@@ -35,7 +35,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^1.0.0
+  flutter_flavorizr: ^1.0.1
 ```
 
 You can install packages from the command line:
