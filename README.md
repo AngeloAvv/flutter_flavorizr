@@ -90,12 +90,12 @@ flavorizr:
 
 #### flavorizr
 
-| key                                     | type   | default  | required | description                                                                                   |
-|:----------------------------------------|:-------|:---------|:---------|:----------------------------------------------------------------------------------------------|
-| app                                     | Object |          | true     | An object describing the general capabilities of an app                                       |
-| flavors                                 | Array  |          | true     | An array of items. Each of them describes a flavor configuration                              |
-| [instructions](#available-instructions) | Array  |          | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https:// | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| key                                     | type   | default                                                                            | required | description                                                                                   |
+|:----------------------------------------|:-------|:-----------------------------------------------------------------------------------|:---------|:----------------------------------------------------------------------------------------------|
+| app                                     | Object |                                                                                    | true     | An object describing the general capabilities of an app                                       |
+| flavors                                 | Array  |                                                                                    | true     | An array of items. Each of them describes a flavor configuration                              |
+| [instructions](#available-instructions) | Array  |                                                                                    | false    | An array of instructions to customize the flavorizr process                                   |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.1/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
 
 
 ##### <a href="#available-instructions">Available instructions</a>
