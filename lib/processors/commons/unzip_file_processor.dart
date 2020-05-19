@@ -52,7 +52,7 @@ class UnzipFileProcessor extends AbstractFileProcessor {
           ..createSync(recursive: true)
           ..writeAsBytesSync(data);
       } else {
-        Directory(fileName)..create(recursive: true);
+        Directory(fileName)..createSync(recursive: true);
       }
     }
   }
