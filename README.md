@@ -96,7 +96,7 @@ flavorizr:
 | flavors                                 | Array  |                                                                                    | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                    | false    | An array of instructions to customize the flavorizr process                                   |
 | assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.2/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
-
+| ide                                     | String |                                                                                    | false    | The IDE in which the app is being developed. Currently only `vscode` or `androidStudio`       |
 
 ##### <a href="#available-instructions">Available instructions</a>
 
@@ -118,6 +118,7 @@ flavorizr:
 | ios:dummyAssets         | iOS           | Generates some default icons for your custom flavors                    |
 | ios:plist               | iOS           | Updates the info.plist file                                             |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
+| ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
 
 #### android (under app)
 

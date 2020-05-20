@@ -89,4 +89,8 @@ class K {
 
   static String tempiOSAddBuildConfigurationScriptPath =
       '$tempiOSScriptsPath/add_build_configuration.rb';
+
+  static String vsCodePath = '.vscode';
+
+  static String vsCodeLaunchPath = '$vsCodePath/launch.json';
 }

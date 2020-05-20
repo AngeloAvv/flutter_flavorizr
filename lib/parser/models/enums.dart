@@ -1,0 +1,4 @@
+enum IDE {
+  androidStudio,
+  vscode
+}

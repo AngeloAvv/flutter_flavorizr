@@ -27,6 +27,7 @@ Flavorizr _$FlavorizrFromJson(Map json) {
         (json['instructions'] as List)?.map((e) => e as String)?.toList(),
     assetsUrl: json['assetsUrl'] as String ??
         'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.2/assets.zip',
+    ide: _$enumDecodeNullable(_$IDEEnumMap, json['ide']),
   );
 }
 
@@ -35,4 +36,42 @@ Map<String, dynamic> _$FlavorizrToJson(Flavorizr instance) => <String, dynamic>{
       'flavors': instance.flavors,
       'instructions': instance.instructions,
       'assetsUrl': instance.assetsUrl,
+      'ide': _$IDEEnumMap[instance.ide],
     };
+
+T _$enumDecode<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
+  if (source == null) {
+    throw ArgumentError('A value must be provided. Supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
+
+  if (value == null && unknownValue == null) {
+    throw ArgumentError('`$source` is not one of the supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+  return value ?? unknownValue;
+}
+
+T _$enumDecodeNullable<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
+  if (source == null) {
+    return null;
+  }
+  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+}
+
+const _$IDEEnumMap = {
+  IDE.androidStudio: 'androidStudio',
+  IDE.vscode: 'vscode',
+};
