@@ -26,6 +26,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'config/app.dart';
+import 'enums.dart';
 import 'flavors/flavor.dart';
 
 part 'flavorizr.g.dart';
@@ -44,11 +45,15 @@ class Flavorizr {
   @JsonKey(defaultValue: 'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.2/assets.zip')
   final String assetsUrl;
 
+  @JsonKey(nullable: true)
+  final IDE ide;
+
   Flavorizr({
     this.app,
     this.flavors,
     this.instructions,
     this.assetsUrl,
+    this.ide
   });
 
   factory Flavorizr.fromJson(Map<String, dynamic> json) =>
