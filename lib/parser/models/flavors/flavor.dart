@@ -30,7 +30,7 @@ import 'app.dart';
 import 'ios.dart';
 part 'flavor.g.dart';
 
-@JsonSerializable(anyMap: true)
+@JsonSerializable(anyMap: true, createToJson: false)
 class Flavor {
   @JsonKey(required: true, disallowNullValue: true)
   final App app;

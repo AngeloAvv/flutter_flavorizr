@@ -11,7 +11,3 @@ Android _$AndroidFromJson(Map json) {
     flavorDimensions: json['flavorDimensions'] as String ?? 'flavor-type',
   );
 }
-
-Map<String, dynamic> _$AndroidToJson(Android instance) => <String, dynamic>{
-      'flavorDimensions': instance.flavorDimensions,
-    };

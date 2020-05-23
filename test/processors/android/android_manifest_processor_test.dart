@@ -30,14 +30,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Test AndroidManifestProcessor', () {
-    String content =
-        File('../test_resources/android/android_manifest_processor_test/AndroidManifest.xml')
-            .readAsStringSync();
+    String content = File(
+            '../test_resources/android/android_manifest_processor_test/AndroidManifest.xml')
+        .readAsStringSync();
     String matcher = File(
             '../test_resources/android/android_manifest_processor_test/AndroidManifest_expected.xml')
         .readAsStringSync();
 
-    AndroidManifestProcessor processor = AndroidManifestProcessor(input: content);
+    AndroidManifestProcessor processor =
+        AndroidManifestProcessor(input: content);
     String actual = processor.execute();
 
     expect(actual, matcher);

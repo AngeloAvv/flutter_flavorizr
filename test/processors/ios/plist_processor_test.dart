@@ -30,8 +30,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Test iOSPListProcessor', () {
-    String content = File('../test_resources/ios/plist_processor_test/Info.plist').readAsStringSync();
-    String matcher = File('../test_resources/ios/plist_processor_test/Matcher.plist').readAsStringSync();
+    String content =
+        File('../test_resources/ios/plist_processor_test/Info.plist')
+            .readAsStringSync();
+    String matcher =
+        File('../test_resources/ios/plist_processor_test/Matcher.plist')
+            .readAsStringSync();
 
     IOSPListProcessor processor = IOSPListProcessor(input: content);
     String actual = processor.execute();
@@ -40,7 +44,9 @@ void main() {
   });
 
   test('Test malformed iOSPListProcessor', () {
-    String content = File('../test_resources/ios/plist_processor_test/Malformed.plist').readAsStringSync();
+    String content =
+        File('../test_resources/ios/plist_processor_test/Malformed.plist')
+            .readAsStringSync();
 
     IOSPListProcessor processor = IOSPListProcessor(input: content);
     expect(() => processor.execute(), throwsException);

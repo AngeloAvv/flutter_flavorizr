@@ -28,7 +28,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ios.g.dart';
 
-@JsonSerializable(anyMap: true)
+@JsonSerializable(anyMap: true, createToJson: false)
 class IOS extends OS {
   @JsonKey(required: true, disallowNullValue: true)
   final String bundleId;

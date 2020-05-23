@@ -26,7 +26,7 @@
 import 'package:json_annotation/json_annotation.dart';
 part 'app.g.dart';
 
-@JsonSerializable(anyMap: true)
+@JsonSerializable(anyMap: true, createToJson: false)
 class App {
   @JsonKey(required: true, disallowNullValue: true)
   final String name;

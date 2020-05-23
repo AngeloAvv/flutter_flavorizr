@@ -1,0 +1,6 @@
+#include "Generated.xcconfig"
+
+FLUTTER_TARGET=lib/main-apple.dart
+
+ASSET_PREFIX=apple
+BUNDLE_NAME=Apple App

@@ -15,18 +15,3 @@ Android _$AndroidFromJson(Map json) {
     generateDummyAssets: json['generateDummyAssets'] ?? true,
   );
 }
-
-Map<String, dynamic> _$AndroidToJson(Android instance) {
-  final val = <String, dynamic>{
-    'generateDummyAssets': instance.generateDummyAssets,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('applicationId', instance.applicationId);
-  return val;
-}

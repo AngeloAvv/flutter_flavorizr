@@ -29,7 +29,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'pubspec.g.dart';
 
-@JsonSerializable(anyMap: true, nullable: false)
+@JsonSerializable(anyMap: true, nullable: false, createToJson: false)
 class Pubspec {
   @JsonKey(required: true)
   final Flavorizr flavorizr;

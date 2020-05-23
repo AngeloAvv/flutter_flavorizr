@@ -1,9 +1,7 @@
 import 'package:flutter_flavorizr/parser/models/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ide/vscode_launch_processor.dart';
+import 'package:flutter_flavorizr/processors/ide/idea/idea_run_configurations_processor.dart';
+import 'package:flutter_flavorizr/processors/ide/vscode/vscode_launch_file_processor.dart';
 import 'package:flutter_flavorizr/utils/constants.dart';
 
 class IDEProcessor extends AbstractProcessor {
@@ -18,17 +16,12 @@ class IDEProcessor extends AbstractProcessor {
   execute() {
     if (_ide != null) {
       switch (_ide) {
-        case IDE.androidStudio:
-          throw UnimplementedError();
+        case IDE.idea:
+          _processor =
+              IdeaRunConfigurationsProcessor(K.ideaLaunchpath, _flavors);
           break;
         case IDE.vscode:
-          _processor = QueueProcessor(
-            [
-              NewFolderProcessor(K.vsCodePath),
-              NewFileStringProcessor(
-                  K.vsCodeLaunchPath, VSCodeLaunchProcessor(_flavors.toList()))
-            ],
-          );
+          _processor = VSCodeLaunchFileProcessor(_flavors);
           break;
         default:
           break;
@@ -42,6 +35,6 @@ class IDEProcessor extends AbstractProcessor {
 
   @override
   String toString() {
-    return 'IDEProcessor: ${_ide == null ? 'Skippping IDE file generation' : super.toString()}';
+    return 'IDEProcessor: ${_ide == null ? 'Skipping IDE file generation' : super.toString()}';
   }
 }

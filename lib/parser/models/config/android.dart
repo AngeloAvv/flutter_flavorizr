@@ -26,7 +26,7 @@
 import 'package:json_annotation/json_annotation.dart';
 part 'android.g.dart';
 
-@JsonSerializable(anyMap: true)
+@JsonSerializable(anyMap: true, createToJson: false)
 class Android {
   @JsonKey(defaultValue: 'flavor-type')
   final String flavorDimensions;

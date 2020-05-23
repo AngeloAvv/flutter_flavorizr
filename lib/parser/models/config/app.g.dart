@@ -22,17 +22,3 @@ App _$AppFromJson(Map json) {
           )),
   );
 }
-
-Map<String, dynamic> _$AppToJson(App instance) {
-  final val = <String, dynamic>{};
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('android', instance.android);
-  val['ios'] = instance.ios;
-  return val;
-}

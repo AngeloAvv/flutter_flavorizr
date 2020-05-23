@@ -1,0 +1,6 @@
+#include "Generated.xcconfig"
+
+FLUTTER_TARGET=lib/main-banana.dart
+
+ASSET_PREFIX=banana
+BUNDLE_NAME=Banana App

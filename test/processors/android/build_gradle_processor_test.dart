@@ -31,7 +31,6 @@ import 'package:flutter_flavorizr/processors/android/android_build_gradle_proces
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-
   Pubspec pubspec;
 
   setUp(() {
@@ -43,23 +42,26 @@ void main() {
     }
   });
 
-  tearDown((){
-
-  });
+  tearDown(() {});
 
   test('Test AndroidBuildGradleProcessor', () {
-    String content = File('../test_resources/android/build_gradle_processor_test/build.gradle').readAsStringSync();
-    String matcher = File('../test_resources/android/build_gradle_processor_test/build_expected.gradle').readAsStringSync();
+    String content = File(
+            '../test_resources/android/build_gradle_processor_test/build.gradle')
+        .readAsStringSync();
+    String matcher = File(
+            '../test_resources/android/build_gradle_processor_test/build_expected.gradle')
+        .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
     String actual = processor.execute();
 
     expect(actual, matcher);
   });
 
   test('Test malformed AndroidBuildGradleProcessor', () {
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(pubspec.flavorizr, input: '');
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(pubspec.flavorizr, input: '');
     expect(() => processor.execute(), throwsException);
-
   });
 }

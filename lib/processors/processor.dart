@@ -139,9 +139,14 @@ class Processor extends AbstractProcessor<void> {
         K.flutterFlavorPath,
         FlutterFlavorsProcessor(_pubspec.flavorizr.flavors),
       ),
-      'flutter:app': CopyFileProcessor(K.tempFlutterAppPath, K.flutterAppPath),
-      'flutter:pages':
-          CopyFolderProcessor(K.tempFlutterPagesPath, K.flutterPagesPath),
+      'flutter:app': CopyFileProcessor(
+        K.tempFlutterAppPath,
+        K.flutterAppPath,
+      ),
+      'flutter:pages': CopyFolderProcessor(
+        K.tempFlutterPagesPath,
+        K.flutterPagesPath,
+      ),
       'flutter:targets': FlutterTargetsFileProcessor(
         K.tempFlutterMainPath,
         K.flutterPath,
@@ -174,8 +179,10 @@ class Processor extends AbstractProcessor<void> {
         K.iOSAssetsPath,
         _pubspec.flavorizr.flavors,
       ),
-      'ios:plist':
-          ExistingFileStringProcessor(K.iOSPListPath, IOSPListProcessor()),
+      'ios:plist': ExistingFileStringProcessor(
+        K.iOSPListPath,
+        IOSPListProcessor(),
+      ),
       'ios:launchScreen': IOSTargetsLaunchScreenFileProcessor(
         'ruby',
         K.tempiOSAddFileScriptPath,
@@ -184,8 +191,10 @@ class Processor extends AbstractProcessor<void> {
         K.iOSRunnerPath,
         _pubspec.flavorizr.flavors.keys,
       ),
-      'ide:config':
-          IDEProcessor(_pubspec.flavorizr.ide, _pubspec.flavorizr.flavors.keys),
+      'ide:config': IDEProcessor(
+        _pubspec.flavorizr.ide,
+        _pubspec.flavorizr.flavors.keys,
+      ),
     };
   }
 }

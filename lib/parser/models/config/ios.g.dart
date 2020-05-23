@@ -9,5 +9,3 @@ part of 'ios.dart';
 IOS _$IOSFromJson(Map json) {
   return IOS();
 }
-
-Map<String, dynamic> _$IOSToJson(IOS instance) => <String, dynamic>{};

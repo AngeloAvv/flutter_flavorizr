@@ -42,5 +42,5 @@ abstract class AbstractFileStringProcessor extends AbstractFileProcessor {
 
   @override
   String toString() =>
-      "FileProcessor: modifying file $path with nested $processor";
+      "FileProcessor: writing file $path with nested $processor";
 }

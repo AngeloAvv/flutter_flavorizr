@@ -31,7 +31,7 @@ import 'flavors/flavor.dart';
 
 part 'flavorizr.g.dart';
 
-@JsonSerializable(anyMap: true)
+@JsonSerializable(anyMap: true, createToJson: false)
 class Flavorizr {
   @JsonKey(required: true)
   final App app;
@@ -42,19 +42,16 @@ class Flavorizr {
   @JsonKey(nullable: true)
   final List<String> instructions;
 
-  @JsonKey(defaultValue: 'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.2/assets.zip')
+  @JsonKey(
+      defaultValue:
+          'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.3/assets.zip')
   final String assetsUrl;
 
   @JsonKey(nullable: true)
   final IDE ide;
 
-  Flavorizr({
-    this.app,
-    this.flavors,
-    this.instructions,
-    this.assetsUrl,
-    this.ide
-  });
+  Flavorizr(
+      {this.app, this.flavors, this.instructions, this.assetsUrl, this.ide});
 
   factory Flavorizr.fromJson(Map<String, dynamic> json) =>
       _$FlavorizrFromJson(json);

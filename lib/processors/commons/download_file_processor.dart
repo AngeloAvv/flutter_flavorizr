@@ -28,7 +28,6 @@ import 'dart:io';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_processor.dart';
 
 class DownloadFileProcessor extends AbstractFileProcessor {
-
   final String _url;
 
   DownloadFileProcessor(this._url, String path) : super(path);
@@ -44,5 +43,4 @@ class DownloadFileProcessor extends AbstractFileProcessor {
 
   @override
   String toString() => 'Downloading resources from $_url into $path';
-
 }

@@ -13,7 +13,3 @@ Pubspec _$PubspecFromJson(Map json) {
         Flavorizr.fromJson(Map<String, dynamic>.from(json['flavorizr'] as Map)),
   );
 }
-
-Map<String, dynamic> _$PubspecToJson(Pubspec instance) => <String, dynamic>{
-      'flavorizr': instance.flavorizr,
-    };

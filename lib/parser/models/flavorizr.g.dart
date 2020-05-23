@@ -26,18 +26,10 @@ Flavorizr _$FlavorizrFromJson(Map json) {
     instructions:
         (json['instructions'] as List)?.map((e) => e as String)?.toList(),
     assetsUrl: json['assetsUrl'] as String ??
-        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.2/assets.zip',
+        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.3/assets.zip',
     ide: _$enumDecodeNullable(_$IDEEnumMap, json['ide']),
   );
 }
-
-Map<String, dynamic> _$FlavorizrToJson(Flavorizr instance) => <String, dynamic>{
-      'app': instance.app,
-      'flavors': instance.flavors,
-      'instructions': instance.instructions,
-      'assetsUrl': instance.assetsUrl,
-      'ide': _$IDEEnumMap[instance.ide],
-    };
 
 T _$enumDecode<T>(
   Map<T, dynamic> enumValues,
@@ -72,6 +64,6 @@ T _$enumDecodeNullable<T>(
 }
 
 const _$IDEEnumMap = {
-  IDE.androidStudio: 'androidStudio',
+  IDE.idea: 'idea',
   IDE.vscode: 'vscode',
 };

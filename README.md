@@ -2,6 +2,11 @@
 
 A flutter utility to easily create flavors in your flutter application
 
+[![Pub](https://img.shields.io/pub/v/flutter_flavorizr.svg)](https://pub.dev/packages/flutter_flavorizr)
+![Dart CI](https://github.com/AngeloAvv/flutter_flavorizr/workflows/Dart%20CI/badge.svg)
+[![Star on GitHub](https://img.shields.io/github/stars/AngeloAvv/flutter_flavorizr.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/AngeloAvv/flutter_flavorizr)
+[![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+
 ## Getting Started
 
 Let's start by setting up our environment in order to run Flutter
@@ -35,7 +40,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^1.0.2
+  flutter_flavorizr: ^1.0.3
 ```
 
 You can install packages from the command line:
@@ -95,8 +100,8 @@ flavorizr:
 | app                                     | Object |                                                                                    | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                    | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                    | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.2/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
-| ide                                     | String |                                                                                    | false    | The IDE in which the app is being developed. Currently only `vscode` or `androidStudio`       |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.3/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| ide                                     | String |                                                                                    | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
 
@@ -169,6 +174,42 @@ Example
 flutter run --flavor apple -t lib/main-apple.dart
 flutter run --flavor banana -t lib/main-banana.dart
 ```
+
+## Customize your app
+
+Flutter_flavorizr creates different dart files in the lib folder. In the
+flavors.dart file we have the F class which contains all of our
+customizations.
+
+```
+class F {
+  static Flavor appFlavor;
+
+  static String get title {
+    switch (appFlavor) {
+      case Flavor.APPLE:
+        return 'Apple App';
+      case Flavor.BANANA:
+        return 'Banana App';
+      default:
+        return 'title';
+    }
+  }
+
+}
+```
+
+The process creates a simple title customization: a
+switch which checks the current appFlavor (defined in our app starting
+point) and returns the correct value. Here you can write whatever you
+want, you can create your custom app color palette, differentiate the
+URL action of a button, and so on.
+
+If you are wondering how to use these
+getters, you can find an example under the pages folder: in the
+my_home_page.dart file, the page shown after the launch of the app, we
+can see a clear reference on the title getter defined in the F class.
+
 
 ## Further developments
 

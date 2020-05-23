@@ -30,9 +30,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Test IOXCConfigProcessor', () {
-    String matcher = File('../test_resources/ios/xcconfig_processor_test/matcher.xcconfig').readAsStringSync();
+    String matcher =
+        File('../test_resources/ios/xcconfig_processor_test/matcher.xcconfig')
+            .readAsStringSync();
 
-    IOSXCConfigProcessor processor = IOSXCConfigProcessor('Example App', 'example');
+    IOSXCConfigProcessor processor =
+        IOSXCConfigProcessor('Example App', 'example');
     String actual = processor.execute();
 
     expect(actual, matcher);

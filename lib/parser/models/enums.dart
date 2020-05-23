@@ -1,4 +1,1 @@
-enum IDE {
-  androidStudio,
-  vscode
-}
+enum IDE { idea, vscode }

@@ -28,18 +28,3 @@ Flavor _$FlavorFromJson(Map json) {
           )),
   );
 }
-
-Map<String, dynamic> _$FlavorToJson(Flavor instance) {
-  final val = <String, dynamic>{};
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('app', instance.app);
-  writeNotNull('android', instance.android);
-  writeNotNull('ios', instance.ios);
-  return val;
-}
