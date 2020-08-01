@@ -23,37 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
-import 'package:flutter_flavorizr/processors/ios/ios_plist_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
-
-import '../../test_utils.dart';
-
-void main() {
-  test('Test iOSPListProcessor', () {
-    String content =
-        File('../test_resources/ios/plist_processor_test/Info.plist')
-            .readAsStringSync();
-    String matcher =
-        File('../test_resources/ios/plist_processor_test/Matcher.plist')
-            .readAsStringSync();
-
-    IOSPListProcessor processor = IOSPListProcessor(input: content);
-    String actual = processor.execute();
-
-    actual = TestUtils.stripEndOfLines(actual);
-    matcher = TestUtils.stripEndOfLines(matcher);
-
-    expect(actual, matcher);
-  });
-
-  test('Test malformed iOSPListProcessor', () {
-    String content =
-        File('../test_resources/ios/plist_processor_test/Malformed.plist')
-            .readAsStringSync();
-
-    IOSPListProcessor processor = IOSPListProcessor(input: content);
-    expect(() => processor.execute(), throwsException);
-  });
+class TestUtils {
+  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
+      input, (previousValue, element) => previousValue.replaceAll(element, ''));
 }

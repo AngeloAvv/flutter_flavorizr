@@ -26,6 +26,8 @@
 import 'package:flutter_flavorizr/processors/commons/replace_string_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../test_utils.dart';
+
 void main() {
   test('Test ReplaceStringProcessor', () {
     String content = 'blablabla [[FLAVOR_NAME]] blablabla';
@@ -39,20 +41,26 @@ void main() {
 
     String actual = processor.execute();
 
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
     expect(actual, matcher);
   });
 
   test('Test not found ReplaceStringProcessor', () {
-    String content = 'blablabla blablabla';
+    String matcher = 'blablabla blablabla';
 
     ReplaceStringProcessor processor = ReplaceStringProcessor(
       '[[FLAVOR_NAME]]',
       'test',
-      input: content,
+      input: matcher,
     );
 
     String actual = processor.execute();
 
-    expect(actual, content);
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
   });
 }

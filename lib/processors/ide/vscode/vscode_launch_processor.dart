@@ -40,7 +40,7 @@ class VSCodeLaunchProcessor extends StringProcessor {
             .expand(
               (flavorName) => modes.map(
                 (mode) => Configuration(
-                  name: '${flavorName} ${mode}',
+                  name: '$flavorName $mode',
                   flutterMode: mode.toLowerCase(),
                   request: 'launch',
                   type: 'dart',

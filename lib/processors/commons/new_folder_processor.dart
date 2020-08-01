@@ -18,6 +18,6 @@ class NewFolderProcessor extends AbstractProcessor {
 
   @override
   String toString() {
-    return 'NewFolderProcessor: Creating directory ${path}';
+    return 'NewFolderProcessor: Creating directory $path';
   }
 }

@@ -28,6 +28,8 @@ import 'dart:io';
 import 'package:flutter_flavorizr/processors/ide/vscode/vscode_launch_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../test_utils.dart';
+
 void main() {
   test('Test VSCodeLaunchProcessor', () {
     String matcher =
@@ -38,6 +40,9 @@ void main() {
 
     VSCodeLaunchProcessor processor = VSCodeLaunchProcessor(flavorNames);
     String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
 
     expect(actual, matcher);
   });

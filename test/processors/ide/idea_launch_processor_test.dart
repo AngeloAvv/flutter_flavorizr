@@ -28,6 +28,8 @@ import 'dart:io';
 import 'package:flutter_flavorizr/processors/ide/idea/idea_launch_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../test_utils.dart';
+
 void main() {
   test('Test VSCodeLaunchProcessor', () {
     String matcher = File(
@@ -36,6 +38,9 @@ void main() {
 
     IdeaLaunchProcessor processor = IdeaLaunchProcessor('example');
     String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
 
     expect(actual, matcher);
   });

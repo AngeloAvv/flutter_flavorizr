@@ -30,6 +30,8 @@ import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/android/android_build_gradle_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../test_utils.dart';
+
 void main() {
   Pubspec pubspec;
 
@@ -55,6 +57,9 @@ void main() {
     AndroidBuildGradleProcessor processor =
         AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
     String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
 
     expect(actual, matcher);
   });

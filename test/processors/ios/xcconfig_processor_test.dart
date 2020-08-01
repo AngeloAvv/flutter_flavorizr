@@ -28,6 +28,8 @@ import 'dart:io';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../test_utils.dart';
+
 void main() {
   test('Test IOXCConfigProcessor', () {
     String matcher =
@@ -37,6 +39,9 @@ void main() {
     IOSXCConfigProcessor processor =
         IOSXCConfigProcessor('Example App', 'example');
     String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
 
     expect(actual, matcher);
   });
