@@ -25,11 +25,17 @@
 
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:flutter_flavorizr/parser/models/pubspec.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/processor.dart';
 
-void execute() {
+void execute(List<String> args) {
+  ArgParser argParser = ArgParser();
+  argParser.addMultiOption('processors', abbr: 'p', allowed: Processor.defaultInstructionSet, splitCommas: true);
+  ArgResults results = argParser.parse(args);
+  List<String> argProcessors = results['processors'];
+
   Parser parser = Parser(file: 'pubspec.yaml');
 
   Pubspec pubspec;
@@ -37,6 +43,10 @@ void execute() {
     pubspec = parser.parse();
   } catch (e) {
     stderr.writeln(e);
+  }
+
+  if (argProcessors.isNotEmpty) {
+    pubspec.flavorizr.instructions = argProcessors;
   }
 
   Processor processor = Processor(pubspec);

@@ -23,7 +23,7 @@ packages:
     source: hosted
     version: "2.0.13"
   args:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: args
       url: "https://pub.dartlang.org"

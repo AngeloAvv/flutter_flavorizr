@@ -40,7 +40,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^1.0.3
+  flutter_flavorizr: ^1.0.4
 ```
 
 You can install packages from the command line:
@@ -100,7 +100,7 @@ flavorizr:
 | app                                     | Object |                                                                                    | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                    | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                    | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.3/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.4/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                    | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -158,6 +158,18 @@ by running the script with:
 
 ```
 flutter pub run flutter_flavorizr
+```
+
+You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma:
+
+```
+flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
+```
+Example
+
+```
+flutter pub run flutter_flavorizr -p assets:download
+flutter pub run flutter_flavorizr -p assets:download,assets:extract
 ```
 
 ## Run your flavors

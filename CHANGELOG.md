@@ -1,3 +1,6 @@
+## 1.0.4
+* Added processors param to the command line
+
 ## 1.0.3
 * Added IDE processors (vscode and idea)
 * Updated README
