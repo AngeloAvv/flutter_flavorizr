@@ -11,13 +11,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  archive: ^2.0.11
+  archive: ^2.0.13
   args: ^1.6.0
-  checked_yaml: ^1.0.0
+  checked_yaml: ^1.0.2
   io: ^0.3.4
   json_annotation: ^3.0.1
-  xml: ^3.6.1
-  yaml: ^2.2.0
+  xml: ^4.1.0
+  yaml: ^2.2.1
 
 dev_dependencies:
   flutter_test:
