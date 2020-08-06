@@ -1,3 +1,6 @@
+## 1.0.5
+* Bumped dependencies
+
 ## 1.0.4
 * Added processors param to the command line
 
