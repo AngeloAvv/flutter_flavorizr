@@ -48,6 +48,7 @@ class VSCodeLaunchProcessor extends StringProcessor {
                     '--flavor',
                     flavorName,
                   ],
+                  program: 'lib/main-$flavorName.dart',
                 ),
               ),
             )
