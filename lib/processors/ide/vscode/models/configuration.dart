@@ -39,12 +39,15 @@ class Configuration {
 
   final List<String> args;
 
+  final String program;
+
   Configuration({
     this.name,
     this.request,
     this.type,
     this.flutterMode,
     this.args,
+    this.program,
   });
 
   Map<String, dynamic> toJson() => _$ConfigurationToJson(this);

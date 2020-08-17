@@ -13,4 +13,5 @@ Map<String, dynamic> _$ConfigurationToJson(Configuration instance) =>
       'type': instance.type,
       'flutterMode': instance.flutterMode,
       'args': instance.args,
+      'program': instance.program,
     };
