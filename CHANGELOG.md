@@ -1,3 +1,6 @@
+## 1.0.9
+* Fixed README
+
 ## 1.0.8
 * Added buildConfig param in iOS configuration
 * Added program argument in vscode configuration

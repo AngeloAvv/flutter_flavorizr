@@ -40,7 +40,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^1.0.8
+  flutter_flavorizr: ^1.0.9
 ```
 
 You can install packages from the command line:
@@ -100,7 +100,7 @@ flavorizr:
 | app                                     | Object |                                                                                    | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                    | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                    | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.8/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.9/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                    | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -134,9 +134,9 @@ flavorizr:
 
 #### ios (under app)
 
-| key         | type       | default | required | description                                                                                    |
-|:------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
-| buildConfig | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+| key           | type       | default | required | description                                                                                    |
+|:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
+| buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 
 #### app (under *flavorname*)
 
@@ -156,7 +156,7 @@ flavorizr:
 | key                 | type       | default | required | description                                                                                                   |
 |:--------------------|:-----------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------|
 | bundleId            | String     |         | true     | The bundleId of the iOS App                                                                                   |
-| buildConfig         | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+| buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 
 ## Usage
