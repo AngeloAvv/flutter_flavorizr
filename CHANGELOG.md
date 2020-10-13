@@ -1,3 +1,8 @@
+## 1.0.8
+* Added buildConfig param in iOS configuration
+* Added program argument in vscode configuration
+* Added dash in iOS configuration
+
 ## 1.0.7
 * Bumped dependencies
 
