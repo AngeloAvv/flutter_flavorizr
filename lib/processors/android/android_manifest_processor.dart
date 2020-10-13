@@ -32,7 +32,7 @@ class AndroidManifestProcessor extends StringProcessor {
 
   @override
   String execute() {
-    XmlDocument document = parse(this.input);
+    XmlDocument document = XmlDocument.parse(this.input);
 
     Iterable<XmlElement> applications = document.findAllElements('application');
     if (applications.isEmpty) {

@@ -7,5 +7,10 @@ part of 'ios.dart';
 // **************************************************************************
 
 IOS _$IOSFromJson(Map json) {
-  return IOS();
+  return IOS(
+    buildSettings: (json['buildSettings'] as Map)?.map(
+          (k, e) => MapEntry(k as String, e),
+        ) ??
+        {},
+  );
 }

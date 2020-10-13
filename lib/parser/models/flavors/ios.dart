@@ -23,20 +23,27 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'ios.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class IOS extends OS {
+class IOS extends OS with BuildSettingsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String bundleId;
 
   IOS({
     this.bundleId,
+    Map<String, dynamic> buildSettings = const {},
     generateDummyAssets,
-  }) : super(generateDummyAssets);
+  }) : super(generateDummyAssets) {
+    this.buildSettings = {
+      "PRODUCT_BUNDLE_IDENTIFIER": bundleId,
+    };
+    this.buildSettings.addAll(buildSettings);
+  }
 
   factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
 }

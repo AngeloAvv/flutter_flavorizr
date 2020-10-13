@@ -1,7 +1,9 @@
 require 'xcodeproj'
+require 'json'
+require "base64"
 
-if ARGV.length != 5
-  puts "We need exactly four arguments"
+if ARGV.length != 6
+  puts "We need exactly six arguments"
   exit
 end
 
@@ -10,18 +12,7 @@ file_path = ARGV[1]
 flavor = ARGV[2]
 bundleId = ARGV[3]
 mode = ARGV[4]
-
-
-additional_build_settings = {
-    "ASSETCATALOG_COMPILER_APPICON_NAME" => "$(ASSET_PREFIX)AppIcon",
-    "LD_RUNPATH_SEARCH_PATHS" => "$(inherited) @executable_path/Frameworks",
-    "SWIFT_OBJC_BRIDGING_HEADER" => "Runner/Runner-Bridging-Header.h",
-    "SWIFT_VERSION" => "5.0",
-    "FRAMEWORK_SEARCH_PATHS" => %w[$(inherited) $(PROJECT_DIR)/Flutter],
-    "LIBRARY_SEARCH_PATHS" => %w[$(inherited) $(PROJECT_DIR)/Flutter],
-    "INFOPLIST_FILE" => "Runner/Info.plist",
-    "PRODUCT_BUNDLE_IDENTIFIER" => bundleId,
-}
+additional_build_settings = JSON.parse(Base64.decode64(ARGV[5]))
 
 project = Xcodeproj::Project.open(project_path)
 

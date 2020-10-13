@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/build_configuration/ios_build_configurations_processor.dart';
@@ -33,8 +35,8 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
     String script,
     String project,
     String file,
-    Map<String, Flavor> flavors,
-  ) : super(flavors
+    Flavorizr flavorizr,
+  ) : super(flavorizr.flavors
             .map((String flavorName, Flavor flavor) => MapEntry(
                 flavorName,
                 IOSBuildConfigurationsProcessor(
@@ -44,6 +46,11 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                   file,
                   flavorName,
                   flavor.ios.bundleId,
+                  {}
+                    ..addAll(flavorizr.app.ios != null
+                        ? flavorizr.app.ios.buildSettings
+                        : BuildSettingsMixin.defaultBuildSettings)
+                    ..addAll(flavor.ios.buildSettings),
                 )))
             .values);
 

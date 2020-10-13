@@ -23,12 +23,16 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:json_annotation/json_annotation.dart';
 part 'ios.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class IOS {
-  IOS();
+class IOS with BuildSettingsMixin {
+  IOS({Map<String, dynamic> buildSettings = const {}}) {
+    this.buildSettings = BuildSettingsMixin.defaultBuildSettings;
+    this.buildSettings.addAll(buildSettings);
+  }
 
   factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
 }

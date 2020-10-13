@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
+
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
@@ -37,6 +39,7 @@ class IOSBuildConfigurationsProcessor extends QueueProcessor {
     String file,
     String flavorName,
     String bundleId,
+    Map<String, dynamic> buildConfigurations,
   ) : super(
           _modes.map(
             (String mode) => ShellProcessor(
@@ -48,6 +51,7 @@ class IOSBuildConfigurationsProcessor extends QueueProcessor {
                 flavorName,
                 bundleId,
                 mode,
+                base64.encode(utf8.encode(jsonEncode(buildConfigurations))),
               ],
             ),
           ),

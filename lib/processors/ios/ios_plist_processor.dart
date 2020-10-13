@@ -32,7 +32,7 @@ class IOSPListProcessor extends StringProcessor {
 
   @override
   String execute() {
-    XmlDocument document = parse(this.input);
+    XmlDocument document = XmlDocument.parse(this.input);
     XmlElement root = document.rootElement.children
         .where((XmlNode node) => node is XmlElement)
         .first;

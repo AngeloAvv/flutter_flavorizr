@@ -166,7 +166,7 @@ class Processor extends AbstractProcessor<void> {
         K.tempiOSAddBuildConfigurationScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
-        _pubspec.flavorizr.flavors,
+        _pubspec.flavorizr,
       ),
       'ios:schema': IOSSchemasProcessor(
         'ruby',
