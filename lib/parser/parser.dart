@@ -33,7 +33,7 @@ import 'package:json_annotation/src/allowed_keys_helpers.dart';
 class Parser {
   final String file;
 
-  Parser({this.file});
+  Parser({required this.file});
 
   Pubspec parse() {
     File pubspecFile = File(file);

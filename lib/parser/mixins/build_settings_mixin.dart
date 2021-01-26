@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
+// TODO: This looks more like an abstract class rather than a mixin.
 mixin BuildSettingsMixin {
   static final Map<String, dynamic> defaultBuildSettings = {
     "ASSETCATALOG_COMPILER_APPICON_NAME": "\$(ASSET_PREFIX)AppIcon",
@@ -12,5 +13,5 @@ mixin BuildSettingsMixin {
   };
 
   @JsonKey(defaultValue: {})
-  Map<String, dynamic> buildSettings;
+  late Map<String, dynamic> buildSettings;
 }

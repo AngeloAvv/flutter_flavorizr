@@ -29,11 +29,8 @@ import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 
 abstract class AbstractFileProcessor extends AbstractProcessor<void> {
   final String path;
+
   File file;
 
-  AbstractFileProcessor(
-    this.path,
-  ) {
-    this.file = File(this.path);
-  }
+  AbstractFileProcessor(this.path) : file = File(path);
 }

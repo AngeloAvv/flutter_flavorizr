@@ -23,19 +23,21 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:collection/collection.dart';
 import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:xml/xml.dart';
 
 class IOSPListProcessor extends StringProcessor {
-  IOSPListProcessor({String input}) : super(input: input);
+  IOSPListProcessor({String input = ''}) : super(input: input);
 
   @override
   String execute() {
     XmlDocument document = XmlDocument.parse(this.input);
-    XmlElement root = document.rootElement.children
+    XmlNode rootNode = document.rootElement.children
         .where((XmlNode node) => node is XmlElement)
         .first;
+    XmlElement root = rootNode as XmlElement;
 
     _updateCFBundleName(root);
     _updateUILaunchStoryboardName(root);
@@ -62,21 +64,23 @@ class IOSPListProcessor extends StringProcessor {
       throw MalformedResourceException(input);
     }
 
-    XmlElement element =
-        keys.firstWhere((XmlNode e) => e.text == key, orElse: () => null);
+    XmlNode? element = keys.firstWhereOrNull((XmlNode e) => e.text == key);
     if (element == null) {
       throw MalformedResourceException(input);
     }
 
-    XmlElement xmlValue = element.following?.firstWhere(
-        (XmlNode e) => e is XmlElement && e.name.local == 'string',
-        orElse: () => null);
+    XmlNode? xmlValue = element.following.firstWhereOrNull(
+        (XmlNode e) => e is XmlElement && e.name.local == 'string');
+
     if (xmlValue == null) {
       throw MalformedResourceException(input);
     }
 
-    XmlText xmlText = xmlValue.firstChild;
-    xmlText.text = value;
+    final xmlText = xmlValue.firstChild as XmlText?;
+
+    if (xmlText != null) {
+      xmlText.text = value;
+    }
   }
 
   @override

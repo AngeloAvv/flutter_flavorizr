@@ -34,7 +34,7 @@ class Android extends OS {
   final String applicationId;
 
   Android({
-    this.applicationId,
+    required this.applicationId,
     generateDummyAssets,
   }) : super(generateDummyAssets);
 

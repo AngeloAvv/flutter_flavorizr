@@ -5,12 +5,13 @@ import 'package:flutter_flavorizr/processors/ide/vscode/vscode_launch_file_proce
 import 'package:flutter_flavorizr/utils/constants.dart';
 
 class IDEProcessor extends AbstractProcessor {
-  final IDE _ide;
+  final IDE? _ide;
+
   final Iterable<String> _flavors;
 
-  AbstractProcessor _processor;
+  AbstractProcessor? _processor;
 
-  IDEProcessor(this._ide, this._flavors);
+  IDEProcessor(this._flavors, [this._ide]);
 
   @override
   execute() {
@@ -29,7 +30,7 @@ class IDEProcessor extends AbstractProcessor {
     }
 
     if (_processor != null) {
-      _processor.execute();
+      _processor!.execute();
     }
   }
 

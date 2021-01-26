@@ -11,20 +11,9 @@ Flavor _$FlavorFromJson(Map json) {
       requiredKeys: const ['app', 'android', 'ios'],
       disallowNullValues: const ['app', 'android', 'ios']);
   return Flavor(
-    app: json['app'] == null
-        ? null
-        : App.fromJson((json['app'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    android: json['android'] == null
-        ? null
-        : Android.fromJson((json['android'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
-    ios: json['ios'] == null
-        ? null
-        : IOS.fromJson((json['ios'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+    app: App.fromJson(Map<String, dynamic>.from(json['app'] as Map)),
+    android:
+        Android.fromJson(Map<String, dynamic>.from(json['android'] as Map)),
+    ios: IOS.fromJson(Map<String, dynamic>.from(json['ios'] as Map)),
   );
 }

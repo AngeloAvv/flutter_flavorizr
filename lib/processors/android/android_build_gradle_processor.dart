@@ -33,7 +33,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
   final Flavorizr _flavorizr;
 
-  AndroidBuildGradleProcessor(this._flavorizr, {String input})
+  AndroidBuildGradleProcessor(this._flavorizr, {String input = ''})
       : super(input: input);
 
   @override

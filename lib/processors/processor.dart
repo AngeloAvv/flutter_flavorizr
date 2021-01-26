@@ -96,10 +96,15 @@ class Processor extends AbstractProcessor<void> {
     for (String instruction in instructions) {
       stdout.writeln('Executing task $instruction');
 
-      AbstractProcessor processor = _availableProcessors[instruction];
-      await processor.execute();
+      AbstractProcessor? processor = _availableProcessors[instruction];
+      if (processor != null) {
+        await processor.execute();
 
-      stdout.writeln();
+        stdout.writeln();
+      } else {
+        stderr
+            .writeln('Could not find proccessor for instuction: $instruction');
+      }
     }
   }
 
@@ -192,8 +197,8 @@ class Processor extends AbstractProcessor<void> {
         _pubspec.flavorizr.flavors.keys,
       ),
       'ide:config': IDEProcessor(
-        _pubspec.flavorizr.ide,
         _pubspec.flavorizr.flavors.keys,
+        _pubspec.flavorizr.ide,
       ),
     };
   }

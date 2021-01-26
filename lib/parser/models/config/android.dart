@@ -24,6 +24,7 @@
  */
 
 import 'package:json_annotation/json_annotation.dart';
+
 part 'android.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
@@ -31,7 +32,7 @@ class Android {
   @JsonKey(defaultValue: 'flavor-type')
   final String flavorDimensions;
 
-  Android({this.flavorDimensions});
+  const Android({required this.flavorDimensions});
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

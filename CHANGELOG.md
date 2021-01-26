@@ -1,3 +1,6 @@
+## 2.0.0-nullsafety.0
+* Move to nullsafety
+
 ## 1.0.9
 * Fixed README
 

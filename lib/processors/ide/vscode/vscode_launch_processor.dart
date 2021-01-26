@@ -31,7 +31,8 @@ class VSCodeLaunchProcessor extends StringProcessor {
   final Iterable<String> _flavorNames;
   static const List<String> modes = ['Debug', 'Profile', 'Release'];
 
-  VSCodeLaunchProcessor(this._flavorNames);
+  VSCodeLaunchProcessor(this._flavorNames, {String input = ''})
+      : super(input: input);
 
   @override
   execute() => Launch(

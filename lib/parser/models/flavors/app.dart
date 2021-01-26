@@ -24,6 +24,7 @@
  */
 
 import 'package:json_annotation/json_annotation.dart';
+
 part 'app.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
@@ -31,7 +32,7 @@ class App {
   @JsonKey(required: true, disallowNullValue: true)
   final String name;
 
-  App({this.name});
+  App({required this.name});
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 }

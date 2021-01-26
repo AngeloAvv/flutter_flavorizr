@@ -29,10 +29,8 @@ import 'package:xml/xml.dart';
 class IdeaLaunchProcessor extends StringProcessor {
   final String _flavorName;
 
-  IdeaLaunchProcessor(
-    this._flavorName, {
-    String input,
-  }) : super(input: input);
+  IdeaLaunchProcessor(this._flavorName, {String input = ''})
+      : super(input: input);
 
   @override
   String toString() => 'IdeaLaunchProcessor';
@@ -65,6 +63,6 @@ class IdeaLaunchProcessor extends StringProcessor {
       });
     });
 
-    return builder.build().toXmlString(pretty: true);
+    return builder.buildDocument().toXmlString(pretty: true);
   }
 }

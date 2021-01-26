@@ -37,8 +37,8 @@ class Launch {
   final List<Configuration> configurations;
 
   Launch({
-    this.version,
-    this.configurations,
+    required this.version,
+    required this.configurations,
   });
 
   Map<String, dynamic> toJson() => _$LaunchToJson(this);

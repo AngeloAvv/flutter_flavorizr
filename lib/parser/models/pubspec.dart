@@ -29,12 +29,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'pubspec.g.dart';
 
-@JsonSerializable(anyMap: true, nullable: false, createToJson: false)
+@JsonSerializable(anyMap: true, createToJson: false)
 class Pubspec {
   @JsonKey(required: true)
   final Flavorizr flavorizr;
 
-  Pubspec({this.flavorizr});
+  const Pubspec({required this.flavorizr});
 
   factory Pubspec.fromJson(Map json) => _$PubspecFromJson(json);
 

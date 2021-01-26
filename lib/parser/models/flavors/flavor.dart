@@ -28,6 +28,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'android.dart';
 import 'app.dart';
 import 'ios.dart';
+
 part 'flavor.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
@@ -41,7 +42,7 @@ class Flavor {
   @JsonKey(required: true, disallowNullValue: true)
   final IOS ios;
 
-  Flavor({this.app, this.android, this.ios});
+  Flavor({required this.app, required this.android, required this.ios});
 
   factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);
 }

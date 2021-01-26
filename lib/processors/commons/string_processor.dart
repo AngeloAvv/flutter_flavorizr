@@ -28,7 +28,7 @@ import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 abstract class StringProcessor extends AbstractProcessor<String> {
   String input;
 
-  StringProcessor({this.input});
+  StringProcessor({required this.input});
 
   @override
   String toString() => 'StringProcessor';

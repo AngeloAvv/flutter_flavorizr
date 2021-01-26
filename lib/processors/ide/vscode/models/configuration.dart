@@ -41,13 +41,13 @@ class Configuration {
 
   final String program;
 
-  Configuration({
-    this.name,
-    this.request,
-    this.type,
-    this.flutterMode,
-    this.args,
-    this.program,
+  const Configuration({
+    required this.name,
+    required this.request,
+    required this.type,
+    required this.flutterMode,
+    required this.args,
+    required this.program,
   });
 
   Map<String, dynamic> toJson() => _$ConfigurationToJson(this);

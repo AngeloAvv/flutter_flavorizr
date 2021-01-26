@@ -35,7 +35,7 @@ class IOS extends OS with BuildSettingsMixin {
   final String bundleId;
 
   IOS({
-    this.bundleId,
+    required this.bundleId,
     Map<String, dynamic> buildSettings = const {},
     generateDummyAssets,
   }) : super(generateDummyAssets) {

@@ -29,7 +29,7 @@ class ReplaceStringProcessor extends StringProcessor {
   final Pattern _find;
   final String _replace;
 
-  ReplaceStringProcessor(this._find, this._replace, {String input})
+  ReplaceStringProcessor(this._find, this._replace, {String input = ''})
       : super(input: input);
 
   @override
