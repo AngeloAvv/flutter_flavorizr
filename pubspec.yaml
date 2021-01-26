@@ -14,8 +14,8 @@ dependencies:
   collection: 1.15.0-nullsafety.5 
   archive: ^3.0.0-nullsafety.0 
   args: ^1.6.0 # args 2.0.0-nullsafety.0 is blocked by build_runner
-  checked_yaml: ^1.0.2
-  io: ^0.3.4
+  checked_yaml: 1.9.0-nullsafety-dev
+  universal_io: 2.0.0-nullsafety.2
   json_annotation: ^4.0.0-nullsafety.0
   xml: ^5.0.0-nullsafety.1
   yaml: ^3.0.0-nullsafety.0 

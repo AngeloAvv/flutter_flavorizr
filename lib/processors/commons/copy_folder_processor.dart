@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
-import 'package:io/io.dart';
+import 'package:universal_io/io.dart';
 
 class CopyFolderProcessor extends AbstractProcessor<void> {
   final String _source;
@@ -33,7 +33,7 @@ class CopyFolderProcessor extends AbstractProcessor<void> {
   CopyFolderProcessor(this._source, this._destination);
 
   @override
-  void execute() => copyPathSync(_source, _destination);
+  void execute() => File(_source).copySync(_destination);
 
   @override
   String toString() => 'Copying folder from $_source to $_destination';
