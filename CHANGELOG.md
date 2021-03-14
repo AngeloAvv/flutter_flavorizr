@@ -1,3 +1,8 @@
+## 1.0.10
+* Added AndroidBuildGradleProcessor idempotency
+* Bumped dependencies
+* Updated LICENCE
+
 ## 1.0.9
 * Fixed README
 

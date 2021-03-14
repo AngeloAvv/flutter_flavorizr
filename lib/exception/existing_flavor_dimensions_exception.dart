@@ -23,16 +23,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
-import 'package:json_annotation/json_annotation.dart';
-part 'ios.g.dart';
+class ExistingFlavorDimensionsException implements Exception {
+  final String content;
 
-@JsonSerializable(anyMap: true, createToJson: false)
-class IOS with BuildSettingsMixin {
-  IOS({Map<String, dynamic> buildSettings = const {}}) {
-    this.buildSettings = BuildSettingsMixin.defaultBuildSettings;
-    this.buildSettings.addAll(buildSettings);
-  }
+  ExistingFlavorDimensionsException(this.content);
 
-  factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
+  @override
+  String toString() =>
+      'The following resource contains existing flavor dimensions: $content. '
+      'Please delete the whole section before running flutter_flavorizr again.';
 }

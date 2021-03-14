@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 MyLittleSuite
+ * Copyright (c) 2021 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -44,7 +44,7 @@ class Flavorizr {
 
   @JsonKey(
       defaultValue:
-          'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.9/assets.zip')
+          'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.10/assets.zip')
   final String assetsUrl;
 
   @JsonKey(nullable: true)
