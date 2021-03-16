@@ -161,8 +161,7 @@ flavorizr:
 
 ## Usage
 
-When you finished defining the flavorizr configuration, you can proceed
-by running the script with:
+When you finished defining the flavorizr configuration, you can proceed by running the script with:
 
 ```
 flutter pub run flutter_flavorizr
@@ -194,6 +193,27 @@ Example
 flutter run --flavor apple -t lib/main-apple.dart
 flutter run --flavor banana -t lib/main-banana.dart
 ```
+
+### Default processors set
+
+By default, when you do not specify a custom set of processors by appending the -p (or --processors) param, a default processors set will be used:
+* assets:download
+* assets:extract
+* android:androidManifest
+* android:buildGradle
+* android:dummyAssets
+* flutter:flavors
+* flutter:app
+* flutter:pages
+* flutter:targets
+* ios:xcconfig
+* ios:buildTargets
+* ios:schema
+* ios:dummyAssets
+* ios:plist
+* ios:launchScreen
+* assets:clean
+* ide:config
 
 ## Customize your app
 
