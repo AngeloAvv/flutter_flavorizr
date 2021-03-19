@@ -17,7 +17,7 @@ dependencies:
   io: ^0.3.5
   json_annotation: ^3.1.1
   xml: ^5.0.2
-  yaml: ^2.2.1
+  yaml: ^3.1.0
 
 dev_dependencies:
   flutter_test:
