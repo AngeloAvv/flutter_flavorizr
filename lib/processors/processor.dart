@@ -198,9 +198,14 @@ class Processor extends AbstractProcessor<void> {
 
       // Google
       'google:firebase': FirebaseProcessor(
-        K.androidSrcPath,
-        K.iOSRunnerPath,
-        _pubspec.flavorizr.flavors,
+        process: 'ruby',
+        androidDestination: K.androidSrcPath,
+        iosDestination: K.iOSRunnerPath,
+        addFileScript: K.tempiOSAddFileScriptPath,
+        runnerProject: K.iOSRunnerProjectPath,
+        firebaseScript: K.tempiOSAddFirebaseBuildPhaseScriptPath,
+        generatedFirebaseScriptPath: K.tempiOSFirebaseScriptPath,
+        flavors: _pubspec.flavorizr.flavors,
       ),
 
       // IDE

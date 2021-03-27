@@ -23,32 +23,15 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
+import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
-import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/exception/missing_required_fields_exception.dart';
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
-import 'package:json_annotation/json_annotation.dart';
+class EmptyFileProcessor extends StringProcessor {
 
-class Parser {
-  final String file;
+  EmptyFileProcessor() : super(input: '');
 
-  Parser({this.file});
+  @override
+  String toString() => 'EmptyFileProcessor';
 
-  Pubspec parse() {
-    File pubspecFile = File(file);
-    if (!pubspecFile.existsSync()) {
-      throw FileNotFoundException(file);
-    }
-
-    String yaml = pubspecFile.readAsStringSync();
-
-    try {
-      return Pubspec.parse(yaml);
-    } on DisallowedNullValueException catch (e) {
-      throw MissingRequiredFieldsException(e.keysWithNullValues);
-    } on MissingRequiredKeysException catch (e) {
-      throw MissingRequiredFieldsException(e.missingKeys);
-    }
-  }
+  @override
+  String execute() => '';
 }

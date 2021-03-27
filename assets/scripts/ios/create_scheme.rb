@@ -1,7 +1,7 @@
 require 'xcodeproj'
 
 if ARGV.length != 2
-  puts "We need exactly two arguments"
+  puts 'We need exactly two arguments'
   exit
 end
 

@@ -29,15 +29,15 @@ import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
 class IOSFirebaseProcessor extends QueueProcessor {
   IOSFirebaseProcessor(
-      String source,
-      String destination,
-      String flavorName,
-      ) : super([
-    NewFolderProcessor('$destination/$flavorName'),
-    CopyFileProcessor(source, '$destination/$flavorName/GoogleService-Info.plist'),
-  ]);
+    String source,
+    String destination,
+    String flavorName,
+  ) : super([
+          NewFolderProcessor('$destination/$flavorName'),
+          CopyFileProcessor(
+              source, '$destination/$flavorName/GoogleService-Info.plist'),
+        ]);
 
   @override
   String toString() => 'IOSFirebaseProcessor';
-
 }

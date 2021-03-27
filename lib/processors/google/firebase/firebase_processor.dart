@@ -24,14 +24,21 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/processors/android/android_firebase_processor.dart';
+import 'package:flutter_flavorizr/processors/android/google/firebase/android_firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/ios_firebase_processor.dart';
+import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_targets_firebase_processor.dart';
 
 class FirebaseProcessor extends QueueProcessor {
-  FirebaseProcessor(String androidDestination, String iosDestination,
-      Map<String, Flavor> flavors)
-      : super(
+  FirebaseProcessor({
+    String process,
+    String androidDestination,
+    String iosDestination,
+    String addFileScript,
+    String runnerProject,
+    String firebaseScript,
+    String generatedFirebaseScriptPath,
+    Map<String, Flavor> flavors,
+  }) : super(
           [
             ...flavors
                 .map(
@@ -48,21 +55,15 @@ class FirebaseProcessor extends QueueProcessor {
                 )
                 .values
                 .where((processor) => processor != null),
-            ...flavors
-                .map(
-                  (String flavorName, Flavor flavor) => MapEntry(
-                    flavorName,
-                    flavor.ios?.firebase != null
-                        ? IOSFirebaseProcessor(
-                            flavor.ios?.firebase?.config,
-                            iosDestination,
-                            flavorName,
-                          )
-                        : null,
-                  ),
-                )
-                .values
-                .where((processor) => processor != null),
+            IOSTargetsFirebaseProcessor(
+              process: process,
+              destination: iosDestination,
+              addFileScript: addFileScript,
+              runnerProject: runnerProject,
+              firebaseScript: firebaseScript,
+              generatedFirebaseScriptPath: generatedFirebaseScriptPath,
+              flavors: flavors,
+            ),
           ],
         );
 

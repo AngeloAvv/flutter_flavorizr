@@ -99,7 +99,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
   void _appendFlavorsDimension(StringBuffer buffer) {
     buffer.writeln();
-    buffer.writeln('    ${beginFlavorDimensionsMarkup}');
+    buffer.writeln('    $beginFlavorDimensionsMarkup');
     buffer.writeln(
         '    flavorDimensions "${this._flavorizr.app.android.flavorDimensions}"');
     buffer.writeln();
