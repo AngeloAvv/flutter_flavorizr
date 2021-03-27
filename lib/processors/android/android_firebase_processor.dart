@@ -23,15 +23,20 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
-class OS {
-  @JsonKey(defaultValue: true)
-  final bool generateDummyAssets;
+class AndroidFirebaseProcessor extends QueueProcessor {
+  AndroidFirebaseProcessor(
+    String source,
+    String destination,
+    String flavorName,
+  ) : super([
+          NewFolderProcessor('$destination/$flavorName'),
+          CopyFileProcessor(source, '$destination/$flavorName/google_services.json'),
+        ]);
 
-  @JsonKey(disallowNullValue: true)
-  final Firebase firebase;
-
-  OS({this.generateDummyAssets, this.firebase});
+  @override
+  String toString() => 'AndroidFirebaseProcessor';
 }

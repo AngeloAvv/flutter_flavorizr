@@ -24,6 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'android.g.dart';
@@ -35,8 +36,12 @@ class Android extends OS {
 
   Android({
     this.applicationId,
-    generateDummyAssets,
-  }) : super(generateDummyAssets);
+    bool generateDummyAssets,
+    Firebase firebase,
+  }) : super(
+          generateDummyAssets: generateDummyAssets,
+          firebase: firebase,
+        );
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

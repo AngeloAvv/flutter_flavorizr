@@ -40,6 +40,7 @@ import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/unzip_file_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/flutter_flavors_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/target/flutter_targets_file_processor.dart';
+import 'package:flutter_flavorizr/processors/google/firebase/firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/ide/ide_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
@@ -76,6 +77,9 @@ class Processor extends AbstractProcessor<void> {
     'ios:dummyAssets',
     'ios:plist',
     'ios:launchScreen',
+
+    // Google
+    'google:firebase',
 
     // Cleanup
     'assets:clean',
@@ -191,6 +195,15 @@ class Processor extends AbstractProcessor<void> {
         K.iOSRunnerPath,
         _pubspec.flavorizr.flavors.keys,
       ),
+
+      // Google
+      'google:firebase': FirebaseProcessor(
+        K.androidSrcPath,
+        K.iOSRunnerPath,
+        _pubspec.flavorizr.flavors,
+      ),
+
+      // IDE
       'ide:config': IDEProcessor(
         _pubspec.flavorizr.ide,
         _pubspec.flavorizr.flavors.keys,

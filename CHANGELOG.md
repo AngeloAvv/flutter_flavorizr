@@ -1,3 +1,6 @@
+## 1.0.11
+* Added FirebaseProcessor to plug Firebase configurations
+
 ## 1.0.10
 * Added AndroidBuildGradleProcessor idempotency
 * Bumped dependencies

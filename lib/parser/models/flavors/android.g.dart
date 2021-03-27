@@ -9,9 +9,14 @@ part of 'android.dart';
 Android _$AndroidFromJson(Map json) {
   $checkKeys(json,
       requiredKeys: const ['applicationId'],
-      disallowNullValues: const ['applicationId']);
+      disallowNullValues: const ['firebase', 'applicationId']);
   return Android(
     applicationId: json['applicationId'] as String,
-    generateDummyAssets: json['generateDummyAssets'] ?? true,
+    generateDummyAssets: json['generateDummyAssets'] as bool ?? true,
+    firebase: json['firebase'] == null
+        ? null
+        : Firebase.fromJson((json['firebase'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
   );
 }

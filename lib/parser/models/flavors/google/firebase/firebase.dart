@@ -23,15 +23,17 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-class OS {
-  @JsonKey(defaultValue: true)
-  final bool generateDummyAssets;
+part 'firebase.g.dart';
 
-  @JsonKey(disallowNullValue: true)
-  final Firebase firebase;
+@JsonSerializable(anyMap: true, createToJson: false)
+class Firebase {
+  @JsonKey(required: true, disallowNullValue: true)
+  final String config;
 
-  OS({this.generateDummyAssets, this.firebase});
+  Firebase({this.config});
+
+  factory Firebase.fromJson(Map<String, dynamic> json) =>
+      _$FirebaseFromJson(json);
 }

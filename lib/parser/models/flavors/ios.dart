@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'ios.g.dart';
@@ -37,8 +38,12 @@ class IOS extends OS with BuildSettingsMixin {
   IOS({
     this.bundleId,
     Map<String, dynamic> buildSettings = const {},
-    generateDummyAssets,
-  }) : super(generateDummyAssets) {
+    bool generateDummyAssets,
+    Firebase firebase,
+  }) : super(
+          generateDummyAssets: generateDummyAssets,
+          firebase: firebase,
+        ) {
     this.buildSettings = {
       "PRODUCT_BUNDLE_IDENTIFIER": bundleId,
     };
