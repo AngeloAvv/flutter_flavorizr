@@ -33,10 +33,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../test_utils.dart';
 
 void main() {
-  Pubspec pubspec;
+  Pubspec? pubspec;
 
   setUp(() {
-    Parser parser = Parser(file: '../test_resources/pubspec.yaml');
+    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
     try {
       pubspec = parser.parse();
     } catch (e) {
@@ -48,14 +48,14 @@ void main() {
 
   test('Test original AndroidBuildGradleProcessor', () {
     String content = File(
-        '../test_resources/android/build_gradle_processor_test/build_original.gradle')
+        'test_resources/android/build_gradle_processor_test/build_original.gradle')
         .readAsStringSync();
     String matcher = File(
-        '../test_resources/android/build_gradle_processor_test/build_expected.gradle')
+        'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
+    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -66,14 +66,14 @@ void main() {
 
   test('Test idempotent AndroidBuildGradleProcessor', () {
     String content = File(
-            '../test_resources/android/build_gradle_processor_test/build_idempotent.gradle')
+            'test_resources/android/build_gradle_processor_test/build_idempotent.gradle')
         .readAsStringSync();
     String matcher = File(
-            '../test_resources/android/build_gradle_processor_test/build_expected.gradle')
+            'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
+        AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -84,37 +84,37 @@ void main() {
 
   test('Test malformed AndroidBuildGradleProcessor', () {
     AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(pubspec.flavorizr, input: '');
+        AndroidBuildGradleProcessor(pubspec!.flavorizr, input: '');
     expect(() => processor.execute(), throwsException);
   });
 
   test('Test existing flavor dimensions exception AndroidBuildGradleProcessor', () {
     String content = File(
-        '../test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
+        'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
+    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
   test('Test existing flavor dimensions exception with begin markup AndroidBuildGradleProcessor', () {
     String content = File(
-        '../test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
+        'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
+    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
   test('Test existing flavor dimensions exception with end markup AndroidBuildGradleProcessor', () {
     String content = File(
-        '../test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
+        'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec.flavorizr, input: content);
+    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 }

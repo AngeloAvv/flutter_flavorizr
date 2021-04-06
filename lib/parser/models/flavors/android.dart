@@ -35,9 +35,9 @@ class Android extends OS {
   final String applicationId;
 
   Android({
-    this.applicationId,
-    bool generateDummyAssets,
-    Firebase firebase,
+    required this.applicationId,
+    bool generateDummyAssets = true,
+    Firebase? firebase,
   }) : super(
           generateDummyAssets: generateDummyAssets,
           firebase: firebase,

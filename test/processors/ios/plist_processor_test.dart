@@ -33,10 +33,10 @@ import '../../test_utils.dart';
 void main() {
   test('Test iOSPListProcessor', () {
     String content =
-        File('../test_resources/ios/plist_processor_test/Info.plist')
+        File('test_resources/ios/plist_processor_test/Info.plist')
             .readAsStringSync();
     String matcher =
-        File('../test_resources/ios/plist_processor_test/Matcher.plist')
+        File('test_resources/ios/plist_processor_test/Matcher.plist')
             .readAsStringSync();
 
     IOSPListProcessor processor = IOSPListProcessor(input: content);
@@ -50,7 +50,7 @@ void main() {
 
   test('Test malformed iOSPListProcessor', () {
     String content =
-        File('../test_resources/ios/plist_processor_test/Malformed.plist')
+        File('test_resources/ios/plist_processor_test/Malformed.plist')
             .readAsStringSync();
 
     IOSPListProcessor processor = IOSPListProcessor(input: content);

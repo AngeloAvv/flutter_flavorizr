@@ -33,7 +33,7 @@ import '../../test_utils.dart';
 void main() {
   test('Test VSCodeLaunchProcessor', () {
     String matcher = File(
-            '../test_resources/ide/idea_launcher_processor_test/main_example_dart.xml')
+            'test_resources/ide/idea_launcher_processor_test/main_example_dart.xml')
         .readAsStringSync();
 
     IdeaLaunchProcessor processor = IdeaLaunchProcessor('example');

@@ -33,7 +33,7 @@ import '../../../../test_utils.dart';
 void main() {
   test('Test IOSFirebaseScriptProcessor with a single flavor', () {
     String matcher = File(
-            '../test_resources/ios/ios_firebase_script_processor_test/single_flavor.sh')
+            'test_resources/ios/ios_firebase_script_processor_test/single_flavor.sh')
         .readAsStringSync();
 
     IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(['apple']);
@@ -47,7 +47,7 @@ void main() {
 
   test('Test IOSFirebaseScriptProcessor with multiple flavors', () {
     String matcher = File(
-        '../test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
+        'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
         .readAsStringSync();
 
     IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(['apple', 'banana', 'pear']);

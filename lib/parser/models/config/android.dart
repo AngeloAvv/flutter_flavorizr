@@ -31,7 +31,7 @@ class Android {
   @JsonKey(defaultValue: 'flavor-type')
   final String flavorDimensions;
 
-  Android({this.flavorDimensions});
+  Android({this.flavorDimensions = 'flavor-type'});
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

@@ -32,7 +32,7 @@ class IOSXCConfigProcessor extends StringProcessor {
   IOSXCConfigProcessor(
     this._appName,
     this._flavorName, {
-    String input,
+    String? input,
   }) : super(input: input);
 
   @override

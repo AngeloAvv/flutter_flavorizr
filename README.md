@@ -40,7 +40,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^1.0.11
+  flutter_flavorizr: ^2.0.0-dev.0
 ```
 
 You can install packages from the command line:
@@ -100,7 +100,7 @@ flavorizr:
 | app                                     | Object |                                                                                     | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                     | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                     | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v1.0.11/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.0.0-dev.0/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -233,7 +233,7 @@ customizations.
 
 ```
 class F {
-  static Flavor appFlavor;
+  static Flavor? appFlavor;
 
   static String get title {
     switch (appFlavor) {

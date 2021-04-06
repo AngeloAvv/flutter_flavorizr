@@ -33,7 +33,7 @@ import '../../test_utils.dart';
 void main() {
   test('Test IOXCConfigProcessor', () {
     String matcher =
-        File('../test_resources/ios/xcconfig_processor_test/matcher.xcconfig')
+        File('test_resources/ios/xcconfig_processor_test/matcher.xcconfig')
             .readAsStringSync();
 
     IOSXCConfigProcessor processor =

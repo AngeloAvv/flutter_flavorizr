@@ -38,11 +38,12 @@ void execute(List<String> args) {
 
   Parser parser = Parser(file: 'pubspec.yaml');
 
-  Pubspec pubspec;
+  Pubspec? pubspec;
   try {
     pubspec = parser.parse();
   } catch (e) {
     stderr.writeln(e);
+    exit(0);
   }
 
   if (argProcessors.isNotEmpty) {

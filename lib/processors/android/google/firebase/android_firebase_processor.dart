@@ -23,19 +23,28 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
+import 'package:flutter_flavorizr/processors/android/google/firebase/android_target_firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
 class AndroidFirebaseProcessor extends QueueProcessor {
-  AndroidFirebaseProcessor(
-    String source,
-    String destination,
-    String flavorName,
-  ) : super([
-          NewFolderProcessor('$destination/$flavorName'),
-          CopyFileProcessor(source, '$destination/$flavorName/google_services.json'),
-        ]);
+  AndroidFirebaseProcessor({
+    required String destination,
+    required Map<String, Flavor> flavors,
+  }) : super(
+          flavors
+              .map(
+                (flavorName, flavor) => MapEntry(
+                  flavorName,
+                  AndroidTargetFirebaseProcessor(
+                    flavor.android.firebase!.config,
+                    destination,
+                    flavorName,
+                  ),
+                ),
+              )
+              .values,
+        );
 
   @override
   String toString() => 'AndroidFirebaseProcessor';

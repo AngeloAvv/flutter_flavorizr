@@ -12,11 +12,9 @@ Android _$AndroidFromJson(Map json) {
       disallowNullValues: const ['firebase', 'applicationId']);
   return Android(
     applicationId: json['applicationId'] as String,
-    generateDummyAssets: json['generateDummyAssets'] as bool ?? true,
+    generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
     firebase: json['firebase'] == null
         ? null
-        : Firebase.fromJson((json['firebase'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Firebase.fromJson(Map<String, dynamic>.from(json['firebase'] as Map)),
   );
 }

@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 class FlutterFlavorsProcessor extends StringProcessor {
   Map<String, Flavor> _flavors;
 
-  FlutterFlavorsProcessor(this._flavors, {String input}) : super(input: input);
+  FlutterFlavorsProcessor(this._flavors, {String? input}) : super(input: input);
 
   @override
   String execute() {
@@ -54,7 +54,7 @@ class FlutterFlavorsProcessor extends StringProcessor {
   void _appendFlavorClass(StringBuffer buffer) {
     buffer.writeln();
     buffer.writeln('class F {');
-    buffer.writeln('  static Flavor appFlavor;');
+    buffer.writeln('  static Flavor? appFlavor;');
     buffer.writeln();
 
     buffer.writeln('  static String get title {');

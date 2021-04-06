@@ -33,7 +33,7 @@ import '../../test_utils.dart';
 void main() {
   test('Test VSCodeLaunchProcessor', () {
     String matcher =
-        File('../test_resources/ide/vscode_launch_processor_test/launch.json')
+        File('test_resources/ide/vscode_launch_processor_test/launch.json')
             .readAsStringSync();
 
     List<String> flavorNames = ['apple', 'banana'];

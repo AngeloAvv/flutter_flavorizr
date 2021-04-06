@@ -30,43 +30,43 @@ import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_targets_fir
 
 class FirebaseProcessor extends QueueProcessor {
   FirebaseProcessor({
-    String process,
-    String androidDestination,
-    String iosDestination,
-    String addFileScript,
-    String runnerProject,
-    String firebaseScript,
-    String generatedFirebaseScriptPath,
-    Map<String, Flavor> flavors,
+    required String process,
+    required String androidDestination,
+    required String iosDestination,
+    required String addFileScript,
+    required String runnerProject,
+    required String firebaseScript,
+    required String generatedFirebaseScriptPath,
+    required Map<String, Flavor> flavors,
   }) : super(
           [
-            ...flavors
-                .map(
-                  (String flavorName, Flavor flavor) => MapEntry(
-                    flavorName,
-                    flavor.android?.firebase != null
-                        ? AndroidFirebaseProcessor(
-                            flavor.android?.firebase?.config,
-                            androidDestination,
-                            flavorName,
-                          )
-                        : null,
-                  ),
-                )
-                .values
-                .where((processor) => processor != null),
-            IOSTargetsFirebaseProcessor(
-              process: process,
-              destination: iosDestination,
-              addFileScript: addFileScript,
-              runnerProject: runnerProject,
-              firebaseScript: firebaseScript,
-              generatedFirebaseScriptPath: generatedFirebaseScriptPath,
-              flavors: flavors,
-            ),
+            if (androidFirebaseExists(flavors.values))
+              AndroidFirebaseProcessor(
+                flavors: Map.from(flavors)
+                  ..removeWhere(
+                      (name, flavor) => flavor.android.firebase == null),
+                destination: androidDestination,
+              ),
+            if (iosFirebaseExists(flavors.values))
+              IOSTargetsFirebaseProcessor(
+                process: process,
+                destination: iosDestination,
+                addFileScript: addFileScript,
+                runnerProject: runnerProject,
+                firebaseScript: firebaseScript,
+                generatedFirebaseScriptPath: generatedFirebaseScriptPath,
+                flavors: Map.from(flavors)
+                  ..removeWhere((name, flavor) => flavor.ios.firebase == null),
+              ),
           ],
         );
 
   @override
   String toString() => 'FirebaseProcessor';
+
+  static androidFirebaseExists(Iterable<Flavor> values) =>
+      values.where((flavor) => flavor.android.firebase != null).isNotEmpty;
+
+  static iosFirebaseExists(Iterable<Flavor> values) =>
+      values.where((flavor) => flavor.ios.firebase != null).isNotEmpty;
 }

@@ -26,16 +26,17 @@
 import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:xml/xml.dart';
+import 'package:collection/collection.dart';
 
 class IOSPListProcessor extends StringProcessor {
-  IOSPListProcessor({String input}) : super(input: input);
+  IOSPListProcessor({String? input}) : super(input: input);
 
   @override
   String execute() {
-    XmlDocument document = XmlDocument.parse(this.input);
-    XmlElement root = document.rootElement.children
+    XmlDocument document = XmlDocument.parse(this.input!);
+    XmlElement root = (document.rootElement.children
         .where((XmlNode node) => node is XmlElement)
-        .first;
+        .first) as XmlElement;
 
     _updateCFBundleName(root);
     _updateUILaunchStoryboardName(root);
@@ -59,23 +60,22 @@ class IOSPListProcessor extends StringProcessor {
     Iterable<XmlNode> keys =
         root.children.where((e) => e is XmlElement && e.name.local == 'key');
     if (keys.isEmpty) {
-      throw MalformedResourceException(input);
+      throw MalformedResourceException(input!);
     }
 
-    XmlElement element =
-        keys.firstWhere((XmlNode e) => e.text == key, orElse: () => null);
+    XmlNode? element =
+        keys.firstWhereOrNull((XmlNode e) => e.text == key);
     if (element == null) {
-      throw MalformedResourceException(input);
+      throw MalformedResourceException(input!);
     }
 
-    XmlElement xmlValue = element.following?.firstWhere(
-        (XmlNode e) => e is XmlElement && e.name.local == 'string',
-        orElse: () => null);
+    XmlNode? xmlValue = element.following.firstWhereOrNull(
+        (XmlNode e) => e is XmlElement && e.name.local == 'string');
     if (xmlValue == null) {
-      throw MalformedResourceException(input);
+      throw MalformedResourceException(input!);
     }
 
-    XmlText xmlText = xmlValue.firstChild;
+    XmlText xmlText = xmlValue.firstChild as XmlText;
     xmlText.text = value;
   }
 

@@ -12,5 +12,5 @@ mixin BuildSettingsMixin {
   };
 
   @JsonKey(defaultValue: {})
-  Map<String, dynamic> buildSettings;
+  late Map<String, dynamic> buildSettings;
 }

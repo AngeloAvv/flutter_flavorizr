@@ -1,26 +1,27 @@
 name: flutter_flavorizr
 description: A flutter utility to easily create flavors in your flutter application
-version: 1.0.11
+version: 2.0.0-dev.0
 repository: https://github.com/AngeloAvv/flutter_flavorizr
 issue_tracker: https://github.com/AngeloAvv/flutter_flavorizr/issues
 homepage: https://www.angelocassano.it
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  archive: ^2.0.13
-  args: ^1.6.0
-  checked_yaml: ^1.0.4
-  io: ^0.3.5
-  json_annotation: ^3.1.1
-  xml: ^4.5.1
-  yaml: ^2.2.1
+  archive: ^3.1.2
+  args: ^2.0.0
+  checked_yaml: ^2.0.1
+  collection: ^1.15.0
+  io: ^1.0.0
+  json_annotation: ^4.0.1
+  xml: ^5.1.0
+  yaml: ^3.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  build_runner: ^1.0.0
-  json_serializable: ^3.5.1
+  build_runner:
+  json_serializable:

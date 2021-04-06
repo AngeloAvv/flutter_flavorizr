@@ -12,15 +12,13 @@ IOS _$IOSFromJson(Map json) {
       disallowNullValues: const ['firebase', 'bundleId']);
   return IOS(
     bundleId: json['bundleId'] as String,
-    buildSettings: (json['buildSettings'] as Map)?.map(
+    buildSettings: (json['buildSettings'] as Map?)?.map(
           (k, e) => MapEntry(k as String, e),
         ) ??
         {},
-    generateDummyAssets: json['generateDummyAssets'] as bool ?? true,
+    generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
     firebase: json['firebase'] == null
         ? null
-        : Firebase.fromJson((json['firebase'] as Map)?.map(
-            (k, e) => MapEntry(k as String, e),
-          )),
+        : Firebase.fromJson(Map<String, dynamic>.from(json['firebase'] as Map)),
   );
 }
