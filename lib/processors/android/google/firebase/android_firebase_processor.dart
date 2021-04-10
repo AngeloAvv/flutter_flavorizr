@@ -34,7 +34,7 @@ class AndroidFirebaseProcessor extends QueueProcessor {
     String flavorName,
   ) : super([
           NewFolderProcessor('$destination/$flavorName'),
-          CopyFileProcessor(source, '$destination/$flavorName/google_services.json'),
+          CopyFileProcessor(source, '$destination/$flavorName/google-services.json'),
         ]);
 
   @override
