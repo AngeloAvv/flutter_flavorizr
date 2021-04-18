@@ -109,7 +109,7 @@ class Processor extends AbstractProcessor<void> {
     }
   }
 
-  static _initAvailableProcessors(Pubspec pubspec) {
+  static Map<String, AbstractProcessor<void>> _initAvailableProcessors(Pubspec pubspec) {
     return {
       // Commons
       'assets:download': DownloadFileProcessor(
