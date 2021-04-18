@@ -51,7 +51,7 @@ import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_targets_f
 import 'package:flutter_flavorizr/utils/constants.dart';
 
 class Processor extends AbstractProcessor<void> {
-  Map<String, AbstractProcessor<void>> _availableProcessors = Map();
+  final Map<String, AbstractProcessor<void>> _availableProcessors;
 
   final Pubspec _pubspec;
   static const List<String> defaultInstructionSet = [
@@ -88,9 +88,7 @@ class Processor extends AbstractProcessor<void> {
     'ide:config'
   ];
 
-  Processor(this._pubspec) {
-    _initAvailableProcessors();
-  }
+  Processor(this._pubspec) : _availableProcessors = _initAvailableProcessors(_pubspec);
 
   @override
   void execute() async {
@@ -100,18 +98,22 @@ class Processor extends AbstractProcessor<void> {
     for (String instruction in instructions) {
       stdout.writeln('Executing task $instruction');
 
-      AbstractProcessor processor = _availableProcessors[instruction];
-      await processor.execute();
+      AbstractProcessor? processor = _availableProcessors[instruction];
+      if (processor == null) {
+        stderr.writeln('Cannot execute processor $instruction');
+      }
+
+      await processor?.execute();
 
       stdout.writeln();
     }
   }
 
-  void _initAvailableProcessors() {
-    _availableProcessors = {
+  static Map<String, AbstractProcessor<void>> _initAvailableProcessors(Pubspec pubspec) {
+    return {
       // Commons
       'assets:download': DownloadFileProcessor(
-        _pubspec.flavorizr.assetsUrl,
+        pubspec.flavorizr.assetsUrl,
         K.assetsZipPath,
       ),
       'assets:extract': UnzipFileProcessor(
@@ -130,18 +132,18 @@ class Processor extends AbstractProcessor<void> {
       ),
       'android:buildGradle': ExistingFileStringProcessor(
         K.androidBuildGradlePath,
-        AndroidBuildGradleProcessor(_pubspec.flavorizr),
+        AndroidBuildGradleProcessor(pubspec.flavorizr),
       ),
       'android:dummyAssets': AndroidDummyAssetsProcessor(
         K.tempAndroidResPath,
         K.androidSrcPath,
-        _pubspec.flavorizr.flavors,
+        pubspec.flavorizr.flavors,
       ),
 
       //Flutter
       'flutter:flavors': NewFileStringProcessor(
         K.flutterFlavorPath,
-        FlutterFlavorsProcessor(_pubspec.flavorizr.flavors),
+        FlutterFlavorsProcessor(pubspec.flavorizr.flavors),
       ),
       'flutter:app': CopyFileProcessor(
         K.tempFlutterAppPath,
@@ -154,7 +156,7 @@ class Processor extends AbstractProcessor<void> {
       'flutter:targets': FlutterTargetsFileProcessor(
         K.tempFlutterMainPath,
         K.flutterPath,
-        _pubspec.flavorizr.flavors.keys,
+        pubspec.flavorizr.flavors.keys,
       ),
 
       //iOS
@@ -163,25 +165,25 @@ class Processor extends AbstractProcessor<void> {
         K.tempiOSAddFileScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
-        _pubspec.flavorizr.flavors,
+        pubspec.flavorizr.flavors,
       ),
       'ios:buildTargets': IOSBuildConfigurationsTargetsProcessor(
         'ruby',
         K.tempiOSAddBuildConfigurationScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
-        _pubspec.flavorizr,
+        pubspec.flavorizr,
       ),
       'ios:schema': IOSSchemasProcessor(
         'ruby',
         K.tempiOSCreateSchemeScriptPath,
         K.iOSRunnerProjectPath,
-        _pubspec.flavorizr.flavors.keys,
+        pubspec.flavorizr.flavors.keys,
       ),
       'ios:dummyAssets': IOSDummyAssetsTargetsProcessor(
         K.tempiOSAssetsPath,
         K.iOSAssetsPath,
-        _pubspec.flavorizr.flavors,
+        pubspec.flavorizr.flavors,
       ),
       'ios:plist': ExistingFileStringProcessor(
         K.iOSPListPath,
@@ -193,7 +195,7 @@ class Processor extends AbstractProcessor<void> {
         K.iOSRunnerProjectPath,
         K.tempiOSLaunchScreenPath,
         K.iOSRunnerPath,
-        _pubspec.flavorizr.flavors.keys,
+        pubspec.flavorizr.flavors.keys,
       ),
 
       // Google
@@ -205,13 +207,13 @@ class Processor extends AbstractProcessor<void> {
         runnerProject: K.iOSRunnerProjectPath,
         firebaseScript: K.tempiOSAddFirebaseBuildPhaseScriptPath,
         generatedFirebaseScriptPath: K.tempiOSFirebaseScriptPath,
-        flavors: _pubspec.flavorizr.flavors,
+        flavors: pubspec.flavorizr.flavors,
       ),
 
       // IDE
       'ide:config': IDEProcessor(
-        _pubspec.flavorizr.ide,
-        _pubspec.flavorizr.flavors.keys,
+        ide: pubspec.flavorizr.ide,
+        flavors: pubspec.flavorizr.flavors.keys,
       ),
     };
   }

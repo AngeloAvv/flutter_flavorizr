@@ -34,29 +34,26 @@ import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
 
 class IOSTargetsFirebaseProcessor extends QueueProcessor {
   IOSTargetsFirebaseProcessor({
-    String process,
-    String destination,
-    String addFileScript,
-    String runnerProject,
-    String firebaseScript,
-    String generatedFirebaseScriptPath,
-    Map<String, Flavor> flavors,
+    required String process,
+    required String destination,
+    required String addFileScript,
+    required String runnerProject,
+    required String firebaseScript,
+    required String generatedFirebaseScriptPath,
+    required Map<String, Flavor> flavors,
   }) : super([
           ...flavors
               .map(
-                (String flavorName, Flavor flavor) => MapEntry(
+                (flavorName, flavor) => MapEntry(
                   flavorName,
-                  flavor.ios?.firebase != null
-                      ? IOSFirebaseProcessor(
-                          flavor.ios?.firebase?.config,
-                          destination,
-                          flavorName,
-                        )
-                      : null,
+                  IOSFirebaseProcessor(
+                    flavor.ios.firebase!.config,
+                    destination,
+                    flavorName,
+                  ),
                 ),
               )
-              .values
-              .where((processor) => processor != null),
+              .values,
           NewFileStringProcessor(
             '$destination/GoogleService-Info.plist',
             EmptyFileProcessor(),

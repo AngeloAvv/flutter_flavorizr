@@ -31,7 +31,7 @@ class App {
   @JsonKey(required: true, disallowNullValue: true)
   final String name;
 
-  App({this.name});
+  App({required this.name});
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 }

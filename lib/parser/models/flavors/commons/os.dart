@@ -31,7 +31,10 @@ class OS {
   final bool generateDummyAssets;
 
   @JsonKey(disallowNullValue: true)
-  final Firebase firebase;
+  final Firebase? firebase;
 
-  OS({this.generateDummyAssets, this.firebase});
+  OS({
+    this.generateDummyAssets = true,
+    this.firebase,
+  });
 }

@@ -1,3 +1,6 @@
+## 2.0.0
+* Migration to Flutter 2
+
 ## 1.0.11
 * Added FirebaseProcessor to plug Firebase configurations
 

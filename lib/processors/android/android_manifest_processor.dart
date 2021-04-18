@@ -23,30 +23,31 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:collection/collection.dart';
 import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:xml/xml.dart';
 
 class AndroidManifestProcessor extends StringProcessor {
-  AndroidManifestProcessor({String input}) : super(input: input);
+  AndroidManifestProcessor({String? input}) : super(input: input);
 
   @override
   String execute() {
-    XmlDocument document = XmlDocument.parse(this.input);
+    XmlDocument document = XmlDocument.parse(this.input!);
 
     Iterable<XmlElement> applications = document.findAllElements('application');
     if (applications.isEmpty) {
-      throw MalformedResourceException(input);
+      throw MalformedResourceException(input!);
     }
 
     XmlNode application = applications.first;
-    XmlAttribute androidLabel = application.attributes.firstWhere(
-        (XmlAttribute attribute) =>
-            attribute.name.toXmlString() == 'android:label',
-        orElse: () => null);
+    XmlAttribute? androidLabel = application.attributes.firstWhereOrNull(
+      (XmlAttribute attribute) =>
+          attribute.name.toXmlString() == 'android:label',
+    );
 
     if (androidLabel == null) {
-      throw MalformedResourceException(input);
+      throw MalformedResourceException(input!);
     }
 
     androidLabel.value = '@string/app_name';

@@ -30,7 +30,7 @@ class IOSFirebaseScriptProcessor extends StringProcessor {
 
   IOSFirebaseScriptProcessor(
     this._flavors, {
-    String input,
+    String? input,
   }) : super(input: input);
 
   @override

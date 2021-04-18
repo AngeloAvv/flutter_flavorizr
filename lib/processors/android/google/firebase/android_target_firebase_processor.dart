@@ -23,21 +23,20 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:checked_yaml/checked_yaml.dart';
-import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
-part 'pubspec.g.dart';
+class AndroidTargetFirebaseProcessor extends QueueProcessor {
+  AndroidTargetFirebaseProcessor(
+    String source,
+    String destination,
+    String flavorName,
+  ) : super([
+          NewFolderProcessor('$destination/$flavorName'),
+          CopyFileProcessor(source, '$destination/$flavorName/google-services.json'),
+        ]);
 
-@JsonSerializable(anyMap: true, createToJson: false)
-class Pubspec {
-  @JsonKey(required: true)
-  final Flavorizr flavorizr;
-
-  Pubspec({required this.flavorizr});
-
-  factory Pubspec.fromJson(Map json) => _$PubspecFromJson(json);
-
-  factory Pubspec.parse(String yaml) =>
-      checkedYamlDecode(yaml, (o) => Pubspec.fromJson(o ?? {}));
+  @override
+  String toString() => 'AndroidTargetFirebaseProcessor';
 }

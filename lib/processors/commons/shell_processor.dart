@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 
 class ShellProcessor extends AbstractProcessor<void> {
   final String _path;
-  final String workingDirectory;
+  final String? workingDirectory;
   final List<String> _args;
 
   ShellProcessor(

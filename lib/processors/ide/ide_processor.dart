@@ -5,36 +5,38 @@ import 'package:flutter_flavorizr/processors/ide/vscode/vscode_launch_file_proce
 import 'package:flutter_flavorizr/utils/constants.dart';
 
 class IDEProcessor extends AbstractProcessor {
-  final IDE _ide;
-  final Iterable<String> _flavors;
+  final IDE? ide;
+  final Iterable<String> flavors;
+  final AbstractProcessor? _processor;
 
-  AbstractProcessor _processor;
-
-  IDEProcessor(this._ide, this._flavors);
+  IDEProcessor({
+    this.ide,
+    required this.flavors,
+  }) : _processor = initProcessor(
+          flavors,
+          ide: ide,
+        );
 
   @override
-  execute() {
-    if (_ide != null) {
-      switch (_ide) {
-        case IDE.idea:
-          _processor =
-              IdeaRunConfigurationsProcessor(K.ideaLaunchpath, _flavors);
-          break;
-        case IDE.vscode:
-          _processor = VSCodeLaunchFileProcessor(_flavors);
-          break;
-        default:
-          break;
-      }
-    }
-
-    if (_processor != null) {
-      _processor.execute();
-    }
+  void execute() {
+    _processor?.execute();
   }
 
   @override
   String toString() {
-    return 'IDEProcessor: ${_ide == null ? 'Skipping IDE file generation' : super.toString()}';
+    return 'IDEProcessor: ${ide == null ? 'Skipping IDE file generation' : super.toString()}';
+  }
+
+  static initProcessor(Iterable<String> _flavors, {IDE? ide}) {
+    if (ide != null) {
+      switch (ide) {
+        case IDE.idea:
+          return IdeaRunConfigurationsProcessor(K.ideaLaunchpath, _flavors);
+        case IDE.vscode:
+          return VSCodeLaunchFileProcessor(_flavors);
+        default:
+          break;
+      }
+    }
   }
 }

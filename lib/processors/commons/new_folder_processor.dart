@@ -4,7 +4,7 @@ import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 
 class NewFolderProcessor extends AbstractProcessor {
   final String path;
-  Directory dir;
+  late Directory dir;
   NewFolderProcessor(this.path);
 
   @override

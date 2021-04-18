@@ -32,7 +32,7 @@ class Firebase {
   @JsonKey(required: true, disallowNullValue: true)
   final String config;
 
-  Firebase({this.config});
+  Firebase({required this.config});
 
   factory Firebase.fromJson(Map<String, dynamic> json) =>
       _$FirebaseFromJson(json);

@@ -39,25 +39,25 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
   final Flavorizr _flavorizr;
 
-  AndroidBuildGradleProcessor(this._flavorizr, {String input})
+  AndroidBuildGradleProcessor(this._flavorizr, {String? input})
       : super(input: input);
 
   @override
   String execute() {
-    final int androidPosition = this.input.indexOf(androidEntryPoint);
+    final int androidPosition = this.input!.indexOf(androidEntryPoint);
     final bool existingFlavorDimensions =
-        this.input.indexOf(flavorDimensions) >= 0;
+        this.input!.indexOf(flavorDimensions) >= 0;
     final int beginFlavorDimensionsMarkupPosition =
-        this.input.indexOf(beginFlavorDimensionsMarkup);
+        this.input!.indexOf(beginFlavorDimensionsMarkup);
     final int endFlavorDimensionsMarkupPosition =
-        this.input.indexOf(endFlavorDimensionsMarkup);
+        this.input!.indexOf(endFlavorDimensionsMarkup);
 
     if (androidPosition < 0) {
-      throw MalformedResourceException(this.input);
+      throw MalformedResourceException(this.input!);
     }
 
     if (existingFlavorDimensions && (beginFlavorDimensionsMarkupPosition < 0 || endFlavorDimensionsMarkupPosition < 0)) {
-      throw ExistingFlavorDimensionsException(this.input);
+      throw ExistingFlavorDimensionsException(this.input!);
     }
 
     StringBuffer buffer = StringBuffer();
@@ -83,18 +83,18 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   ) {
     if (beginFlavorDimensionsMarkupPosition >= 0 &&
         endFlavorDimensionsMarkupPosition >= 0) {
-      final String flavorDimensions = this.input.substring(
+      final String flavorDimensions = this.input!.substring(
             beginFlavorDimensionsMarkupPosition - 2,
             endFlavorDimensionsMarkupPosition + endFlavorDimensionsMarkup.length + 4,
           );
 
-      this.input = this.input.replaceAll(flavorDimensions, '');
+      this.input = this.input!.replaceAll(flavorDimensions, '');
     }
   }
 
   void _appendStartContent(StringBuffer buffer, int androidPosition) {
     buffer.writeln(
-        this.input.substring(0, androidPosition + androidEntryPoint.length));
+        this.input!.substring(0, androidPosition + androidEntryPoint.length));
   }
 
   void _appendFlavorsDimension(StringBuffer buffer) {
@@ -126,7 +126,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   void _appendEndContent(StringBuffer buffer, int androidPosition) {
     buffer.writeln('    ${endFlavorDimensionsMarkup}');
     buffer.writeln(
-        this.input.substring(androidPosition + androidEntryPoint.length + 1));
+        this.input!.substring(androidPosition + androidEntryPoint.length + 1));
   }
 
   @override

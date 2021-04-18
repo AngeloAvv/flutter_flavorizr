@@ -23,8 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
@@ -34,7 +32,6 @@ class ExistingFileStringProcessor extends AbstractFileStringProcessor {
     String path,
     StringProcessor processor,
   ) : super(path, processor) {
-    this.file = File(path);
     if (!this.file.existsSync()) {
       throw new FileNotFoundException(this.path);
     }

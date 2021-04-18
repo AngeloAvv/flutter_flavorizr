@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'android.dart';
 import 'ios.dart';
+
 part 'app.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
@@ -34,9 +35,12 @@ class App {
   @JsonKey(required: true, disallowNullValue: true)
   final Android android;
 
-  final IOS ios;
+  final IOS? ios;
 
-  App({this.android, this.ios});
+  App({
+    required this.android,
+    this.ios,
+  });
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 }

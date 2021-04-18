@@ -33,10 +33,10 @@ import '../../test_utils.dart';
 void main() {
   test('Test AndroidManifestProcessor', () {
     String content = File(
-            '../test_resources/android/android_manifest_processor_test/AndroidManifest.xml')
+            'test_resources/android/android_manifest_processor_test/AndroidManifest.xml')
         .readAsStringSync();
     String matcher = File(
-            '../test_resources/android/android_manifest_processor_test/AndroidManifest_expected.xml')
+            'test_resources/android/android_manifest_processor_test/AndroidManifest_expected.xml')
         .readAsStringSync();
 
     AndroidManifestProcessor processor =

@@ -31,7 +31,7 @@ class IdeaLaunchProcessor extends StringProcessor {
 
   IdeaLaunchProcessor(
     this._flavorName, {
-    String input,
+    String? input,
   }) : super(input: input);
 
   @override
