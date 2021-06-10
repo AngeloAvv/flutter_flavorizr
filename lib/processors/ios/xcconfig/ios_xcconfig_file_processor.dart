@@ -27,7 +27,7 @@ import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_mode_file_processor.dart';
 
 class IOSXCConfigFileProcessor extends QueueProcessor {
-  static const List<String> _modes = ['Debug', 'Release'];
+  static const List<String> _modes = ['Debug', 'Profile', 'Release'];
 
   IOSXCConfigFileProcessor(
     String process,
