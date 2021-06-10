@@ -30,8 +30,10 @@ part 'app.g.dart';
 class App {
   @JsonKey(required: true, disallowNullValue: true)
   final String name;
+  @JsonKey()
+  final String? runner_path;
 
-  App({required this.name});
+  App({required this.name, this.runner_path});
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 }

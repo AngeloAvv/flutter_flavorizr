@@ -36,6 +36,7 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
     String path,
     String appName,
     String flavorName,
+    String? runnerPath,
   ) : super(
           _modes.map(
             (String mode) => IOSXCConfigModeFileProcessor(
@@ -45,6 +46,7 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
               '$path/$flavorName$mode.xcconfig',
               appName,
               flavorName,
+              runnerPath,
             ),
           ),
         );
