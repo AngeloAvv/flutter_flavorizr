@@ -39,11 +39,16 @@ class ShellProcessor extends AbstractProcessor<void> {
   });
 
   @override
-  void execute() => Process.runSync(
-        _path,
-        _args,
-        workingDirectory: workingDirectory,
-      );
+  void execute() {
+    ProcessResult result = Process.runSync(
+      _path,
+      _args,
+      workingDirectory: workingDirectory,
+    );
+    if (result.exitCode != 0) {
+      print(result.stderr);
+    }
+  }
 
   @override
   String toString() =>
