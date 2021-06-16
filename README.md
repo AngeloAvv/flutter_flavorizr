@@ -144,6 +144,7 @@ flavorizr:
 | key  | type   | default | required | description         |
 |:-----|:-------|:--------|:---------|:--------------------|
 | name | String |         | true     | The name of the App |
+| runner_path | String | lib/main-<FLAVOR_NAME>.dart | false     | The custom path of the runner dart file |
 
 #### android (under *flavorname*)
 

@@ -11,5 +11,6 @@ App _$AppFromJson(Map json) {
       requiredKeys: const ['name'], disallowNullValues: const ['name']);
   return App(
     name: json['name'] as String,
+    runner_path: json['runner_path'] as String?,
   );
 }

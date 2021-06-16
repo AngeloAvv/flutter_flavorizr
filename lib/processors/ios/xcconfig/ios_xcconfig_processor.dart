@@ -28,12 +28,16 @@ import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 class IOSXCConfigProcessor extends StringProcessor {
   final String _appName;
   final String _flavorName;
+  late final String? _runnerPath;
 
   IOSXCConfigProcessor(
     this._appName,
     this._flavorName, {
     String? input,
-  }) : super(input: input);
+    String? runnerPath,
+  }) : super(input: input) {
+    this._runnerPath = runnerPath;
+  }
 
   @override
   String execute() {
@@ -51,7 +55,8 @@ class IOSXCConfigProcessor extends StringProcessor {
 
   void _appendBody(StringBuffer buffer) {
     buffer.writeln();
-    buffer.writeln('FLUTTER_TARGET=lib/main-$_flavorName.dart');
+    var flutterTarget = this._runnerPath != null && this._runnerPath!.length > 0 ? _runnerPath : 'lib/main-$_flavorName.dart';
+    buffer.writeln('FLUTTER_TARGET=$flutterTarget');
     buffer.writeln();
     buffer.writeln('ASSET_PREFIX=$_flavorName');
     buffer.writeln('BUNDLE_NAME=$_appName');

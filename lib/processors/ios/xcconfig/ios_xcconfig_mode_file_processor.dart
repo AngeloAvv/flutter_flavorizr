@@ -37,12 +37,14 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
     String file,
     String appName,
     String flavorName,
+    String? runnerPath,
   ) : super([
           NewFileStringProcessor(
             file,
             IOSXCConfigProcessor(
               appName,
               flavorName,
+              runnerPath: runnerPath,
             ),
           ),
           ShellProcessor(

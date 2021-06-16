@@ -44,6 +44,7 @@ class IOSXCConfigTargetsFileProcessor extends QueueProcessor {
                   path,
                   flavor.app.name,
                   flavorName,
+                  flavor.app.runner_path,
                 )))
             .values);
 
