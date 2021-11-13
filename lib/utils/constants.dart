@@ -78,8 +78,7 @@ class K {
   static String tempiOSLaunchScreenPath =
       '$tempiOSPath/LaunchScreen.storyboard';
 
-  static String tempiOSFirebaseScriptPath =
-      '$tempiOSPath/firebaseScript.sh';
+  static String tempiOSFirebaseScriptPath = '$tempiOSPath/firebaseScript.sh';
 
   static String tempScriptsPath = '$tempPath/scripts';
 
@@ -90,7 +89,8 @@ class K {
 
   static String tempiOSAddFileScriptPath = '$tempiOSScriptsPath/add_file.rb';
 
-  static String tempiOSAddFirebaseBuildPhaseScriptPath = '$tempiOSScriptsPath/add_firebase_build_phase.rb';
+  static String tempiOSAddFirebaseBuildPhaseScriptPath =
+      '$tempiOSScriptsPath/add_firebase_build_phase.rb';
 
   static String tempiOSAddBuildConfigurationScriptPath =
       '$tempiOSScriptsPath/add_build_configuration.rb';

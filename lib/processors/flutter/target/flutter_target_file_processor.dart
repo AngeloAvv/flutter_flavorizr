@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/replace_string_processor.dart';
@@ -30,20 +31,29 @@ import 'package:flutter_flavorizr/processors/commons/runtime_file_string_process
 
 class FlutterTargetFileProcessor extends QueueProcessor {
   FlutterTargetFileProcessor(
-      String source, String destination, String flavorName)
-      : super([
-          CopyFileProcessor(
-            source,
-            '$destination/main-$flavorName.dart',
-          ),
-          RuntimeFileStringProcessor(
-            '$destination/main-$flavorName.dart',
-            ReplaceStringProcessor(
-              '[[FLAVOR_NAME]]',
-              flavorName.toUpperCase(),
+    String source,
+    String destination,
+    String flavorName, {
+    required Flavorizr config,
+  }) : super(
+          [
+            CopyFileProcessor(
+              source,
+              '$destination/main-$flavorName.dart',
+              config: config,
             ),
-          ),
-        ]);
+            RuntimeFileStringProcessor(
+              '$destination/main-$flavorName.dart',
+              ReplaceStringProcessor(
+                '[[FLAVOR_NAME]]',
+                flavorName.toUpperCase(),
+                config: config,
+              ),
+              config: config,
+            ),
+          ],
+          config: config,
+        );
 
   @override
   String toString() => 'FlutterTargetFileProcessor';

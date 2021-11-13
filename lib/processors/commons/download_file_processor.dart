@@ -25,12 +25,20 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_processor.dart';
 
 class DownloadFileProcessor extends AbstractFileProcessor {
   final String _url;
 
-  DownloadFileProcessor(this._url, String path) : super(path);
+  DownloadFileProcessor(
+    String path, {
+    required Flavorizr config,
+  })  : this._url = config.assetsUrl,
+        super(
+          path,
+          config: config,
+        );
 
   @override
   void execute() async {

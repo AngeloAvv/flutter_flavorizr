@@ -25,18 +25,34 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_firebase_script_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../test_utils.dart';
 
 void main() {
+
+  Pubspec? pubspec;
+
+  tearDown(() {
+    pubspec = null;
+  });
+
   test('Test IOSFirebaseScriptProcessor with a single flavor', () {
+    Parser parser = Parser(file: 'test_resources/ios/ios_firebase_script_processor_test/single_flavor_pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+
     String matcher = File(
             'test_resources/ios/ios_firebase_script_processor_test/single_flavor.sh')
         .readAsStringSync();
 
-    IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(['apple']);
+    IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -46,11 +62,18 @@ void main() {
   });
 
   test('Test IOSFirebaseScriptProcessor with multiple flavors', () {
+    Parser parser = Parser(file: 'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors_pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+
     String matcher = File(
         'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
         .readAsStringSync();
 
-    IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(['apple', 'banana', 'pear']);
+    IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

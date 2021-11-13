@@ -23,12 +23,16 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 
 abstract class StringProcessor extends AbstractProcessor<String> {
   String? input;
 
-  StringProcessor({this.input});
+  StringProcessor({
+    this.input,
+    required Flavorizr config,
+  }) : super(config);
 
   @override
   String toString() => 'StringProcessor';

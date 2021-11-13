@@ -25,18 +25,36 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/ide/idea/idea_launch_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
 
 void main() {
+  Pubspec? pubspec;
+
+  setUp(() {
+    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+  });
+
+  tearDown(() {});
+
   test('Test VSCodeLaunchProcessor', () {
     String matcher = File(
             'test_resources/ide/idea_launcher_processor_test/main_example_dart.xml')
         .readAsStringSync();
 
-    IdeaLaunchProcessor processor = IdeaLaunchProcessor('example');
+    IdeaLaunchProcessor processor = IdeaLaunchProcessor(
+      'example',
+      config: pubspec!.flavorizr,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

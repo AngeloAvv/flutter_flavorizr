@@ -25,21 +25,38 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/ios/ios_plist_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
 
 void main() {
+  Pubspec? pubspec;
+
+  setUp(() {
+    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+  });
+
+  tearDown(() {});
+
   test('Test iOSPListProcessor', () {
-    String content =
-        File('test_resources/ios/plist_processor_test/Info.plist')
-            .readAsStringSync();
+    String content = File('test_resources/ios/plist_processor_test/Info.plist')
+        .readAsStringSync();
     String matcher =
         File('test_resources/ios/plist_processor_test/Matcher.plist')
             .readAsStringSync();
 
-    IOSPListProcessor processor = IOSPListProcessor(input: content);
+    IOSPListProcessor processor = IOSPListProcessor(
+      input: content,
+      config: pubspec!.flavorizr,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -53,7 +70,10 @@ void main() {
         File('test_resources/ios/plist_processor_test/Malformed.plist')
             .readAsStringSync();
 
-    IOSPListProcessor processor = IOSPListProcessor(input: content);
+    IOSPListProcessor processor = IOSPListProcessor(
+      input: content,
+      config: pubspec!.flavorizr,
+    );
     expect(() => processor.execute(), throwsException);
   });
 }

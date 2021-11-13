@@ -23,25 +23,16 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ide/vscode/vscode_launch_processor.dart';
-import 'package:flutter_flavorizr/utils/constants.dart';
+extension MapExtensions<K, V> on Map<K, V> {
+  Map<K, V> where(bool Function(K key, V value) test) {
+    Map<K, V> map = {};
+    for (K key in keys) {
+      final value = this[key];
+      if (test(key, value!)) {
+        map.putIfAbsent(key, () => value);
+      }
+    }
 
-class VSCodeLaunchFileProcessor extends QueueProcessor {
-  VSCodeLaunchFileProcessor({
-    required Flavorizr config,
-  }) : super(
-          [
-            NewFolderProcessor(K.vsCodePath, config: config),
-            NewFileStringProcessor(
-              K.vsCodeLaunchPath,
-              VSCodeLaunchProcessor(config: config),
-              config: config,
-            )
-          ],
-          config: config,
-        );
+    return map;
+  }
 }

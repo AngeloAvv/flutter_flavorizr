@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/android/google/firebase/android_firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
@@ -37,17 +38,15 @@ class FirebaseProcessor extends QueueProcessor {
     required String runnerProject,
     required String firebaseScript,
     required String generatedFirebaseScriptPath,
-    required Map<String, Flavor> flavors,
+    required Flavorizr config,
   }) : super(
           [
-            if (androidFirebaseExists(flavors.values))
+            if (androidFirebaseExists(config.flavors.values))
               AndroidFirebaseProcessor(
-                flavors: Map.from(flavors)
-                  ..removeWhere(
-                      (name, flavor) => flavor.android.firebase == null),
                 destination: androidDestination,
+                config: config,
               ),
-            if (iosFirebaseExists(flavors.values))
+            if (iosFirebaseExists(config.flavors.values))
               IOSTargetsFirebaseProcessor(
                 process: process,
                 destination: iosDestination,
@@ -55,10 +54,10 @@ class FirebaseProcessor extends QueueProcessor {
                 runnerProject: runnerProject,
                 firebaseScript: firebaseScript,
                 generatedFirebaseScriptPath: generatedFirebaseScriptPath,
-                flavors: Map.from(flavors)
-                  ..removeWhere((name, flavor) => flavor.ios.firebase == null),
+                config: config,
               ),
           ],
+          config: config,
         );
 
   @override

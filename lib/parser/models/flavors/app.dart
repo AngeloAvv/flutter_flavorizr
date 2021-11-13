@@ -24,6 +24,7 @@
  */
 
 import 'package:json_annotation/json_annotation.dart';
+
 part 'app.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)

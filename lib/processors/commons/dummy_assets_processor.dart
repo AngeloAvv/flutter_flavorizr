@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/processors/commons/copy_folder_processor.dart';
 
@@ -32,8 +33,13 @@ class DummyAssetsProcessor extends CopyFolderProcessor {
   DummyAssetsProcessor(
     String source,
     String destination,
-    this._os,
-  ) : super(source, destination);
+    this._os, {
+    required Flavorizr config,
+  }) : super(
+          source,
+          destination,
+          config: config,
+        );
 
   @override
   void execute() {

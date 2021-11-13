@@ -25,19 +25,34 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
 
 void main() {
+  Pubspec? pubspec;
+
+  setUp(() {
+    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+  });
+
+  tearDown(() {});
+
   test('Test IOXCConfigProcessor', () {
     String matcher =
         File('test_resources/ios/xcconfig_processor_test/matcher.xcconfig')
             .readAsStringSync();
 
     IOSXCConfigProcessor processor =
-        IOSXCConfigProcessor('Example App', 'example');
+        IOSXCConfigProcessor('Example App', 'example', config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

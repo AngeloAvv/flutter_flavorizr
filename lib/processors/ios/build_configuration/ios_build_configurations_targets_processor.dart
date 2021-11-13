@@ -34,25 +34,30 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
     String process,
     String script,
     String project,
-    String file,
-    Flavorizr flavorizr,
-  ) : super(flavorizr.flavors
-            .map((String flavorName, Flavor flavor) => MapEntry(
-                flavorName,
-                IOSBuildConfigurationsProcessor(
-                  process,
-                  script,
-                  project,
-                  file,
-                  flavorName,
-                  flavor.ios.bundleId,
-                  {}
-                    ..addAll(flavorizr.app.ios != null
-                        ? flavorizr.app.ios!.buildSettings
-                        : BuildSettingsMixin.defaultBuildSettings)
-                    ..addAll(flavor.ios.buildSettings),
-                )))
-            .values);
+    String file, {
+    required Flavorizr config,
+  }) : super(
+          config.flavors
+              .map((String flavorName, Flavor flavor) => MapEntry(
+                    flavorName,
+                    IOSBuildConfigurationsProcessor(
+                      process,
+                      script,
+                      project,
+                      file,
+                      flavorName,
+                      flavor.ios.bundleId,
+                      {}
+                        ..addAll(config.app.ios != null
+                            ? config.app.ios!.buildSettings
+                            : BuildSettingsMixin.defaultBuildSettings)
+                        ..addAll(flavor.ios.buildSettings),
+                      config: config,
+                    ),
+                  ))
+              .values,
+          config: config,
+        );
 
   @override
   String toString() => 'IOSBuildConfigurationsTargetsProcessor';

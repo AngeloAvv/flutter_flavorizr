@@ -23,15 +23,19 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions+map.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class IOSFirebaseScriptProcessor extends StringProcessor {
-  final Iterable<String> _flavors;
-
-  IOSFirebaseScriptProcessor(
-    this._flavors, {
+  IOSFirebaseScriptProcessor({
     String? input,
-  }) : super(input: input);
+    required Flavorizr config,
+  }) : super(
+          input: input,
+          config: config,
+        );
 
   @override
   String toString() => 'IOSFirebaseScriptProcessor';
@@ -40,8 +44,9 @@ class IOSFirebaseScriptProcessor extends StringProcessor {
   String execute() {
     StringBuffer buffer = StringBuffer();
 
-    if (_flavors.isNotEmpty) {
-      final iterator = _flavors.iterator;
+    final filteredFlavors = _filteredFlavors(config);
+    if (filteredFlavors.isNotEmpty) {
+      final iterator = filteredFlavors.keys.iterator;
       iterator.moveNext();
 
       buffer.writeln('if ${_generateCondition(iterator.current)}');
@@ -64,4 +69,7 @@ class IOSFirebaseScriptProcessor extends StringProcessor {
 
   String _generateCopy(String flavorName) =>
       'cp Runner/$flavorName/GoogleService-Info.plist Runner/GoogleService-Info.plist';
+
+  Map<String, Flavor> _filteredFlavors(Flavorizr config) => config.flavors
+      .where((flavorName, flavor) => flavor.android.firebase != null);
 }

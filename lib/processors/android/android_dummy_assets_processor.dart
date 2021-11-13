@@ -23,22 +23,32 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
 class AndroidDummyAssetsProcessor extends QueueProcessor {
   AndroidDummyAssetsProcessor(
-      String source, String destination, Map<String, Flavor> flavors)
-      : super(flavors
-            .map((String flavorName, Flavor flavor) => MapEntry(
-                flavorName,
-                DummyAssetsProcessor(
-                  source,
-                  '$destination/$flavorName/res',
-                  flavor.android,
-                )))
-            .values);
+    String source,
+    String destination, {
+    required Flavorizr config,
+  }) : super(
+          config.flavors
+              .map(
+                (String flavorName, Flavor flavor) => MapEntry(
+                  flavorName,
+                  DummyAssetsProcessor(
+                    source,
+                    '$destination/$flavorName/res',
+                    flavor.android,
+                    config: config,
+                  ),
+                ),
+              )
+              .values,
+          config: config,
+        );
 
   @override
   String toString() => 'AndroidBuildGradleProcessor';

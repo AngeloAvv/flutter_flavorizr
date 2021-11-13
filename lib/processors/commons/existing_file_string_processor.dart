@@ -24,14 +24,16 @@
  */
 
 import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class ExistingFileStringProcessor extends AbstractFileStringProcessor {
   ExistingFileStringProcessor(
     String path,
-    StringProcessor processor,
-  ) : super(path, processor) {
+    StringProcessor processor, {
+    required Flavorizr config,
+  }) : super(path, processor, config: config) {
     if (!this.file.existsSync()) {
       throw new FileNotFoundException(this.path);
     }

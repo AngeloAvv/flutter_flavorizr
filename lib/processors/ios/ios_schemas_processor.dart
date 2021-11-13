@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 
@@ -30,16 +31,21 @@ class IOSSchemasProcessor extends QueueProcessor {
   IOSSchemasProcessor(
     String process,
     String script,
-    String path,
-    Iterable<String> flavors,
-  ) : super(
-          flavors.map(
-            (String flavorName) => ShellProcessor(process, [
-              script,
-              path,
-              flavorName,
-            ]),
+    String path, {
+    required Flavorizr config,
+  }) : super(
+          config.flavors.keys.map(
+            (String flavorName) => ShellProcessor(
+              process,
+              [
+                script,
+                path,
+                flavorName,
+              ],
+              config: config,
+            ),
           ),
+          config: config,
         );
 
   @override

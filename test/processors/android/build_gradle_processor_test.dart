@@ -55,7 +55,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
+    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -73,7 +73,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
+        AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -84,7 +84,7 @@ void main() {
 
   test('Test malformed AndroidBuildGradleProcessor', () {
     AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(pubspec!.flavorizr, input: '');
+        AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: '');
     expect(() => processor.execute(), throwsException);
   });
 
@@ -94,7 +94,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
+    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
@@ -104,7 +104,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
+    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
@@ -114,7 +114,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(pubspec!.flavorizr, input: content);
+    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 }

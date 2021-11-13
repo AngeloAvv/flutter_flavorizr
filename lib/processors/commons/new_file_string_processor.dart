@@ -23,12 +23,18 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class NewFileStringProcessor extends AbstractFileStringProcessor {
   NewFileStringProcessor(
     String path,
-    StringProcessor processor,
-  ) : super(path, processor);
+    StringProcessor processor, {
+    required Flavorizr config,
+  }) : super(
+          path,
+          processor,
+          config: config,
+        );
 }

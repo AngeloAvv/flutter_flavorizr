@@ -23,12 +23,27 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/commons/replace_string_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
 
 void main() {
+  Pubspec? pubspec;
+
+  setUp(() {
+    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+  });
+
+  tearDown(() {});
+
   test('Test ReplaceStringProcessor', () {
     String content = 'blablabla [[FLAVOR_NAME]] blablabla';
     String matcher = 'blablabla test blablabla';
@@ -37,6 +52,7 @@ void main() {
       '[[FLAVOR_NAME]]',
       'test',
       input: content,
+      config: pubspec!.flavorizr,
     );
 
     String actual = processor.execute();
@@ -54,6 +70,7 @@ void main() {
       '[[FLAVOR_NAME]]',
       'test',
       input: matcher,
+      config: pubspec!.flavorizr,
     );
 
     String actual = processor.execute();

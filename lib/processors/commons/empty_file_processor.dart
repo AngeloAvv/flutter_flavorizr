@@ -23,11 +23,16 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class EmptyFileProcessor extends StringProcessor {
-
-  EmptyFileProcessor() : super(input: '');
+  EmptyFileProcessor({
+    required Flavorizr config,
+  }) : super(
+          input: '',
+          config: config,
+        );
 
   @override
   String toString() => 'EmptyFileProcessor';

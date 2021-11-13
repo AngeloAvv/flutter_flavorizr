@@ -25,12 +25,27 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/android/android_manifest_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
 
 void main() {
+  Pubspec? pubspec;
+
+  setUp(() {
+    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    try {
+      pubspec = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+  });
+
+  tearDown(() {});
+
   test('Test AndroidManifestProcessor', () {
     String content = File(
             'test_resources/android/android_manifest_processor_test/AndroidManifest.xml')
@@ -40,7 +55,7 @@ void main() {
         .readAsStringSync();
 
     AndroidManifestProcessor processor =
-        AndroidManifestProcessor(input: content);
+        AndroidManifestProcessor(input: content, config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -50,7 +65,10 @@ void main() {
   });
 
   test('Test malformed AndroidManifestProcessor', () {
-    AndroidManifestProcessor processor = AndroidManifestProcessor(input: '');
+    AndroidManifestProcessor processor = AndroidManifestProcessor(
+      input: '',
+      config: pubspec!.flavorizr,
+    );
     expect(() => processor.execute(), throwsException);
   });
 }
