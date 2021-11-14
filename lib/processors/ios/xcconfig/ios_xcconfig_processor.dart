@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class IOSXCConfigProcessor extends StringProcessor {
@@ -33,7 +34,11 @@ class IOSXCConfigProcessor extends StringProcessor {
     this._appName,
     this._flavorName, {
     String? input,
-  }) : super(input: input);
+    required Flavorizr config,
+  }) : super(
+          input: input,
+          config: config,
+        );
 
   @override
   String execute() {

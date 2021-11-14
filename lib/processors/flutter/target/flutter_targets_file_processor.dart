@@ -23,20 +23,25 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/target/flutter_target_file_processor.dart';
 
 class FlutterTargetsFileProcessor extends QueueProcessor {
   FlutterTargetsFileProcessor(
-      String source, String destination, Iterable<String> flavors)
-      : super(
-          flavors.map(
-            (String flavorName) => FlutterTargetFileProcessor(
+    String source,
+    String destination, {
+    required Flavorizr config,
+  }) : super(
+          config.flavors.keys.map(
+            (flavorName) => FlutterTargetFileProcessor(
               source,
               destination,
               flavorName,
+              config: config,
             ),
           ),
+          config: config,
         );
 
   @override

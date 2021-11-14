@@ -27,13 +27,18 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_processor.dart';
 
 class UnzipFileProcessor extends AbstractFileProcessor {
   final String _source;
   final String _destination;
 
-  UnzipFileProcessor(this._source, this._destination) : super(_source);
+  UnzipFileProcessor(
+    this._source,
+    this._destination, {
+    required Flavorizr config,
+  }) : super(_source, config: config);
 
   @override
   void execute() {

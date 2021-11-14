@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/replace_string_processor.dart';
@@ -37,29 +38,37 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
     String project,
     String source,
     String destination,
-    String flavorName,
-  ) : super([
-          CopyFileProcessor(
-            source,
-            '$destination/${flavorName}LaunchScreen.storyboard',
-          ),
-          RuntimeFileStringProcessor(
-            '$destination/${flavorName}LaunchScreen.storyboard',
-            ReplaceStringProcessor(
-              '[[FLAVOR_NAME]]',
-              flavorName,
+    String flavorName, {
+    required Flavorizr config,
+  }) : super(
+          [
+            CopyFileProcessor(
+              source,
+              '$destination/${flavorName}LaunchScreen.storyboard',
+              config: config,
             ),
-          ),
-          ShellProcessor(
-            process,
-            [
-              script,
-              project,
-              IOSUtils.flatPath(
-                  '$destination/${flavorName}LaunchScreen.storyboard'),
-            ],
-          )
-        ]);
+            RuntimeFileStringProcessor(
+              '$destination/${flavorName}LaunchScreen.storyboard',
+              ReplaceStringProcessor(
+                '[[FLAVOR_NAME]]',
+                flavorName,
+                config: config,
+              ),
+              config: config,
+            ),
+            ShellProcessor(
+              process,
+              [
+                script,
+                project,
+                IOSUtils.flatPath(
+                    '$destination/${flavorName}LaunchScreen.storyboard'),
+              ],
+              config: config,
+            )
+          ],
+          config: config,
+        );
 
   @override
   String toString() => 'IOSTargetLaunchScreenFileProcessor';

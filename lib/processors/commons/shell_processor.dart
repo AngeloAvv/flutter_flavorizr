@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 
 class ShellProcessor extends AbstractProcessor<void> {
@@ -36,7 +37,8 @@ class ShellProcessor extends AbstractProcessor<void> {
     this._path,
     this._args, {
     this.workingDirectory,
-  });
+    required Flavorizr config,
+  }) : super(config);
 
   @override
   void execute() {

@@ -23,20 +23,22 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:flutter_flavorizr/processors/ide/vscode/models/configuration.dart';
 import 'package:flutter_flavorizr/processors/ide/vscode/models/launch.dart';
 
 class VSCodeLaunchProcessor extends StringProcessor {
-  final Iterable<String> _flavorNames;
   static const List<String> modes = ['Debug', 'Profile', 'Release'];
 
-  VSCodeLaunchProcessor(this._flavorNames);
+  VSCodeLaunchProcessor({
+    required Flavorizr config,
+  }) : super(config: config);
 
   @override
   execute() => Launch(
         version: '0.2.0',
-        configurations: _flavorNames
+        configurations: config.flavors.keys
             .expand(
               (flavorName) => modes.map(
                 (mode) => Configuration(

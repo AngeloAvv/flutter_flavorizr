@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ide/idea/idea_launch_processor.dart';
@@ -30,15 +31,21 @@ import 'package:flutter_flavorizr/processors/ide/idea/idea_launch_processor.dart
 class IdeaLaunchFileProcessor extends QueueProcessor {
   IdeaLaunchFileProcessor(
     String flavorName,
-    String path,
-  ) : super([
-          NewFileStringProcessor(
-            path,
-            IdeaLaunchProcessor(
-              flavorName,
+    String path, {
+    required Flavorizr config,
+  }) : super(
+          [
+            NewFileStringProcessor(
+              path,
+              IdeaLaunchProcessor(
+                flavorName,
+                config: config,
+              ),
+              config: config,
             ),
-          ),
-        ]);
+          ],
+          config: config,
+        );
 
   @override
   String toString() => 'IdeaLaunchFileProcessor';

@@ -6,3 +6,5 @@
 .pub/
 
 build/
+.fvm/
+example/.fvm

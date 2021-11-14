@@ -23,23 +23,33 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/dummy_assets/ios_dummy_assets_processor.dart';
 
 class IOSDummyAssetsTargetsProcessor extends QueueProcessor {
   IOSDummyAssetsTargetsProcessor(
-      String source, String destination, Map<String, Flavor> flavors)
-      : super(flavors
-            .map((String flavorName, Flavor flavor) => MapEntry(
-                flavorName,
-                IOSDummyAssetsProcessor(
-                  source,
-                  destination,
+    String source,
+    String destination, {
+    required Flavorizr config,
+  }) : super(
+          config.flavors
+              .map(
+                (String flavorName, Flavor flavor) => MapEntry(
                   flavorName,
-                  flavor.ios,
-                )))
-            .values);
+                  IOSDummyAssetsProcessor(
+                    source,
+                    destination,
+                    flavorName,
+                    flavor.ios,
+                    config: config,
+                  ),
+                ),
+              )
+              .values,
+          config: config,
+        );
 
   @override
   String toString() => 'IOSDummyAssetsTargetsProcessor';

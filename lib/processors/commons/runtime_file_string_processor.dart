@@ -24,16 +24,19 @@
  */
 
 import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
   RuntimeFileStringProcessor(
     String path,
-    StringProcessor processor,
-  ) : super(
+    StringProcessor processor, {
+    required Flavorizr config,
+  }) : super(
           path,
           processor,
+          config: config,
         );
 
   @override

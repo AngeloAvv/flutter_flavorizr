@@ -1,3 +1,10 @@
+## 2.1.0
+* Added flavor banner in the top-left corner
+* Disabled override of the launchScreen attribute in Info.plist if its processor is not specified
+* Removed blank line generation at the end of the build.gradle file on every run
+* Code refactoring
+* Bumped dependencies
+
 ## 2.0.0
 * Migration to Flutter 2
 

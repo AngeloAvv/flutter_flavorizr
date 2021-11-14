@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
@@ -36,25 +37,32 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
     String project,
     String file,
     String appName,
-    String flavorName,
-  ) : super([
-          NewFileStringProcessor(
-            file,
-            IOSXCConfigProcessor(
-              appName,
-              flavorName,
+    String flavorName, {
+    required Flavorizr config,
+  }) : super(
+          [
+            NewFileStringProcessor(
+              file,
+              IOSXCConfigProcessor(
+                appName,
+                flavorName,
+                config: config,
+              ),
+              config: config,
             ),
-          ),
-          ShellProcessor(
-            process,
-            [
-              script,
-              project,
-              IOSUtils.flatPath(file),
-              'Flutter',
-            ],
-          ),
-        ]);
+            ShellProcessor(
+              process,
+              [
+                script,
+                project,
+                IOSUtils.flatPath(file),
+                'Flutter',
+              ],
+              config: config,
+            ),
+          ],
+          config: config,
+        );
 
   @override
   String toString() => 'IOSXCConfigModeFileProcessor';

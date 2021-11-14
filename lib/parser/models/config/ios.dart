@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:json_annotation/json_annotation.dart';
+
 part 'ios.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)

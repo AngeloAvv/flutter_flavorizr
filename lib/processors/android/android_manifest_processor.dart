@@ -25,11 +25,18 @@
 
 import 'package:collection/collection.dart';
 import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:xml/xml.dart';
 
 class AndroidManifestProcessor extends StringProcessor {
-  AndroidManifestProcessor({String? input}) : super(input: input);
+  AndroidManifestProcessor({
+    String? input,
+    required Flavorizr config,
+  }) : super(
+          input: input,
+          config: config,
+        );
 
   @override
   String execute() {

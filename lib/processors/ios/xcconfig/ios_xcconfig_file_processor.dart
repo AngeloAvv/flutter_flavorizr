@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_mode_file_processor.dart';
 
@@ -35,8 +36,9 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
     String project,
     String path,
     String appName,
-    String flavorName,
-  ) : super(
+    String flavorName, {
+    required Flavorizr config,
+  }) : super(
           _modes.map(
             (String mode) => IOSXCConfigModeFileProcessor(
               process,
@@ -45,8 +47,10 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
               '$path/$flavorName$mode.xcconfig',
               appName,
               flavorName,
+              config: config,
             ),
           ),
+          config: config,
         );
 
   @override
