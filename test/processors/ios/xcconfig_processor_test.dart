@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -51,8 +51,9 @@ void main() {
         File('test_resources/ios/xcconfig_processor_test/matcher.xcconfig')
             .readAsStringSync();
 
-    IOSXCConfigProcessor processor =
-        IOSXCConfigProcessor('Example App', 'example', config: pubspec!.flavorizr);
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+        'Example App', 'example',
+        config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

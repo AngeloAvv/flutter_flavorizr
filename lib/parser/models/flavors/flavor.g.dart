@@ -7,9 +7,11 @@ part of 'flavor.dart';
 // **************************************************************************
 
 Flavor _$FlavorFromJson(Map json) {
-  $checkKeys(json,
-      requiredKeys: const ['app', 'android', 'ios'],
-      disallowNullValues: const ['app', 'android', 'ios']);
+  $checkKeys(
+    json,
+    requiredKeys: const ['app', 'android', 'ios'],
+    disallowNullValues: const ['app', 'android', 'ios'],
+  );
   return Flavor(
     app: App.fromJson(Map<String, dynamic>.from(json['app'] as Map)),
     android:

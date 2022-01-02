@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -32,7 +32,13 @@ class App {
   @JsonKey(required: true, disallowNullValue: true)
   final String name;
 
-  App({required this.name});
+  @JsonKey(disallowNullValue: true)
+  final String? icon;
+
+  App({
+    required this.name,
+    this.icon,
+  });
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -38,9 +38,11 @@ class Android extends OS {
     required this.applicationId,
     bool generateDummyAssets = true,
     Firebase? firebase,
+    String? icon,
   }) : super(
           generateDummyAssets: generateDummyAssets,
           firebase: firebase,
+          icon: icon,
         );
 
   factory Android.fromJson(Map<String, dynamic> json) =>

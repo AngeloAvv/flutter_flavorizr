@@ -7,8 +7,11 @@ part of 'firebase.dart';
 // **************************************************************************
 
 Firebase _$FirebaseFromJson(Map json) {
-  $checkKeys(json,
-      requiredKeys: const ['config'], disallowNullValues: const ['config']);
+  $checkKeys(
+    json,
+    requiredKeys: const ['config'],
+    disallowNullValues: const ['config'],
+  );
   return Firebase(
     config: json['config'] as String,
   );

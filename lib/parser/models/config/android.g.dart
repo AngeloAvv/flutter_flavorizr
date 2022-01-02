@@ -6,8 +6,6 @@ part of 'android.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Android _$AndroidFromJson(Map json) {
-  return Android(
-    flavorDimensions: json['flavorDimensions'] as String? ?? 'flavor-type',
-  );
-}
+Android _$AndroidFromJson(Map json) => Android(
+      flavorDimensions: json['flavorDimensions'] as String? ?? 'flavor-type',
+    );

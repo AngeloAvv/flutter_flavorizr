@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/parser/models/pubspec.dart';
 import 'package:flutter_flavorizr/processors/android/android_build_gradle_processor.dart';
 import 'package:flutter_flavorizr/processors/android/android_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/processors/android/android_manifest_processor.dart';
+import 'package:flutter_flavorizr/processors/android/icons/android_icons_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/abstract_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/copy_folder_processor.dart';
@@ -44,6 +45,7 @@ import 'package:flutter_flavorizr/processors/google/firebase/firebase_processor.
 import 'package:flutter_flavorizr/processors/ide/ide_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
+import 'package:flutter_flavorizr/processors/ios/icons/ios_icons_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/ios_plist_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/ios_schemas_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/launch_screen/ios_targets_launchscreen_file_processor.dart';
@@ -63,6 +65,7 @@ class Processor extends AbstractProcessor<void> {
     'android:androidManifest',
     'android:buildGradle',
     'android:dummyAssets',
+    'android:icons',
 
     // Flutter
     'flutter:flavors',
@@ -75,6 +78,7 @@ class Processor extends AbstractProcessor<void> {
     'ios:buildTargets',
     'ios:schema',
     'ios:dummyAssets',
+    'ios:icons',
     'ios:plist',
     'ios:launchScreen',
 
@@ -156,6 +160,9 @@ class Processor extends AbstractProcessor<void> {
         K.androidSrcPath,
         config: pubspec.flavorizr,
       ),
+      'android:icons': AndroidIconsProcessor(
+        config: pubspec.flavorizr,
+      ),
 
       //Flutter
       'flutter:flavors': NewFileStringProcessor(
@@ -203,6 +210,9 @@ class Processor extends AbstractProcessor<void> {
       'ios:dummyAssets': IOSDummyAssetsTargetsProcessor(
         K.tempiOSAssetsPath,
         K.iOSAssetsPath,
+        config: pubspec.flavorizr,
+      ),
+      'ios:icons': IOSIconsProcessor(
         config: pubspec.flavorizr,
       ),
       'ios:plist': ExistingFileStringProcessor(

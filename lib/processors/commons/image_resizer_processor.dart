@@ -23,32 +23,64 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
+import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
+import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
+import 'package:image/image.dart';
 
-class IOSFirebaseProcessor extends QueueProcessor {
-  IOSFirebaseProcessor(
+class ImageResizerProcessor extends CopyFileProcessor {
+  final Size size;
+
+  ImageResizerProcessor(
     String source,
     String destination,
-    String flavorName, {
+    this.size, {
     required Flavorizr config,
   }) : super(
-          [
-            NewFolderProcessor(
-              '$destination/$flavorName',
-              config: config,
-            ),
-            CopyFileProcessor(
-              source,
-              '$destination/$flavorName/GoogleService-Info.plist',
-              config: config,
-            ),
-          ],
+          source,
+          destination,
           config: config,
         );
 
   @override
-  String toString() => 'IOSFirebaseProcessor';
+  File execute() {
+    final image = decodeImage(File(source).readAsBytesSync());
+    if (image == null) {
+      throw FileNotFoundException(source);
+    }
+
+    final thumbnail = copyResize(
+      image,
+      width: size.width,
+      height: size.height,
+      interpolation: Interpolation.average,
+    );
+    final encodedImage = encodeNamedImage(thumbnail, destination);
+
+    if (encodedImage == null) {
+      throw MalformedResourceException(source);
+    }
+
+    return File(destination)..writeAsBytesSync(encodedImage);
+  }
+
+  @override
+  String toString() =>
+      'ImageResizerProcessor: Resizing image to $size from $source to $destination';
+}
+
+class Size {
+  final int width;
+  final int height;
+
+  const Size({
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  String toString() => 'Size{width: $width, height: $height}';
 }

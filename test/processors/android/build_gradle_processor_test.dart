@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -48,14 +48,14 @@ void main() {
 
   test('Test original AndroidBuildGradleProcessor', () {
     String content = File(
-        'test_resources/android/build_gradle_processor_test/build_original.gradle')
+            'test_resources/android/build_gradle_processor_test/build_original.gradle')
         .readAsStringSync();
     String matcher = File(
-        'test_resources/android/build_gradle_processor_test/build_expected.gradle')
+            'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
+        AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -88,33 +88,38 @@ void main() {
     expect(() => processor.execute(), throwsException);
   });
 
-  test('Test existing flavor dimensions exception AndroidBuildGradleProcessor', () {
+  test('Test existing flavor dimensions exception AndroidBuildGradleProcessor',
+      () {
     String content = File(
-        'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
+            'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
+        AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
-  test('Test existing flavor dimensions exception with begin markup AndroidBuildGradleProcessor', () {
+  test(
+      'Test existing flavor dimensions exception with begin markup AndroidBuildGradleProcessor',
+      () {
     String content = File(
-        'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
+            'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
+        AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
-  test('Test existing flavor dimensions exception with end markup AndroidBuildGradleProcessor', () {
+  test(
+      'Test existing flavor dimensions exception with end markup AndroidBuildGradleProcessor',
+      () {
     String content = File(
-        'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
+            'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor =
-    AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
+        AndroidBuildGradleProcessor(config: pubspec!.flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 }

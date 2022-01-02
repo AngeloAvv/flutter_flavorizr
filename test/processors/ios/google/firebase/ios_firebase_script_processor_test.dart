@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -33,7 +33,6 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../test_utils.dart';
 
 void main() {
-
   Pubspec? pubspec;
 
   tearDown(() {
@@ -41,7 +40,9 @@ void main() {
   });
 
   test('Test IOSFirebaseScriptProcessor with a single flavor', () {
-    Parser parser = Parser(file: 'test_resources/ios/ios_firebase_script_processor_test/single_flavor_pubspec.yaml');
+    Parser parser = Parser(
+        file:
+            'test_resources/ios/ios_firebase_script_processor_test/single_flavor_pubspec.yaml');
     try {
       pubspec = parser.parse();
     } catch (e) {
@@ -52,7 +53,8 @@ void main() {
             'test_resources/ios/ios_firebase_script_processor_test/single_flavor.sh')
         .readAsStringSync();
 
-    IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(config: pubspec!.flavorizr);
+    IOSFirebaseScriptProcessor processor =
+        IOSFirebaseScriptProcessor(config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -62,7 +64,9 @@ void main() {
   });
 
   test('Test IOSFirebaseScriptProcessor with multiple flavors', () {
-    Parser parser = Parser(file: 'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors_pubspec.yaml');
+    Parser parser = Parser(
+        file:
+            'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors_pubspec.yaml');
     try {
       pubspec = parser.parse();
     } catch (e) {
@@ -70,10 +74,11 @@ void main() {
     }
 
     String matcher = File(
-        'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
+            'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
         .readAsStringSync();
 
-    IOSFirebaseScriptProcessor processor = IOSFirebaseScriptProcessor(config: pubspec!.flavorizr);
+    IOSFirebaseScriptProcessor processor =
+        IOSFirebaseScriptProcessor(config: pubspec!.flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

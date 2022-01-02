@@ -24,17 +24,41 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/image_resizer_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/utils/constants.dart';
+import 'package:sprintf/sprintf.dart';
 
-class NewFileStringProcessor extends AbstractFileStringProcessor {
-  NewFileStringProcessor(
-    String path,
-    StringProcessor processor, {
+class AndroidIconProcessor extends QueueProcessor {
+  static const _entries = {
+    'mipmap-mdpi': const Size(width: 48, height: 48),
+    'mipmap-hdpi': const Size(width: 72, height: 72),
+    'mipmap-xhdpi': const Size(width: 96, height: 96),
+    'mipmap-xxhdpi': const Size(width: 144, height: 144),
+    'mipmap-xxxhdpi': const Size(width: 192, height: 192),
+  };
+
+  AndroidIconProcessor(
+    String source,
+    String flavorName, {
     required Flavorizr config,
   }) : super(
-          path,
-          processor,
+          _entries
+              .map(
+                (folder, size) => MapEntry(
+                  folder,
+                  ImageResizerProcessor(
+                    source,
+                    sprintf(K.androidIconPath, [flavorName, folder]),
+                    size,
+                    config: config,
+                  ),
+                ),
+              )
+              .values,
           config: config,
         );
+
+  @override
+  String toString() => 'AndroidIconProcessor';
 }
