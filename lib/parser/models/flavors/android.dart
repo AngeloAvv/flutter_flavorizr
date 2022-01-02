@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -34,8 +35,12 @@ class Android extends OS {
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
 
+  @JsonKey(disallowNullValue: true, defaultValue: {})
+  final Map<String, ResValue> resValues;
+
   Android({
     required this.applicationId,
+    this.resValues = const {},
     bool generateDummyAssets = true,
     Firebase? firebase,
     String? icon,

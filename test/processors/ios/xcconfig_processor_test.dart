@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/parser/models/pubspec.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_processor.dart';
@@ -47,13 +48,79 @@ void main() {
   tearDown(() {});
 
   test('Test IOXCConfigProcessor', () {
-    String matcher =
-        File('test_resources/ios/xcconfig_processor_test/matcher.xcconfig')
-            .readAsStringSync();
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_without_variables.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = pubspec!.flavorizr.flavors.keys.last;
+    final flavor = pubspec!.flavorizr.flavors[flavorName];
 
     IOSXCConfigProcessor processor = IOSXCConfigProcessor(
-        'Example App', 'example',
+        flavorName, flavor!, null,
         config: pubspec!.flavorizr);
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
+
+  test('Test IOXCConfigProcessor with variables', () {
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_with_variables.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = pubspec!.flavorizr.flavors.keys.first;
+    final flavor = pubspec!.flavorizr.flavors[flavorName];
+
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+        flavorName, flavor!, null,
+        config: pubspec!.flavorizr);
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
+
+  test('Test IOXCConfigProcessor with variables', () {
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_with_variables.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = pubspec!.flavorizr.flavors.keys.first;
+    final flavor = pubspec!.flavorizr.flavors[flavorName];
+
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+      flavorName,
+      flavor!,
+      null,
+      config: pubspec!.flavorizr,
+    );
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
+
+  test('Test IOXCConfigProcessor with variables and target', () {
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_with_variables_and_target.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = pubspec!.flavorizr.flavors.keys.first;
+    final flavor = pubspec!.flavorizr.flavors[flavorName];
+
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+      flavorName,
+      flavor!,
+      Target.Debug,
+      config: pubspec!.flavorizr,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

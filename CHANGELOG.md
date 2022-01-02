@@ -1,5 +1,10 @@
+## 2.1.2
+* Added resValues directive to declare resValues in build.gradle for each flavor (Android)
+* Added variables directive to declare variables in xcconfig for each flavor (iOS)
+* Bumped dependencies
+
 ## 2.1.1
-* Added icon directive to generate icons for your flavors
+* Added icon directive to generate icons for each flavor
 * Bumped dependencies
 
 ## 2.1.0

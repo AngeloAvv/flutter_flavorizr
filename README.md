@@ -6,6 +6,9 @@ A flutter utility to easily create flavors in your flutter application
 ![Dart CI](https://github.com/AngeloAvv/flutter_flavorizr/workflows/Dart%20CI/badge.svg)
 [![Star on GitHub](https://img.shields.io/github/stars/AngeloAvv/flutter_flavorizr.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/AngeloAvv/flutter_flavorizr)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+
+If you want to support this project,
+
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/angeloavv)
 
 ## Getting Started
@@ -41,7 +44,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^2.1.1
+  flutter_flavorizr: ^2.1.2
 ```
 
 You can install packages from the command line:
@@ -101,7 +104,7 @@ flavorizr:
 | app                                     | Object |                                                                                     | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                     | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                     | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.1/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.2/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -155,6 +158,7 @@ flavorizr:
 |:--------------------|:-------|:--------|:---------|:-------------------------------------------------------------------|
 | applicationId       | String |         | true     | The applicationId of the Android App                               |
 | firebase            | Object |         | false    | An object which contains a Firebase configuration                  |
+| resValues           | Array  |         | false    | An array which contains a set of resValues configurations          |
 | generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc) |
 | icon                | String |         | false    | The icon path for this android flavor                              |
 
@@ -165,6 +169,7 @@ flavorizr:
 | bundleId            | String     |         | true     | The bundleId of the iOS App                                                                                   |
 | buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
+| variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 | icon                | String     |         | false    | The icon path for this iOS flavor                                                                             |
 
@@ -173,6 +178,71 @@ flavorizr:
 | key    | type   | default | required | description                                                                                                         |
 |:-------|:-------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------------|
 | config | String |         | false    | The path to the Firebase configuration file (google-services.json for Android and GoogleService-Info.plist for iOS) |
+
+#### resValue (for Android)
+
+| key   | type   | default | required | description                                                                                                                              |
+|:------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+| type  | String |         | true     | The type of the [resValue](https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/variant/ResValue) variable |
+| value | String |         | true     | The value of the resValue variable                                                                                                       |
+
+```
+flavorizr:
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    ios:
+
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+        resValues:
+          variable_one:
+            type: "string"
+            value: "example variable one"
+          variable_two:
+            type: "string"
+            value: "example variable two"
+
+      ios:
+        bundleId: "com.example.apple"
+```
+
+#### variable (for iOS)
+
+| key    | type   | default | required | description                                                                                                                                                                                                                                          |
+|:-------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| target | String |         | false    | The type of the [target](https://medium.com/geekculture/what-are-debug-and-release-modes-in-xcode-how-to-check-app-is-running-in-debug-mode-8dadad6a3428) (Debug, Release, Profile). Do not specify a target if you want to apply it to all of them. |
+| value  | String |         | true     | The value of the variable                                                                                                                                                                                                                            |
+
+```
+flavorizr:
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    ios:
+
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+
+      ios:
+        bundleId: "com.example.apple"
+        variables:
+          VARIABLE_ONE:
+            value: "variable1"
+          VARIABLE_TWO:
+            target: "Debug"
+            value: "variable2"        
+```
 
 ## Usage
 

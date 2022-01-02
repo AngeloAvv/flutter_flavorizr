@@ -24,7 +24,6 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_file_processor.dart';
 
@@ -37,17 +36,20 @@ class IOSXCConfigTargetsFileProcessor extends QueueProcessor {
     required Flavorizr config,
   }) : super(
           config.flavors
-              .map((String flavorName, Flavor flavor) => MapEntry(
+              .map(
+                (flavorName, flavor) => MapEntry(
                   flavorName,
                   IOSXCConfigFileProcessor(
                     process,
                     script,
                     project,
                     path,
-                    flavor.app.name,
                     flavorName,
+                    flavor,
                     config: config,
-                  )))
+                  ),
+                ),
+              )
               .values,
           config: config,
         );

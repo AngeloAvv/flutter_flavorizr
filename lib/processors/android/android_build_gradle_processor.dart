@@ -23,10 +23,12 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:collection';
+
 import 'package:flutter_flavorizr/exception/existing_flavor_dimensions_exception.dart';
 import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class AndroidBuildGradleProcessor extends StringProcessor {
@@ -115,14 +117,25 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   void _appendFlavors(StringBuffer buffer) {
     buffer.writeln('    productFlavors {');
 
-    this.config.flavors.forEach((String name, Flavor flavor) {
+    this.config.flavors.forEach((name, flavor) {
       buffer.writeln('        $name {');
       buffer.writeln(
           '            dimension "${this.config.app.android.flavorDimensions}"');
       buffer.writeln(
           '            applicationId "${flavor.android.applicationId}"');
-      buffer.writeln(
-          '            resValue "string", "app_name", "${flavor.app.name}"');
+
+      final Map<String, ResValue> resValues = LinkedHashMap.from({
+        'app_name': ResValue(
+          type: 'string',
+          value: flavor.app.name,
+        )
+      })
+        ..addAll(flavor.android.resValues);
+      resValues.forEach((key, res) {
+        buffer.writeln(
+            '            resValue "${res.type}", "$key", "${res.value}"');
+      });
+
       buffer.writeln('        }');
     });
 
