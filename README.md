@@ -226,7 +226,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * ios:buildTargets
 * ios:schema
 * ios:dummyAssets
-* android:icons
+* ios:icons
 * ios:plist
 * ios:launchScreen
 * google:firebase
