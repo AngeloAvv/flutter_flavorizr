@@ -40,7 +40,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```
 dev_dependencies:
-  flutter_flavorizr: ^2.1.0
+  flutter_flavorizr: ^2.1.1
 ```
 
 You can install packages from the command line:
@@ -100,7 +100,7 @@ flavorizr:
 | app                                     | Object |                                                                                     | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                     | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                     | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.0/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.1/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -113,6 +113,7 @@ flavorizr:
 | android:buildGradle     | Android       | Adds the flavors to the Android build.gradle file                       |
 | android:androidManifest | Android       | Changes the reference of the app name in the AndroidManifest.xml        |
 | android:dummyAssets     | Android       | Generates some default icons for your custom flavors                    |
+| android:icons           | Android       | Creates a set of icons for each flavor according to the icon directive  |
 | flutter:flavors         | Flutter       | Creates the flutter flavor configuration file                           |
 | flutter:app             | Flutter       | Creates the app.dart entry                                              |
 | flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
@@ -123,6 +124,7 @@ flavorizr:
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
 | ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
 | ios:dummyAssets         | iOS           | Generates some default icons for your custom flavors                    |
+| ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Updates the info.plist file                                             |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
 
@@ -141,9 +143,10 @@ flavorizr:
 
 #### app (under *flavorname*)
 
-| key  | type   | default | required | description         |
-|:-----|:-------|:--------|:---------|:--------------------|
-| name | String |         | true     | The name of the App |
+| key  | type   | default | required | description                   |
+|:-----|:-------|:--------|:---------|:------------------------------|
+| name | String |         | true     | The name of the App           |
+| icon | String |         | false    | The icon path for this flavor |
 
 #### android (under *flavorname*)
 
@@ -152,6 +155,7 @@ flavorizr:
 | applicationId       | String |         | true     | The applicationId of the Android App                               |
 | firebase            | Object |         | false    | An object which contains a Firebase configuration                  |
 | generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc) |
+| icon                | String |         | false    | The icon path for this android flavor                              |
 
 #### ios (under *flavorname*)
 
@@ -161,6 +165,7 @@ flavorizr:
 | buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
+| icon                | String     |         | false    | The icon path for this iOS flavor                                                                             |
 
 #### firebase
 
@@ -211,6 +216,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * android:androidManifest
 * android:buildGradle
 * android:dummyAssets
+* android:icons
 * flutter:flavors
 * flutter:app
 * flutter:pages
@@ -219,6 +225,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * ios:buildTargets
 * ios:schema
 * ios:dummyAssets
+* android:icons
 * ios:plist
 * ios:launchScreen
 * google:firebase

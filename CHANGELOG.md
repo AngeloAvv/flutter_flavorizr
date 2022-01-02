@@ -1,3 +1,7 @@
+## 2.1.1
+* Added icon directive to generate icons for your flavors
+* Bumped dependencies
+
 ## 2.1.0
 * Added flavor banner in the top-left corner
 * Disabled override of the launchScreen attribute in Info.plist if its processor is not specified

@@ -7,9 +7,13 @@ part of 'app.dart';
 // **************************************************************************
 
 App _$AppFromJson(Map json) {
-  $checkKeys(json,
-      requiredKeys: const ['name'], disallowNullValues: const ['name']);
+  $checkKeys(
+    json,
+    requiredKeys: const ['name'],
+    disallowNullValues: const ['name', 'icon'],
+  );
   return App(
     name: json['name'] as String,
+    icon: json['icon'] as String?,
   );
 }

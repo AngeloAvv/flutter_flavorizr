@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,6 +28,9 @@ class K {
 
   static String androidSrcPath = '$androidAppPath/src';
 
+  static String androidIconPath =
+      '$androidAppPath/src/%s/res/%s/ic_launcher.png';
+
   static String androidManifestPath =
       '$androidSrcPath/main/AndroidManifest.xml';
 
@@ -54,6 +57,9 @@ class K {
   static String iOSPListPath = '$iOSRunnerPath/Info.plist';
 
   static String iOSAssetsPath = '$iOSRunnerPath/Assets.xcassets';
+
+  static String iOSAppIconPath =
+      '$iOSRunnerPath/Assets.xcassets/%sAppIcon.appiconset/%s';
 
   static String assetsZipPath = 'assets.tmp.zip';
 

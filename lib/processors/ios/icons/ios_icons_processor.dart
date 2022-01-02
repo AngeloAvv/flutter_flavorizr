@@ -23,18 +23,32 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions+map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/processors/ios/icons/ios_icon_target_processor.dart';
 
-class NewFileStringProcessor extends AbstractFileStringProcessor {
-  NewFileStringProcessor(
-    String path,
-    StringProcessor processor, {
+class IOSIconsProcessor extends QueueProcessor {
+  IOSIconsProcessor({
     required Flavorizr config,
   }) : super(
-          path,
-          processor,
+          config.flavors
+              .where((_, flavor) =>
+                  flavor.app.icon != null || flavor.ios.icon != null)
+              .map(
+                (flavorName, flavor) => MapEntry(
+                  flavorName,
+                  IOSIconTargetProcessor(
+                    flavor.ios.icon ?? flavor.app.icon ?? '',
+                    flavorName,
+                    config: config,
+                  ),
+                ),
+              )
+              .values,
           config: config,
         );
+
+  @override
+  String toString() => 'IOSIconsProcessor';
 }

@@ -3,10 +3,6 @@ enum Flavor {
   BANANA,
 }
 
-extension FlavorName on Flavor {
-  String get name => this.toString().split('.').last;
-}
-
 class F {
   static Flavor? appFlavor;
 

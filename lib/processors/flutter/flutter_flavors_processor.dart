@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -41,7 +41,6 @@ class FlutterFlavorsProcessor extends StringProcessor {
     StringBuffer buffer = StringBuffer();
 
     _appendFlavorEnum(buffer);
-    _appendFlavorNameExtension(buffer);
     _appendFlavorClass(buffer);
 
     return buffer.toString();
@@ -54,13 +53,6 @@ class FlutterFlavorsProcessor extends StringProcessor {
       buffer.writeln('  ${flavorName.toUpperCase()},');
     });
 
-    buffer.writeln('}');
-  }
-
-  void _appendFlavorNameExtension(StringBuffer buffer) {
-    buffer.writeln();
-    buffer.writeln('extension FlavorName on Flavor {');
-    buffer.writeln('  String get name => this.toString().split(\'.\').last;');
     buffer.writeln('}');
   }
 

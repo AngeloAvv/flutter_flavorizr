@@ -7,9 +7,11 @@ part of 'ios.dart';
 // **************************************************************************
 
 IOS _$IOSFromJson(Map json) {
-  $checkKeys(json,
-      requiredKeys: const ['bundleId'],
-      disallowNullValues: const ['firebase', 'bundleId']);
+  $checkKeys(
+    json,
+    requiredKeys: const ['bundleId'],
+    disallowNullValues: const ['firebase', 'icon', 'bundleId'],
+  );
   return IOS(
     bundleId: json['bundleId'] as String,
     buildSettings: (json['buildSettings'] as Map?)?.map(
@@ -20,5 +22,6 @@ IOS _$IOSFromJson(Map json) {
     firebase: json['firebase'] == null
         ? null
         : Firebase.fromJson(Map<String, dynamic>.from(json['firebase'] as Map)),
+    icon: json['icon'] as String?,
   );
 }

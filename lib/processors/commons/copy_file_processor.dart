@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 MyLittleSuite
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/processors/commons/abstract_file_processor.dar
 
 class CopyFileProcessor extends AbstractFileProcessor {
   final String _destination;
+
   final String _source;
 
   CopyFileProcessor(
@@ -43,4 +44,8 @@ class CopyFileProcessor extends AbstractFileProcessor {
 
   @override
   String toString() => 'Copying file from $_source to $_destination';
+
+  String get destination => _destination;
+
+  String get source => _source;
 }
