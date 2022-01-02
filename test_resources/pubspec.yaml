@@ -37,6 +37,12 @@ flavorizr:
 
       ios:
         bundleId: "com.example.apple"
+        variables:
+          VARIABLE_ONE:
+            value: "variable1"
+          VARIABLE_TWO:
+            target: "Debug"
+            value: "variable2"
 
     banana:
       app:
@@ -44,6 +50,14 @@ flavorizr:
 
       android:
         applicationId: "com.example.banana"
+        resValues:
+          variable_one:
+            type: "string"
+            value: "test variable one"
+          variable_two:
+            type: "string"
+            value: "test variable two"
+
       ios:
         bundleId: "com.example.banana"
 

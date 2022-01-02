@@ -26,13 +26,12 @@
 import 'dart:convert';
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
 
 class IOSBuildConfigurationsProcessor extends QueueProcessor {
-  static const List<String> _modes = ['Debug', 'Profile', 'Release'];
-
   IOSBuildConfigurationsProcessor(
     String process,
     String script,
@@ -43,16 +42,16 @@ class IOSBuildConfigurationsProcessor extends QueueProcessor {
     Map<String, dynamic> buildConfigurations, {
     required Flavorizr config,
   }) : super(
-          _modes.map(
-            (String mode) => ShellProcessor(
+          Target.values.map(
+            (target) => ShellProcessor(
               process,
               [
                 script,
                 project,
-                IOSUtils.flatPath('$file/$flavorName$mode.xcconfig'),
+                IOSUtils.flatPath('$file/$flavorName${target.name}.xcconfig'),
                 flavorName,
                 bundleId,
-                mode,
+                target.name,
                 base64.encode(utf8.encode(jsonEncode(buildConfigurations))),
               ],
               config: config,

@@ -24,29 +24,30 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_mode_file_processor.dart';
 
 class IOSXCConfigFileProcessor extends QueueProcessor {
-  static const List<String> _modes = ['Debug', 'Release'];
-
   IOSXCConfigFileProcessor(
     String process,
     String script,
     String project,
     String path,
-    String appName,
-    String flavorName, {
+    String flavorName,
+    Flavor flavor, {
     required Flavorizr config,
   }) : super(
-          _modes.map(
-            (String mode) => IOSXCConfigModeFileProcessor(
+          Target.values.map(
+            (target) => IOSXCConfigModeFileProcessor(
               process,
               script,
               project,
-              '$path/$flavorName$mode.xcconfig',
-              appName,
+              path,
               flavorName,
+              flavor,
+              target,
               config: config,
             ),
           ),

@@ -23,39 +23,24 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
-import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
-import 'package:flutter_flavorizr/processors/ide/vscode/models/configuration.dart';
-import 'package:flutter_flavorizr/processors/ide/vscode/models/launch.dart';
+import 'package:json_annotation/json_annotation.dart';
 
-class VSCodeLaunchProcessor extends StringProcessor {
-  VSCodeLaunchProcessor({
-    required Flavorizr config,
-  }) : super(config: config);
+part 'variable.g.dart';
 
-  @override
-  execute() => Launch(
-        version: '0.2.0',
-        configurations: config.flavors.keys
-            .expand(
-              (flavorName) => Target.values.map(
-                (target) => Configuration(
-                  name: '$flavorName ${target.name}',
-                  flutterMode: target.name.toLowerCase(),
-                  request: 'launch',
-                  type: 'dart',
-                  args: [
-                    '--flavor',
-                    flavorName,
-                  ],
-                  program: 'lib/main-$flavorName.dart',
-                ),
-              ),
-            )
-            .toList(),
-      ).toString();
+@JsonSerializable(anyMap: true, createToJson: false)
+class Variable {
+  @JsonKey(disallowNullValue: true)
+  final Target? target;
 
-  @override
-  String toString() => "VSCodeLaunchProcessor";
+  @JsonKey(required: true, disallowNullValue: true)
+  final String value;
+
+  const Variable({
+    required this.value,
+    this.target,
+  });
+
+  factory Variable.fromJson(Map<String, dynamic> json) =>
+      _$VariableFromJson(json);
 }
