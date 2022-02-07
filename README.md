@@ -25,6 +25,7 @@ existing project could throw errors.
 
 Before running Flutter Flavorizr, you must install the following
 software:
+
 * [Ruby](https://www.ruby-lang.org/en/documentation/installation/)
 * [Gem](https://rubygems.org/pages/download)
 * [Xcodeproj](https://github.com/CocoaPods/Xcodeproj) (through RubyGems)
@@ -42,14 +43,14 @@ general, put it under
 [dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies),
 in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
-```
+```yaml
 dev_dependencies:
   flutter_flavorizr: ^2.1.2
 ```
 
 You can install packages from the command line:
 
-```
+```terminal
 pub get
 ```
 
@@ -67,7 +68,7 @@ Add a new key named flavorizr and define two sub-items: *app* and
 flavors, in our example *apple* and *banana*. For each flavor you have
 to specify the *app name*, the *applicationId* and the *bundleId*.
 
-```
+```yaml
 flavorizr:
   app:
     android:
@@ -104,7 +105,7 @@ flavorizr:
 | app                                     | Object |                                                                                     | true     | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                     | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                     | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.2/assets.zip | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.2/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -137,7 +138,6 @@ flavorizr:
 | key              | type   | default       | required | description                                                        |
 |:-----------------|:-------|:--------------|:---------|:-------------------------------------------------------------------|
 | flavorDimensions | String | "flavor-type" | false    | The value of the flavorDimensions in the android build.gradle file |
-
 
 #### ios (under app)
 
@@ -186,7 +186,7 @@ flavorizr:
 | type  | String |         | true     | The type of the [resValue](https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/variant/ResValue) variable |
 | value | String |         | true     | The value of the resValue variable                                                                                                       |
 
-```
+```yaml
 flavorizr:
   app:
     android:
@@ -219,7 +219,7 @@ flavorizr:
 | target | String |         | false    | The type of the [target](https://medium.com/geekculture/what-are-debug-and-release-modes-in-xcode-how-to-check-app-is-running-in-debug-mode-8dadad6a3428) (Debug, Release, Profile). Do not specify a target if you want to apply it to all of them. |
 | value  | String |         | true     | The value of the variable                                                                                                                                                                                                                            |
 
-```
+```yaml
 flavorizr:
   app:
     android:
@@ -248,18 +248,19 @@ flavorizr:
 
 When you finished defining the flavorizr configuration, you can proceed by running the script with:
 
-```
+```terminal
 flutter pub run flutter_flavorizr
 ```
 
 You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma:
 
-```
+```terminal
 flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
 ```
+
 Example
 
-```
+```terminal
 flutter pub run flutter_flavorizr -p assets:download
 flutter pub run flutter_flavorizr -p assets:download,assets:extract
 ```
@@ -268,13 +269,13 @@ flutter pub run flutter_flavorizr -p assets:download,assets:extract
 
 Once the process has generated the flavors, you can run them by typing
 
-```
+```terminal
 flutter run --flavor <flavorName> -t lib/main-<flavorName>.dart
 ```
 
 Example
 
-```
+```terminal
 flutter run --flavor apple -t lib/main-apple.dart
 flutter run --flavor banana -t lib/main-banana.dart
 ```
@@ -282,6 +283,7 @@ flutter run --flavor banana -t lib/main-banana.dart
 ### Default processors set
 
 By default, when you do not specify a custom set of processors by appending the -p (or --processors) param, a default processors set will be used:
+
 * assets:download
 * assets:extract
 * android:androidManifest
@@ -309,7 +311,7 @@ Flutter_flavorizr creates different dart files in the lib folder. In the
 flavors.dart file we have the F class which contains all of our
 customizations.
 
-```
+```dart
 class F {
   static Flavor? appFlavor;
 
@@ -339,12 +341,15 @@ my_home_page.dart file, the page shown after the launch of the app, we
 can see a clear reference on the title getter defined in the F class.
 
 ## Side notes
+
 I haven't found yet a good groovy parser to guarantee the idempotency of the AndroidBuildGradleProcessor.  
 The only way to keep track of the autogenerated flavorDimensions is to mark up the beginning and the end of the section with magic comments.  
 Please do not erase these comments otherwise you will break down the AndroidBuildGradleProcessor.
 
 ## Third party services
+
 ### Google Firebase
+
 In order to flavorize your project and enable Firebase in your flavor  
 you have to define a firebase object below each OS flavor. Under the  
 firebase object you must define the config path of the google-services.json  
@@ -352,7 +357,8 @@ firebase object you must define the config path of the google-services.json
 (if you are under iOS configuration).
 
 As you can see in the example below, we added the path accordingly
-```
+
+```yaml
 flavorizr:
   app:
     android:
