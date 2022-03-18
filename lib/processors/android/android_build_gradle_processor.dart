@@ -124,6 +124,10 @@ class AndroidBuildGradleProcessor extends StringProcessor {
       buffer.writeln(
           '            applicationId "${flavor.android.applicationId}"');
 
+      flavor.android.customConfig.forEach((key, value) {
+        buffer.writeln('            $key $value');
+      });
+
       final Map<String, ResValue> resValues = LinkedHashMap.from({
         'app_name': ResValue(
           type: 'string',

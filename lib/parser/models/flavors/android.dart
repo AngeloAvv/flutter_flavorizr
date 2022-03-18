@@ -36,10 +36,14 @@ class Android extends OS {
   final String applicationId;
 
   @JsonKey(disallowNullValue: true, defaultValue: {})
+  final Map<String, dynamic> customConfig;
+
+  @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, ResValue> resValues;
 
   Android({
     required this.applicationId,
+    this.customConfig = const {},
     this.resValues = const {},
     bool generateDummyAssets = true,
     Firebase? firebase,
