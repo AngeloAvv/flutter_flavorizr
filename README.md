@@ -309,14 +309,14 @@ flutter pub run flutter_flavorizr -p assets:download,assets:extract
 Once the process has generated the flavors, you can run them by typing
 
 ```terminal
-flutter run --flavor <flavorName> -t lib/main-<flavorName>.dart
+flutter run --flavor <flavorName> -t lib/main_<flavorName>.dart
 ```
 
 Example
 
 ```terminal
-flutter run --flavor apple -t lib/main-apple.dart
-flutter run --flavor banana -t lib/main-banana.dart
+flutter run --flavor apple -t lib/main_apple.dart
+flutter run --flavor banana -t lib/main_banana.dart
 ```
 
 ### Default processors set
