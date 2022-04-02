@@ -50,7 +50,7 @@ class VSCodeLaunchProcessor extends StringProcessor {
                     '--flavor',
                     flavorName,
                   ],
-                  program: 'lib/main-$flavorName.dart',
+                  program: 'lib/main_$flavorName.dart',
                 ),
               ),
             )
