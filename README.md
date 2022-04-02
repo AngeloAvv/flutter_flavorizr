@@ -159,6 +159,7 @@ flavorizr:
 | applicationId       | String |         | true     | The applicationId of the Android App                               |
 | firebase            | Object |         | false    | An object which contains a Firebase configuration                  |
 | resValues           | Array  |         | false    | An array which contains a set of resValues configurations          |
+| customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig*          |
 | generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc) |
 | icon                | String |         | false    | The icon path for this android flavor                              |
 
@@ -243,6 +244,44 @@ flavorizr:
             target: "Debug"
             value: "variable2"        
 ```
+#### customConfig (for Android only)
+
+You can define any custom property for android
+```yml
+flavorizr:
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    ios:
+
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+        customConfig:
+            versionNameSuffix: "\"-green-prod\"" # Don't forget to escape strings with \"
+            signingConfig: flavorSigning.green
+            versionCode: 1000
+            minSdkVersion: 23
+            # ..... and any custom property want you do
+```
+
+This .yml part, generate this custom android flavor:
+
+```groovy
+apple {
+  dimension "flavor-type"
+  applicationId "com.example.apple"
+  versionNameSuffix "-green-prod"
+  signingConfig flavorSigning.green
+  versionCode 1000
+  minSdkVersion 23
+}
+```
+
 
 ## Usage
 
