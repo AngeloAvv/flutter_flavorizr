@@ -19,7 +19,7 @@ Variable _$VariableFromJson(Map json) {
 }
 
 const _$TargetEnumMap = {
-  Target.Debug: 'Debug',
-  Target.Profile: 'Profile',
-  Target.Release: 'Release',
+  Target.debug: 'debug',
+  Target.profile: 'profile',
+  Target.release: 'release',
 };

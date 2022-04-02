@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
@@ -30,7 +31,7 @@ import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.d
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
+import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
 
 class IOSXCConfigModeFileProcessor extends QueueProcessor {
   IOSXCConfigModeFileProcessor(
@@ -45,7 +46,7 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
   }) : super(
           [
             NewFileStringProcessor(
-              '$path/$flavorName${target.name}.xcconfig',
+              '$path/$flavorName${target.name.capitalize}.xcconfig',
               IOSXCConfigProcessor(
                 flavorName,
                 flavor,
@@ -59,7 +60,8 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
               [
                 script,
                 project,
-                IOSUtils.flatPath('$path/$flavorName${target.name}.xcconfig'),
+                ios_utils.flatPath(
+                    '$path/$flavorName${target.name.capitalize}.xcconfig'),
                 'Flutter',
               ],
               config: config,

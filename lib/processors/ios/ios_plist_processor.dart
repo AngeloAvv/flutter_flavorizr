@@ -40,15 +40,15 @@ class IOSPListProcessor extends StringProcessor {
 
   @override
   String execute() {
-    XmlDocument document = XmlDocument.parse(this.input!);
-    XmlElement root = (document.rootElement.children
-        .where((XmlNode node) => node is XmlElement)
-        .first) as XmlElement;
+    XmlDocument document = XmlDocument.parse(input!);
+    XmlElement root =
+        (document.rootElement.children.whereType<XmlElement>().first);
 
     _updateCFBundleName(root);
 
-    if ((config.instructions ?? []).contains("ios:launchScreen"))
+    if ((config.instructions ?? []).contains("ios:launchScreen")) {
       _updateUILaunchStoryboardName(root);
+    }
 
     return document.toXmlString(pretty: true);
   }

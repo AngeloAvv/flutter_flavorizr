@@ -23,4 +23,4 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum Target { Debug, Profile, Release }
+enum Target { debug, profile, release }

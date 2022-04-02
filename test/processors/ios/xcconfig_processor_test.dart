@@ -118,7 +118,7 @@ void main() {
     IOSXCConfigProcessor processor = IOSXCConfigProcessor(
       flavorName,
       flavor!,
-      Target.Debug,
+      Target.debug,
       config: pubspec!.flavorizr,
     );
     String actual = processor.execute();

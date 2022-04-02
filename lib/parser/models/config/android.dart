@@ -29,10 +29,12 @@ part 'android.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
 class Android {
+  static const kFlavorDimensionValue = 'flavor-type';
+
   @JsonKey(defaultValue: 'flavor-type')
   final String flavorDimensions;
 
-  Android({this.flavorDimensions = 'flavor-type'});
+  const Android({this.flavorDimensions = kFlavorDimensionValue});
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

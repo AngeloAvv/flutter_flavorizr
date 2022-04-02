@@ -34,7 +34,7 @@ class DownloadFileProcessor extends AbstractFileProcessor {
   DownloadFileProcessor(
     String path, {
     required Flavorizr config,
-  })  : this._url = config.assetsUrl,
+  })  : _url = config.assetsUrl,
         super(
           path,
           config: config,
@@ -42,11 +42,11 @@ class DownloadFileProcessor extends AbstractFileProcessor {
 
   @override
   void execute() async {
-    HttpClient client = new HttpClient();
+    HttpClient client = HttpClient();
 
     HttpClientRequest request = await client.getUrl(Uri.parse(_url));
     HttpClientResponse response = await request.close();
-    await response.pipe(this.file.openWrite());
+    await response.pipe(file.openWrite());
   }
 
   @override

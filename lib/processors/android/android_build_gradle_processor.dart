@@ -27,6 +27,7 @@ import 'dart:collection';
 
 import 'package:flutter_flavorizr/exception/existing_flavor_dimensions_exception.dart';
 import 'package:flutter_flavorizr/exception/malformed_resource_exception.dart';
+import 'package:flutter_flavorizr/parser/models/config/android.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
@@ -49,22 +50,21 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
   @override
   String execute() {
-    final int androidPosition = this.input!.indexOf(androidEntryPoint);
-    final bool existingFlavorDimensions =
-        this.input!.indexOf(flavorDimensions) >= 0;
+    final int androidPosition = input!.indexOf(androidEntryPoint);
+    final bool existingFlavorDimensions = input!.contains(flavorDimensions);
     final int beginFlavorDimensionsMarkupPosition =
-        this.input!.indexOf(beginFlavorDimensionsMarkup);
+        input!.indexOf(beginFlavorDimensionsMarkup);
     final int endFlavorDimensionsMarkupPosition =
-        this.input!.indexOf(endFlavorDimensionsMarkup);
+        input!.indexOf(endFlavorDimensionsMarkup);
 
     if (androidPosition < 0) {
-      throw MalformedResourceException(this.input!);
+      throw MalformedResourceException(input!);
     }
 
     if (existingFlavorDimensions &&
         (beginFlavorDimensionsMarkupPosition < 0 ||
             endFlavorDimensionsMarkupPosition < 0)) {
-      throw ExistingFlavorDimensionsException(this.input!);
+      throw ExistingFlavorDimensionsException(input!);
     }
 
     StringBuffer buffer = StringBuffer();
@@ -90,37 +90,41 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   ) {
     if (beginFlavorDimensionsMarkupPosition >= 0 &&
         endFlavorDimensionsMarkupPosition >= 0) {
-      final String flavorDimensions = this.input!.substring(
-            beginFlavorDimensionsMarkupPosition - 2,
-            endFlavorDimensionsMarkupPosition +
-                endFlavorDimensionsMarkup.length +
-                4,
-          );
+      final String flavorDimensions = input!.substring(
+        beginFlavorDimensionsMarkupPosition - 2,
+        endFlavorDimensionsMarkupPosition +
+            endFlavorDimensionsMarkup.length +
+            4,
+      );
 
-      this.input = this.input!.replaceAll(flavorDimensions, '');
+      input = input!.replaceAll(flavorDimensions, '');
     }
   }
 
   void _appendStartContent(StringBuffer buffer, int androidPosition) {
     buffer.writeln(
-        this.input!.substring(0, androidPosition + androidEntryPoint.length));
+        input!.substring(0, androidPosition + androidEntryPoint.length));
   }
 
   void _appendFlavorsDimension(StringBuffer buffer) {
+    final flavorDimension =
+        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+
     buffer.writeln();
     buffer.writeln('    $beginFlavorDimensionsMarkup');
-    buffer.writeln(
-        '    flavorDimensions "${this.config.app.android.flavorDimensions}"');
+    buffer.writeln('    flavorDimensions "$flavorDimension"');
     buffer.writeln();
   }
 
   void _appendFlavors(StringBuffer buffer) {
+    final flavorDimension =
+        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+
     buffer.writeln('    productFlavors {');
 
-    this.config.flavors.forEach((name, flavor) {
+    config.flavors.forEach((name, flavor) {
       buffer.writeln('        $name {');
-      buffer.writeln(
-          '            dimension "${this.config.app.android.flavorDimensions}"');
+      buffer.writeln('            dimension "$flavorDimension"');
       buffer.writeln(
           '            applicationId "${flavor.android.applicationId}"');
 
@@ -148,9 +152,9 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   }
 
   void _appendEndContent(StringBuffer buffer, int androidPosition) {
-    buffer.writeln('    ${endFlavorDimensionsMarkup}');
+    buffer.writeln('    $endFlavorDimensionsMarkup');
     buffer.write(
-        this.input!.substring(androidPosition + androidEntryPoint.length + 1));
+        input!.substring(androidPosition + androidEntryPoint.length + 1));
   }
 
   @override

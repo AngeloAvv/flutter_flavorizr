@@ -56,7 +56,7 @@ class IdeaLaunchProcessor extends StringProcessor {
       }, nest: () {
         builder.element('option', attributes: {
           'name': 'buildFlavor',
-          'value': '$_flavorName',
+          'value': _flavorName,
         });
 
         builder.element('option', attributes: {

@@ -33,8 +33,7 @@ part 'flavorizr.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
 class Flavorizr {
-  @JsonKey(required: true)
-  final App app;
+  final App? app;
 
   @JsonKey(required: true)
   final Map<String, Flavor> flavors;
@@ -51,7 +50,7 @@ class Flavorizr {
   final IDE? ide;
 
   Flavorizr({
-    required this.app,
+    this.app,
     required this.flavors,
     this.instructions,
     required this.assetsUrl,

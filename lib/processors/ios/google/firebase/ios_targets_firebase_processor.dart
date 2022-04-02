@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/extensions/extensions+map.dart';
+import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/empty_file_processor.dart';
@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_firebase_script_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
+import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
 
 class IOSTargetsFirebaseProcessor extends QueueProcessor {
   IOSTargetsFirebaseProcessor({
@@ -68,7 +68,7 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
               [
                 addFileScript,
                 runnerProject,
-                IOSUtils.flatPath('$destination/GoogleService-Info.plist'),
+                ios_utils.flatPath('$destination/GoogleService-Info.plist'),
               ],
               config: config,
             ),
