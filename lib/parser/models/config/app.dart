@@ -32,13 +32,12 @@ part 'app.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
 class App {
-  @JsonKey(required: true, disallowNullValue: true)
-  final Android android;
+  final Android? android;
 
   final IOS? ios;
 
   App({
-    required this.android,
+    this.android,
     this.ios,
   });
 

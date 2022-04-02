@@ -41,7 +41,7 @@ flavorizr:
           VARIABLE_ONE:
             value: "variable1"
           VARIABLE_TWO:
-            target: "Debug"
+            target: "debug"
             value: "variable2"
 
     banana:

@@ -39,9 +39,9 @@ class NewFolderProcessor extends AbstractProcessor {
 
   @override
   execute() {
-    this.dir = Directory(path);
+    dir = Directory(path);
 
-    if (!this.dir.existsSync()) {
+    if (!dir.existsSync()) {
       dir.createSync(recursive: true);
     }
   }

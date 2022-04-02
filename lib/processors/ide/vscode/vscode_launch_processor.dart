@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
@@ -41,7 +42,7 @@ class VSCodeLaunchProcessor extends StringProcessor {
             .expand(
               (flavorName) => Target.values.map(
                 (target) => Configuration(
-                  name: '$flavorName ${target.name}',
+                  name: '$flavorName ${target.name.capitalize}',
                   flutterMode: target.name.toLowerCase(),
                   request: 'launch',
                   type: 'dart',

@@ -23,34 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/processors/commons/abstract_file_string_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
-
-class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
-  RuntimeFileStringProcessor(
-    String path,
-    StringProcessor processor, {
-    required Flavorizr config,
-  }) : super(
-          path,
-          processor,
-          config: config,
-        );
-
-  @override
-  void execute() {
-    if (!file.existsSync()) {
-      throw FileNotFoundException(path);
-    }
-
-    processor.input = file.readAsStringSync();
-
-    super.execute();
-  }
-
-  @override
-  String toString() =>
-      "FileProcessor: creating file $path with nested $processor";
+extension StringExtensions on String {
+  String get capitalize =>
+      "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
 }

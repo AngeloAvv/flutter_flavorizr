@@ -25,11 +25,12 @@
 
 import 'dart:convert';
 
+import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
+import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
 
 class IOSBuildConfigurationsProcessor extends QueueProcessor {
   IOSBuildConfigurationsProcessor(
@@ -48,10 +49,11 @@ class IOSBuildConfigurationsProcessor extends QueueProcessor {
               [
                 script,
                 project,
-                IOSUtils.flatPath('$file/$flavorName${target.name}.xcconfig'),
+                ios_utils.flatPath(
+                    '$file/$flavorName${target.name.capitalize}.xcconfig'),
                 flavorName,
                 bundleId,
-                target.name,
+                target.name.capitalize,
                 base64.encode(utf8.encode(jsonEncode(buildConfigurations))),
               ],
               config: config,

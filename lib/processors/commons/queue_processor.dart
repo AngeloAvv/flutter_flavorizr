@@ -36,6 +36,7 @@ class QueueProcessor extends AbstractProcessor {
     required Flavorizr config,
   }) : super(config);
 
+  @override
   void execute() {
     for (AbstractProcessor processor in processors) {
       stdout.writeln("Running $processor");

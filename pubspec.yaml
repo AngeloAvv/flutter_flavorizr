@@ -6,7 +6,7 @@ issue_tracker: https://github.com/AngeloAvv/flutter_flavorizr/issues
 homepage: https://www.angelocassano.it
 
 environment:
-  sdk: ">=2.15.0 <3.0.0"
+  sdk: ">=2.16.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -26,4 +26,5 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner:
+  flutter_lints: ^1.0.0
   json_serializable:

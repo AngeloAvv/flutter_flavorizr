@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/replace_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/runtime_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as IOSUtils;
+import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
 
 class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
   IOSTargetLaunchScreenFileProcessor(
@@ -61,7 +61,7 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
               [
                 script,
                 project,
-                IOSUtils.flatPath(
+                ios_utils.flatPath(
                     '$destination/${flavorName}LaunchScreen.storyboard'),
               ],
               config: config,

@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/extensions/extensions+map.dart';
+import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/android/google/firebase/android_target_firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';

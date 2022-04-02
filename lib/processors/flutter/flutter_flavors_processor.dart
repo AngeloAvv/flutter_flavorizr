@@ -49,9 +49,9 @@ class FlutterFlavorsProcessor extends StringProcessor {
   void _appendFlavorEnum(StringBuffer buffer) {
     buffer.writeln('enum Flavor {');
 
-    config.flavors.keys.forEach((String flavorName) {
+    for (var flavorName in config.flavors.keys) {
       buffer.writeln('  ${flavorName.toUpperCase()},');
-    });
+    }
 
     buffer.writeln('}');
   }

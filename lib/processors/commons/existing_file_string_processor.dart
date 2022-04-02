@@ -34,10 +34,10 @@ class ExistingFileStringProcessor extends AbstractFileStringProcessor {
     StringProcessor processor, {
     required Flavorizr config,
   }) : super(path, processor, config: config) {
-    if (!this.file.existsSync()) {
-      throw new FileNotFoundException(this.path);
+    if (!file.existsSync()) {
+      throw FileNotFoundException(this.path);
     }
 
-    processor.input = this.file.readAsStringSync();
+    processor.input = file.readAsStringSync();
   }
 }
