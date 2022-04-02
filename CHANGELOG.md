@@ -1,3 +1,10 @@
+## 2.1.3
+* Added Android custom properties/config to flavors
+* Relaxed first app entry checks
+* New naming conventions for flutter_lints
+* New README section: Docs and Tutorials
+* Bumped dependencies
+
 ## 2.1.2
 * Added resValues directive to declare resValues in build.gradle for each flavor (Android)
 * Added variables directive to declare variables in xcconfig for each flavor (iOS)
