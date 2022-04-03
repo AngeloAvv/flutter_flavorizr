@@ -25,35 +25,18 @@
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/processors/android/google/firebase/android_firebase_processor.dart';
+import 'package:flutter_flavorizr/processors/android/huawei/agconnect/android_agconnect_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_targets_firebase_processor.dart';
 
-class FirebaseProcessor extends QueueProcessor {
-  FirebaseProcessor({
-    required String process,
-    required String androidDestination,
-    required String iosDestination,
-    required String addFileScript,
-    required String runnerProject,
-    required String firebaseScript,
-    required String generatedFirebaseScriptPath,
+class AGConnectProcessor extends QueueProcessor {
+  AGConnectProcessor({
+    required String destination,
     required Flavorizr config,
   }) : super(
           [
-            if (_androidFirebaseExists(config.flavors.values))
-              AndroidFirebaseProcessor(
-                destination: androidDestination,
-                config: config,
-              ),
-            if (_iosFirebaseExists(config.flavors.values))
-              IOSTargetsFirebaseProcessor(
-                process: process,
-                destination: iosDestination,
-                addFileScript: addFileScript,
-                runnerProject: runnerProject,
-                firebaseScript: firebaseScript,
-                generatedFirebaseScriptPath: generatedFirebaseScriptPath,
+            if (_androidAGConnectExists(config.flavors.values))
+              AndroidAGConnectProcessor(
+                destination: destination,
                 config: config,
               ),
           ],
@@ -61,11 +44,8 @@ class FirebaseProcessor extends QueueProcessor {
         );
 
   @override
-  String toString() => 'FirebaseProcessor';
+  String toString() => 'AGConnectProcessor';
 
-  static _androidFirebaseExists(Iterable<Flavor> values) =>
-      values.where((flavor) => flavor.android.firebase != null).isNotEmpty;
-
-  static _iosFirebaseExists(Iterable<Flavor> values) =>
-      values.where((flavor) => flavor.ios.firebase != null).isNotEmpty;
+  static _androidAGConnectExists(Iterable<Flavor> values) =>
+      values.where((flavor) => flavor.android.agconnect != null).isNotEmpty;
 }

@@ -23,42 +23,17 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/flavors/android/res_value.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/huawei/agconnect/agconnect.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'android.g.dart';
+part 'agconnect.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class Android extends OS {
+class AGConnect {
   @JsonKey(required: true, disallowNullValue: true)
-  final String applicationId;
+  final String config;
 
-  @JsonKey(disallowNullValue: true, defaultValue: {})
-  final Map<String, dynamic> customConfig;
+  AGConnect({required this.config});
 
-  @JsonKey(disallowNullValue: true, defaultValue: {})
-  final Map<String, ResValue> resValues;
-
-  @JsonKey(disallowNullValue: true)
-  final AGConnect? agconnect;
-
-  Android({
-    required this.applicationId,
-    this.customConfig = const {},
-    this.resValues = const {},
-    this.agconnect,
-    bool generateDummyAssets = true,
-    Firebase? firebase,
-    String? icon,
-  }) : super(
-          generateDummyAssets: generateDummyAssets,
-          firebase: firebase,
-          icon: icon,
-        );
-
-  factory Android.fromJson(Map<String, dynamic> json) =>
-      _$AndroidFromJson(json);
+  factory AGConnect.fromJson(Map<String, dynamic> json) =>
+      _$AGConnectFromJson(json);
 }

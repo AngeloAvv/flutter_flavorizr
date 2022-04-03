@@ -15,7 +15,8 @@ Android _$AndroidFromJson(Map json) {
       'icon',
       'applicationId',
       'customConfig',
-      'resValues'
+      'resValues',
+      'agconnect'
     ],
   );
   return Android(
@@ -29,6 +30,10 @@ Android _$AndroidFromJson(Map json) {
               ResValue.fromJson(Map<String, dynamic>.from(e as Map))),
         ) ??
         {},
+    agconnect: json['agconnect'] == null
+        ? null
+        : AGConnect.fromJson(
+            Map<String, dynamic>.from(json['agconnect'] as Map)),
     generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
     firebase: json['firebase'] == null
         ? null

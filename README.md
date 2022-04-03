@@ -63,18 +63,12 @@ flavors.
 
 ### Example
 
-Add a new key named flavorizr and define two sub-items: *app* and
-*flavors*. Under the flavors array you can define the name of the
+Add a new key named flavorizr and define a sub item named *flavors*. Under the flavors array you can define the name of the
 flavors, in our example *apple* and *banana*. For each flavor you have
 to specify the *app name*, the *applicationId* and the *bundleId*.
 
 ```yaml
 flavorizr:
-  app:
-    android:
-      flavorDimensions: "flavor-type"
-    ios:
-
   flavors:
     apple:
       app:
@@ -124,6 +118,7 @@ flavorizr:
 | flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
 | flutter:targets         | Flutter       | Creates a set of targets for each flavor instance                       |
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
+| huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
 | ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
 | ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
@@ -180,6 +175,12 @@ flavorizr:
 |:-------|:-------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------------|
 | config | String |         | false    | The path to the Firebase configuration file (google-services.json for Android and GoogleService-Info.plist for iOS) |
 
+#### agconnect (for Android)
+
+| key    | type   | default | required | description                                                            |
+|:-------|:-------|:--------|:---------|:-----------------------------------------------------------------------|
+| config | String |         | false    | The path to the AGConnect configuration file (agconnect-services.json) |
+
 #### resValue (for Android)
 
 | key   | type   | default | required | description                                                                                                                              |
@@ -189,11 +190,6 @@ flavorizr:
 
 ```yaml
 flavorizr:
-  app:
-    android:
-      flavorDimensions: "flavor-type"
-    ios:
-
   flavors:
     apple:
       app:
@@ -222,11 +218,6 @@ flavorizr:
 
 ```yaml
 flavorizr:
-  app:
-    android:
-      flavorDimensions: "flavor-type"
-    ios:
-
   flavors:
     apple:
       app:
@@ -249,11 +240,6 @@ flavorizr:
 You can define any custom property for android
 ```yml
 flavorizr:
-  app:
-    android:
-      flavorDimensions: "flavor-type"
-    ios:
-
   flavors:
     apple:
       app:
@@ -266,7 +252,7 @@ flavorizr:
             signingConfig: flavorSigning.green
             versionCode: 1000
             minSdkVersion: 23
-            # ..... and any custom property want you do
+            # ..... and any custom property you want to add
 ```
 
 This .yml part, generate this custom android flavor:
@@ -341,6 +327,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * ios:plist
 * ios:launchScreen
 * google:firebase
+* huawei:agconnect
 * assets:clean
 * ide:config
 
@@ -389,21 +376,12 @@ Please do not erase these comments otherwise you will break down the AndroidBuil
 
 ### Google Firebase
 
-In order to flavorize your project and enable Firebase in your flavor  
-you have to define a firebase object below each OS flavor. Under the  
-firebase object you must define the config path of the google-services.json  
-(if you are under Android configuration) or GoogleService-Info.plist  
-(if you are under iOS configuration).
+In order to flavorize your project and enable Firebase in your flavor you have to define a firebase object below each OS flavor. Under the firebase object you must define the config path of the google-services.json (if you are under Android configuration) or GoogleService-Info.plist (if you are under iOS configuration).
 
 As you can see in the example below, we added the path accordingly
 
 ```yaml
 flavorizr:
-  app:
-    android:
-      flavorDimensions: "flavor-type"
-    ios:
-
   flavors:
     apple:
       app:
@@ -431,6 +409,40 @@ flavorizr:
         bundleId: "com.example.banana"
         firebase:
           config: ".firebase/banana/GoogleService-Info.plist"
+```
+
+### Huawei AppGallery Connect
+
+In order to flavorize your project and enable AppGallery Connect in your flavor  
+you have to define an agconnect object below each Android flavor. Under the agconnect object you must define the config path of the agconnect-services.json.
+
+As you can see in the example below, we added the path accordingly
+
+```yaml
+flavorizr:
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+        agconnect:
+          config: ".agconnect/apple/agconnect-services.json"
+
+      ios:
+        bundleId: "com.example.apple"
+
+    banana:
+      app:
+        name: "Banana App"
+        
+      android:
+        applicationId: "com.example.banana"
+        agconnect:
+          config: ".agconnect/banana/agconnect-services.json"
+      ios:
+        bundleId: "com.example.banana"
 ```
 
 ## Docs & Tutorials (from the community)
