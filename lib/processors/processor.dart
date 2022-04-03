@@ -42,6 +42,7 @@ import 'package:flutter_flavorizr/processors/commons/unzip_file_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/flutter_flavors_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/target/flutter_targets_file_processor.dart';
 import 'package:flutter_flavorizr/processors/google/firebase/firebase_processor.dart';
+import 'package:flutter_flavorizr/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/processors/ide/ide_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
@@ -84,6 +85,9 @@ class Processor extends AbstractProcessor<void> {
 
     // Google
     'google:firebase',
+
+    // Huawei
+    'huawei:agconnect',
 
     // Cleanup
     'assets:clean',
@@ -238,6 +242,12 @@ class Processor extends AbstractProcessor<void> {
         runnerProject: K.iOSRunnerProjectPath,
         firebaseScript: K.tempiOSAddFirebaseBuildPhaseScriptPath,
         generatedFirebaseScriptPath: K.tempiOSFirebaseScriptPath,
+        config: pubspec.flavorizr,
+      ),
+
+      // Huawei
+      'huawei:agconnect': AGConnectProcessor(
+        destination: K.androidSrcPath,
         config: pubspec.flavorizr,
       ),
 
