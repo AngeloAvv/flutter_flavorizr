@@ -219,9 +219,22 @@ class Processor extends AbstractProcessor<void> {
       'ios:icons': IOSIconsProcessor(
         config: pubspec.flavorizr,
       ),
-      'ios:plist': ExistingFileStringProcessor(
-        K.iOSPListPath,
-        IOSPListProcessor(config: pubspec.flavorizr),
+      'ios:plist': QueueProcessor(
+        pubspec.flavorizr.app?.ios != null &&
+                pubspec.flavorizr.app!.ios!.iOSPListFiles.isNotEmpty
+            ? pubspec.flavorizr.app!.ios!.iOSPListFiles
+                .map<ExistingFileStringProcessor>(
+                    (String path) => ExistingFileStringProcessor(
+                          path,
+                          IOSPListProcessor(config: pubspec.flavorizr),
+                          config: pubspec.flavorizr,
+                        ))
+                .toList()
+            : pubspec.flavorizr.app?.ios != null &&
+                    pubspec.flavorizr.app!.ios!.buildSettings
+                        .containsKey('INFOPLIST_FILE')
+                ? pubspec.flavorizr.app?.ios?.buildSettings['INFOPLIST_FILE']
+                : K.iOSPListPath,
         config: pubspec.flavorizr,
       ),
       'ios:launchScreen': IOSTargetsLaunchScreenFileProcessor(
