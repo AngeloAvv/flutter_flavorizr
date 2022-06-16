@@ -37,7 +37,6 @@ class IOS with BuildSettingsMixin {
     this.buildSettings.addAll(buildSettings);
   }
 
-  @JsonKey(defaultValue: [])
   late List<String> iOSPListFiles;
 
   factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);

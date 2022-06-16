@@ -36,7 +36,7 @@ class IOS extends OS with BuildSettingsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String bundleId;
 
-  @JsonKey(disallowNullValue: true, defaultValue: {})
+  @JsonKey(disallowNullValue: true)
   final Map<String, Variable> variables;
 
   IOS({

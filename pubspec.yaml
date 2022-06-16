@@ -17,7 +17,7 @@ dependencies:
   collection: ^1.15.0
   image: ^3.1.0
   io: ^1.0.3
-  json_annotation: ^4.4.0
+  json_annotation: ^4.5.0
   sprintf: ^6.0.0
   xml: ^5.3.1
   yaml: ^3.1.0

@@ -1,5 +1,3 @@
-import 'package:json_annotation/json_annotation.dart';
-
 mixin BuildSettingsMixin {
   static final Map<String, dynamic> defaultBuildSettings = {
     "ASSETCATALOG_COMPILER_APPICON_NAME": "\$(ASSET_PREFIX)AppIcon",
@@ -11,6 +9,5 @@ mixin BuildSettingsMixin {
     "INFOPLIST_FILE": "Runner/Info.plist",
   };
 
-  @JsonKey(defaultValue: {})
   late Map<String, dynamic> buildSettings;
 }

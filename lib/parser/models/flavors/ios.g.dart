@@ -18,11 +18,11 @@ IOS _$IOSFromJson(Map json) {
           (k, e) => MapEntry(k as String,
               Variable.fromJson(Map<String, dynamic>.from(e as Map))),
         ) ??
-        {},
+        const {},
     buildSettings: (json['buildSettings'] as Map?)?.map(
           (k, e) => MapEntry(k as String, e),
         ) ??
-        {},
+        const {},
     generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
     firebase: json['firebase'] == null
         ? null
