@@ -139,6 +139,19 @@ flavorizr:
 | key           | type       | default | required | description                                                                                    |
 |:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
 | buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+| iOSPListFiles | List       | []      | false    | A list of custom iOS plist files (including paths) |
+
+```yaml
+flavorizr:
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+    ios:
+      iOSPListFiles:
+        - "ios/Runner/Info-Debug.plist"
+        - "ios/Runner/Info-Profile.plist"
+        - "ios/Runner/Info-Release.plist"
+```
 
 #### app (under *flavorname*)
 
