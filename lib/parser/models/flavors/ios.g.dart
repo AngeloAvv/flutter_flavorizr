@@ -22,7 +22,7 @@ IOS _$IOSFromJson(Map json) {
     buildSettings: (json['buildSettings'] as Map?)?.map(
           (k, e) => MapEntry(k as String, e),
         ) ??
-        const {},
+        {},
     generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
     firebase: json['firebase'] == null
         ? null

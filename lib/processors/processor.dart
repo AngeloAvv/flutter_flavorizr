@@ -219,24 +219,28 @@ class Processor extends AbstractProcessor<void> {
       'ios:icons': IOSIconsProcessor(
         config: pubspec.flavorizr,
       ),
-      'ios:plist': QueueProcessor(
-        pubspec.flavorizr.app?.ios != null &&
-                pubspec.flavorizr.app!.ios!.iOSPListFiles.isNotEmpty
-            ? pubspec.flavorizr.app!.ios!.iOSPListFiles
-                .map<ExistingFileStringProcessor>(
-                    (String path) => ExistingFileStringProcessor(
-                          path,
-                          IOSPListProcessor(config: pubspec.flavorizr),
-                          config: pubspec.flavorizr,
-                        ))
-                .toList()
-            : pubspec.flavorizr.app?.ios != null &&
-                    pubspec.flavorizr.app!.ios!.buildSettings
-                        .containsKey('INFOPLIST_FILE')
-                ? pubspec.flavorizr.app?.ios?.buildSettings['INFOPLIST_FILE']
-                : K.iOSPListPath,
-        config: pubspec.flavorizr,
-      ),
+      'ios:plist': pubspec.flavorizr.app?.ios?.iOSPListFiles != null &&
+              pubspec.flavorizr.app!.ios!.iOSPListFiles!.isNotEmpty
+          ? QueueProcessor(
+              pubspec.flavorizr.app!.ios!.iOSPListFiles!
+                  .map<ExistingFileStringProcessor>(
+                      (String path) => ExistingFileStringProcessor(
+                            path,
+                            IOSPListProcessor(config: pubspec.flavorizr),
+                            config: pubspec.flavorizr,
+                          ))
+                  .toList(),
+              config: pubspec.flavorizr,
+            )
+          : ExistingFileStringProcessor(
+              pubspec.flavorizr.app?.ios != null &&
+                      pubspec.flavorizr.app!.ios!.buildSettings
+                          .containsKey('INFOPLIST_FILE')
+                  ? pubspec.flavorizr.app?.ios?.buildSettings['INFOPLIST_FILE']
+                  : K.iOSPListPath,
+              IOSPListProcessor(config: pubspec.flavorizr),
+              config: pubspec.flavorizr,
+            ) as AbstractProcessor,
       'ios:launchScreen': IOSTargetsLaunchScreenFileProcessor(
         'ruby',
         K.tempiOSAddFileScriptPath,

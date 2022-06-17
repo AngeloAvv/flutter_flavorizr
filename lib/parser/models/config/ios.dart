@@ -32,12 +32,13 @@ part 'ios.g.dart';
 class IOS with BuildSettingsMixin {
   IOS(
       {Map<String, dynamic> buildSettings = const {},
-      List<String> iOSPListFiles = const []}) {
+      this.iOSPListFiles = const []}) {
     this.buildSettings = BuildSettingsMixin.defaultBuildSettings;
     this.buildSettings.addAll(buildSettings);
   }
 
-  late List<String> iOSPListFiles;
+  @JsonKey(disallowNullValue: true, defaultValue: [])
+  final List<String> iOSPListFiles;
 
   factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
 }
