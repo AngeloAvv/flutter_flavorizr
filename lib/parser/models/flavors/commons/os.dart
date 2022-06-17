@@ -27,6 +27,7 @@ import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase
 import 'package:json_annotation/json_annotation.dart';
 
 class OS {
+  @JsonKey(defaultValue: true)
   final bool generateDummyAssets;
 
   @JsonKey(disallowNullValue: true)
