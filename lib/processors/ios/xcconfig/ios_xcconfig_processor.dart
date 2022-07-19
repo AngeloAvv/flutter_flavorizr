@@ -60,6 +60,8 @@ class IOSXCConfigProcessor extends StringProcessor {
 
   void _appendIncludes(StringBuffer buffer) {
     buffer.writeln('#include "Generated.xcconfig"');
+    buffer.writeln(
+        '#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.${_target?.name}-${_flavorName.toLowerCase()}.xcconfig"');
   }
 
   void _appendBody(StringBuffer buffer) {
