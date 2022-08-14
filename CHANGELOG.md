@@ -1,3 +1,7 @@
+## 2.1.4
+* Added CFBundleDisplayName in Info.plist to show the proper name for iOS apps
+* Bumped dependencies
+
 ## 2.1.3
 * Added Android custom properties/config to flavors
 * Relaxed first app entry checks
