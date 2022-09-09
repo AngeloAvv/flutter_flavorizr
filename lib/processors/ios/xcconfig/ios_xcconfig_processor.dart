@@ -31,6 +31,7 @@ import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/ios/variable.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/utils/target_utils.dart';
 
 class IOSXCConfigProcessor extends StringProcessor {
   final String _flavorName;
@@ -64,7 +65,9 @@ class IOSXCConfigProcessor extends StringProcessor {
 
   void _appendBody(StringBuffer buffer) {
     final Map<String, Variable> variables = LinkedHashMap.from({
-      'FLUTTER_TARGET': Variable(value: 'lib/main_$_flavorName.dart'),
+      if (config.createFlutterTargets)
+        'FLUTTER_TARGET':
+            Variable(value: getMainFlavorFilePath(config, _flavorName)),
       'ASSET_PREFIX': Variable(value: _flavorName),
       'BUNDLE_NAME': Variable(value: _flavor.app.name),
       'BUNDLE_DISPLAY_NAME': Variable(value: _flavor.app.name),

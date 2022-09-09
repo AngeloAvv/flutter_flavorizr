@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/utils/target_utils.dart';
 import 'package:xml/xml.dart';
 
 class IdeaLaunchProcessor extends StringProcessor {
@@ -50,7 +51,7 @@ class IdeaLaunchProcessor extends StringProcessor {
         attributes: {'name': 'ProjectRunConfigurationManager'}, nest: () {
       builder.element('configuration', attributes: {
         'default': 'false',
-        'name': 'main_$_flavorName.dart',
+        'name': getMainFlavorFilePath(config, _flavorName),
         'type': 'FlutterRunConfigurationType',
         'factoryName': 'Flutter',
       }, nest: () {
@@ -61,7 +62,7 @@ class IdeaLaunchProcessor extends StringProcessor {
 
         builder.element('option', attributes: {
           'name': 'filePath',
-          'value': '\$PROJECT_DIR\$/lib/main_$_flavorName.dart',
+          'value': '\$PROJECT_DIR\$/${getMainFlavorFilePath(config, _flavorName)}',
         });
 
         builder.element('method', attributes: {

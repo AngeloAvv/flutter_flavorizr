@@ -25,6 +25,7 @@ Flavorizr _$FlavorizrFromJson(Map json) {
     assetsUrl: json['assetsUrl'] as String? ??
         'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.1.4/assets.zip',
     ide: $enumDecodeNullable(_$IDEEnumMap, json['ide']),
+    createFlutterTargets: json['createFlutterTargets'] as bool? ?? true,
   );
 }
 

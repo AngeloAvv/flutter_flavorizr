@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:flutter_flavorizr/processors/ide/vscode/models/configuration.dart';
 import 'package:flutter_flavorizr/processors/ide/vscode/models/launch.dart';
+import 'package:flutter_flavorizr/utils/target_utils.dart';
 
 class VSCodeLaunchProcessor extends StringProcessor {
   VSCodeLaunchProcessor({
@@ -50,7 +51,7 @@ class VSCodeLaunchProcessor extends StringProcessor {
                     '--flavor',
                     flavorName,
                   ],
-                  program: 'lib/main_$flavorName.dart',
+                  program: getMainFlavorFilePath(config, flavorName),
                 ),
               ),
             )

@@ -24,29 +24,9 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/flutter/target/flutter_target_file_processor.dart';
 
-class FlutterTargetsFileProcessor extends QueueProcessor {
-  FlutterTargetsFileProcessor(
-    String source,
-    String destination, {
-    required Flavorizr config,
-  }) : super(
-          [
-            if (config.createFlutterTargets)
-              ...config.flavors.keys.map(
-                (flavorName) => FlutterTargetFileProcessor(
-                  source,
-                  destination,
-                  flavorName,
-                  config: config,
-                ),
-              ),
-          ],
-          config: config,
-        );
+String getMainFlavorFilePath(Flavorizr config, String flavorName) =>
+    "lib/${getMainFlavorFileName(config, flavorName)}";
 
-  @override
-  String toString() => 'FlutterTargetsFileProcessor';
-}
+String getMainFlavorFileName(Flavorizr config, String flavorName) =>
+    "main${config.createFlutterTargets ? '_$flavorName' : ''}.dart";

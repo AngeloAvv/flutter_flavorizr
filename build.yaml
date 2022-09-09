@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        generate_for:
+          - lib/**
+        options:
+          explicit_to_json: true

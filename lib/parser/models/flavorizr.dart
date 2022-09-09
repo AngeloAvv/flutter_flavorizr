@@ -49,12 +49,16 @@ class Flavorizr {
   @JsonKey()
   final IDE? ide;
 
+  @JsonKey(defaultValue: true)
+  final bool createFlutterTargets;
+
   Flavorizr({
     this.app,
     required this.flavors,
     this.instructions,
     required this.assetsUrl,
     this.ide,
+    required this.createFlutterTargets,
   });
 
   factory Flavorizr.fromJson(Map<String, dynamic> json) =>
