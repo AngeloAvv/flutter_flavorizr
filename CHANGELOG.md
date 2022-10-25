@@ -1,3 +1,7 @@
+## 2.1.5
+* Json serializable build runner setup
+* Bumped dependencies
+
 ## 2.1.4
 * Added CFBundleDisplayName in Info.plist to show the proper name for iOS apps
 * Bumped dependencies
