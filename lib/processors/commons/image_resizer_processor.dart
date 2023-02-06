@@ -64,7 +64,9 @@ class ImageResizerProcessor extends CopyFileProcessor {
       throw MalformedResourceException(source);
     }
 
-    return File(destination)..writeAsBytesSync(encodedImage);
+    return File(destination)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(encodedImage);
   }
 
   @override
