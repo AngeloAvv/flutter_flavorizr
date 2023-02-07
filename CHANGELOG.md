@@ -1,5 +1,3 @@
-## 3.0.0
-* Upgraded image dependency to v4
 
 ## 2.1.5
 * Json serializable build runner setup
