@@ -58,7 +58,7 @@ class ImageResizerProcessor extends CopyFileProcessor {
       height: size.height,
       interpolation: Interpolation.average,
     );
-    final encodedImage = encodeNamedImage(thumbnail, destination);
+    final encodedImage = encodeNamedImage(destination, thumbnail);
 
     if (encodedImage == null) {
       throw MalformedResourceException(source);
