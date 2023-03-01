@@ -50,7 +50,7 @@ class FlutterFlavorsProcessor extends StringProcessor {
     buffer.writeln('enum Flavor {');
 
     for (var flavorName in config.flavors.keys) {
-      buffer.writeln('  ${flavorName.toUpperCase()},');
+      buffer.writeln('  ${flavorName.toLowerCase()},');
     }
 
     buffer.writeln('}');
@@ -69,7 +69,7 @@ class FlutterFlavorsProcessor extends StringProcessor {
     buffer.writeln('    switch (appFlavor) {');
 
     config.flavors.forEach((String name, Flavor flavor) {
-      buffer.writeln('      case Flavor.${name.toUpperCase()}:');
+      buffer.writeln('      case Flavor.${name.toLowerCase()}:');
       buffer.writeln('        return \'${flavor.app.name}\';');
     });
 
