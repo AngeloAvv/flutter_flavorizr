@@ -46,7 +46,7 @@ class FlutterTargetFileProcessor extends QueueProcessor {
               '$destination/main_$flavorName.dart',
               ReplaceStringProcessor(
                 '[[FLAVOR_NAME]]',
-                flavorName.toUpperCase(),
+                flavorName.toLowerCase(),
                 config: config,
               ),
               config: config,
