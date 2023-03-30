@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 MyLittleSuite
+ * Copyright (c) 2023 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,7 +28,7 @@ extension MapExtensions<K, V> on Map<K, V> {
     Map<K, V> map = {};
     for (K key in keys) {
       final value = this[key];
-      if (test(key, value!)) {
+      if (value != null && test(key, value)) {
         map.putIfAbsent(key, () => value);
       }
     }

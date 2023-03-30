@@ -1,3 +1,10 @@
+## NEXT
+
+## 2.1.6
+* Create file path if not existing when copying icon sets
+* Set letters lowercase when created flavors
+* Bumped dependencies
+* Updated copyright version
 
 ## 2.1.5
 * Json serializable build runner setup
