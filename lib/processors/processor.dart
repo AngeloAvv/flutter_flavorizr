@@ -72,6 +72,7 @@ class Processor extends AbstractProcessor<void> {
     'flutter:flavors',
     'flutter:app',
     'flutter:pages',
+    'flutter:main',
     'flutter:targets',
 
     // iOS
@@ -184,8 +185,13 @@ class Processor extends AbstractProcessor<void> {
         K.flutterPagesPath,
         config: pubspec.flavorizr,
       ),
-      'flutter:targets': FlutterTargetsFileProcessor(
+      'flutter:main': CopyFileProcessor(
         K.tempFlutterMainPath,
+        K.flutterMainPath,
+        config: pubspec.flavorizr,
+      ),
+      'flutter:targets': FlutterTargetsFileProcessor(
+        K.tempFlutterMainTargetPath,
         K.flutterPath,
         config: pubspec.flavorizr,
       ),

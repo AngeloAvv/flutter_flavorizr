@@ -1,4 +1,5 @@
 ## NEXT
+* main.dart generated more seamlessly
 
 ## 2.1.6
 * Create file path if not existing when copying icon sets

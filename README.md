@@ -116,6 +116,7 @@ flavorizr:
 | flutter:flavors         | Flutter       | Creates the flutter flavor configuration file                           |
 | flutter:app             | Flutter       | Creates the app.dart entry                                              |
 | flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
+| flutter:main            | Flutter       | Creates the main target to run the app                                  |
 | flutter:targets         | Flutter       | Creates a set of targets for each flavor instance                       |
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
 | huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
@@ -318,6 +319,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * flutter:flavors
 * flutter:app
 * flutter:pages
+* flutter:main
 * flutter:targets
 * ios:xcconfig
 * ios:buildTargets

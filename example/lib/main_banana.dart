@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
-
-import 'app.dart';
 import 'flavors.dart';
+import 'main.dart' as runner;
 
-void main() {
+Future<void> main() async {
   F.appFlavor = Flavor.BANANA;
-  runApp(App());
+  await runner.main();
 }
