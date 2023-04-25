@@ -42,6 +42,8 @@ class K {
 
   static String flutterAppPath = '$flutterPath/app.dart';
 
+  static String flutterMainPath = '$flutterPath/main.dart';
+
   static String flutterPagesPath = '$flutterPath/pages';
 
   static String flutterMainPagePath = '$flutterPagesPath/my_home_page.dart';
@@ -73,7 +75,9 @@ class K {
 
   static String tempFlutterAppPath = '$tempFlutterPath/app.dart';
 
-  static String tempFlutterMainPath = '$tempFlutterPath/main_target.dart';
+  static String tempFlutterMainPath = '$tempFlutterPath/main.dart';
+
+  static String tempFlutterMainTargetPath = '$tempFlutterPath/main_target.dart';
 
   static String tempFlutterPagesPath = '$tempFlutterPath/pages';
 
