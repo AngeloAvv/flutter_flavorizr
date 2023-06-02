@@ -34,12 +34,12 @@ class AndroidIconsProcessor extends QueueProcessor {
   }) : super(
           config.flavors
               .where((_, flavor) =>
-                  flavor.app.icon != null || flavor.android.icon != null)
+                  flavor.app.icon != null || flavor.android?.icon != null)
               .map(
                 (flavorName, flavor) => MapEntry(
                   flavorName,
                   AndroidIconProcessor(
-                    flavor.android.icon ?? flavor.app.icon ?? '',
+                    flavor.android?.icon ?? flavor.app.icon ?? '',
                     flavorName,
                     config: config,
                   ),

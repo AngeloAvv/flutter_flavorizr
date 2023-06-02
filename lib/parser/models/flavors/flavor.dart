@@ -36,16 +36,16 @@ class Flavor {
   @JsonKey(required: true, disallowNullValue: true)
   final App app;
 
-  @JsonKey(required: true, disallowNullValue: true)
-  final Android android;
+  @JsonKey(required: false, disallowNullValue: true)
+  final Android? android;
 
-  @JsonKey(required: true, disallowNullValue: true)
-  final IOS ios;
+  @JsonKey(required: false, disallowNullValue: true)
+  final IOS? ios;
 
   Flavor({
     required this.app,
-    required this.android,
-    required this.ios,
+    this.android,
+    this.ios,
   });
 
   factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);

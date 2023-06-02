@@ -456,8 +456,13 @@ flavorizr:
 
 * Let the user define its custom set of available instructions.
 
-Please feel free to submit new issues if you encounter some problems
-with it.
+## Questions and bugs
+
+Please feel free to submit new issues if you encounter problems while using this library.
+
+If you need help with the use of the library or you just want to request new features, please use
+the [Discussions](https://github.com/AngeloAvv/flutter_flavorizr/discussions) section of the 
+repository. Issues opened as questions will be automatically closed.
 
 ## License
 

@@ -50,7 +50,7 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
                   (flavorName, flavor) => MapEntry(
                     flavorName,
                     IOSFirebaseProcessor(
-                      flavor.ios.firebase!.config,
+                      flavor.ios!.firebase!.config,
                       destination,
                       flavorName,
                       config: config,
@@ -95,5 +95,5 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
 
   static Map<String, Flavor> _filteredFlavors(Flavorizr config) =>
       config.flavors
-          .where((flavorName, flavor) => flavor.android.firebase != null);
+          .where((flavorName, flavor) => flavor.ios?.firebase != null);
 }

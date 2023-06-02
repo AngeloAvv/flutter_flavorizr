@@ -1,4 +1,5 @@
 ## NEXT
+* Android and iOS definitions are no longer required
 * main.dart generated more seamlessly
 
 ## 2.1.6

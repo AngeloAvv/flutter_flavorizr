@@ -126,9 +126,9 @@ class AndroidBuildGradleProcessor extends StringProcessor {
       buffer.writeln('        $name {');
       buffer.writeln('            dimension "$flavorDimension"');
       buffer.writeln(
-          '            applicationId "${flavor.android.applicationId}"');
+          '            applicationId "${flavor.android?.applicationId}"');
 
-      flavor.android.customConfig.forEach((key, value) {
+      flavor.android?.customConfig.forEach((key, value) {
         buffer.writeln('            $key $value');
       });
 
@@ -138,7 +138,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
           value: flavor.app.name,
         )
       })
-        ..addAll(flavor.android.resValues);
+        ..addAll(flavor.android?.resValues ?? {});
       resValues.forEach((key, res) {
         buffer.writeln(
             '            resValue "${res.type}", "$key", "${res.value}"');

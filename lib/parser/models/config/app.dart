@@ -32,8 +32,11 @@ part 'app.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
 class App {
+
+  @JsonKey(required: false, disallowNullValue: true)
   final Android? android;
 
+  @JsonKey(required: false, disallowNullValue: true)
   final IOS? ios;
 
   App({

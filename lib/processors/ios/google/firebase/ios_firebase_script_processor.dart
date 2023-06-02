@@ -71,5 +71,5 @@ class IOSFirebaseScriptProcessor extends StringProcessor {
       'cp Runner/$flavorName/GoogleService-Info.plist Runner/GoogleService-Info.plist';
 
   Map<String, Flavor> _filteredFlavors(Flavorizr config) => config.flavors
-      .where((flavorName, flavor) => flavor.android.firebase != null);
+      .where((flavorName, flavor) => flavor.ios?.firebase != null);
 }

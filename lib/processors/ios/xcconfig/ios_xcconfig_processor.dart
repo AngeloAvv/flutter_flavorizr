@@ -70,8 +70,8 @@ class IOSXCConfigProcessor extends StringProcessor {
       'BUNDLE_DISPLAY_NAME': Variable(value: _flavor.app.name),
     })
       ..addAll(
-        _flavor.ios.variables.where((_, variable) =>
-            variable.target == null || variable.target == _target),
+        _flavor.ios?.variables.where((_, variable) =>
+            variable.target == null || variable.target == _target) ?? {},
       );
 
     buffer.writeln();

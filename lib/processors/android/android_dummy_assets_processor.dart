@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/dummy_assets_processor.dart';
@@ -35,13 +36,14 @@ class AndroidDummyAssetsProcessor extends QueueProcessor {
     required Flavorizr config,
   }) : super(
           config.flavors
+              .where((_, flavor) => flavor.android != null)
               .map(
                 (String flavorName, Flavor flavor) => MapEntry(
                   flavorName,
                   DummyAssetsProcessor(
                     source,
                     '$destination/$flavorName/res',
-                    flavor.android,
+                    flavor.android!,
                     config: config,
                   ),
                 ),

@@ -47,5 +47,5 @@ class AGConnectProcessor extends QueueProcessor {
   String toString() => 'AGConnectProcessor';
 
   static _androidAGConnectExists(Iterable<Flavor> values) =>
-      values.where((flavor) => flavor.android.agconnect != null).isNotEmpty;
+      values.where((flavor) => flavor.android?.agconnect != null).isNotEmpty;
 }

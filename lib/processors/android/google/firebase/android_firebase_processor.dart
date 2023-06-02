@@ -34,12 +34,12 @@ class AndroidFirebaseProcessor extends QueueProcessor {
     required Flavorizr config,
   }) : super(
           config.flavors
-              .where((flavorName, flavor) => flavor.android.firebase != null)
+              .where((flavorName, flavor) => flavor.android?.firebase != null)
               .map(
                 (flavorName, flavor) => MapEntry(
                   flavorName,
                   AndroidTargetFirebaseProcessor(
-                    flavor.android.firebase!.config,
+                    flavor.android!.firebase!.config,
                     destination,
                     flavorName,
                     config: config,
