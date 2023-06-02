@@ -162,6 +162,7 @@ flavorizr:
 | key              | type   | default       | required | description                                                        |
 |:-----------------|:-------|:--------------|:---------|:-------------------------------------------------------------------|
 | flavorDimensions | String | "flavor-type" | false    | The value of the flavorDimensions in the android build.gradle file |
+| resValues        | Array  | {}            | false    | An array which contains a set of resValues configurations          |
 
 #### ios (under app)
 
@@ -178,14 +179,14 @@ flavorizr:
 
 #### android (under *flavorname*)
 
-| key                 | type   | default | required | description                                                        |
-|:--------------------|:-------|:--------|:---------|:-------------------------------------------------------------------|
-| applicationId       | String |         | true     | The applicationId of the Android App                               |
-| firebase            | Object |         | false    | An object which contains a Firebase configuration                  |
-| resValues           | Array  |         | false    | An array which contains a set of resValues configurations          |
-| customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig*          |
-| generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc) |
-| icon                | String |         | false    | The icon path for this android flavor                              |
+| key                 | type   | default | required | description                                                                |
+|:--------------------|:-------|:--------|:---------|:---------------------------------------------------------------------------|
+| applicationId       | String |         | true     | The applicationId of the Android App                                       |
+| firebase            | Object |         | false    | An object which contains a Firebase configuration                          |
+| resValues           | Array  |         | false    | An array which contains a set of resValues configurations                  |
+| customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig* |
+| generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)         |
+| icon                | String |         | false    | The icon path for this android flavor                                      |
 
 #### ios (under *flavorname*)
 

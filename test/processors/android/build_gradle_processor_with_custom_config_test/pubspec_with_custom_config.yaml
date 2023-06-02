@@ -25,6 +25,13 @@ flavorizr:
   app:
     android:
       flavorDimensions: "flavor-type" # optional?
+      resValues:
+        variable_one:
+          type: "string"
+          value: "previous variable one"
+        common:
+          type: "string"
+          value: "test common"
 
   flavors:
     apple:

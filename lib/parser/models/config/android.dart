@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/models/flavors/android/res_value.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'android.g.dart';
@@ -34,7 +35,13 @@ class Android {
   @JsonKey(defaultValue: 'flavor-type')
   final String flavorDimensions;
 
-  const Android({this.flavorDimensions = kFlavorDimensionValue});
+  @JsonKey(disallowNullValue: true, defaultValue: {})
+  final Map<String, ResValue> resValues;
+
+  const Android({
+    this.flavorDimensions = kFlavorDimensionValue,
+    this.resValues = const {},
+  });
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

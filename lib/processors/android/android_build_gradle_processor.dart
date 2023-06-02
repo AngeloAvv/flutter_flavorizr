@@ -138,6 +138,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
           value: flavor.app.name,
         )
       })
+        ..addAll(config.app?.android?.resValues ?? {})
         ..addAll(flavor.android?.resValues ?? {});
       resValues.forEach((key, res) {
         buffer.writeln(
