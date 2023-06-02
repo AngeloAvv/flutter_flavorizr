@@ -69,24 +69,24 @@ to specify the *app name*, the *applicationId* and the *bundleId*.
 
 ```yaml
 flavors:
-apple:
-  app:
-    name: "Apple App"
-
-  android:
-    applicationId: "com.example.apple"
-
-  ios:
-    bundleId: "com.example.apple"
-
-banana:
-  app:
-    name: "Banana App"
-
-  android:
-    applicationId: "com.example.banana"
-  ios:
-    bundleId: "com.example.banana"
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+  
+    ios:
+      bundleId: "com.example.apple"
+  
+  banana:
+    app:
+      name: "Banana App"
+  
+    android:
+      applicationId: "com.example.banana"
+    ios:
+      bundleId: "com.example.banana"
 ```
 
 Alternatively, add a new key named flavorizr and define a sub item named *flavors*. 
@@ -219,22 +219,22 @@ flavorizr:
 
 ```yaml
 flavors:
-apple:
-  app:
-    name: "Apple App"
-
-  android:
-    applicationId: "com.example.apple"
-    resValues:
-      variable_one:
-        type: "string"
-        value: "example variable one"
-      variable_two:
-        type: "string"
-        value: "example variable two"
-
-  ios:
-    bundleId: "com.example.apple"
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+      resValues:
+        variable_one:
+          type: "string"
+          value: "example variable one"
+        variable_two:
+          type: "string"
+          value: "example variable two"
+  
+    ios:
+      bundleId: "com.example.apple"
 ```
 
 #### variable (for iOS)
@@ -246,39 +246,39 @@ apple:
 
 ```yaml
 flavors:
-apple:
-  app:
-    name: "Apple App"
-
-  android:
-    applicationId: "com.example.apple"
-
-  ios:
-    bundleId: "com.example.apple"
-    variables:
-      VARIABLE_ONE:
-        value: "variable1"
-      VARIABLE_TWO:
-        target: "Debug"
-        value: "variable2"        
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+  
+    ios:
+      bundleId: "com.example.apple"
+      variables:
+        VARIABLE_ONE:
+          value: "variable1"
+        VARIABLE_TWO:
+          target: "Debug"
+          value: "variable2"        
 ```
 #### customConfig (for Android only)
 
 You can define any custom property for android
 ```yml
 flavors:
-apple:
-  app:
-    name: "Apple App"
-
-  android:
-    applicationId: "com.example.apple"
-    customConfig:
-        versionNameSuffix: "\"-green-prod\"" # Don't forget to escape strings with \"
-        signingConfig: flavorSigning.green
-        versionCode: 1000
-        minSdkVersion: 23
-        # ..... and any custom property you want to add
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+      customConfig:
+          versionNameSuffix: "\"-green-prod\"" # Don't forget to escape strings with \"
+          signingConfig: flavorSigning.green
+          versionCode: 1000
+          minSdkVersion: 23
+          # ..... and any custom property you want to add
 ```
 
 This .yml part, generate this custom android flavor:
@@ -409,32 +409,32 @@ As you can see in the example below, we added the path accordingly
 
 ```yaml
 flavors:
-apple:
-  app:
-    name: "Apple App"
-
-  android:
-    applicationId: "com.example.apple"
-    firebase:
-      config: ".firebase/apple/google-services.json"
-
-  ios:
-    bundleId: "com.example.apple"
-    firebase:
-      config: ".firebase/apple/GoogleService-Info.plist"
-
-banana:
-  app:
-    name: "Banana App"
-    
-  android:
-    applicationId: "com.example.banana"
-    firebase:
-      config: ".firebase/banana/google-services.json"
-  ios:
-    bundleId: "com.example.banana"
-    firebase:
-      config: ".firebase/banana/GoogleService-Info.plist"
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/google-services.json"
+  
+    ios:
+      bundleId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/GoogleService-Info.plist"
+  
+  banana:
+    app:
+      name: "Banana App"
+      
+    android:
+      applicationId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/google-services.json"
+    ios:
+      bundleId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/GoogleService-Info.plist"
 ```
 
 ### Huawei AppGallery Connect
@@ -446,28 +446,28 @@ As you can see in the example below, we added the path accordingly
 
 ```yaml
 flavors:
-apple:
-  app:
-    name: "Apple App"
-
-  android:
-    applicationId: "com.example.apple"
-    agconnect:
-      config: ".agconnect/apple/agconnect-services.json"
-
-  ios:
-    bundleId: "com.example.apple"
-
-banana:
-  app:
-    name: "Banana App"
-    
-  android:
-    applicationId: "com.example.banana"
-    agconnect:
-      config: ".agconnect/banana/agconnect-services.json"
-  ios:
-    bundleId: "com.example.banana"
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+      agconnect:
+        config: ".agconnect/apple/agconnect-services.json"
+  
+    ios:
+      bundleId: "com.example.apple"
+  
+  banana:
+    app:
+      name: "Banana App"
+      
+    android:
+      applicationId: "com.example.banana"
+      agconnect:
+        config: ".agconnect/banana/agconnect-services.json"
+    ios:
+      bundleId: "com.example.banana"
 ```
 
 ## Docs & Tutorials (from the community)
