@@ -25,7 +25,7 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/android/android_build_gradle_processor.dart';
 import 'package:flutter_flavorizr/processors/android/android_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/processors/android/android_manifest_processor.dart';
@@ -56,7 +56,7 @@ import 'package:flutter_flavorizr/utils/constants.dart';
 class Processor extends AbstractProcessor<void> {
   final Map<String, AbstractProcessor<void>> _availableProcessors;
 
-  final Pubspec _pubspec;
+  final Flavorizr _flavorizr;
   static const List<String> defaultInstructionSet = [
     // Prepare
     'assets:download',
@@ -97,14 +97,14 @@ class Processor extends AbstractProcessor<void> {
     'ide:config'
   ];
 
-  Processor(this._pubspec)
-      : _availableProcessors = _initAvailableProcessors(_pubspec),
-        super(_pubspec.flavorizr);
+  Processor(this._flavorizr)
+      : _availableProcessors = _initAvailableProcessors(_flavorizr),
+        super(_flavorizr);
 
   @override
   void execute() async {
     final List<String> instructions =
-        _pubspec.flavorizr.instructions ?? defaultInstructionSet;
+        _flavorizr.instructions ?? defaultInstructionSet;
 
     for (String instruction in instructions) {
       stdout.writeln('Executing task $instruction');
@@ -121,79 +121,79 @@ class Processor extends AbstractProcessor<void> {
   }
 
   static Map<String, AbstractProcessor<void>> _initAvailableProcessors(
-      Pubspec pubspec) {
+      Flavorizr flavorizr) {
     return {
       // Commons
       'assets:download': DownloadFileProcessor(
         K.assetsZipPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'assets:extract': UnzipFileProcessor(
         K.assetsZipPath,
         K.tempPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'assets:clean': QueueProcessor(
         [
           DeleteFileProcessor(
             K.assetsZipPath,
-            config: pubspec.flavorizr,
+            config: flavorizr,
           ),
           DeleteFileProcessor(
             K.tempPath,
-            config: pubspec.flavorizr,
+            config: flavorizr,
           ),
         ],
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
 
       // Android
       'android:androidManifest': ExistingFileStringProcessor(
         K.androidManifestPath,
-        AndroidManifestProcessor(config: pubspec.flavorizr),
-        config: pubspec.flavorizr,
+        AndroidManifestProcessor(config: flavorizr),
+        config: flavorizr,
       ),
       'android:buildGradle': ExistingFileStringProcessor(
         K.androidBuildGradlePath,
         AndroidBuildGradleProcessor(
-          config: pubspec.flavorizr,
+          config: flavorizr,
         ),
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'android:dummyAssets': AndroidDummyAssetsProcessor(
         K.tempAndroidResPath,
         K.androidSrcPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'android:icons': AndroidIconsProcessor(
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
 
       //Flutter
       'flutter:flavors': NewFileStringProcessor(
         K.flutterFlavorPath,
-        FlutterFlavorsProcessor(config: pubspec.flavorizr),
-        config: pubspec.flavorizr,
+        FlutterFlavorsProcessor(config: flavorizr),
+        config: flavorizr,
       ),
       'flutter:app': CopyFileProcessor(
         K.tempFlutterAppPath,
         K.flutterAppPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'flutter:pages': CopyFolderProcessor(
         K.tempFlutterPagesPath,
         K.flutterPagesPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'flutter:main': CopyFileProcessor(
         K.tempFlutterMainPath,
         K.flutterMainPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'flutter:targets': FlutterTargetsFileProcessor(
         K.tempFlutterMainTargetPath,
         K.flutterPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
 
       //iOS
@@ -202,33 +202,33 @@ class Processor extends AbstractProcessor<void> {
         K.tempiOSAddFileScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'ios:buildTargets': IOSBuildConfigurationsTargetsProcessor(
         'ruby',
         K.tempiOSAddBuildConfigurationScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'ios:schema': IOSSchemasProcessor(
         'ruby',
         K.tempiOSCreateSchemeScriptPath,
         K.iOSRunnerProjectPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'ios:dummyAssets': IOSDummyAssetsTargetsProcessor(
         K.tempiOSAssetsPath,
         K.iOSAssetsPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'ios:icons': IOSIconsProcessor(
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'ios:plist': ExistingFileStringProcessor(
         K.iOSPListPath,
-        IOSPListProcessor(config: pubspec.flavorizr),
-        config: pubspec.flavorizr,
+        IOSPListProcessor(config: flavorizr),
+        config: flavorizr,
       ),
       'ios:launchScreen': IOSTargetsLaunchScreenFileProcessor(
         'ruby',
@@ -236,7 +236,7 @@ class Processor extends AbstractProcessor<void> {
         K.iOSRunnerProjectPath,
         K.tempiOSLaunchScreenPath,
         K.iOSRunnerPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
 
       // Google
@@ -248,18 +248,18 @@ class Processor extends AbstractProcessor<void> {
         runnerProject: K.iOSRunnerProjectPath,
         firebaseScript: K.tempiOSAddFirebaseBuildPhaseScriptPath,
         generatedFirebaseScriptPath: K.tempiOSFirebaseScriptPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
 
       // Huawei
       'huawei:agconnect': AGConnectProcessor(
         destination: K.androidSrcPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
 
       // IDE
       'ide:config': IDEProcessor(
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
     };
   }

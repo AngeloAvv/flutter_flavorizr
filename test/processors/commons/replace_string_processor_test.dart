@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/commons/replace_string_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,12 +31,12 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../test_utils.dart';
 
 void main() {
-  Pubspec? pubspec;
+  late Flavorizr flavorizr;
 
   setUp(() {
-    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    Parser parser = Parser(pubspecPath: 'test_resources/pubspec.yaml', flavorizrPath: '',);
     try {
-      pubspec = parser.parse();
+      flavorizr = parser.parse();
     } catch (e) {
       fail(e.toString());
     }
@@ -52,7 +52,7 @@ void main() {
       '[[FLAVOR_NAME]]',
       'test',
       input: content,
-      config: pubspec!.flavorizr,
+      config: flavorizr,
     );
 
     String actual = processor.execute();
@@ -70,7 +70,7 @@ void main() {
       '[[FLAVOR_NAME]]',
       'test',
       input: matcher,
-      config: pubspec!.flavorizr,
+      config: flavorizr,
     );
 
     String actual = processor.execute();

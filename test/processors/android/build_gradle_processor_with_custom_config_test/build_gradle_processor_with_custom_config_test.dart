@@ -25,7 +25,7 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/android/android_build_gradle_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,14 +33,16 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../test_utils.dart';
 
 void main() {
-  Pubspec? pubspecWithCustomConfig;
+  late Flavorizr flavorizr;
 
   setUp(() {
     Parser parser = Parser(
-        file:
-            'test/processors/android/build_gradle_processor_with_custom_config_test/pubspec_with_custom_config.yaml');
+      pubspecPath:
+          'test/processors/android/build_gradle_processor_with_custom_config_test/pubspec_with_custom_config.yaml',
+      flavorizrPath: '',
+    );
     try {
-      pubspecWithCustomConfig = parser.parse();
+      flavorizr = parser.parse();
     } catch (e) {
       fail(e.toString());
     }
@@ -57,7 +59,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: pubspecWithCustomConfig!.flavorizr, input: content);
+        config: flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -75,7 +77,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: pubspecWithCustomConfig!.flavorizr, input: content);
+        config: flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -85,8 +87,8 @@ void main() {
   });
 
   test('Test malformed AndroidBuildGradleProcessor with custom config', () {
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: pubspecWithCustomConfig!.flavorizr, input: '');
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(config: flavorizr, input: '');
     expect(() => processor.execute(), throwsException);
   });
 
@@ -98,7 +100,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: pubspecWithCustomConfig!.flavorizr, input: content);
+        config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
@@ -110,7 +112,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: pubspecWithCustomConfig!.flavorizr, input: content);
+        config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
@@ -122,7 +124,7 @@ void main() {
         .readAsStringSync();
 
     AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: pubspecWithCustomConfig!.flavorizr, input: content);
+        config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 }

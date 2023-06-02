@@ -1,0 +1,24 @@
+app:
+  android:
+    flavorDimensions: "flavor-type"
+  ios:
+
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+
+    android:
+      applicationId: "com.example.apple"
+
+    ios:
+      bundleId: "com.example.apple"
+
+  banana:
+    app:
+      name: "Banana App"
+
+    android:
+      applicationId: "com.example.banana"
+    ios:
+      bundleId: "com.example.banana"

@@ -23,60 +23,31 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
-import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
-import 'package:flutter_flavorizr/processors/ios/ios_plist_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../test_utils.dart';
-
 void main() {
-  late Flavorizr flavorizr;
-
-  setUp(() {
-    Parser parser = Parser(
+  test('Test Flavorizr loaded from pubspec.yaml', () {
+    final parser = Parser(
       pubspecPath: 'test_resources/pubspec.yaml',
       flavorizrPath: '',
     );
     try {
-      flavorizr = parser.parse();
+      parser.parse();
     } catch (e) {
       fail(e.toString());
     }
   });
 
-  tearDown(() {});
-
-  test('Test iOSPListProcessor', () {
-    String content = File('test_resources/ios/plist_processor_test/Info.plist')
-        .readAsStringSync();
-    String matcher =
-        File('test_resources/ios/plist_processor_test/Matcher.plist')
-            .readAsStringSync();
-
-    IOSPListProcessor processor = IOSPListProcessor(
-      input: content,
-      config: flavorizr,
+  test('Test Flavorizr loaded from flavorizr.yaml', () {
+    final parser = Parser(
+      pubspecPath: 'test_resources/pubspec.yaml',
+      flavorizrPath: 'test_resources/flavorizr.yaml',
     );
-    String actual = processor.execute();
-
-    actual = TestUtils.stripEndOfLines(actual);
-    matcher = TestUtils.stripEndOfLines(matcher);
-
-    expect(actual, matcher);
-  });
-
-  test('Test malformed iOSPListProcessor', () {
-    String content =
-        File('test_resources/ios/plist_processor_test/Malformed.plist')
-            .readAsStringSync();
-
-    IOSPListProcessor processor = IOSPListProcessor(
-      input: content,
-      config: flavorizr,
-    );
-    expect(() => processor.execute(), throwsException);
+    try {
+      parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
   });
 }

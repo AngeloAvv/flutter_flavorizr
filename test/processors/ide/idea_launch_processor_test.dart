@@ -25,7 +25,7 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/ide/idea/idea_launch_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,12 +33,15 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../test_utils.dart';
 
 void main() {
-  Pubspec? pubspec;
+  late Flavorizr flavorizr;
 
   setUp(() {
-    Parser parser = Parser(file: 'test_resources/pubspec.yaml');
+    Parser parser = Parser(
+      pubspecPath: 'test_resources/pubspec.yaml',
+      flavorizrPath: '',
+    );
     try {
-      pubspec = parser.parse();
+      flavorizr = parser.parse();
     } catch (e) {
       fail(e.toString());
     }
@@ -53,7 +56,7 @@ void main() {
 
     IdeaLaunchProcessor processor = IdeaLaunchProcessor(
       'example',
-      config: pubspec!.flavorizr,
+      config: flavorizr,
     );
     String actual = processor.execute();
 

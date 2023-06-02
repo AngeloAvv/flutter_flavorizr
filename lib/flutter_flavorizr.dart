@@ -26,7 +26,7 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
 import 'package:flutter_flavorizr/processors/processor.dart';
 
@@ -37,20 +37,23 @@ void execute(List<String> args) {
   ArgResults results = argParser.parse(args);
   List<String> argProcessors = results['processors'];
 
-  Parser parser = Parser(file: 'pubspec.yaml');
+  Parser parser = Parser(
+    pubspecPath: 'pubspec.yaml',
+    flavorizrPath: 'flavorizr.yaml',
+  );
 
-  Pubspec? pubspec;
+  Flavorizr? flavorizr;
   try {
-    pubspec = parser.parse();
+    flavorizr = parser.parse();
   } catch (e) {
     stderr.writeln(e);
     exit(0);
   }
 
   if (argProcessors.isNotEmpty) {
-    pubspec.flavorizr.instructions = argProcessors;
+    flavorizr.instructions = argProcessors;
   }
 
-  Processor processor = Processor(pubspec);
+  Processor processor = Processor(flavorizr);
   processor.execute();
 }

@@ -27,24 +27,42 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/exception/missing_required_fields_exception.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/pubspec.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 class Parser {
-  final String file;
+  final String pubspecPath;
+  final String flavorizrPath;
 
-  Parser({required this.file});
+  Parser({
+    required this.pubspecPath,
+    required this.flavorizrPath,
+  });
 
-  Pubspec parse() {
-    File pubspecFile = File(file);
-    if (!pubspecFile.existsSync()) {
-      throw FileNotFoundException(file);
+  Flavorizr parse() {
+    File pubspecFile = File(pubspecPath);
+    File flavorizrFile = File(flavorizrPath);
+
+    final pubspecFileExists = pubspecFile.existsSync();
+    final flavorizrFileExists = flavorizrFile.existsSync();
+
+    if (!pubspecFileExists) {
+      if (!flavorizrFileExists) {
+        throw FileNotFoundException(flavorizrPath);
+      } else {
+        throw FileNotFoundException(pubspecPath);
+      }
     }
 
-    String yaml = pubspecFile.readAsStringSync();
-
     try {
-      return Pubspec.parse(yaml);
+      if (flavorizrFileExists) {
+        final yaml = flavorizrFile.readAsStringSync();
+        return Flavorizr.parse(yaml);
+      } else {
+        final yaml = pubspecFile.readAsStringSync();
+        return Pubspec.parse(yaml).flavorizr;
+      }
     } on DisallowedNullValueException catch (e) {
       throw MissingRequiredFieldsException(e.keysWithNullValues);
     } on MissingRequiredKeysException catch (e) {

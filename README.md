@@ -38,7 +38,7 @@ occur.
 
 ### Installation
 
-This package is intended to support development of Dart projects. In
+This package is intended to support development of Flutter projects. In
 general, put it under
 [dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies),
 in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
@@ -63,9 +63,37 @@ flavors.
 
 ### Example
 
-Add a new key named flavorizr and define a sub item named *flavors*. Under the flavors array you can define the name of the
+Create a new file named flavorizr.yaml and define the name of the
 flavors, in our example *apple* and *banana*. For each flavor you have
 to specify the *app name*, the *applicationId* and the *bundleId*.
+
+```yaml
+flavors:
+apple:
+  app:
+    name: "Apple App"
+
+  android:
+    applicationId: "com.example.apple"
+
+  ios:
+    bundleId: "com.example.apple"
+
+banana:
+  app:
+    name: "Banana App"
+
+  android:
+    applicationId: "com.example.banana"
+  ios:
+    bundleId: "com.example.banana"
+```
+
+Alternatively, add a new key named flavorizr and define a sub item named *flavors*. 
+Under the flavors array you can define the name of the
+flavors, in our example *apple* and *banana*. For each flavor you have
+to specify the *app name*, the *applicationId* and the *bundleId*.
+This way of defining flavors will be deprecated in versions 3.x
 
 ```yaml
 flavorizr:
@@ -190,24 +218,23 @@ flavorizr:
 | value | String |         | true     | The value of the resValue variable                                                                                                       |
 
 ```yaml
-flavorizr:
-  flavors:
-    apple:
-      app:
-        name: "Apple App"
+flavors:
+apple:
+  app:
+    name: "Apple App"
 
-      android:
-        applicationId: "com.example.apple"
-        resValues:
-          variable_one:
-            type: "string"
-            value: "example variable one"
-          variable_two:
-            type: "string"
-            value: "example variable two"
+  android:
+    applicationId: "com.example.apple"
+    resValues:
+      variable_one:
+        type: "string"
+        value: "example variable one"
+      variable_two:
+        type: "string"
+        value: "example variable two"
 
-      ios:
-        bundleId: "com.example.apple"
+  ios:
+    bundleId: "com.example.apple"
 ```
 
 #### variable (for iOS)
@@ -218,42 +245,40 @@ flavorizr:
 | value  | String |         | true     | The value of the variable                                                                                                                                                                                                                            |
 
 ```yaml
-flavorizr:
-  flavors:
-    apple:
-      app:
-        name: "Apple App"
+flavors:
+apple:
+  app:
+    name: "Apple App"
 
-      android:
-        applicationId: "com.example.apple"
+  android:
+    applicationId: "com.example.apple"
 
-      ios:
-        bundleId: "com.example.apple"
-        variables:
-          VARIABLE_ONE:
-            value: "variable1"
-          VARIABLE_TWO:
-            target: "Debug"
-            value: "variable2"        
+  ios:
+    bundleId: "com.example.apple"
+    variables:
+      VARIABLE_ONE:
+        value: "variable1"
+      VARIABLE_TWO:
+        target: "Debug"
+        value: "variable2"        
 ```
 #### customConfig (for Android only)
 
 You can define any custom property for android
 ```yml
-flavorizr:
-  flavors:
-    apple:
-      app:
-        name: "Apple App"
+flavors:
+apple:
+  app:
+    name: "Apple App"
 
-      android:
-        applicationId: "com.example.apple"
-        customConfig:
-            versionNameSuffix: "\"-green-prod\"" # Don't forget to escape strings with \"
-            signingConfig: flavorSigning.green
-            versionCode: 1000
-            minSdkVersion: 23
-            # ..... and any custom property you want to add
+  android:
+    applicationId: "com.example.apple"
+    customConfig:
+        versionNameSuffix: "\"-green-prod\"" # Don't forget to escape strings with \"
+        signingConfig: flavorSigning.green
+        versionCode: 1000
+        minSdkVersion: 23
+        # ..... and any custom property you want to add
 ```
 
 This .yml part, generate this custom android flavor:
@@ -383,34 +408,33 @@ In order to flavorize your project and enable Firebase in your flavor you have t
 As you can see in the example below, we added the path accordingly
 
 ```yaml
-flavorizr:
-  flavors:
-    apple:
-      app:
-        name: "Apple App"
+flavors:
+apple:
+  app:
+    name: "Apple App"
 
-      android:
-        applicationId: "com.example.apple"
-        firebase:
-          config: ".firebase/apple/google-services.json"
+  android:
+    applicationId: "com.example.apple"
+    firebase:
+      config: ".firebase/apple/google-services.json"
 
-      ios:
-        bundleId: "com.example.apple"
-        firebase:
-          config: ".firebase/apple/GoogleService-Info.plist"
+  ios:
+    bundleId: "com.example.apple"
+    firebase:
+      config: ".firebase/apple/GoogleService-Info.plist"
 
-    banana:
-      app:
-        name: "Banana App"
-        
-      android:
-        applicationId: "com.example.banana"
-        firebase:
-          config: ".firebase/banana/google-services.json"
-      ios:
-        bundleId: "com.example.banana"
-        firebase:
-          config: ".firebase/banana/GoogleService-Info.plist"
+banana:
+  app:
+    name: "Banana App"
+    
+  android:
+    applicationId: "com.example.banana"
+    firebase:
+      config: ".firebase/banana/google-services.json"
+  ios:
+    bundleId: "com.example.banana"
+    firebase:
+      config: ".firebase/banana/GoogleService-Info.plist"
 ```
 
 ### Huawei AppGallery Connect
@@ -421,30 +445,29 @@ you have to define an agconnect object below each Android flavor. Under the agco
 As you can see in the example below, we added the path accordingly
 
 ```yaml
-flavorizr:
-  flavors:
-    apple:
-      app:
-        name: "Apple App"
+flavors:
+apple:
+  app:
+    name: "Apple App"
 
-      android:
-        applicationId: "com.example.apple"
-        agconnect:
-          config: ".agconnect/apple/agconnect-services.json"
+  android:
+    applicationId: "com.example.apple"
+    agconnect:
+      config: ".agconnect/apple/agconnect-services.json"
 
-      ios:
-        bundleId: "com.example.apple"
+  ios:
+    bundleId: "com.example.apple"
 
-    banana:
-      app:
-        name: "Banana App"
-        
-      android:
-        applicationId: "com.example.banana"
-        agconnect:
-          config: ".agconnect/banana/agconnect-services.json"
-      ios:
-        bundleId: "com.example.banana"
+banana:
+  app:
+    name: "Banana App"
+    
+  android:
+    applicationId: "com.example.banana"
+    agconnect:
+      config: ".agconnect/banana/agconnect-services.json"
+  ios:
+    bundleId: "com.example.banana"
 ```
 
 ## Docs & Tutorials (from the community)

@@ -12,7 +12,6 @@ Pubspec _$PubspecFromJson(Map json) {
     requiredKeys: const ['flavorizr'],
   );
   return Pubspec(
-    flavorizr:
-        Flavorizr.fromJson(Map<String, dynamic>.from(json['flavorizr'] as Map)),
+    flavorizr: Flavorizr.fromJson(json['flavorizr'] as Map),
   );
 }

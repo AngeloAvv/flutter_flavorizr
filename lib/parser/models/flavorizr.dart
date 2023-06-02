@@ -24,6 +24,7 @@
  */
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:checked_yaml/checked_yaml.dart';
 
 import 'config/app.dart';
 import 'enums.dart';
@@ -57,6 +58,9 @@ class Flavorizr {
     this.ide,
   });
 
-  factory Flavorizr.fromJson(Map<String, dynamic> json) =>
+  factory Flavorizr.fromJson(Map json) =>
       _$FlavorizrFromJson(json);
+
+  factory Flavorizr.parse(String yaml) =>
+      checkedYamlDecode(yaml, (o) => Flavorizr.fromJson(o ?? {}));
 }
