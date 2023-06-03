@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:checked_yaml/checked_yaml.dart';
 
@@ -50,16 +51,56 @@ class Flavorizr {
   @JsonKey()
   final IDE? ide;
 
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> androidFlavors;
+
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> iosFlavors;
+
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> macosFlavors;
+
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> androidFirebaseFlavors;
+
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> androidAGConnectFlavors;
+
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> iosFirebaseFlavors;
+
+  @JsonKey(ignore: true)
+  late Map<String, Flavor> macosFirebaseFlavors;
+
   Flavorizr({
     this.app,
     required this.flavors,
     this.instructions,
     required this.assetsUrl,
     this.ide,
-  });
+  })  : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
+        iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
+        macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
+        androidFirebaseFlavors =
+            flavors.where((_, flavor) => flavor.android?.firebase != null),
+        androidAGConnectFlavors =
+            flavors.where((_, flavor) => flavor.android?.agconnect != null),
+        iosFirebaseFlavors =
+            flavors.where((_, flavor) => flavor.ios?.firebase != null),
+        macosFirebaseFlavors =
+            flavors.where((_, flavor) => flavor.macos?.firebase != null);
 
   factory Flavorizr.fromJson(Map json) =>
       _$FlavorizrFromJson(json);
+
+  bool get androidFirebaseFlavorsAvailable => androidFirebaseFlavors.isNotEmpty;
+
+  bool get androidAGConnectFlavorsAvailable =>
+      androidAGConnectFlavors.isNotEmpty;
+
+  bool get iosFirebaseFlavorsAvailable => iosFirebaseFlavors.isNotEmpty;
+
+  bool get macosFirebaseFlavorsAvailable => macosFirebaseFlavors.isNotEmpty;
 
   factory Flavorizr.parse(String yaml) =>
       checkedYamlDecode(yaml, (o) => Flavorizr.fromJson(o ?? {}));

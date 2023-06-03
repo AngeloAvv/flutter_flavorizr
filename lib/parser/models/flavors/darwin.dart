@@ -25,21 +25,21 @@
 
 import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/commons/os.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/variable.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/google/firebase/firebase.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/variable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'ios.g.dart';
+part 'darwin.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class IOS extends OS with BuildSettingsMixin {
+class Darwin extends OS with BuildSettingsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String bundleId;
 
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, Variable> variables;
 
-  IOS({
+  Darwin({
     required this.bundleId,
     this.variables = const {},
     Map<String, dynamic> buildSettings = const {},
@@ -57,5 +57,5 @@ class IOS extends OS with BuildSettingsMixin {
     this.buildSettings.addAll(buildSettings);
   }
 
-  factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
+  factory Darwin.fromJson(Map<String, dynamic> json) => _$DarwinFromJson(json);
 }

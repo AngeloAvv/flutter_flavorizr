@@ -35,11 +35,11 @@ class IOSXCConfigTargetsFileProcessor extends QueueProcessor {
     String path, {
     required Flavorizr config,
   }) : super(
-          config.flavors
+          config.iosFlavors
               .map(
                 (flavorName, flavor) => MapEntry(
                   flavorName,
-                  IOSXCConfigFileProcessor(
+                  MacOSXCConfigFileProcessor(
                     process,
                     script,
                     project,

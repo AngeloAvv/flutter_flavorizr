@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin.dart';
 import 'package:flutter_flavorizr/processors/commons/dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
@@ -33,7 +33,7 @@ class IOSDummyAssetsProcessor extends QueueProcessor {
     String source,
     String destination,
     String flavorName,
-    IOS os, {
+    Darwin os, {
     required Flavorizr config,
   }) : super(
           [

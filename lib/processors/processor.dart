@@ -39,6 +39,7 @@ import 'package:flutter_flavorizr/processors/commons/existing_file_string_proces
 import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/unzip_file_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/flutter_flavors_processor.dart';
 import 'package:flutter_flavorizr/processors/flutter/target/flutter_targets_file_processor.dart';
 import 'package:flutter_flavorizr/processors/google/firebase/firebase_processor.dart';
@@ -48,9 +49,14 @@ import 'package:flutter_flavorizr/processors/ios/build_configuration/ios_build_c
 import 'package:flutter_flavorizr/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/icons/ios_icons_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/ios_plist_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/ios_schemas_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/launch_screen/ios_targets_launchscreen_file_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_targets_file_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/build_configuration/macos_build_configurations_targets_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/configs/macos_configs_targets_file_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/dummy_assets/macos_dummy_assets_targets_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/icons/macos_icons_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/macos_plist_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/xcconfig/macos_xcconfig_targets_file_processor.dart';
 import 'package:flutter_flavorizr/utils/constants.dart';
 
 class Processor extends AbstractProcessor<void> {
@@ -84,6 +90,15 @@ class Processor extends AbstractProcessor<void> {
     'ios:plist',
     'ios:launchScreen',
 
+    // macOS
+    'macos:xcconfig',
+    'macos:configs',
+    'macos:buildTargets',
+    'macos:schema',
+    'macos:dummyAssets',
+    'macos:icons',
+    'macos:plist',
+
     // Google
     'google:firebase',
 
@@ -103,7 +118,7 @@ class Processor extends AbstractProcessor<void> {
 
   @override
   void execute() async {
-    final List<String> instructions =
+    final instructions =
         _flavorizr.instructions ?? defaultInstructionSet;
 
     for (String instruction in instructions) {
@@ -199,21 +214,21 @@ class Processor extends AbstractProcessor<void> {
       //iOS
       'ios:xcconfig': IOSXCConfigTargetsFileProcessor(
         'ruby',
-        K.tempiOSAddFileScriptPath,
+        K.tempDarwinAddFileScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
         config: flavorizr,
       ),
       'ios:buildTargets': IOSBuildConfigurationsTargetsProcessor(
         'ruby',
-        K.tempiOSAddBuildConfigurationScriptPath,
+        K.tempDarwinAddBuildConfigurationScriptPath,
         K.iOSRunnerProjectPath,
         K.iOSFlutterPath,
         config: flavorizr,
       ),
-      'ios:schema': IOSSchemasProcessor(
+      'ios:schema': DarwinSchemasProcessor(
         'ruby',
-        K.tempiOSCreateSchemeScriptPath,
+        K.tempDarwinCreateSchemeScriptPath,
         K.iOSRunnerProjectPath,
         config: flavorizr,
       ),
@@ -232,11 +247,53 @@ class Processor extends AbstractProcessor<void> {
       ),
       'ios:launchScreen': IOSTargetsLaunchScreenFileProcessor(
         'ruby',
-        K.tempiOSAddFileScriptPath,
+        K.tempDarwinAddFileScriptPath,
         K.iOSRunnerProjectPath,
         K.tempiOSLaunchScreenPath,
         K.iOSRunnerPath,
         config: flavorizr,
+      ),
+
+      // MacOS
+      'macos:xcconfig': MacOSXCConfigTargetsFileProcessor(
+        'ruby',
+        K.tempDarwinAddFileScriptPath,
+        K.macOSRunnerProjectPath,
+        K.macOSFlutterPath,
+        config: pubspec.flavorizr,
+      ),
+      'macos:configs': MacOSConfigsTargetsFileProcessor(
+        'ruby',
+        K.tempDarwinAddFileScriptPath,
+        K.macOSRunnerProjectPath,
+        K.macOSConfigsPath,
+        config: pubspec.flavorizr,
+      ),
+      'macos:buildTargets': MacOSBuildConfigurationsTargetsProcessor(
+        'ruby',
+        K.tempDarwinAddBuildConfigurationScriptPath,
+        K.macOSRunnerProjectPath,
+        K.macOSConfigsPath,
+        config: pubspec.flavorizr,
+      ),
+      'macos:schema': DarwinSchemasProcessor(
+        'ruby',
+        K.tempDarwinCreateSchemeScriptPath,
+        K.macOSRunnerProjectPath,
+        config: pubspec.flavorizr,
+      ),
+      'macos:dummyAssets': MacOSDummyAssetsTargetsProcessor(
+        K.tempMacOSAssetsPath,
+        K.macOSAssetsPath,
+        config: pubspec.flavorizr,
+      ),
+      'macos:icons': MacOSIconsProcessor(
+        config: pubspec.flavorizr,
+      ),
+      'macos:plist': ExistingFileStringProcessor(
+        K.macOSPlistPath,
+        MacOSPListProcessor(config: pubspec.flavorizr),
+        config: pubspec.flavorizr,
       ),
 
       // Google
@@ -244,10 +301,13 @@ class Processor extends AbstractProcessor<void> {
         process: 'ruby',
         androidDestination: K.androidSrcPath,
         iosDestination: K.iOSRunnerPath,
-        addFileScript: K.tempiOSAddFileScriptPath,
-        runnerProject: K.iOSRunnerProjectPath,
-        firebaseScript: K.tempiOSAddFirebaseBuildPhaseScriptPath,
-        generatedFirebaseScriptPath: K.tempiOSFirebaseScriptPath,
+        macosDestination: K.macOSRunnerPath,
+        addFileScript: K.tempDarwinAddFileScriptPath,
+        iosRunnerProject: K.iOSRunnerProjectPath,
+        macosRunnerProject: K.macOSRunnerProjectPath,
+        firebaseScript: K.tempDarwinAddFirebaseBuildPhaseScriptPath,
+        iosGeneratedFirebaseScriptPath: K.iOSFirebaseScriptPath,
+        macosGeneratedFirebaseScriptPath: K.macOSFirebaseScriptPath,
         config: flavorizr,
       ),
 

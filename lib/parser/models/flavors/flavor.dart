@@ -27,7 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'android.dart';
 import 'app.dart';
-import 'ios.dart';
+import 'darwin.dart';
 
 part 'flavor.g.dart';
 
@@ -40,12 +40,16 @@ class Flavor {
   final Android? android;
 
   @JsonKey(required: false, disallowNullValue: true)
-  final IOS? ios;
+  final Darwin? ios;
+
+  @JsonKey(required: false, disallowNullValue: true)
+  final Darwin? macos;
 
   Flavor({
     required this.app,
     this.android,
     this.ios,
+    required this.macos,
   });
 
   factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);

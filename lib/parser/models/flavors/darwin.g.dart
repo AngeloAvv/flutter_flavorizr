@@ -1,18 +1,18 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ios.dart';
+part of 'darwin.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-IOS _$IOSFromJson(Map json) {
+Darwin _$DarwinFromJson(Map json) {
   $checkKeys(
     json,
     requiredKeys: const ['bundleId'],
     disallowNullValues: const ['firebase', 'icon', 'bundleId', 'variables'],
   );
-  return IOS(
+  return Darwin(
     bundleId: json['bundleId'] as String,
     variables: (json['variables'] as Map?)?.map(
           (k, e) => MapEntry(k as String,

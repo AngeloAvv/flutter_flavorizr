@@ -25,11 +25,10 @@
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/image_resizer_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/icons/darwin_icon_target_processor.dart';
 import 'package:flutter_flavorizr/utils/constants.dart';
-import 'package:sprintf/sprintf.dart';
 
-class IOSIconTargetProcessor extends QueueProcessor {
+class IOSIconTargetProcessor extends DarwinIconTargetProcessor {
   static const _entries = {
     'Icon-App-20x20@1x.png': Size(width: 20, height: 20),
     'Icon-App-20x20@2x.png': Size(width: 40, height: 40),
@@ -53,19 +52,10 @@ class IOSIconTargetProcessor extends QueueProcessor {
     String flavorName, {
     required Flavorizr config,
   }) : super(
-          _entries
-              .map(
-                (fileName, size) => MapEntry(
-                  fileName,
-                  ImageResizerProcessor(
-                    source,
-                    sprintf(K.iOSAppIconPath, [flavorName, fileName]),
-                    size,
-                    config: config,
-                  ),
-                ),
-              )
-              .values,
+          source,
+          flavorName: flavorName,
+          iconSet: _entries,
+          appIconPath: K.iOSAppIconPath,
           config: config,
         );
 

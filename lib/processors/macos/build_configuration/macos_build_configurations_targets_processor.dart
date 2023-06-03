@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Angelo Cassano
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,31 +23,42 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/build_configuration/macos_build_configurations_processor.dart';
 
-class IOSSchemasProcessor extends QueueProcessor {
-  IOSSchemasProcessor(
+class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
+  MacOSBuildConfigurationsTargetsProcessor(
     String process,
     String script,
-    String path, {
+    String project,
+    String file, {
     required Flavorizr config,
   }) : super(
-          config.flavors.keys.map(
-            (String flavorName) => ShellProcessor(
-              process,
-              [
-                script,
-                path,
-                flavorName,
-              ],
-              config: config,
-            ),
-          ),
+          config.macosFlavors
+              .map((String flavorName, Flavor flavor) => MapEntry(
+                    flavorName,
+                    DarwinBuildConfigurationsProcessor(
+                      process,
+                      script,
+                      project,
+                      file,
+                      flavorName,
+                      flavor.macos!.bundleId,
+                      {}
+                        ..addAll(config.app?.macos != null
+                            ? config.app!.macos!.buildSettings
+                            : BuildSettingsMixin.defaultBuildSettings)
+                        ..addAll(flavor.macos?.buildSettings ?? {}),
+                      config: config,
+                    ),
+                  ))
+              .values,
           config: config,
         );
 
   @override
-  String toString() => 'IOSSchemasProcessor';
+  String toString() => 'MacOSBuildConfigurationsTargetsProcessor';
 }

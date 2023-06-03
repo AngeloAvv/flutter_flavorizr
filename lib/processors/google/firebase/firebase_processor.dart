@@ -24,36 +24,49 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/android/google/firebase/android_firebase_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_targets_firebase_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/google/firebase/macos_targets_firebase_processor.dart';
 
 class FirebaseProcessor extends QueueProcessor {
   FirebaseProcessor({
     required String process,
     required String androidDestination,
     required String iosDestination,
+    required String macosDestination,
     required String addFileScript,
-    required String runnerProject,
+    required String iosRunnerProject,
+    required String macosRunnerProject,
     required String firebaseScript,
-    required String generatedFirebaseScriptPath,
+    required String iosGeneratedFirebaseScriptPath,
+    required String macosGeneratedFirebaseScriptPath,
     required Flavorizr config,
   }) : super(
           [
-            if (_androidFirebaseExists(config.flavors.values))
+            if (config.androidFirebaseFlavorsAvailable)
               AndroidFirebaseProcessor(
                 destination: androidDestination,
                 config: config,
               ),
-            if (_iosFirebaseExists(config.flavors.values))
+            if (config.iosFirebaseFlavorsAvailable)
               IOSTargetsFirebaseProcessor(
                 process: process,
                 destination: iosDestination,
                 addFileScript: addFileScript,
-                runnerProject: runnerProject,
+                runnerProject: iosRunnerProject,
                 firebaseScript: firebaseScript,
-                generatedFirebaseScriptPath: generatedFirebaseScriptPath,
+                generatedFirebaseScriptPath: iosGeneratedFirebaseScriptPath,
+                config: config,
+              ),
+            if (config.macosFirebaseFlavorsAvailable)
+              MacOSTargetsFirebaseProcessor(
+                process: process,
+                destination: iosDestination,
+                addFileScript: addFileScript,
+                runnerProject: macosRunnerProject,
+                firebaseScript: firebaseScript,
+                generatedFirebaseScriptPath: macosGeneratedFirebaseScriptPath,
                 config: config,
               ),
           ],
@@ -62,10 +75,4 @@ class FirebaseProcessor extends QueueProcessor {
 
   @override
   String toString() => 'FirebaseProcessor';
-
-  static _androidFirebaseExists(Iterable<Flavor> values) =>
-      values.where((flavor) => flavor.android?.firebase != null).isNotEmpty;
-
-  static _iosFirebaseExists(Iterable<Flavor> values) =>
-      values.where((flavor) => flavor.ios?.firebase != null).isNotEmpty;
 }

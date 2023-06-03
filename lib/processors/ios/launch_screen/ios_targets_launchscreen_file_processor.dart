@@ -36,7 +36,7 @@ class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
     String destination, {
     required Flavorizr config,
   }) : super(
-          config.flavors.keys.map(
+          config.iosFlavors.keys.map(
             (flavorName) => IOSTargetLaunchScreenFileProcessor(
               process,
               script,

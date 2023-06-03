@@ -27,13 +27,13 @@ import 'dart:convert';
 
 import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
+import 'package:flutter_flavorizr/utils/darwin_utils.dart' as utils;
 
-class IOSBuildConfigurationsProcessor extends QueueProcessor {
-  IOSBuildConfigurationsProcessor(
+class DarwinBuildConfigurationsProcessor extends QueueProcessor {
+  DarwinBuildConfigurationsProcessor(
     String process,
     String script,
     String project,
@@ -49,7 +49,7 @@ class IOSBuildConfigurationsProcessor extends QueueProcessor {
               [
                 script,
                 project,
-                ios_utils.flatPath(
+                utils.flatPath(
                     '$file/$flavorName${target.name.capitalize}.xcconfig'),
                 flavorName,
                 bundleId,
@@ -63,5 +63,5 @@ class IOSBuildConfigurationsProcessor extends QueueProcessor {
         );
 
   @override
-  String toString() => 'IOSBuildConfigurationsProcessor';
+  String toString() => 'DarwinBuildConfigurationsProcessor';
 }

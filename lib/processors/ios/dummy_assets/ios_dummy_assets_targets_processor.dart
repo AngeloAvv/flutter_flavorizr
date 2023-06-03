@@ -25,7 +25,6 @@
 
 import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/dummy_assets/ios_dummy_assets_processor.dart';
 
@@ -35,10 +34,9 @@ class IOSDummyAssetsTargetsProcessor extends QueueProcessor {
     String destination, {
     required Flavorizr config,
   }) : super(
-          config.flavors
-              .where((_, flavor) => flavor.ios != null)
+          config.iosFlavors
               .map(
-                (String flavorName, Flavor flavor) => MapEntry(
+                (flavorName, flavor) => MapEntry(
                   flavorName,
                   IOSDummyAssetsProcessor(
                     source,

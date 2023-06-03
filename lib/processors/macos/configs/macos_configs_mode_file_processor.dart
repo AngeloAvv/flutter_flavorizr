@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Angelo Cassano
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,26 +23,46 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/processors/commons/copy_file_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/new_folder_processor.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
+import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/configs/macos_configs_processor.dart';
+import 'package:flutter_flavorizr/utils/darwin_utils.dart' as ios_utils;
 
-class IOSFirebaseProcessor extends QueueProcessor {
-  IOSFirebaseProcessor(
-    String source,
-    String destination,
-    String flavorName, {
+class MacOSConfigsModeFileProcessor extends QueueProcessor {
+  MacOSConfigsModeFileProcessor(
+    String process,
+    String script,
+    String project,
+    String path,
+    String flavorName,
+    Flavor flavor,
+    Target target, {
     required Flavorizr config,
   }) : super(
           [
-            NewFolderProcessor(
-              '$destination/$flavorName',
+            NewFileStringProcessor(
+              '$path/$flavorName${target.name.capitalize}.xcconfig',
+              MacOSConfigsProcessor(
+                flavorName,
+                flavor,
+                target,
+                config: config,
+              ),
               config: config,
             ),
-            CopyFileProcessor(
-              source,
-              '$destination/$flavorName/GoogleService-Info.plist',
+            ShellProcessor(
+              process,
+              [
+                script,
+                project,
+                ios_utils.flatPath(
+                    '$path/$flavorName${target.name.capitalize}.xcconfig'),
+              ],
               config: config,
             ),
           ],
@@ -50,5 +70,5 @@ class IOSFirebaseProcessor extends QueueProcessor {
         );
 
   @override
-  String toString() => 'IOSFirebaseProcessor';
+  String toString() => 'MacOSConfigsModeFileProcessor';
 }

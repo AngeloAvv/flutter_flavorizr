@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Angelo Cassano
+ * Copyright (c) 2022 MyLittleSuite
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,17 +23,35 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/processors/commons/image_resizer_processor.dart';
+import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
+import 'package:sprintf/sprintf.dart';
 
-part 'ios.g.dart';
+abstract class DarwinIconTargetProcessor extends QueueProcessor {
+  DarwinIconTargetProcessor(
+    String source, {
+    required String flavorName,
+    required Map<String, Size> iconSet,
+    required String appIconPath,
+    required Flavorizr config,
+  }) : super(
+          iconSet
+              .map(
+                (fileName, size) => MapEntry(
+                  fileName,
+                  ImageResizerProcessor(
+                    source,
+                    sprintf(appIconPath, [flavorName, fileName]),
+                    size,
+                    config: config,
+                  ),
+                ),
+              )
+              .values,
+          config: config,
+        );
 
-@JsonSerializable(anyMap: true, createToJson: false)
-class IOS with BuildSettingsMixin {
-  IOS({Map<String, dynamic> buildSettings = const {}}) {
-    this.buildSettings = BuildSettingsMixin.defaultBuildSettings;
-    this.buildSettings.addAll(buildSettings);
-  }
-
-  factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
+  @override
+  String toString() => 'DarwinIconProcessor';
 }

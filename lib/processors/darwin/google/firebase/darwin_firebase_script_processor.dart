@@ -28,8 +28,8 @@ import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
-class IOSFirebaseScriptProcessor extends StringProcessor {
-  IOSFirebaseScriptProcessor({
+class DarwinFirebaseScriptProcessor extends StringProcessor {
+  DarwinFirebaseScriptProcessor({
     String? input,
     required Flavorizr config,
   }) : super(
@@ -38,7 +38,7 @@ class IOSFirebaseScriptProcessor extends StringProcessor {
         );
 
   @override
-  String toString() => 'IOSFirebaseScriptProcessor';
+  String toString() => 'DarwinFirebaseScriptProcessor';
 
   @override
   String execute() {

@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/parser.dart';
-import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_firebase_script_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/google/firebase/darwin_firebase_script_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../test_utils.dart';
@@ -51,8 +51,8 @@ void main() {
             'test_resources/ios/ios_firebase_script_processor_test/single_flavor.sh')
         .readAsStringSync();
 
-    IOSFirebaseScriptProcessor processor =
-        IOSFirebaseScriptProcessor(config: flavorizr);
+    DarwinFirebaseScriptProcessor processor =
+        DarwinFirebaseScriptProcessor(config: flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -77,8 +77,8 @@ void main() {
             'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
         .readAsStringSync();
 
-    IOSFirebaseScriptProcessor processor =
-        IOSFirebaseScriptProcessor(config: flavorizr);
+    DarwinFirebaseScriptProcessor processor =
+        DarwinFirebaseScriptProcessor(config: flavorizr);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

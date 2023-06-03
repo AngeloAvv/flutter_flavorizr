@@ -24,13 +24,13 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_mode_file_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/xcconfig/macos_xcconfig_mode_file_processor.dart';
 
-class IOSXCConfigFileProcessor extends QueueProcessor {
-  IOSXCConfigFileProcessor(
+class MacOSXCConfigFileProcessor extends QueueProcessor {
+  MacOSXCConfigFileProcessor(
     String process,
     String script,
     String project,
@@ -40,13 +40,12 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
     required Flavorizr config,
   }) : super(
           Target.values.map(
-            (target) => IOSXCConfigModeFileProcessor(
+            (target) => MacOSXCConfigModeFileProcessor(
               process,
               script,
               project,
               path,
               flavorName,
-              flavor,
               target,
               config: config,
             ),

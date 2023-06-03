@@ -28,7 +28,7 @@ import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/build_configuration/ios_build_configurations_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/build_configuration/macos_build_configurations_processor.dart';
 
 class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
   IOSBuildConfigurationsTargetsProcessor(
@@ -38,11 +38,10 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
     String file, {
     required Flavorizr config,
   }) : super(
-          config.flavors
-              .where((_, flavor) => flavor.ios != null)
+          config.iosFlavors
               .map((String flavorName, Flavor flavor) => MapEntry(
                     flavorName,
-                    IOSBuildConfigurationsProcessor(
+                    DarwinBuildConfigurationsProcessor(
                       process,
                       script,
                       project,

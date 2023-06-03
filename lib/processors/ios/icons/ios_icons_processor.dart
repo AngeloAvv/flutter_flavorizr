@@ -32,14 +32,14 @@ class IOSIconsProcessor extends QueueProcessor {
   IOSIconsProcessor({
     required Flavorizr config,
   }) : super(
-          config.flavors
+          config.iosFlavors
               .where((_, flavor) =>
                   flavor.app.icon != null || flavor.ios?.icon != null)
               .map(
                 (flavorName, flavor) => MapEntry(
                   flavorName,
                   IOSIconTargetProcessor(
-                    flavor.ios?.icon ?? flavor.app.icon ?? '',
+                    flavor.ios!.icon ?? flavor.app.icon ?? '',
                     flavorName,
                     config: config,
                   ),

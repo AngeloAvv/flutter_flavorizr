@@ -33,7 +33,7 @@ class AndroidAGConnectProcessor extends QueueProcessor {
     required String destination,
     required Flavorizr config,
   }) : super(
-          config.flavors
+          config.androidFlavors
               .where((flavorName, flavor) => flavor.android?.agconnect != null)
               .map(
                 (flavorName, flavor) => MapEntry(

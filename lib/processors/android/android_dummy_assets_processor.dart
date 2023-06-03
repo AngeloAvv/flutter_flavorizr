@@ -35,8 +35,7 @@ class AndroidDummyAssetsProcessor extends QueueProcessor {
     String destination, {
     required Flavorizr config,
   }) : super(
-          config.flavors
-              .where((_, flavor) => flavor.android != null)
+          config.androidFlavors
               .map(
                 (String flavorName, Flavor flavor) => MapEntry(
                   flavorName,

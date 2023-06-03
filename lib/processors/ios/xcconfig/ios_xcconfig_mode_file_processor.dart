@@ -25,13 +25,13 @@
 
 import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
+import 'package:flutter_flavorizr/utils/darwin_utils.dart' as ios_utils;
 
 class IOSXCConfigModeFileProcessor extends QueueProcessor {
   IOSXCConfigModeFileProcessor(

@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'variable.g.dart';

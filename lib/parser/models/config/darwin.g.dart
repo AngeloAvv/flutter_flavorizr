@@ -1,12 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ios.dart';
+part of 'darwin.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-IOS _$IOSFromJson(Map json) => IOS(
+Darwin _$DarwinFromJson(Map json) => Darwin(
       buildSettings: (json['buildSettings'] as Map?)?.map(
             (k, e) => MapEntry(k as String, e),
           ) ??
