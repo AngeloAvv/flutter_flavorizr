@@ -27,15 +27,15 @@ import 'dart:collection';
 
 import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/variable.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/variable.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class IOSXCConfigProcessor extends StringProcessor {
   final String _flavorName;
   final Flavor _flavor;
-  final Target? _target;
+  final Target _target;
 
   IOSXCConfigProcessor(
     this._flavorName,
@@ -71,7 +71,8 @@ class IOSXCConfigProcessor extends StringProcessor {
     })
       ..addAll(
         _flavor.ios?.variables.where((_, variable) =>
-            variable.target == null || variable.target == _target) ?? {},
+                variable.target == null || variable.target == _target) ??
+            {},
       );
 
     buffer.writeln();

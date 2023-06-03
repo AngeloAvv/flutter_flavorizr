@@ -31,7 +31,7 @@ part 'ios.g.dart';
 @JsonSerializable(anyMap: true, createToJson: false)
 class IOS with BuildSettingsMixin {
   IOS({Map<String, dynamic> buildSettings = const {}}) {
-    this.buildSettings = BuildSettingsMixin.defaultBuildSettings;
+    this.buildSettings = BuildSettingsMixin.iosDefaultBuildSettings;
     this.buildSettings.addAll(buildSettings);
   }
 

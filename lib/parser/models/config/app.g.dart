@@ -18,5 +18,8 @@ App _$AppFromJson(Map json) {
     ios: json['ios'] == null
         ? null
         : IOS.fromJson(Map<String, dynamic>.from(json['ios'] as Map)),
+    macos: json['macos'] == null
+        ? null
+        : MacOS.fromJson(Map<String, dynamic>.from(json['macos'] as Map)),
   );
 }

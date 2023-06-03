@@ -25,7 +25,7 @@
 
 import 'package:flutter_flavorizr/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/ios/enums.dart';
+import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 import 'package:flutter_flavorizr/processors/ide/vscode/models/configuration.dart';
 import 'package:flutter_flavorizr/processors/ide/vscode/models/launch.dart';

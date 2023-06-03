@@ -24,7 +24,6 @@
  */
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/android/huawei/agconnect/android_agconnect_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 
@@ -34,7 +33,7 @@ class AGConnectProcessor extends QueueProcessor {
     required Flavorizr config,
   }) : super(
           [
-            if (_androidAGConnectExists(config.flavors.values))
+            if (config.androidAGConnectFlavorsAvailable)
               AndroidAGConnectProcessor(
                 destination: destination,
                 config: config,
@@ -45,7 +44,4 @@ class AGConnectProcessor extends QueueProcessor {
 
   @override
   String toString() => 'AGConnectProcessor';
-
-  static _androidAGConnectExists(Iterable<Flavor> values) =>
-      values.where((flavor) => flavor.android?.agconnect != null).isNotEmpty;
 }

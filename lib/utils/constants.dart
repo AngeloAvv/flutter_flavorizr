@@ -60,8 +60,27 @@ class K {
 
   static String iOSAssetsPath = '$iOSRunnerPath/Assets.xcassets';
 
-  static String iOSAppIconPath =
-      '$iOSRunnerPath/Assets.xcassets/%sAppIcon.appiconset/%s';
+  static String iOSAppIconPath = '$iOSAssetsPath/%sAppIcon.appiconset/%s';
+
+  static String iOSFirebaseScriptPath = '$iOSPath/firebaseScript.sh';
+
+  static String macOSPath = 'macos';
+
+  static String macOSRunnerPath = '$macOSPath/Runner';
+
+  static String macOSRunnerProjectPath = '$macOSPath/Runner.xcodeproj';
+
+  static String macOSPlistPath = '$macOSRunnerPath/Info.plist';
+
+  static String macOSAssetsPath = '$macOSRunnerPath/Assets.xcassets';
+
+  static String macOSAppIconPath = '$macOSAssetsPath/%sAppIcon.appiconset/%s';
+
+  static String macOSConfigsPath = '$macOSRunnerPath/Configs';
+
+  static String macOSFlutterPath = '$macOSPath/Flutter';
+
+  static String macOSFirebaseScriptPath = '$macOSPath/firebaseScript.sh';
 
   static String assetsZipPath = 'assets.tmp.zip';
 
@@ -88,22 +107,29 @@ class K {
   static String tempiOSLaunchScreenPath =
       '$tempiOSPath/LaunchScreen.storyboard';
 
-  static String tempiOSFirebaseScriptPath = '$tempiOSPath/firebaseScript.sh';
-
   static String tempScriptsPath = '$tempPath/scripts';
+
+  static String tempDarwinScriptsPath = '$tempScriptsPath/darwin';
+
+  static String tempMacOSPath = '$tempPath/macos';
+
+  static String tempMacOSScriptsPath = '$tempScriptsPath/macos';
+
+  static String tempMacOSAssetsPath = '$tempMacOSPath/Assets.xcassets';
+
+  static String tempDarwinCreateSchemeScriptPath =
+      '$tempDarwinScriptsPath/create_scheme.rb';
 
   static String tempiOSScriptsPath = '$tempScriptsPath/ios';
 
-  static String tempiOSCreateSchemeScriptPath =
-      '$tempiOSScriptsPath/create_scheme.rb';
+  static String tempDarwinAddFileScriptPath =
+      '$tempDarwinScriptsPath/add_file.rb';
 
-  static String tempiOSAddFileScriptPath = '$tempiOSScriptsPath/add_file.rb';
+  static String tempDarwinAddBuildConfigurationScriptPath =
+      '$tempDarwinScriptsPath/add_build_configuration.rb';
 
-  static String tempiOSAddFirebaseBuildPhaseScriptPath =
-      '$tempiOSScriptsPath/add_firebase_build_phase.rb';
-
-  static String tempiOSAddBuildConfigurationScriptPath =
-      '$tempiOSScriptsPath/add_build_configuration.rb';
+  static String tempDarwinAddFirebaseBuildPhaseScriptPath =
+      '$tempDarwinScriptsPath/add_firebase_build_phase.rb';
 
   static String ideaPath = '.idea';
 

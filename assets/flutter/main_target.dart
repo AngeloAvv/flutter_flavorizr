@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'app.dart';
 import 'flavors.dart';
 
 import 'main.dart' as runner;

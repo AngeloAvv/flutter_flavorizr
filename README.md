@@ -30,7 +30,7 @@ software:
 * [Gem](https://rubygems.org/pages/download)
 * [Xcodeproj](https://github.com/CocoaPods/Xcodeproj) (through RubyGems)
 
-These prerequisites are needed to manipulate the iOS project and
+These prerequisites are needed to manipulate the iOS and macOS projects and
 schemes. If you are interested in flavorizing Android only, you can skip
 this step. Keep in mind that you will have to use a custom instructions
 set with Android and Flutter processors only, otherwise an error will
@@ -72,13 +72,13 @@ flavors:
   apple:
     app:
       name: "Apple App"
-  
+
     android:
-      applicationId: "com.example.apple"
-  
+      applicationId: "com.example.apple"  
     ios:
       bundleId: "com.example.apple"
-  
+    macos:
+      bundleId: "com.example.apple"  
   banana:
     app:
       name: "Banana App"
@@ -86,6 +86,8 @@ flavors:
     android:
       applicationId: "com.example.banana"
     ios:
+      bundleId: "com.example.banana"
+    macos:
       bundleId: "com.example.banana"
 ```
 
@@ -104,10 +106,10 @@ flavorizr:
 
       android:
         applicationId: "com.example.apple"
-
       ios:
         bundleId: "com.example.apple"
-
+      macos:
+        bundleId: "com.example.apple"        
     banana:
       app:
         name: "Banana App"
@@ -115,6 +117,8 @@ flavorizr:
       android:
         applicationId: "com.example.banana"
       ios:
+        bundleId: "com.example.banana"
+      macos:
         bundleId: "com.example.banana"
 ```
 
@@ -156,6 +160,13 @@ flavorizr:
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Updates the info.plist file                                             |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
+| macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
+| macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
+| macos:buildTargets      | macOS         | Creates a set of build targets for each flavor and build configuration  |
+| macos:schema            | macOS         | Creates a set of schemas for each flavor                                |
+| macos:dummyAssets       | macOS         | Generates some default icons for your custom flavors                    |
+| macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
+| macos:plist             | macOS         | Updates the info.plist file                                             |
 
 #### android (under app)
 
@@ -165,6 +176,12 @@ flavorizr:
 | resValues        | Array  | {}            | false    | An array which contains a set of resValues configurations          |
 
 #### ios (under app)
+
+| key           | type       | default | required | description                                                                                    |
+|:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
+| buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+
+#### macos (under app)
 
 | key           | type       | default | required | description                                                                                    |
 |:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
@@ -199,11 +216,22 @@ flavorizr:
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 | icon                | String     |         | false    | The icon path for this iOS flavor                                                                             |
 
+#### macos (under *flavorname*)
+
+| key                 | type       | default | required | description                                                                                                   |
+|:--------------------|:-----------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------|
+| bundleId            | String     |         | true     | The bundleId of the macOS App                                                                                 |
+| buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+| firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
+| variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
+| generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
+| icon                | String     |         | false    | The icon path for this macOS flavor                                                                           | 
+
 #### firebase
 
-| key    | type   | default | required | description                                                                                                         |
-|:-------|:-------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------------|
-| config | String |         | false    | The path to the Firebase configuration file (google-services.json for Android and GoogleService-Info.plist for iOS) |
+| key    | type   | default | required | description                                                                                                                   |
+|:-------|:-------|:--------|:---------|:------------------------------------------------------------------------------------------------------------------------------|
+| config | String |         | false    | The path to the Firebase configuration file (google-services.json for Android and GoogleService-Info.plist for iOS and macOS) |
 
 #### agconnect (for Android)
 
@@ -238,7 +266,7 @@ flavors:
       bundleId: "com.example.apple"
 ```
 
-#### variable (for iOS)
+#### variable (for iOS and macOS)
 
 | key    | type   | default | required | description                                                                                                                                                                                                                                          |
 |:-------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -332,6 +360,9 @@ flutter run --flavor apple -t lib/main_apple.dart
 flutter run --flavor banana -t lib/main_banana.dart
 ```
 
+Currently, due to a bug in the Flutter SDK, it's not possible to run the macOS flavors from the terminal.
+You can run them from XCode by selecting the proper schema and by pressing play.
+
 ### Default processors set
 
 By default, when you do not specify a custom set of processors by appending the -p (or --processors) param, a default processors set will be used:
@@ -354,6 +385,13 @@ By default, when you do not specify a custom set of processors by appending the 
 * ios:icons
 * ios:plist
 * ios:launchScreen
+* macos:xcconfig
+* macos:configs
+* macos:buildTargets
+* macos:schema
+* macos:dummyAssets
+* macos:icons
+* macos:plist
 * google:firebase
 * huawei:agconnect
 * assets:clean
@@ -404,7 +442,7 @@ Please do not erase these comments otherwise you will break down the AndroidBuil
 
 ### Google Firebase
 
-In order to flavorize your project and enable Firebase in your flavor you have to define a firebase object below each OS flavor. Under the firebase object you must define the config path of the google-services.json (if you are under Android configuration) or GoogleService-Info.plist (if you are under iOS configuration).
+In order to flavorize your project and enable Firebase in your flavor you have to define a firebase object below each OS flavor. Under the firebase object you must define the config path of the google-services.json (if you are under Android configuration) or GoogleService-Info.plist (if you are under iOS or macOS configuration).
 
 As you can see in the example below, we added the path accordingly
 

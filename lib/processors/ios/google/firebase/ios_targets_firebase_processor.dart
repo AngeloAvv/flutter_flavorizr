@@ -23,16 +23,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/empty_file_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_firebase_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/google/firebase/ios_firebase_script_processor.dart';
-import 'package:flutter_flavorizr/utils/ios_utils.dart' as ios_utils;
+import 'package:flutter_flavorizr/processors/darwin/google/firebase/darwin_firebase_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/google/firebase/darwin_firebase_script_processor.dart';
+import 'package:flutter_flavorizr/utils/darwin_utils.dart' as ios_utils;
 
 class IOSTargetsFirebaseProcessor extends QueueProcessor {
   IOSTargetsFirebaseProcessor({
@@ -45,11 +43,11 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
     required Flavorizr config,
   }) : super(
           [
-            ..._filteredFlavors(config)
+            ...config.iosFirebaseFlavors
                 .map(
                   (flavorName, flavor) => MapEntry(
                     flavorName,
-                    IOSFirebaseProcessor(
+                    DarwinFirebaseProcessor(
                       flavor.ios!.firebase!.config,
                       destination,
                       flavorName,
@@ -74,7 +72,10 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
             ),
             NewFileStringProcessor(
               generatedFirebaseScriptPath,
-              IOSFirebaseScriptProcessor(config: config),
+              DarwinFirebaseScriptProcessor(
+                flavors: config.iosFirebaseFlavors,
+                config: config,
+              ),
               config: config,
             ),
             ShellProcessor(
@@ -92,8 +93,4 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
 
   @override
   String toString() => 'IOSTargetsFirebaseProcessor';
-
-  static Map<String, Flavor> _filteredFlavors(Flavorizr config) =>
-      config.flavors
-          .where((flavorName, flavor) => flavor.ios?.firebase != null);
 }

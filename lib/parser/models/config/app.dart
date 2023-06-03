@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'android.dart';
 import 'ios.dart';
+import 'macos.dart';
 
 part 'app.g.dart';
 
@@ -39,9 +40,12 @@ class App {
   @JsonKey(required: false, disallowNullValue: true)
   final IOS? ios;
 
+  final MacOS? macos;
+
   App({
     this.android,
     this.ios,
+    this.macos,
   });
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);

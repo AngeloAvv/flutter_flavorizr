@@ -122,7 +122,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
     buffer.writeln('    productFlavors {');
 
-    config.flavors.forEach((name, flavor) {
+    config.androidFlavors.forEach((name, flavor) {
       buffer.writeln('        $name {');
       buffer.writeln('            dimension "$flavorDimension"');
       buffer.writeln(
