@@ -39,7 +39,7 @@ class IOSXCConfigTargetsFileProcessor extends QueueProcessor {
               .map(
                 (flavorName, flavor) => MapEntry(
                   flavorName,
-                  MacOSXCConfigFileProcessor(
+                  IOSXCConfigFileProcessor(
                     process,
                     script,
                     project,

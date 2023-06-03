@@ -6,25 +6,25 @@ issue_tracker: https://github.com/AngeloAvv/flutter_flavorizr/issues
 homepage: https://www.angelocassano.it
 
 environment:
-  sdk: ">=2.18.2 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  archive: ^3.3.6
-  args: ^2.4.0
-  checked_yaml: ^2.0.2
-  collection: ^1.17.0
-  image: ^4.0.15
+  archive: ^3.3.7
+  args: ^2.4.1
+  checked_yaml: ^2.0.3
+  collection: ^1.17.1
+  image: ^4.0.17
   io: ^1.0.4
-  json_annotation: ^4.8.0
+  json_annotation: ^4.8.1
   sprintf: ^7.0.0
-  xml: ^6.2.2
-  yaml: ^3.1.1
+  xml: ^6.3.0
+  yaml: ^3.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.1
-  build_runner: ^2.3.3
-  json_serializable: ^6.6.1
+  build_runner: ^2.4.4
+  json_serializable: ^6.7.0

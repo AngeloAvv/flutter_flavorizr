@@ -10,7 +10,7 @@ Flavor _$FlavorFromJson(Map json) {
   $checkKeys(
     json,
     requiredKeys: const ['app'],
-    disallowNullValues: const ['app', 'android', 'ios'],
+    disallowNullValues: const ['app', 'android', 'ios', 'macos'],
   );
   return Flavor(
     app: App.fromJson(Map<String, dynamic>.from(json['app'] as Map)),
@@ -19,6 +19,9 @@ Flavor _$FlavorFromJson(Map json) {
         : Android.fromJson(Map<String, dynamic>.from(json['android'] as Map)),
     ios: json['ios'] == null
         ? null
-        : IOS.fromJson(Map<String, dynamic>.from(json['ios'] as Map)),
+        : Darwin.fromJson(Map<String, dynamic>.from(json['ios'] as Map)),
+    macos: json['macos'] == null
+        ? null
+        : Darwin.fromJson(Map<String, dynamic>.from(json['macos'] as Map)),
   );
 }

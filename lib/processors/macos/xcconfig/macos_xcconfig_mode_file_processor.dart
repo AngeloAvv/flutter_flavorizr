@@ -28,15 +28,10 @@ import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/processors/macos/xcconfig/macos_xcconfig_processor.dart';
-import 'package:flutter_flavorizr/utils/darwin_utils.dart' as ios_utils;
 
 class MacOSXCConfigModeFileProcessor extends QueueProcessor {
   MacOSXCConfigModeFileProcessor(
-    String process,
-    String script,
-    String project,
     String path,
     String flavorName,
     Target target, {
@@ -46,16 +41,6 @@ class MacOSXCConfigModeFileProcessor extends QueueProcessor {
             NewFileStringProcessor(
               '$path/$flavorName${target.name.capitalize}.xcconfig',
               MacOSXCConfigProcessor(config: config),
-              config: config,
-            ),
-            ShellProcessor(
-              process,
-              [
-                script,
-                project,
-                ios_utils.flatPath(
-                    '$path/$flavorName${target.name.capitalize}.xcconfig'),
-              ],
               config: config,
             ),
           ],

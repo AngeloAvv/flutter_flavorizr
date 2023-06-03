@@ -49,7 +49,7 @@ class Flavor {
     required this.app,
     this.android,
     this.ios,
-    required this.macos,
+    this.macos,
   });
 
   factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);

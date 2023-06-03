@@ -51,8 +51,10 @@ void main() {
             'test_resources/ios/ios_firebase_script_processor_test/single_flavor.sh')
         .readAsStringSync();
 
-    DarwinFirebaseScriptProcessor processor =
-        DarwinFirebaseScriptProcessor(config: flavorizr);
+    DarwinFirebaseScriptProcessor processor = DarwinFirebaseScriptProcessor(
+      flavors: flavorizr.iosFirebaseFlavors,
+      config: flavorizr,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -77,8 +79,10 @@ void main() {
             'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors.sh')
         .readAsStringSync();
 
-    DarwinFirebaseScriptProcessor processor =
-        DarwinFirebaseScriptProcessor(config: flavorizr);
+    DarwinFirebaseScriptProcessor processor = DarwinFirebaseScriptProcessor(
+      flavors: flavorizr.iosFirebaseFlavors,
+      config: flavorizr,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);

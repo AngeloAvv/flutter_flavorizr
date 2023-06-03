@@ -23,14 +23,17 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/string_processor.dart';
 
 class DarwinFirebaseScriptProcessor extends StringProcessor {
+
+  final Map<String, Flavor> flavors;
+
   DarwinFirebaseScriptProcessor({
     String? input,
+    required this.flavors,
     required Flavorizr config,
   }) : super(
           input: input,
@@ -44,9 +47,8 @@ class DarwinFirebaseScriptProcessor extends StringProcessor {
   String execute() {
     StringBuffer buffer = StringBuffer();
 
-    final filteredFlavors = _filteredFlavors(config);
-    if (filteredFlavors.isNotEmpty) {
-      final iterator = filteredFlavors.keys.iterator;
+    if (flavors.isNotEmpty) {
+      final iterator = flavors.keys.iterator;
       iterator.moveNext();
 
       buffer.writeln('if ${_generateCondition(iterator.current)}');
@@ -69,7 +71,4 @@ class DarwinFirebaseScriptProcessor extends StringProcessor {
 
   String _generateCopy(String flavorName) =>
       'cp Runner/$flavorName/GoogleService-Info.plist Runner/GoogleService-Info.plist';
-
-  Map<String, Flavor> _filteredFlavors(Flavorizr config) => config.flavors
-      .where((flavorName, flavor) => flavor.ios?.firebase != null);
 }

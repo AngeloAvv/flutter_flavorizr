@@ -74,7 +74,10 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
             ),
             NewFileStringProcessor(
               generatedFirebaseScriptPath,
-              DarwinFirebaseScriptProcessor(config: config),
+              DarwinFirebaseScriptProcessor(
+                flavors: config.iosFirebaseFlavors,
+                config: config,
+              ),
               config: config,
             ),
             ShellProcessor(

@@ -30,18 +30,12 @@ import 'package:flutter_flavorizr/processors/macos/xcconfig/macos_xcconfig_mode_
 
 class MacOSXCConfigFileProcessor extends QueueProcessor {
   MacOSXCConfigFileProcessor(
-    String process,
-    String script,
-    String project,
     String path,
     String flavorName, {
     required Flavorizr config,
   }) : super(
           Target.values.map(
             (target) => MacOSXCConfigModeFileProcessor(
-              process,
-              script,
-              project,
               path,
               flavorName,
               target,

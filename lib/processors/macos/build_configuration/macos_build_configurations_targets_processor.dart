@@ -27,7 +27,7 @@ import 'package:flutter_flavorizr/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/darwin/build_configuration/macos_build_configurations_processor.dart';
+import 'package:flutter_flavorizr/processors/darwin/build_configuration/darwin_build_configurations_processor.dart';
 
 class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
   MacOSBuildConfigurationsTargetsProcessor(
@@ -50,7 +50,7 @@ class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                       {}
                         ..addAll(config.app?.macos != null
                             ? config.app!.macos!.buildSettings
-                            : BuildSettingsMixin.defaultBuildSettings)
+                            : BuildSettingsMixin.macosDefaultBuildSettings)
                         ..addAll(flavor.macos?.buildSettings ?? {}),
                       config: config,
                     ),

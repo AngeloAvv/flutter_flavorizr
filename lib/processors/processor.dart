@@ -256,44 +256,41 @@ class Processor extends AbstractProcessor<void> {
 
       // MacOS
       'macos:xcconfig': MacOSXCConfigTargetsFileProcessor(
-        'ruby',
-        K.tempDarwinAddFileScriptPath,
-        K.macOSRunnerProjectPath,
         K.macOSFlutterPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'macos:configs': MacOSConfigsTargetsFileProcessor(
         'ruby',
         K.tempDarwinAddFileScriptPath,
         K.macOSRunnerProjectPath,
         K.macOSConfigsPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'macos:buildTargets': MacOSBuildConfigurationsTargetsProcessor(
         'ruby',
         K.tempDarwinAddBuildConfigurationScriptPath,
         K.macOSRunnerProjectPath,
         K.macOSConfigsPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'macos:schema': DarwinSchemasProcessor(
         'ruby',
         K.tempDarwinCreateSchemeScriptPath,
         K.macOSRunnerProjectPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'macos:dummyAssets': MacOSDummyAssetsTargetsProcessor(
         K.tempMacOSAssetsPath,
         K.macOSAssetsPath,
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'macos:icons': MacOSIconsProcessor(
-        config: pubspec.flavorizr,
+        config: flavorizr,
       ),
       'macos:plist': ExistingFileStringProcessor(
         K.macOSPlistPath,
-        MacOSPListProcessor(config: pubspec.flavorizr),
-        config: pubspec.flavorizr,
+        MacOSPListProcessor(config: flavorizr),
+        config: flavorizr,
       ),
 
       // Google

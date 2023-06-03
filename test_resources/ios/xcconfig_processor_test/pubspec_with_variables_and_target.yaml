@@ -25,7 +25,6 @@ flavorizr:
   app:
     android:
       flavorDimensions: "flavor-type" # optional?
-    ios:
 
   flavors:
     apple:

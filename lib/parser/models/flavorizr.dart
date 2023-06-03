@@ -51,25 +51,25 @@ class Flavorizr {
   @JsonKey()
   final IDE? ide;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFlavors;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> iosFlavors;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> macosFlavors;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFirebaseFlavors;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidAGConnectFlavors;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> iosFirebaseFlavors;
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> macosFirebaseFlavors;
 
   Flavorizr({

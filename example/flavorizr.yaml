@@ -1,7 +1,6 @@
 app:
   android:
     flavorDimensions: "flavor-type"
-  ios:
 
 flavors:
   apple:
@@ -10,8 +9,9 @@ flavors:
 
     android:
       applicationId: "com.example.apple"
-
     ios:
+      bundleId: "com.example.apple"
+    macos:
       bundleId: "com.example.apple"
 
   banana:
@@ -22,3 +22,7 @@ flavors:
       applicationId: "com.example.banana"
     ios:
       bundleId: "com.example.banana"
+    macos:
+      bundleId: "com.example.banana"
+
+ide: idea

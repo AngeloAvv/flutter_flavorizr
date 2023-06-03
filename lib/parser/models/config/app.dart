@@ -26,7 +26,8 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'android.dart';
-import 'darwin.dart';
+import 'ios.dart';
+import 'macos.dart';
 
 part 'app.g.dart';
 
@@ -37,9 +38,9 @@ class App {
   final Android? android;
 
   @JsonKey(required: false, disallowNullValue: true)
-  final Darwin? ios;
+  final IOS? ios;
 
-  final Darwin? macos;
+  final MacOS? macos;
 
   App({
     this.android,

@@ -25,27 +25,20 @@
 
 import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/processors/ios/xcconfig/ios_xcconfig_file_processor.dart';
+import 'package:flutter_flavorizr/processors/macos/xcconfig/macos_xcconfig_file_processor.dart';
 
 class MacOSXCConfigTargetsFileProcessor extends QueueProcessor {
   MacOSXCConfigTargetsFileProcessor(
-    String process,
-    String script,
-    String project,
     String path, {
     required Flavorizr config,
   }) : super(
           config.macosFlavors
               .map(
-                (flavorName, flavor) => MapEntry(
+                (flavorName, _) => MapEntry(
                   flavorName,
                   MacOSXCConfigFileProcessor(
-                    process,
-                    script,
-                    project,
                     path,
                     flavorName,
-                    flavor,
                     config: config,
                   ),
                 ),
