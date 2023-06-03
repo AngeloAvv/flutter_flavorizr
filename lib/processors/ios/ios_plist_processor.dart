@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 /*
  * Copyright (c) 2023 Angelo Cassano
  *

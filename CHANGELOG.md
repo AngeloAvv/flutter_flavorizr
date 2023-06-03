@@ -1,5 +1,7 @@
 ## NEXT
 
+## 2.2.0
+
 * Added support to macOS
 * Added common resValues for Android
 * Changed the way flutter_flavorizr reads the instructions: from the flavorizr.yaml as a main source

@@ -1,5 +1,7 @@
+// ignore_for_file: deprecated_member_use
+
 /*
- * Copyright (c) 2022 MyLittleSuite
+ * Copyright (c) 2023 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
