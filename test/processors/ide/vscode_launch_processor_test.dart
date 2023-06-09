@@ -25,9 +25,9 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/parser/parser.dart';
-import 'package:flutter_flavorizr/processors/ide/vscode/vscode_launch_processor.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/ide/vscode/vscode_launch_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';

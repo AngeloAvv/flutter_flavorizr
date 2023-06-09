@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/parser/parser.dart';
+import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
