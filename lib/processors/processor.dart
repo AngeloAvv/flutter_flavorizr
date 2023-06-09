@@ -255,43 +255,45 @@ class Processor extends AbstractProcessor<void> {
       ),
 
       // MacOS
-      'macos:xcconfig': MacOSXCConfigTargetsFileProcessor(
-        K.macOSFlutterPath,
-        config: flavorizr,
-      ),
-      'macos:configs': MacOSConfigsTargetsFileProcessor(
-        'ruby',
-        K.tempDarwinAddFileScriptPath,
-        K.macOSRunnerProjectPath,
-        K.macOSConfigsPath,
-        config: flavorizr,
-      ),
-      'macos:buildTargets': MacOSBuildConfigurationsTargetsProcessor(
-        'ruby',
-        K.tempDarwinAddBuildConfigurationScriptPath,
-        K.macOSRunnerProjectPath,
-        K.macOSConfigsPath,
-        config: flavorizr,
-      ),
-      'macos:schema': DarwinSchemasProcessor(
-        'ruby',
-        K.tempDarwinCreateSchemeScriptPath,
-        K.macOSRunnerProjectPath,
-        config: flavorizr,
-      ),
-      'macos:dummyAssets': MacOSDummyAssetsTargetsProcessor(
-        K.tempMacOSAssetsPath,
-        K.macOSAssetsPath,
-        config: flavorizr,
-      ),
-      'macos:icons': MacOSIconsProcessor(
-        config: flavorizr,
-      ),
-      'macos:plist': ExistingFileStringProcessor(
-        K.macOSPlistPath,
-        MacOSPListProcessor(config: flavorizr),
-        config: flavorizr,
-      ),
+      if (flavorizr.macosFlavors.isNotEmpty) ...{
+        'macos:xcconfig': MacOSXCConfigTargetsFileProcessor(
+          K.macOSFlutterPath,
+          config: flavorizr,
+        ),
+        'macos:configs': MacOSConfigsTargetsFileProcessor(
+          'ruby',
+          K.tempDarwinAddFileScriptPath,
+          K.macOSRunnerProjectPath,
+          K.macOSConfigsPath,
+          config: flavorizr,
+        ),
+        'macos:buildTargets': MacOSBuildConfigurationsTargetsProcessor(
+          'ruby',
+          K.tempDarwinAddBuildConfigurationScriptPath,
+          K.macOSRunnerProjectPath,
+          K.macOSConfigsPath,
+          config: flavorizr,
+        ),
+        'macos:schema': DarwinSchemasProcessor(
+          'ruby',
+          K.tempDarwinCreateSchemeScriptPath,
+          K.macOSRunnerProjectPath,
+          config: flavorizr,
+        ),
+        'macos:dummyAssets': MacOSDummyAssetsTargetsProcessor(
+          K.tempMacOSAssetsPath,
+          K.macOSAssetsPath,
+          config: flavorizr,
+        ),
+        'macos:icons': MacOSIconsProcessor(
+          config: flavorizr,
+        ),
+        'macos:plist': ExistingFileStringProcessor(
+          K.macOSPlistPath,
+          MacOSPListProcessor(config: flavorizr),
+          config: flavorizr,
+        ),
+      },
 
       // Google
       'google:firebase': FirebaseProcessor(
