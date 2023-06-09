@@ -90,8 +90,18 @@ class Flavorizr {
         macosFirebaseFlavors =
             flavors.where((_, flavor) => flavor.macos?.firebase != null);
 
+
   factory Flavorizr.fromJson(Map json) =>
       _$FlavorizrFromJson(json);
+
+  factory Flavorizr.parse(String yaml) =>
+      checkedYamlDecode(yaml, (o) => Flavorizr.fromJson(o ?? {}));
+
+  bool get androidFlavorsAvailable => androidFlavors.isNotEmpty;
+
+  bool get iosFlavorsAvailable => iosFlavors.isNotEmpty;
+
+  bool get macosFlavorsAvailable => macosFlavors.isNotEmpty;
 
   bool get androidFirebaseFlavorsAvailable => androidFirebaseFlavors.isNotEmpty;
 
@@ -101,7 +111,4 @@ class Flavorizr {
   bool get iosFirebaseFlavorsAvailable => iosFirebaseFlavors.isNotEmpty;
 
   bool get macosFirebaseFlavorsAvailable => macosFirebaseFlavors.isNotEmpty;
-
-  factory Flavorizr.parse(String yaml) =>
-      checkedYamlDecode(yaml, (o) => Flavorizr.fromJson(o ?? {}));
 }
