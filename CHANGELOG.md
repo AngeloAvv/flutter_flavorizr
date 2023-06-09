@@ -1,5 +1,8 @@
 ## NEXT
 
+## 2.2.1
+* Fixed platform optionals error due to eager processors initialization
+
 ## 2.2.0
 
 * Added support to macOS
