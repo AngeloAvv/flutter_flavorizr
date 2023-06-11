@@ -23,4 +23,13 @@ build_config.base_configuration_reference = project.files.detect { |file| file.p
 build_config.build_settings = base_config.build_settings.clone
 build_config.build_settings = build_config.build_settings.merge(additional_build_settings)
 
+# Add other build dummy configurations for targets
+project.targets.each do |target|  
+    build_configx = target.add_build_configuration("#{mode}-#{flavor}", mode.downcase == 'debug' ? :debug : :release)
+    build_configx.build_settings = {
+        "PRODUCT_NAME" => target.name,
+    }
+end
+##
+
 project.save
