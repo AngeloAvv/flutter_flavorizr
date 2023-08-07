@@ -56,7 +56,16 @@ flavorizr:
           variable_two:
             type: "string"
             value: "test variable two"
-
+        buildConfigFields:
+          field_one:
+            type: "String"
+            value: "test field one"
+          field_two:
+            type: "char"
+            value: "y"
+          field_three:
+            type: "double"
+            value: "20.0"
       ios:
         bundleId: "com.example.banana"
 

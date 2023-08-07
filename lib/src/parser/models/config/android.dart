@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -38,9 +39,13 @@ class Android {
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, ResValue> resValues;
 
+  @JsonKey(disallowNullValue: true, defaultValue: {})
+  final Map<String, BuildConfigField> buildConfigFields;
+
   const Android({
     this.flavorDimensions = kFlavorDimensionValue,
     this.resValues = const {},
+    this.buildConfigFields = const {},
   });
 
   factory Android.fromJson(Map<String, dynamic> json) =>
