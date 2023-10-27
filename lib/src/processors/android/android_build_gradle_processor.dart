@@ -112,7 +112,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
     buffer.writeln();
     buffer.writeln('    $beginFlavorDimensionsMarkup');
-    buffer.writeln('    flavorDimensions "$flavorDimension"');
+    buffer.writeln('    flavorDimensions += "$flavorDimension"');
     buffer.writeln();
   }
 
