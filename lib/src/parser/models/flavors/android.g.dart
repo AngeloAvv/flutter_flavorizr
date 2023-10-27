@@ -39,5 +39,9 @@ Android _$AndroidFromJson(Map json) {
         ? null
         : Firebase.fromJson(Map<String, dynamic>.from(json['firebase'] as Map)),
     icon: json['icon'] as String?,
+    adaptiveIcon: (json['adaptiveIcon'] as Map?)?.map(
+          (k, e) => MapEntry(k as String, e),
+        ) ??
+        {},
   );
 }

@@ -31,6 +31,15 @@ class K {
   static String androidIconPath =
       '$androidAppPath/src/%s/res/%s/ic_launcher.png';
 
+  static String androidAdaptiveIconBackgroundPath =
+      '$androidAppPath/src/%s/res/%s/ic_launcher_background.png';
+
+  static String androidAdaptiveIconForegroundPath =
+      '$androidAppPath/src/%s/res/%s/ic_launcher_foreground.png';
+
+  static String androidAdaptiveIconXmlPath =
+      '$androidAppPath/src/%s/res/mipmap-anydpi-v26/ic_launcher.xml';
+
   static String androidManifestPath =
       '$androidSrcPath/main/AndroidManifest.xml';
 

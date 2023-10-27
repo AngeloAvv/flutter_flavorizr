@@ -23,9 +23,12 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
+import 'package:path/path.dart' as path_dart;
 
 abstract class AbstractFileStringProcessor extends AbstractFileProcessor {
   StringProcessor processor;
@@ -38,6 +41,10 @@ abstract class AbstractFileStringProcessor extends AbstractFileProcessor {
 
   @override
   void execute() {
+    Directory directory = Directory(path_dart.dirname(path));
+    if (!directory.existsSync()) {
+      directory.createSync(recursive: true);
+    }
     String result = processor.execute();
     file.writeAsStringSync(result);
   }

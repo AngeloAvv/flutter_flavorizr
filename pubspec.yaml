@@ -21,6 +21,7 @@ dependencies:
   sprintf: ^7.0.0
   xml: ^6.3.0
   yaml: ^3.1.2
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:

@@ -45,6 +45,9 @@ class Android extends OS {
   @JsonKey(disallowNullValue: true)
   final AGConnect? agconnect;
 
+  @JsonKey(disallowNullValue: true)
+  final Map<String, dynamic>? adaptiveIcon;
+
   Android({
     required this.applicationId,
     this.customConfig = const {},
@@ -53,6 +56,7 @@ class Android extends OS {
     bool generateDummyAssets = true,
     Firebase? firebase,
     String? icon,
+    this.adaptiveIcon = const {},
   }) : super(
           generateDummyAssets: generateDummyAssets,
           firebase: firebase,
