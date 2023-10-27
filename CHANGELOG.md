@@ -9,8 +9,8 @@
 * Added common resValues for Android
 * Changed the way flutter_flavorizr reads the instructions: from the flavorizr.yaml as a main source
   and pubspec.yaml as fallback
-* Android and iOS definitions are no longer required
 * main.dart generated more seamlessly
+* BREAKING: Android and iOS definitions are no longer required: must remove definitions if they're unused
 
 ## 2.1.6
 
