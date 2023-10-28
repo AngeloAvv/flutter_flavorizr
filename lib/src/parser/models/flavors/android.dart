@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/google/firebase/firebase.dart';
@@ -46,7 +47,7 @@ class Android extends OS {
   final AGConnect? agconnect;
 
   @JsonKey(disallowNullValue: true)
-  final Map<String, dynamic>? adaptiveIcon;
+  final AdaptiveIcon? adaptiveIcon;
 
   Android({
     required this.applicationId,
@@ -56,7 +57,7 @@ class Android extends OS {
     bool generateDummyAssets = true,
     Firebase? firebase,
     String? icon,
-    this.adaptiveIcon = const {},
+    this.adaptiveIcon,
   }) : super(
           generateDummyAssets: generateDummyAssets,
           firebase: firebase,

@@ -37,4 +37,10 @@ class NewFileStringProcessor extends AbstractFileStringProcessor {
           processor,
           config: config,
         );
+
+  @override
+  void execute() {
+    file.createSync(recursive: true);
+    super.execute();
+  }
 }
