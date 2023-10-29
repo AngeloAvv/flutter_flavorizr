@@ -4,10 +4,10 @@ part 'adaptive_icon.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
 class AdaptiveIcon {
-  final String? foreground;
-  final String? background;
+  final String foreground;
+  final String background;
 
-  AdaptiveIcon({this.foreground, this.background});
+  AdaptiveIcon({required this.foreground, required this.background});
 
   factory AdaptiveIcon.fromJson(Map<String, dynamic> json) =>
       _$AdaptiveIconFromJson(json);

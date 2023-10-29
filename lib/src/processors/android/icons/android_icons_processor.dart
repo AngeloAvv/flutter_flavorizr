@@ -67,8 +67,8 @@ class AndroidIconsProcessor extends QueueProcessor {
                   (flavorName, flavor) => MapEntry(
                     flavorName,
                     AndroidAdaptiveIconProcessor(
-                      flavor.android!.adaptiveIcon!.foreground ?? '',
-                      flavor.android!.adaptiveIcon!.background ?? '',
+                      flavor.android!.adaptiveIcon!.foreground,
+                      flavor.android!.adaptiveIcon!.background,
                       flavorName,
                       config: config,
                     ),
