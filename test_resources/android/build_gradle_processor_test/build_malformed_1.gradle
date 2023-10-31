@@ -29,7 +29,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
 
-    flavorDimensions "flavor-type"
+    flavorDimensions += "flavor-type"
 
     productFlavors {
         apple {
