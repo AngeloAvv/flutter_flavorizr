@@ -173,6 +173,7 @@ flavorizr:
 |:-----------------|:-------|:--------------|:---------|:-------------------------------------------------------------------|
 | flavorDimensions | String | "flavor-type" | false    | The value of the flavorDimensions in the android build.gradle file |
 | resValues        | Array  | {}            | false    | An array which contains a set of resValues configurations          |
+| buildConfigFields| Array  | {}            | false    | An array which contains a set of buildConfigFields configurations          |
 
 #### ios (under app)
 
@@ -200,6 +201,7 @@ flavorizr:
 | applicationId       | String |         | true     | The applicationId of the Android App                                       |
 | firebase            | Object |         | false    | An object which contains a Firebase configuration                          |
 | resValues           | Array  |         | false    | An array which contains a set of resValues configurations                  |
+| buildConfigFields   | Array  |         | false    | An array which contains a set of buildConfigFields configurations          |
 | customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig* |
 | generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)         |
 | icon                | String |         | false    | The icon path for this android flavor                                      |
@@ -260,6 +262,36 @@ flavors:
         variable_two:
           type: "string"
           value: "example variable two"
+  
+    ios:
+      bundleId: "com.example.apple"
+```
+
+#### buildConfigField (for Android)
+
+| key   | type   | default | required | description                                                                                                                              |
+|:------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+| type  | String |         | true     | The type of the [buildConfigField](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/variant/BuildConfigField) variable |
+| value | String |         | true     | The value of the buildConfigField variable                                                                                                       |
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+      buildConfigFields:
+        field_one:
+          type: "String"
+          value: "example field one"
+        field_two:
+          type: "char"
+          value: "y"
+        field_three:
+          type: "double"
+          value: "20.0"
   
     ios:
       bundleId: "com.example.apple"
