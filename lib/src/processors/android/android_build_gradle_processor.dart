@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/exception/existing_flavor_dimensions_excep
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/config/android.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
@@ -112,7 +113,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
     buffer.writeln();
     buffer.writeln('    $beginFlavorDimensionsMarkup');
-    buffer.writeln('    flavorDimensions "$flavorDimension"');
+    buffer.writeln('    flavorDimensions += "$flavorDimension"');
     buffer.writeln();
   }
 
@@ -143,6 +144,16 @@ class AndroidBuildGradleProcessor extends StringProcessor {
       resValues.forEach((key, res) {
         buffer.writeln(
             '            resValue "${res.type}", "$key", "${res.value}"');
+      });
+
+      final Map<String, BuildConfigField> buildConfigFields =
+          LinkedHashMap.fromEntries([
+        ...config.app?.android?.buildConfigFields.entries ?? [],
+        ...flavor.android?.buildConfigFields.entries ?? []
+      ]);
+      buildConfigFields.forEach((key, res) {
+        buffer.writeln(
+            '            buildConfigField "${res.type}", "$key", ${res.wrappedValue}');
       });
 
       buffer.writeln('        }');

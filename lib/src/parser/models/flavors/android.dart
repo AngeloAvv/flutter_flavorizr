@@ -24,6 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/google/firebase/firebase.dart';
@@ -43,6 +44,9 @@ class Android extends OS {
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, ResValue> resValues;
 
+  @JsonKey(disallowNullValue: true, defaultValue: {})
+  final Map<String, BuildConfigField> buildConfigFields;
+
   @JsonKey(disallowNullValue: true)
   final AGConnect? agconnect;
 
@@ -53,6 +57,7 @@ class Android extends OS {
     required this.applicationId,
     this.customConfig = const {},
     this.resValues = const {},
+    this.buildConfigFields = const {},
     this.agconnect,
     bool generateDummyAssets = true,
     Firebase? firebase,
