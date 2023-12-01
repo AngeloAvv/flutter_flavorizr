@@ -73,6 +73,7 @@ class Processor extends AbstractProcessor<void> {
     'android:buildGradle',
     'android:dummyAssets',
     'android:icons',
+    'android:adaptiveIcons',
 
     // Flutter
     'flutter:flavors',

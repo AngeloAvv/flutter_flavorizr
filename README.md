@@ -205,6 +205,7 @@ flavorizr:
 | customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig* |
 | generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)         |
 | icon                | String |         | false    | The icon path for this android flavor                                      |
+| adaptiveIcon        | Array  |         | false    | An array which contains foreground and background of adaptive icon         |
 
 #### ios (under *flavorname*)
 
@@ -353,6 +354,24 @@ apple {
   minSdkVersion 23
 }
 ```
+
+#### adaptiveIcon (for Android only)
+
+You can define adaptiveIcon for android:
+```yml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+  
+    android:
+      applicationId: "com.example.apple"
+      icon: "assets/icon/appleApp/ic_launcher.png"
+      adaptiveIcon:
+        foreground: "assets/adaptive_icon/appleApp/ic_launcher_foreground.png"
+        background: "assets/adaptive_icon/appleApp/ic_launcher_background.png"
+```
+After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please delete adaptiveIcon manually.
 
 
 ## Usage
