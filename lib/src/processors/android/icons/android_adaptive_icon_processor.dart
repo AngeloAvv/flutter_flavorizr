@@ -5,49 +5,33 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:sprintf/sprintf.dart';
 
 class AndroidAdaptiveIconProcessor extends QueueProcessor {
-  static const _entries = {
-    'drawable-mdpi': Size(width: 108, height: 108),
-    'drawable-hdpi': Size(width: 162, height: 162),
-    'drawable-xhdpi': Size(width: 216, height: 216),
-    'drawable-xxhdpi': Size(width: 324, height: 324),
-    'drawable-xxxhdpi': Size(width: 432, height: 432),
-  };
-
   String foregroundSource;
   String backgroundSource;
   String flavorName;
+  String folder;
+  Size size;
 
   AndroidAdaptiveIconProcessor(
     this.foregroundSource,
     this.backgroundSource,
-    this.flavorName, {
+    this.flavorName,
+    this.folder,
+    this.size, {
     required Flavorizr config,
-  }) : super(
-          _entries.map(
-            (folder, size) {
-              return MapEntry(
-                folder,
-                QueueProcessor([
-                  ImageResizerProcessor(
-                    foregroundSource,
-                    sprintf(K.androidAdaptiveIconForegroundPath,
-                        [flavorName, folder]),
-                    size,
-                    config: config,
-                  ),
-                  ImageResizerProcessor(
-                    backgroundSource,
-                    sprintf(K.androidAdaptiveIconBackgroundPath,
-                        [flavorName, folder]),
-                    size,
-                    config: config,
-                  ),
-                ], config: config),
-              );
-            },
-          ).values,
-          config: config,
-        );
+  }) : super([
+          ImageResizerProcessor(
+            foregroundSource,
+            sprintf(K.androidAdaptiveIconForegroundPath, [flavorName, folder]),
+            size,
+            config: config,
+          ),
+          ImageResizerProcessor(
+            backgroundSource,
+            sprintf(K.androidAdaptiveIconBackgroundPath, [flavorName, folder]),
+            size,
+            config: config,
+          ),
+        ], config: config);
 
   @override
   String toString() => 'AndroidAdaptiveIconProcessor';
