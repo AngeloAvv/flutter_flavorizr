@@ -559,6 +559,9 @@ flavors:
       bundleId: "com.example.banana"
 ```
 
+## Troubleshooting
+How to fix the error ["Unable to load contents of file list"](docs%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.m)
+
 ## Docs & Tutorials (from the community)
 [Easily build flavors in Flutter (Android and iOS) with flutter_flavorizr](https://angeloavv.medium.com/easily-build-flavors-in-flutter-android-and-ios-with-flutter-flavorizr-d48cbf956e4) - Angelo Cassano
 
