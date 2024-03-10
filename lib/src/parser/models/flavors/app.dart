@@ -35,7 +35,7 @@ class App {
   @JsonKey(disallowNullValue: true)
   final String? icon;
 
-  App({
+  const App({
     required this.name,
     this.icon,
   });

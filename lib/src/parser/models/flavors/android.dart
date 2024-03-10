@@ -59,15 +59,11 @@ class Android extends OS {
     this.resValues = const {},
     this.buildConfigFields = const {},
     this.agconnect,
-    bool generateDummyAssets = true,
-    Firebase? firebase,
-    String? icon,
+    super.generateDummyAssets,
+    super.firebase,
+    super.icon,
     this.adaptiveIcon,
-  }) : super(
-          generateDummyAssets: generateDummyAssets,
-          firebase: firebase,
-          icon: icon,
-        );
+  });
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

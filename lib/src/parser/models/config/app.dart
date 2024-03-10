@@ -42,7 +42,7 @@ class App {
 
   final MacOS? macos;
 
-  App({
+  const App({
     this.android,
     this.ios,
     this.macos,

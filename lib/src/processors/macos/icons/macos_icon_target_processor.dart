@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/icons/darwin_icon_target_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -40,15 +39,13 @@ class MacOSIconTargetProcessor extends DarwinIconTargetProcessor {
   };
 
   MacOSIconTargetProcessor(
-    String source,
+    super.source,
     String flavorName, {
-    required Flavorizr config,
+    required super.config,
   }) : super(
-          source,
           flavorName: flavorName,
           iconSet: _entries,
           appIconPath: K.macOSAppIconPath,
-          config: config,
         );
 
   @override

@@ -36,7 +36,7 @@ class Parser {
   final String pubspecPath;
   final String flavorizrPath;
 
-  Parser({
+  const Parser({
     required this.pubspecPath,
     required this.flavorizrPath,
   });

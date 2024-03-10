@@ -26,7 +26,6 @@
 import 'dart:collection';
 
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/variable.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
@@ -41,12 +40,9 @@ class IOSXCConfigProcessor extends StringProcessor {
     this._flavorName,
     this._flavor,
     this._target, {
-    String? input,
-    required Flavorizr config,
-  }) : super(
-          input: input,
-          config: config,
-        );
+    super.input,
+    required super.config,
+  });
 
   @override
   String execute() {

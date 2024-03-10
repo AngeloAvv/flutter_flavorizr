@@ -41,7 +41,7 @@ void execute(List<String> args) {
   ArgResults results = argParser.parse(args);
   List<String> argProcessors = results['processors'];
 
-  Parser parser = Parser(
+  Parser parser = const Parser(
     pubspecPath: 'pubspec.yaml',
     flavorizrPath: 'flavorizr.yaml',
   );

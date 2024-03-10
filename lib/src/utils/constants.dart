@@ -147,4 +147,6 @@ class K {
   static String vsCodePath = '.vscode';
 
   static String vsCodeLaunchPath = '$vsCodePath/launch.json';
+
+  const K._();
 }

@@ -28,7 +28,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Test Flavorizr loaded from pubspec.yaml', () {
-    final parser = Parser(
+    const parser = Parser(
       pubspecPath: 'test_resources/pubspec.yaml',
       flavorizrPath: '',
     );
@@ -40,7 +40,7 @@ void main() {
   });
 
   test('Test Flavorizr loaded from flavorizr.yaml', () {
-    final parser = Parser(
+    const parser = Parser(
       pubspecPath: 'test_resources/pubspec.yaml',
       flavorizrPath: 'test_resources/flavorizr.yaml',
     );

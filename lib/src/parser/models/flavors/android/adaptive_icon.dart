@@ -7,7 +7,7 @@ class AdaptiveIcon {
   final String foreground;
   final String background;
 
-  AdaptiveIcon({required this.foreground, required this.background});
+  const AdaptiveIcon({required this.foreground, required this.background});
 
   factory AdaptiveIcon.fromJson(Map<String, dynamic> json) =>
       _$AdaptiveIconFromJson(json);

@@ -17,7 +17,8 @@ Android _$AndroidFromJson(Map json) {
       'customConfig',
       'resValues',
       'buildConfigFields',
-      'agconnect'
+      'agconnect',
+      'adaptiveIcon'
     ],
   );
   return Android(

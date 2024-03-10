@@ -1,12 +1,9 @@
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
 class AndroidGenerateIclauncherXmlProcessor extends StringProcessor {
   AndroidGenerateIclauncherXmlProcessor({
-    required Flavorizr config,
-  }) : super(
-          config: config,
-        );
+    required super.config,
+  });
 
   @override
   String execute() {
