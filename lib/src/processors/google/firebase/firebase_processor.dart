@@ -62,7 +62,7 @@ class FirebaseProcessor extends QueueProcessor {
             if (config.macosFirebaseFlavorsAvailable)
               MacOSTargetsFirebaseProcessor(
                 process: process,
-                destination: iosDestination,
+                destination: macosDestination,
                 addFileScript: addFileScript,
                 runnerProject: macosRunnerProject,
                 firebaseScript: firebaseScript,
