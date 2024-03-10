@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Angelo Cassano
+ * Copyright (c) 2024 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_target_launchscreen_file_processor.dart';
 
 class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
@@ -36,17 +37,20 @@ class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
     String destination, {
     required Flavorizr config,
   }) : super(
-          config.iosFlavors.keys.map(
-            (flavorName) => IOSTargetLaunchScreenFileProcessor(
-              process,
-              script,
-              project,
-              source,
-              destination,
-              flavorName,
-              config: config,
+          [
+            XcodeprojProcessor(config: config),
+            ...config.iosFlavors.keys.map(
+              (flavorName) => IOSTargetLaunchScreenFileProcessor(
+                process,
+                script,
+                project,
+                source,
+                destination,
+                flavorName,
+                config: config,
+              ),
             ),
-          ),
+          ],
           config: config,
         );
 

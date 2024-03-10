@@ -1,6 +1,18 @@
 ## NEXT
 
+## 2.2.2
+
+* Fixed misleading error message: The following fields were missing
+* Fixed destination to macosDestination in FirebaseProcessor
+* Fixed PathNotFoundException: Cannot open file, path = '.idea/runConfigurations/main_<flavorname>_dart.xml' (OS Error: No such file or directory, errno = 2)
+* Fixed 'flavorDimensions' is deprecated
+* Added support for generating android adaptive icons
+* Added support for buildConfigFields
+* Added XcodeprojProcessor to verify the existence of the xcodeproj gem
+* Bumped dependencies
+
 ## 2.2.1
+
 * Fixed platform optionals error due to eager processors initialization
 
 ## 2.2.0

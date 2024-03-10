@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Angelo Cassano
+ * Copyright (c) 2024 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/configs/macos_configs_file_processor.dart';
 
 class MacOSConfigsTargetsFileProcessor extends QueueProcessor {
@@ -35,22 +36,25 @@ class MacOSConfigsTargetsFileProcessor extends QueueProcessor {
     String path, {
     required Flavorizr config,
   }) : super(
-          config.macosFlavors
-              .map(
-                (flavorName, flavor) => MapEntry(
-                  flavorName,
-                  MacOSConfigsFileProcessor(
-                    process,
-                    script,
-                    project,
-                    path,
+          [
+            XcodeprojProcessor(config: config),
+            ...config.macosFlavors
+                .map(
+                  (flavorName, flavor) => MapEntry(
                     flavorName,
-                    flavor,
-                    config: config,
+                    MacOSConfigsFileProcessor(
+                      process,
+                      script,
+                      project,
+                      path,
+                      flavorName,
+                      flavor,
+                      config: config,
+                    ),
                   ),
-                ),
-              )
-              .values,
+                )
+                .values,
+          ],
           config: config,
         );
 

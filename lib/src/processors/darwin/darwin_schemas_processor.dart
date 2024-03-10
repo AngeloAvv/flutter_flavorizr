@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Angelo Cassano
+ * Copyright (c) 2024 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -26,6 +26,7 @@
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 
 class DarwinSchemasProcessor extends QueueProcessor {
   DarwinSchemasProcessor(
@@ -34,17 +35,20 @@ class DarwinSchemasProcessor extends QueueProcessor {
     String path, {
     required Flavorizr config,
   }) : super(
-          config.flavors.keys.map(
-            (String flavorName) => ShellProcessor(
-              process,
-              [
-                script,
-                path,
-                flavorName,
-              ],
-              config: config,
+          [
+            XcodeprojProcessor(config: config),
+            ...config.flavors.keys.map(
+              (String flavorName) => ShellProcessor(
+                process,
+                [
+                  script,
+                  path,
+                  flavorName,
+                ],
+                config: config,
+              ),
             ),
-          ),
+          ],
           config: config,
         );
 
