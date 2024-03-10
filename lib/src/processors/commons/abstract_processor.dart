@@ -28,7 +28,7 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 abstract class AbstractProcessor<T> {
   final Flavorizr config;
 
-  AbstractProcessor(this.config);
+  const AbstractProcessor(this.config);
 
   T execute();
 }

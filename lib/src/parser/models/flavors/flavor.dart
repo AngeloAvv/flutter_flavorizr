@@ -45,7 +45,7 @@ class Flavor {
   @JsonKey(required: false, disallowNullValue: true)
   final Darwin? macos;
 
-  Flavor({
+  const Flavor({
     required this.app,
     this.android,
     this.ios,

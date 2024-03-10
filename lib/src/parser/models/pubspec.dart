@@ -34,7 +34,7 @@ class Pubspec {
   @JsonKey(required: true)
   final Flavorizr flavorizr;
 
-  Pubspec({required this.flavorizr});
+  const Pubspec({required this.flavorizr});
 
   factory Pubspec.fromJson(Map json) => _$PubspecFromJson(json);
 

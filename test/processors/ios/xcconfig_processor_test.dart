@@ -37,7 +37,7 @@ void main() {
   late Flavorizr flavorizr;
 
   test('Test IOXCConfigProcessor', () {
-    Parser parser = Parser(
+    Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_without_variables.yaml',
       flavorizrPath: '',
@@ -70,7 +70,7 @@ void main() {
   });
 
   test('Test IOXCConfigProcessor with variables', () {
-    Parser parser = Parser(
+    Parser parser = const Parser(
       pubspecPath:
       'test_resources/ios/xcconfig_processor_test/pubspec_with_variables.yaml',
       flavorizrPath: '',
@@ -103,7 +103,7 @@ void main() {
   });
 
   test('Test IOXCConfigProcessor with variables', () {
-    Parser parser = Parser(
+    Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_with_variables.yaml',
       flavorizrPath: '',
@@ -137,7 +137,7 @@ void main() {
   });
 
   test('Test IOXCConfigProcessor with variables and target', () {
-    Parser parser = Parser(
+    Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_with_variables_and_target.yaml',
       flavorizrPath: '',

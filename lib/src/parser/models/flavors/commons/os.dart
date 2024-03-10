@@ -36,7 +36,7 @@ class OS {
   @JsonKey(disallowNullValue: true)
   final String? icon;
 
-  OS({
+  const OS({
     this.generateDummyAssets = true,
     this.firebase,
     this.icon,

@@ -24,7 +24,6 @@
  */
 
 import 'package:flutter_flavorizr/src/extensions/extensions_string.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/vscode/models/configuration.dart';
@@ -32,8 +31,8 @@ import 'package:flutter_flavorizr/src/processors/ide/vscode/models/launch.dart';
 
 class VSCodeLaunchProcessor extends StringProcessor {
   VSCodeLaunchProcessor({
-    required Flavorizr config,
-  }) : super(config: config);
+    required super.config,
+  });
 
   @override
   execute() => Launch(

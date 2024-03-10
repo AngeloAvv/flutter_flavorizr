@@ -36,7 +36,7 @@ void main() {
   late Flavorizr flavorizr;
 
   setUp(() {
-    Parser parser = Parser(
+    Parser parser = const Parser(
       pubspecPath:
           'test/processors/android/build_gradle_processor_with_custom_config_test/pubspec_with_custom_config.yaml',
       flavorizrPath: '',

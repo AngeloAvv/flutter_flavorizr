@@ -32,7 +32,7 @@ class AGConnect {
   @JsonKey(required: true, disallowNullValue: true)
   final String config;
 
-  AGConnect({required this.config});
+  const AGConnect({required this.config});
 
   factory AGConnect.fromJson(Map<String, dynamic> json) =>
       _$AGConnectFromJson(json);

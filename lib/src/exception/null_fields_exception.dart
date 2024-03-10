@@ -23,42 +23,12 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
+class NullFieldsException implements Exception {
+  final List<String> fields;
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/ide/vscode/vscode_launch_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+  NullFieldsException(this.fields);
 
-import '../../test_utils.dart';
-
-void main() {
-  late Flavorizr flavorizr;
-
-  setUp(() {
-    Parser parser = const Parser(pubspecPath: 'test_resources/pubspec.yaml', flavorizrPath: '',);
-    try {
-      flavorizr = parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  });
-
-  tearDown(() {});
-
-  test('Test VSCodeLaunchProcessor', () {
-    String matcher =
-        File('test_resources/ide/vscode_launch_processor_test/launch.json')
-            .readAsStringSync();
-
-    VSCodeLaunchProcessor processor = VSCodeLaunchProcessor(
-      config: flavorizr,
-    );
-    String actual = processor.execute();
-
-    actual = TestUtils.stripEndOfLines(actual);
-    matcher = TestUtils.stripEndOfLines(matcher);
-
-    expect(actual, matcher);
-  });
+  @override
+  String toString() =>
+      'The following fields are null or undefined: $fields. Read the docs for further details';
 }

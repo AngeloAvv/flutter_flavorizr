@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
@@ -32,13 +31,10 @@ class DarwinFirebaseScriptProcessor extends StringProcessor {
   final Map<String, Flavor> flavors;
 
   DarwinFirebaseScriptProcessor({
-    String? input,
+    super.input,
     required this.flavors,
-    required Flavorizr config,
-  }) : super(
-          input: input,
-          config: config,
-        );
+    required super.config,
+  });
 
   @override
   String toString() => 'DarwinFirebaseScriptProcessor';
