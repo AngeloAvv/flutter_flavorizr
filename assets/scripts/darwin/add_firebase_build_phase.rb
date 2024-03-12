@@ -21,8 +21,7 @@ phase = target.new_shell_script_build_phase('Firebase Setup')
 phase.shell_path = '/bin/sh'
 phase.shell_script = content
 phase.run_only_for_deployment_postprocessing = '0'
-phase.simple_attributes.find { |attribute| attribute.plist_name == 'outputPaths' }
-     .default_value << '$(SRCROOT)/Runner/GoogleService-Info.plist'
+phase.output_paths.append('$(SRCROOT)/Runner/GoogleService-Info.plist')
 
 target.build_phases.rotate!(-1)
 
