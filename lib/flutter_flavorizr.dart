@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 MyLittleSuite
+ * Copyright (c) 2024 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,34 +23,4 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
-import 'package:args/args.dart';
-import 'package:flutter_flavorizr/parser/models/pubspec.dart';
-import 'package:flutter_flavorizr/parser/parser.dart';
-import 'package:flutter_flavorizr/processors/processor.dart';
-
-void execute(List<String> args) {
-  ArgParser argParser = ArgParser();
-  argParser.addMultiOption('processors',
-      abbr: 'p', allowed: Processor.defaultInstructionSet, splitCommas: true);
-  ArgResults results = argParser.parse(args);
-  List<String> argProcessors = results['processors'];
-
-  Parser parser = Parser(file: 'pubspec.yaml');
-
-  Pubspec? pubspec;
-  try {
-    pubspec = parser.parse();
-  } catch (e) {
-    stderr.writeln(e);
-    exit(0);
-  }
-
-  if (argProcessors.isNotEmpty) {
-    pubspec.flavorizr.instructions = argProcessors;
-  }
-
-  Processor processor = Processor(pubspec);
-  processor.execute();
-}
+export 'src/entrypoint/run.dart' show execute;

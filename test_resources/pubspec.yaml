@@ -11,7 +11,7 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.2
+  cupertino_icons: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -25,7 +25,6 @@ flavorizr:
   app:
     android:
       flavorDimensions: "flavor-type" # optional?
-    ios:
 
   flavors:
     apple:
@@ -57,7 +56,16 @@ flavorizr:
           variable_two:
             type: "string"
             value: "test variable two"
-
+        buildConfigFields:
+          field_one:
+            type: "String"
+            value: "test field one"
+          field_two:
+            type: "char"
+            value: "y"
+          field_three:
+            type: "double"
+            value: "20.0"
       ios:
         bundleId: "com.example.banana"
 

@@ -1,0 +1,47 @@
+app:
+  android:
+    flavorDimensions: "flavor-type" # optional?
+
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+
+    android:
+      applicationId: "com.example.apple"
+
+    ios:
+      bundleId: "com.example.apple"
+      variables:
+        VARIABLE_ONE:
+          value: "variable1"
+        VARIABLE_TWO:
+          target: "debug"
+          value: "variable2"
+
+  banana:
+    app:
+      name: "Banana App"
+
+    android:
+      applicationId: "com.example.banana"
+      resValues:
+        variable_one:
+          type: "string"
+          value: "test variable one"
+        variable_two:
+          type: "string"
+          value: "test variable two"
+      buildConfigFields:
+        field_one:
+          type: "String"
+          value: "test field one"
+        field_two:
+          type: "char"
+          value: "y"
+        field_three:
+          type: "double"
+          value: "20.0"
+
+    ios:
+      bundleId: "com.example.banana"
