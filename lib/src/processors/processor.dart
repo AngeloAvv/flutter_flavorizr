@@ -35,11 +35,13 @@ import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dar
 import 'package:flutter_flavorizr/src/processors/commons/copy_folder_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/delete_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/download_file_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/flutter/flutter_flavors_processor.dart';
 import 'package:flutter_flavorizr/src/processors/flutter/target/flutter_targets_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/google/firebase/firebase_processor.dart';
@@ -83,6 +85,7 @@ class Processor extends AbstractProcessor<void> {
     'flutter:targets',
 
     // iOS
+    'ios:podfile',
     'ios:xcconfig',
     'ios:buildTargets',
     'ios:schema',
@@ -92,6 +95,7 @@ class Processor extends AbstractProcessor<void> {
     'ios:launchScreen',
 
     // macOS
+    'macos:podfile',
     'macos:xcconfig',
     'macos:configs',
     'macos:buildTargets',
@@ -222,6 +226,14 @@ class Processor extends AbstractProcessor<void> {
           ),
 
       //iOS
+      'ios:podfile': () => DynamicFileStringProcessor(
+            K.iOSPodfilePath,
+            PodfileProcessor(
+              flavors: flavorizr.iosFlavors.keys.toList(growable: false),
+              config: flavorizr,
+            ),
+            config: flavorizr,
+          ),
       'ios:xcconfig': () => IOSXCConfigTargetsFileProcessor(
             'ruby',
             K.tempDarwinAddFileScriptPath,
@@ -265,6 +277,14 @@ class Processor extends AbstractProcessor<void> {
           ),
 
       // MacOS
+      'macos:podfile': () => DynamicFileStringProcessor(
+            K.macOSPodfilePath,
+            PodfileProcessor(
+              flavors: flavorizr.macosFlavors.keys.toList(growable: false),
+              config: flavorizr,
+            ),
+            config: flavorizr,
+          ),
       'macos:xcconfig': () => MacOSXCConfigTargetsFileProcessor(
             K.macOSFlutterPath,
             config: flavorizr,

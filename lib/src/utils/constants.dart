@@ -65,6 +65,8 @@ class K {
 
   static String iOSRunnerProjectPath = '$iOSPath/Runner.xcodeproj';
 
+  static String iOSPodfilePath = '$iOSPath/Podfile';
+
   static String iOSPListPath = '$iOSRunnerPath/Info.plist';
 
   static String iOSAssetsPath = '$iOSRunnerPath/Assets.xcassets';
@@ -78,6 +80,8 @@ class K {
   static String macOSRunnerPath = '$macOSPath/Runner';
 
   static String macOSRunnerProjectPath = '$macOSPath/Runner.xcodeproj';
+
+  static String macOSPodfilePath = '$macOSPath/Podfile';
 
   static String macOSPlistPath = '$macOSRunnerPath/Info.plist';
 

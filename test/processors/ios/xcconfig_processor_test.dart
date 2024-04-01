@@ -36,7 +36,7 @@ import '../../test_utils.dart';
 void main() {
   late Flavorizr flavorizr;
 
-  test('Test IOXCConfigProcessor', () {
+  test('Test IOSCConfigProcessor', () {
     Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_without_variables.yaml',
@@ -69,7 +69,7 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test IOXCConfigProcessor with variables', () {
+  test('Test IOSCConfigProcessor with variables', () {
     Parser parser = const Parser(
       pubspecPath:
       'test_resources/ios/xcconfig_processor_test/pubspec_with_variables.yaml',
@@ -102,7 +102,7 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test IOXCConfigProcessor with variables', () {
+  test('Test IOSCConfigProcessor with variables', () {
     Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_with_variables.yaml',
@@ -136,7 +136,7 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test IOXCConfigProcessor with variables and target', () {
+  test('Test IOSCConfigProcessor with variables and target', () {
     Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_with_variables_and_target.yaml',

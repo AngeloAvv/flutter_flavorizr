@@ -23,12 +23,27 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum Target {
-  debug('debug'),
-  profile('release'),
-  release('release');
+import 'package:flutter_flavorizr/src/processors/commons/abstract_file_string_processor.dart';
 
-  final String darwinTarget;
+class DynamicFileStringProcessor extends AbstractFileStringProcessor {
+  DynamicFileStringProcessor(
+    super.path,
+    super.processor, {
+    required super.config,
+  });
 
-  const Target(this.darwinTarget);
+  @override
+  void execute() {
+    if (!file.existsSync()) {
+      return;
+    }
+
+    processor.input = file.readAsStringSync();
+
+    super.execute();
+  }
+
+  @override
+  String toString() =>
+      "DynamicFileStringProcessor: writing on file $path with nested $processor if exists";
 }

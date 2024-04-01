@@ -1,5 +1,10 @@
 ## NEXT
 
+## 2.2.3
+
+* Fixed add_firebase_build_phase script output paths
+* Fixed "Unable to load contents of file list"
+
 ## 2.2.2
 
 * Fixed misleading error message: The following fields were missing

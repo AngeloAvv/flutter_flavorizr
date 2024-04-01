@@ -31,9 +31,11 @@ software:
 
 These prerequisites are needed to manipulate the iOS and macOS projects and
 schemes. If you are interested in flavorizing Android only, you can skip
-this step. Keep in mind that you will have to use a custom instructions
-set with Android and Flutter processors only, otherwise an error will
-occur.
+this step.
+
+If your app uses a Flutter plugin and you plan to create flavors for iOS and macOS, you need to make
+sure there's an existing Podfile file under the ios/macos folder. This might lead to problems like
+["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md).
 
 ### Installation
 
@@ -44,7 +46,7 @@ in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```yaml
 dev_dependencies:
-  flutter_flavorizr: ^2.2.2
+  flutter_flavorizr: ^2.2.3
 ```
 
 You can install packages from the command line:
@@ -130,7 +132,7 @@ flavorizr:
 | app                                     | Object |                                                                                     | false    | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                     | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                     | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.2.2/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.2.3/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | String |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
@@ -152,6 +154,7 @@ flavorizr:
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
 | huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
 | ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
+| ios:podfile             | iOS           | Updates the Pods-Runner path for each flavor                            |
 | ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
 | ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
@@ -159,6 +162,7 @@ flavorizr:
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Updates the info.plist file                                             |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
+| macos:podfile           | macOS         | Updates the Pods-Runner path for each flavor                            |
 | macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:buildTargets      | macOS         | Creates a set of build targets for each flavor and build configuration  |
@@ -428,6 +432,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * flutter:pages
 * flutter:main
 * flutter:targets
+* ios:podfile
 * ios:xcconfig
 * ios:buildTargets
 * ios:schema
@@ -435,6 +440,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * ios:icons
 * ios:plist
 * ios:launchScreen
+* macos:podfile
 * macos:xcconfig
 * macos:configs
 * macos:buildTargets
@@ -459,9 +465,9 @@ class F {
 
   static String get title {
     switch (appFlavor) {
-      case Flavor.APPLE:
+      case Flavor.apple:
         return 'Apple App';
-      case Flavor.BANANA:
+      case Flavor.banana:
         return 'Banana App';
       default:
         return 'title';

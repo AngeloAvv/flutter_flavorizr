@@ -39,7 +39,6 @@ class DarwinBuildConfigurationsProcessor extends QueueProcessor {
     String project,
     String file,
     String flavorName,
-    String bundleId,
     Map<String, dynamic> buildConfigurations, {
     required Flavorizr config,
   }) : super(
@@ -52,7 +51,6 @@ class DarwinBuildConfigurationsProcessor extends QueueProcessor {
                 utils.flatPath(
                     '$file/$flavorName${target.name.capitalize}.xcconfig'),
                 flavorName,
-                bundleId,
                 target.name.capitalize,
                 base64.encode(utf8.encode(jsonEncode(buildConfigurations))),
               ],

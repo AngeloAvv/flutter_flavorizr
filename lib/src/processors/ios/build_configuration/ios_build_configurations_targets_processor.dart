@@ -49,7 +49,6 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                         project,
                         file,
                         flavorName,
-                        flavor.ios!.bundleId,
                         {}
                           ..addAll(config.app?.ios != null
                               ? config.app!.ios!.buildSettings

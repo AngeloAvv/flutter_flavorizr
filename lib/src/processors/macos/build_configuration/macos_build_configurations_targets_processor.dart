@@ -49,7 +49,6 @@ class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                         project,
                         file,
                         flavorName,
-                        flavor.macos!.bundleId,
                         {}
                           ..addAll(config.app?.macos != null
                               ? config.app!.macos!.buildSettings
