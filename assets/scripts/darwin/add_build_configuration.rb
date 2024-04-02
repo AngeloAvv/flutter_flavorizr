@@ -18,6 +18,14 @@ config_name = "#{mode}-#{flavor}"
 config_mode = mode.downcase == 'debug' ? :debug : :release
 file_ref = project.files.detect { |file| file.path == file_path }
 
+# Build configuration list for PBXNativeTarget "Runner"
+native_target = project.native_targets.first
+target_config = native_target.add_build_configuration(config_name, config_mode)
+target_config.base_configuration_reference = file_ref
+target_config.build_settings = {
+  'PRODUCT_NAME' => '$(TARGET_NAME)',
+}
+
 # Build configuration list for PBXProject "Runner"
 base_config = project.build_configuration_list.build_configurations.detect { |config| config.name == mode }
 build_config = project.add_build_configuration(config_name, config_mode)
