@@ -43,7 +43,7 @@ class K {
   static String androidManifestPath =
       '$androidSrcPath/main/AndroidManifest.xml';
 
-  static String androidBuildGradlePath = '$androidAppPath/build.gradle';
+  static String androidBuildGradlePath = '$androidAppPath/build.gradle.kts';
 
   static String flutterPath = 'lib';
 
