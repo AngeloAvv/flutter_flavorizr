@@ -23,7 +23,7 @@ Flavorizr _$FlavorizrFromJson(Map json) {
         ?.map((e) => e as String)
         .toList(),
     assetsUrl: json['assetsUrl'] as String? ??
-        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.2.3/assets.zip',
+        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v3.0.0-pre/assets.zip',
     ide: $enumDecodeNullable(_$IDEEnumMap, json['ide']),
   );
 }
