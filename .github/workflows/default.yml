@@ -31,6 +31,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       flavor: ${{ matrix.flavor }}
+      flavorize: ${{ matrix.flavorize }}
       platform: ${{ matrix.platform }}
       working-directory: ${{ matrix.working-directory }}
 
