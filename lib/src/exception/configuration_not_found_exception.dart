@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Angelo Cassano
+ * Copyright (c) 2025 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,31 +23,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_test/flutter_test.dart';
+class ConfigurationNotFoundException implements Exception {
+  const ConfigurationNotFoundException();
 
-void main() {
-  test('Test Flavorizr loaded from pubspec', () {
-    const parser = Parser(
-      pubspecPath: 'test_resources/pubspec',
-      flavorizrPath: 'test_resources/non_existent',
-    );
-    try {
-      parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  });
-
-  test('Test Flavorizr loaded from flavorizr', () {
-    const parser = Parser(
-      pubspecPath: 'test_resources/non_existent',
-      flavorizrPath: 'test_resources/flavorizr',
-    );
-    try {
-      parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  });
+  @override
+  String toString() => 'Cannot find a valid flutter_flavorizr configuration. Please make sure to have a pubspec.y[a]ml or flavorizr.y[a]ml file in the root of your project';
 }

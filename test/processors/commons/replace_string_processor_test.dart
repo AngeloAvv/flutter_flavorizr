@@ -34,7 +34,10 @@ void main() {
   late Flavorizr flavorizr;
 
   setUp(() {
-    Parser parser = const Parser(pubspecPath: 'test_resources/pubspec.yaml', flavorizrPath: '',);
+    Parser parser = const Parser(
+      pubspecPath: 'test_resources/pubspec',
+      flavorizrPath: 'test_resources/non_existent',
+    );
     try {
       flavorizr = parser.parse();
     } catch (e) {

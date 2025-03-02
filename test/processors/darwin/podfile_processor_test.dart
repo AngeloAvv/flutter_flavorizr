@@ -37,8 +37,8 @@ void main() {
 
   setUp(() {
     Parser parser = const Parser(
-      pubspecPath: 'test_resources/pubspec.yaml',
-      flavorizrPath: '',
+      pubspecPath: 'test_resources/pubspec',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       flavorizr = parser.parse();
