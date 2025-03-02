@@ -1,0 +1,11 @@
+name: Setup Flutter environment and get dependencies
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Flutter
+      uses: kuhnroyal/flutter-fvm-config-action/setup@v3
+
+    - name: Get dependencies
+      shell: bash
+      run: flutter pub get

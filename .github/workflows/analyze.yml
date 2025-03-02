@@ -1,0 +1,15 @@
+name: Run Flutter Analyze
+
+on:
+  workflow_call:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: ./.github/actions/setup
+      - name: Analyze
+        run: flutter analyze

@@ -1,0 +1,23 @@
+name: Run Tests and Analyze source code
+
+on: push
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Flutter
+    uses: ./.github/workflows/test.yml
+
+  analyze:
+    name: Flutter
+    uses: ./.github/workflows/analyze.yml
+
+  release:
+    needs:
+      - test
+      - analyze
+    name: Flutter
+    uses: ./.github/workflows/release.yml
