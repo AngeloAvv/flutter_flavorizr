@@ -15,6 +15,8 @@ class ResValue {
     required this.value,
   });
 
+  String get wrappedValue => value.replaceAll('\'', '\\\\\'');
+
   factory ResValue.fromJson(Map<String, dynamic> json) =>
       _$ResValueFromJson(json);
 }
