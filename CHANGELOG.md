@@ -1,5 +1,9 @@
 ## NEXT
 
+## 2.2.4
+
+* Added support for Flutter 3.29
+
 ## 2.2.3
 
 * Fixed add_firebase_build_phase script output paths
