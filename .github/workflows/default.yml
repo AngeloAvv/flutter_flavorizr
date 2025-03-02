@@ -1,4 +1,4 @@
-name: Run Tests and Analyze source code
+name: Pipeline
 
 on: push
 
