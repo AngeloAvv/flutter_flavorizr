@@ -28,6 +28,10 @@ jobs:
       - name: Copy assets
         if: ${{ inputs.flavorize }}
         run: cp -r assets ${{ inputs.working-directory }}/.tmp
+      - name: Create project
+        if: ${{ inputs.flavorize }}
+        working-directory: ${{ inputs.working-directory }}
+        run: flutter create .
       - name: Run flutter_flavorizr
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
