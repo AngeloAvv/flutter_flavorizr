@@ -2,10 +2,10 @@ name: Build iOS
 
 on:
   workflow_call:
-    flavor:
-      required: true
-      type: string
     inputs:
+      flavor:
+        required: true
+        type: string
       working-directory:
         required: true
         type: string
