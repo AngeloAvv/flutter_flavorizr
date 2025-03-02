@@ -26,6 +26,7 @@ jobs:
         platform: [ android, ios ]
         working-directory: [ blank, example ]
         include:
+          - flavorize: false
           - flavorize: true
             working-directory: blank
     uses: ./.github/workflows/build.yml
