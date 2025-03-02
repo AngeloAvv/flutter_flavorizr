@@ -61,14 +61,14 @@ flavorizr:
 
     banana:
       app:
-        name: "Banana App"
+        name: "Banana' App"
 
       android:
         applicationId: "com.example.banana"
         resValues:
           variable_one:
             type: "string"
-            value: "test variable one"
+            value: "test variable' one"
           variable_two:
             type: "string"
             value: "test variable two"

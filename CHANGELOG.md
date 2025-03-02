@@ -1,5 +1,6 @@
 ## NEXT
 
+* Fixed Android app name with single quotes
 * Moved flavor dimensions to another file
 * Removed flutter:targets processor and merged main_<flavor_name>.dart into main.dart
 * Made F.appFlavor non-nullable

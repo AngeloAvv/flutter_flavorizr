@@ -86,7 +86,7 @@ class AndroidFlavorizrGradleProcessor extends StringProcessor {
         ..addAll(flavor.android?.resValues ?? {});
       resValues.forEach((key, res) {
         buffer.writeln(
-            '            resValue "${res.type}", "$key", "${res.value}"');
+            '            resValue "${res.type}", "$key", "${res.wrappedValue}"');
       });
 
       final Map<String, BuildConfigField> buildConfigFields =
