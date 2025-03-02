@@ -25,7 +25,8 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter_flavorizr/src/exception/configuration_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
 import 'package:flutter_flavorizr/src/exception/null_fields_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
@@ -33,6 +34,8 @@ import 'package:flutter_flavorizr/src/parser/models/pubspec.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 class Parser {
+  static const _validExtensions = ['yaml', 'yml'];
+
   final String pubspecPath;
   final String flavorizrPath;
 
@@ -42,26 +45,32 @@ class Parser {
   });
 
   Flavorizr parse() {
-    File pubspecFile = File(pubspecPath);
-    File flavorizrFile = File(flavorizrPath);
+    assert(pubspecPath.isNotEmpty || flavorizrPath.isNotEmpty);
 
-    final pubspecFileExists = pubspecFile.existsSync();
-    final flavorizrFileExists = flavorizrFile.existsSync();
+    final validFileNames = [
+      pubspecPath,
+      flavorizrPath,
+    ].expand(
+      (fileName) =>
+          _validExtensions.map((extension) => [fileName, extension].join('.')),
+    ).where((fileName) => fileName.isNotEmpty);
 
-    if (!pubspecFileExists) {
-      if (!flavorizrFileExists) {
-        throw FileNotFoundException(flavorizrPath);
-      } else {
-        throw FileNotFoundException(pubspecPath);
-      }
+    final configFileName = validFileNames.firstWhereOrNull(
+      (fileName) => File(fileName).existsSync(),
+    );
+
+    if (configFileName == null) {
+      throw const ConfigurationNotFoundException();
     }
 
+    final file = File(configFileName);
+
     try {
-      if (flavorizrFileExists) {
-        final yaml = flavorizrFile.readAsStringSync();
+      if (configFileName.contains(flavorizrPath)) {
+        final yaml = file.readAsStringSync();
         return Flavorizr.parse(yaml);
       } else {
-        final yaml = pubspecFile.readAsStringSync();
+        final yaml = file.readAsStringSync();
         return Pubspec.parse(yaml).flavorizr;
       }
     } on DisallowedNullValueException catch (e) {

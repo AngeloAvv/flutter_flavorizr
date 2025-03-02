@@ -35,18 +35,22 @@ import 'package:flutter_flavorizr/src/processors/processor.dart';
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
 void execute(List<String> args) {
-  ArgParser argParser = ArgParser();
-  argParser.addMultiOption('processors',
-      abbr: 'p', allowed: Processor.defaultInstructionSet, splitCommas: true);
-  ArgResults results = argParser.parse(args);
-  List<String> argProcessors = results['processors'];
+  final argParser = ArgParser();
+  argParser.addMultiOption(
+    'processors',
+    abbr: 'p',
+    allowed: Processor.defaultInstructionSet,
+    splitCommas: true,
+  );
+  final results = argParser.parse(args);
+  final argProcessors = results['processors'];
 
-  Parser parser = const Parser(
-    pubspecPath: 'pubspec.yaml',
-    flavorizrPath: 'flavorizr.yaml',
+  const parser = Parser(
+    pubspecPath: 'pubspec',
+    flavorizrPath: 'flavorizr',
   );
 
-  Flavorizr? flavorizr;
+  late Flavorizr flavorizr;
   try {
     flavorizr = parser.parse();
   } catch (e) {
@@ -58,6 +62,6 @@ void execute(List<String> args) {
     flavorizr.instructions = argProcessors;
   }
 
-  Processor processor = Processor(flavorizr);
+  final processor = Processor(flavorizr);
   processor.execute();
 }

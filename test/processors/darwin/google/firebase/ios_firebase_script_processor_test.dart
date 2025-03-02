@@ -38,8 +38,8 @@ void main() {
   test('Test IOSFirebaseScriptProcessor with a single flavor', () {
     Parser parser = const Parser(
       pubspecPath:
-          'test_resources/ios/ios_firebase_script_processor_test/single_flavor_pubspec.yaml',
-      flavorizrPath: '',
+          'test_resources/ios/ios_firebase_script_processor_test/single_flavor_pubspec',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       flavorizr = parser.parse();
@@ -66,8 +66,8 @@ void main() {
   test('Test IOSFirebaseScriptProcessor with multiple flavors', () {
     Parser parser = const Parser(
       pubspecPath:
-          'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors_pubspec.yaml',
-      flavorizrPath: '',
+          'test_resources/ios/ios_firebase_script_processor_test/multiple_flavors_pubspec',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       flavorizr = parser.parse();

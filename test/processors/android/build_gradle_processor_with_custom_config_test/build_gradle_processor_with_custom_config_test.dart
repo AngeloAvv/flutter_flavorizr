@@ -38,8 +38,8 @@ void main() {
   setUp(() {
     Parser parser = const Parser(
       pubspecPath:
-          'test/processors/android/build_gradle_processor_with_custom_config_test/pubspec_with_custom_config.yaml',
-      flavorizrPath: '',
+          'test/processors/android/build_gradle_processor_with_custom_config_test/pubspec_with_custom_config',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       flavorizr = parser.parse();
@@ -58,8 +58,8 @@ void main() {
             'test_resources/android/build_gradle_processor_with_custom_config_test/build_expected.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(config: flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -76,8 +76,8 @@ void main() {
             'test_resources/android/build_gradle_processor_with_custom_config_test/build_expected.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(config: flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -99,8 +99,8 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
@@ -111,8 +111,8 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
@@ -123,8 +123,8 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
-        config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor =
+        AndroidBuildGradleProcessor(config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 }

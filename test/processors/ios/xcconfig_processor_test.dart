@@ -39,8 +39,8 @@ void main() {
   test('Test IOSCConfigProcessor', () {
     Parser parser = const Parser(
       pubspecPath:
-          'test_resources/ios/xcconfig_processor_test/pubspec_without_variables.yaml',
-      flavorizrPath: '',
+          'test_resources/ios/xcconfig_processor_test/pubspec_without_variables',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       flavorizr = parser.parse();
@@ -72,8 +72,8 @@ void main() {
   test('Test IOSCConfigProcessor with variables', () {
     Parser parser = const Parser(
       pubspecPath:
-      'test_resources/ios/xcconfig_processor_test/pubspec_with_variables.yaml',
-      flavorizrPath: '',
+          'test_resources/ios/xcconfig_processor_test/pubspec_with_variables',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       flavorizr = parser.parse();
@@ -105,8 +105,8 @@ void main() {
   test('Test IOSCConfigProcessor with variables', () {
     Parser parser = const Parser(
       pubspecPath:
-          'test_resources/ios/xcconfig_processor_test/pubspec_with_variables.yaml',
-      flavorizrPath: '',
+          'test_resources/ios/xcconfig_processor_test/pubspec_with_variables',
+      flavorizrPath: 'test_resources/non_existent',
     );
 
     try {
@@ -139,8 +139,8 @@ void main() {
   test('Test IOSCConfigProcessor with variables and target', () {
     Parser parser = const Parser(
       pubspecPath:
-          'test_resources/ios/xcconfig_processor_test/pubspec_with_variables_and_target.yaml',
-      flavorizrPath: '',
+          'test_resources/ios/xcconfig_processor_test/pubspec_with_variables_and_target',
+      flavorizrPath: 'test_resources/non_existent',
     );
 
     try {

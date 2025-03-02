@@ -23,31 +23,49 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/exception/configuration_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Test Flavorizr loaded from pubspec.yaml', () {
+  test('Test Flavorizr loaded from pubspec', () {
     const parser = Parser(
-      pubspecPath: 'test_resources/pubspec.yaml',
-      flavorizrPath: '',
+      pubspecPath: 'test_resources/pubspec',
+      flavorizrPath: 'test_resources/non_existent',
     );
     try {
       parser.parse();
     } catch (e) {
       fail(e.toString());
     }
+
+    expect(parser, isNotNull);
   });
 
-  test('Test Flavorizr loaded from flavorizr.yaml', () {
+  test('Test Flavorizr loaded from flavorizr', () {
     const parser = Parser(
-      pubspecPath: 'test_resources/pubspec.yaml',
-      flavorizrPath: 'test_resources/flavorizr.yaml',
+      pubspecPath: 'test_resources/non_existent',
+      flavorizrPath: 'test_resources/flavorizr',
     );
     try {
       parser.parse();
     } catch (e) {
       fail(e.toString());
+    }
+
+    expect(parser, isNotNull);
+  });
+
+  test('Test Flavorizr fails to load configuration', () {
+    const parser = Parser(
+      pubspecPath: 'test_resources/non_existent',
+      flavorizrPath: 'test_resources/non_existent',
+    );
+    try {
+      parser.parse();
+      fail('Should have thrown ConfigurationNotFoundException');
+    } catch (e) {
+      expect(e, isA<ConfigurationNotFoundException>());
     }
   });
 }
