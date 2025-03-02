@@ -1,0 +1,58 @@
+name: Build Artifacts
+
+on:
+  workflow_call:
+    inputs:
+      flavor:
+        required: true
+        type: string
+      flavorize:
+        required: true
+        type: boolean
+        default: false
+      platform:
+        required: true
+        type: string
+      working-directory:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.platform == 'android' && 'ubuntu-latest' || 'macos-latest' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: ./.github/actions/setup
+      - name: Copy assets
+        if: ${{ inputs.flavorize }}
+        run: cp -r assets ${{ inputs.working-directory }}/.tmp
+      - name: Run flutter_flavorizr
+        if: ${{ inputs.flavorize }}
+        working-directory: ${{ inputs.working-directory }}
+        run: flutter pub run flutter_flavorizr
+      - name: Set up JDK 17
+        if: ${{ inputs.platform == 'android' }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Setup Android SDK
+        if: ${{ inputs.platform == 'android' }}
+        uses: android-actions/setup-android@v3
+      - name: Build Android AAB
+        if: ${{ inputs.platform == 'android' }}
+        working-directory: ${{ inputs.working-directory }}/android
+        run: |
+          flutter build appbundle --release --flavor ${{ inputs.flavor }}
+      - name: Build iOS
+        if: ${{ inputs.platform == 'ios' }}
+        working-directory: ${{ inputs.working-directory }}/ios
+        run: |
+          flutter build ios --release --no-codesign --flavor ${{ inputs.flavor }}
+      - name: Build macOS
+        if: ${{ inputs.platform == 'macos' }}
+        working-directory: ${{ inputs.working-directory }}/macos
+        run: |
+          flutter build macos --release --flavor ${{ inputs.flavor }}

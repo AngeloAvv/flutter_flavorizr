@@ -8,16 +8,36 @@ concurrency:
 
 jobs:
   test:
-    name: Flutter
+    name: Testing
     uses: ./.github/workflows/test.yml
 
   analyze:
-    name: Flutter
+    name: Testing
     uses: ./.github/workflows/analyze.yml
 
-  release:
+  build:
+    name: Build (${{ matrix.platform }}|${{ matrix.working-directory }}|${{ matrix.flavor }}|flavorize:${{ matrix.flavorize }})
     needs:
       - test
       - analyze
-    name: Flutter
+    strategy:
+      matrix:
+        flavor: [ apple, banana ]
+        platform: [ android, ios, macos ]
+        working-directory: [ blank, example ]
+        include:
+          - flavorize: false
+          - flavorize: true
+            working-directory: blank
+    uses: ./.github/workflows/build.yml
+    with:
+      flavor: ${{ matrix.flavor }}
+      flavorize: ${{ matrix.flavorize }}
+      platform: ${{ matrix.platform }}
+      working-directory: ${{ matrix.working-directory }}
+
+  release:
+    needs:
+      - build
+    name: Release
     uses: ./.github/workflows/release.yml
