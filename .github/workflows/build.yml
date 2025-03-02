@@ -55,4 +55,4 @@ jobs:
         if: ${{ inputs.platform == 'macos' }}
         working-directory: ${{ inputs.working-directory }}/macos
         run: |
-          flutter build macos --release --no-codesign --flavor ${{ inputs.flavor }}
+          flutter build macos --release --flavor ${{ inputs.flavor }}
