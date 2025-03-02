@@ -10,7 +10,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Zip Assets
-        run: cd assets && zip ../assets.zip * -r && cd ..
+        working-directory: assets
+        run: zip ../assets.zip * -r
       - name: Perform release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')

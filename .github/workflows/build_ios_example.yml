@@ -1,0 +1,17 @@
+name: Build iOS Example
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: ./.github/actions/setup
+      - name: Build iOS
+        working-directory: example/ios
+        run: |
+          flutter build ios --release --no-codesign
