@@ -31,7 +31,7 @@ jobs:
       - name: Create project
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
-        run: flutter create . --platforms=${{ inputs.platform }}
+        run: flutter create .
       - name: Get dependencies
         working-directory: ${{ inputs.working-directory }}
         run: flutter pub get
