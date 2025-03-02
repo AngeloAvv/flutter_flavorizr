@@ -55,10 +55,10 @@ class FlutterFlavorsProcessor extends StringProcessor {
   void _appendFlavorClass(StringBuffer buffer) {
     buffer.writeln();
     buffer.writeln('class F {');
-    buffer.writeln('  static Flavor? appFlavor;');
+    buffer.writeln('  static late final Flavor appFlavor;');
     buffer.writeln();
 
-    buffer.writeln('  static String get name => appFlavor?.name ?? \'\';');
+    buffer.writeln('  static String get name => appFlavor.name;');
     buffer.writeln();
 
     buffer.writeln('  static String get title {');
@@ -69,8 +69,6 @@ class FlutterFlavorsProcessor extends StringProcessor {
       buffer.writeln('        return \'${flavor.app.name}\';');
     });
 
-    buffer.writeln('      default:');
-    buffer.writeln('        return \'title\';');
     buffer.writeln('    }');
     buffer.writeln('  }');
 
