@@ -142,7 +142,8 @@ flavorizr:
 | assets:download         | Miscellaneous | Downloads the assets zip from the network                               |
 | assets:extract          | Miscellaneous | Extracts the downloaded zip in the project .tmp directory               |
 | assets:clean            | Miscellaneous | Removes the assets from the project directory                           |
-| android:buildGradle     | Android       | Adds the flavors to the Android build.gradle file                       |
+| android:flavorizrGradle | Android       | Adds the flavors to the Android flavorizr.gradle file                   |
+| android:buildGradle     | Android       | Imports the Android flavorizr.gradle file into build.gradle file        |
 | android:androidManifest | Android       | Changes the reference of the app name in the AndroidManifest.xml        |
 | android:dummyAssets     | Android       | Generates some default icons for your custom flavors                    |
 | android:icons           | Android       | Creates a set of icons for each flavor according to the icon directive  |
@@ -423,6 +424,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * assets:download
 * assets:extract
 * android:androidManifest
+* android:flavorizrGradle
 * android:buildGradle
 * android:dummyAssets
 * android:icons

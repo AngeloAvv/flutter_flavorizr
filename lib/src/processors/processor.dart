@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_build_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_dummy_assets_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/android_flavorizr_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_manifest_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
@@ -71,6 +72,7 @@ class Processor extends AbstractProcessor<void> {
 
     // Android
     'android:androidManifest',
+    'android:flavorizrGradle',
     'android:buildGradle',
     'android:dummyAssets',
     'android:icons',
@@ -180,9 +182,17 @@ class Processor extends AbstractProcessor<void> {
             AndroidManifestProcessor(config: flavorizr),
             config: flavorizr,
           ),
+      'android:flavorizrGradle': () => NewFileStringProcessor(
+            K.androidBuildGradlePath,
+            AndroidFlavorizrGradleProcessor(
+              config: flavorizr,
+            ),
+            config: flavorizr,
+          ),
       'android:buildGradle': () => ExistingFileStringProcessor(
             K.androidBuildGradlePath,
             AndroidBuildGradleProcessor(
+              K.androidFlavorizrGradleName,
               config: flavorizr,
             ),
             config: flavorizr,
