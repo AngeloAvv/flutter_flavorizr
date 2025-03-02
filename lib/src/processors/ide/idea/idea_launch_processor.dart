@@ -46,7 +46,7 @@ class IdeaLaunchProcessor extends StringProcessor {
         attributes: {'name': 'ProjectRunConfigurationManager'}, nest: () {
       builder.element('configuration', attributes: {
         'default': 'false',
-        'name': 'main_$_flavorName.dart',
+        'name': _flavorName,
         'type': 'FlutterRunConfigurationType',
         'factoryName': 'Flutter',
       }, nest: () {
@@ -57,7 +57,7 @@ class IdeaLaunchProcessor extends StringProcessor {
 
         builder.element('option', attributes: {
           'name': 'filePath',
-          'value': '\$PROJECT_DIR\$/lib/main_$_flavorName.dart',
+          'value': '\$PROJECT_DIR\$/lib/main.dart',
         });
 
         builder.element('method', attributes: {

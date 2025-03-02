@@ -109,8 +109,6 @@ class K {
 
   static String tempFlutterMainPath = '$tempFlutterPath/main.dart';
 
-  static String tempFlutterMainTargetPath = '$tempFlutterPath/main_target.dart';
-
   static String tempFlutterPagesPath = '$tempFlutterPath/pages';
 
   static String tempiOSPath = '$tempPath/ios';

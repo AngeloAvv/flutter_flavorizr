@@ -43,7 +43,6 @@ import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.da
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/flutter/flutter_flavors_processor.dart';
-import 'package:flutter_flavorizr/src/processors/flutter/target/flutter_targets_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/google/firebase/firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
@@ -82,7 +81,6 @@ class Processor extends AbstractProcessor<void> {
     'flutter:app',
     'flutter:pages',
     'flutter:main',
-    'flutter:targets',
 
     // iOS
     'ios:podfile',
@@ -217,11 +215,6 @@ class Processor extends AbstractProcessor<void> {
       'flutter:main': () => CopyFileProcessor(
             K.tempFlutterMainPath,
             K.flutterMainPath,
-            config: flavorizr,
-          ),
-      'flutter:targets': () => FlutterTargetsFileProcessor(
-            K.tempFlutterMainTargetPath,
-            K.flutterPath,
             config: flavorizr,
           ),
 

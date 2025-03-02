@@ -45,11 +45,11 @@ class Parser {
   });
 
   Flavorizr parse() {
-    assert(pubspecPath.isNotEmpty || flavorizrPath.isNotEmpty);
+    assert(flavorizrPath.isNotEmpty || pubspecPath.isNotEmpty);
 
     final validFileNames = [
-      pubspecPath,
       flavorizrPath,
+      pubspecPath,
     ].expand(
       (fileName) =>
           _validExtensions.map((extension) => [fileName, extension].join('.')),
