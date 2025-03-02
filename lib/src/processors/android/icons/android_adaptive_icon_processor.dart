@@ -18,6 +18,7 @@ class AndroidAdaptiveIconProcessor extends QueueProcessor {
     this.folder,
     this.size, {
     required Flavorizr config,
+    String? monochromeSource,
   }) : super([
           ImageResizerProcessor(
             foregroundSource,
@@ -31,6 +32,14 @@ class AndroidAdaptiveIconProcessor extends QueueProcessor {
             size,
             config: config,
           ),
+          if (monochromeSource != null)
+            ImageResizerProcessor(
+              monochromeSource,
+              sprintf(
+                  K.androidAdaptiveIconMonochromePath, [flavorName, folder]),
+              size,
+              config: config,
+            ),
         ], config: config);
 
   @override
