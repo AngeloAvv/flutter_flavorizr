@@ -56,5 +56,4 @@ instructions:
   - 'macos:plist'
   - 'google:firebase'
   - 'huawei:agconnect'
-  - 'assets:clean'
   - 'ide:config'
