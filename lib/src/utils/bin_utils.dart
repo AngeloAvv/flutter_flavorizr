@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Angelo Cassano
+ * Copyright (c) 2025 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,35 +25,13 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
-
-class ShellProcessor extends AbstractProcessor<void> {
-  final String _path;
-  final String? _workingDirectory;
-  final List<String> _args;
-
-  const ShellProcessor(
-    this._path,
-    this._args, {
-    String? workingDirectory,
-    required Flavorizr config,
-  })  : _workingDirectory = workingDirectory,
-        super(config);
-
-  @override
-  void execute() {
-    final result = Process.runSync(
-      _path,
-      _args,
-      workingDirectory: _workingDirectory,
-    );
-    if (result.exitCode != 0) {
-      throw Exception(result.stderr);
-    }
+String binaryWithExtension(
+  String fileName, {
+  String windowsExtension = 'exe',
+}) {
+  if (Platform.isWindows) {
+    return [fileName, windowsExtension].join('.');
   }
 
-  @override
-  String toString() =>
-      'ShellProcessor: Running script \'$_path\' with arguments ${_args.join(', ')}';
+  return fileName;
 }
