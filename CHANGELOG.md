@@ -1,5 +1,9 @@
 ## NEXT
 
+* Removed flutter:targets processor and merged main_<flavor_name>.dart into main.dart
+* Made F.appFlavor non-nullable
+* Added support for both yml and yaml files
+
 ## 2.2.3
 
 * Fixed add_firebase_build_phase script output paths

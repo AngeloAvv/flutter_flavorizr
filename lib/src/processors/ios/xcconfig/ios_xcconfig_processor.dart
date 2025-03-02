@@ -62,7 +62,6 @@ class IOSXCConfigProcessor extends StringProcessor {
 
   void _appendBody(StringBuffer buffer) {
     final Map<String, Variable> variables = LinkedHashMap.from({
-      'FLUTTER_TARGET': Variable(value: 'lib/main_$_flavorName.dart'),
       'ASSET_PREFIX': Variable(value: _flavorName),
       'BUNDLE_NAME': Variable(value: _flavor.app.name),
       'BUNDLE_DISPLAY_NAME': Variable(value: _flavor.app.name),

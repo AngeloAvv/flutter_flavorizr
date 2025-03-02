@@ -35,7 +35,7 @@ class IdeaRunConfigurationsProcessor extends QueueProcessor {
           config.flavors.keys.map(
             (flavorName) => IdeaLaunchFileProcessor(
               flavorName,
-              '$path/main_${flavorName}_dart.xml',
+              '$path/$flavorName.xml',
               config: config,
             ),
           ),

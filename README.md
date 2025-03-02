@@ -150,7 +150,6 @@ flavorizr:
 | flutter:app             | Flutter       | Creates the app.dart entry                                              |
 | flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
 | flutter:main            | Flutter       | Creates the main target to run the app                                  |
-| flutter:targets         | Flutter       | Creates a set of targets for each flavor instance                       |
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
 | huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
 | ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
@@ -404,14 +403,14 @@ flutter pub run flutter_flavorizr -p assets:download,assets:extract
 Once the process has generated the flavors, you can run them by typing
 
 ```terminal
-flutter run --flavor <flavorName> -t lib/main_<flavorName>.dart
+flutter run --flavor <flavorName>
 ```
 
 Example
 
 ```terminal
-flutter run --flavor apple -t lib/main_apple.dart
-flutter run --flavor banana -t lib/main_banana.dart
+flutter run --flavor apple
+flutter run --flavor banana
 ```
 
 Currently, due to a bug in the Flutter SDK, it's not possible to run the macOS flavors from the terminal.
@@ -431,7 +430,6 @@ By default, when you do not specify a custom set of processors by appending the 
 * flutter:app
 * flutter:pages
 * flutter:main
-* flutter:targets
 * ios:podfile
 * ios:xcconfig
 * ios:buildTargets
