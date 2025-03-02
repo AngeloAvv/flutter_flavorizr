@@ -16,14 +16,18 @@ jobs:
     uses: ./.github/workflows/analyze.yml
 
   build:
+    name: Build (${{ matrix.platform }}|${{ matrix.working-directory }}|${{ matrix.flavor }}|flavorize:${{ matrix.flavorize }})
     needs:
       - test
       - analyze
     strategy:
       matrix:
-        flavor: [apple, banana]
-        platform: [android, ios]
-        working-directory: [example]
+        flavor: [ apple, banana ]
+        platform: [ android, ios ]
+        working-directory: [ blank, example ]
+        include:
+          - flavorize: true
+            working-directory: blank
     uses: ./.github/workflows/build.yml
     with:
       flavor: ${{ matrix.flavor }}

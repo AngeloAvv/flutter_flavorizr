@@ -6,6 +6,10 @@ on:
       flavor:
         required: true
         type: string
+      flavorize:
+        required: true
+        type: boolean
+        default: false
       platform:
         required: true
         type: string
@@ -15,7 +19,6 @@ on:
 
 jobs:
   build:
-    name: Build (${{ inputs.platform }}:${{ inputs.working-directory }}:${{ inputs.flavor }})
     runs-on: ${{ inputs.platform == 'ios' && 'macos-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout code
@@ -31,6 +34,12 @@ jobs:
       - name: Setup Android SDK
         if: ${{ inputs.platform == 'android' }}
         uses: android-actions/setup-android@v3
+      - name: Copy assets
+        if: ${{ inputs.flavorize }}
+        run: cp -r assets ${{ inputs.working-directory }}/.tmp
+      - name: Run flutter_flavorizr
+        if: ${{ inputs.flavorize }}
+        run: flutter pub run flutter_flavorizr
       - name: Build Android AAB
         if: ${{ inputs.platform == 'android' }}
         working-directory: ${{ inputs.working-directory }}/android
