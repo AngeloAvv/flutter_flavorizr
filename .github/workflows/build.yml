@@ -32,9 +32,6 @@ jobs:
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
         run: flutter create .
-      - name: Get dependencies
-        working-directory: ${{ inputs.working-directory }}
-        run: flutter pub get
       - name: Run flutter_flavorizr
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
