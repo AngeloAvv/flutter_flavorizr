@@ -39,6 +39,7 @@ jobs:
         run: cp -r assets ${{ inputs.working-directory }}/.tmp
       - name: Run flutter_flavorizr
         if: ${{ inputs.flavorize }}
+        working-directory: ${{ inputs.working-directory }}
         run: flutter pub run flutter_flavorizr
       - name: Build Android AAB
         if: ${{ inputs.platform == 'android' }}
