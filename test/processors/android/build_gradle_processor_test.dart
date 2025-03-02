@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_build_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
@@ -57,8 +58,11 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: content,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -69,14 +73,38 @@ void main() {
 
   test('Test idempotent AndroidBuildGradleProcessor', () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_idempotent.gradle')
+            'test_resources/android/build_gradle_processor_test/build_idempotent_2.gradle')
         .readAsStringSync();
     String matcher = File(
             'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: content,
+    );
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
+
+  test('Test idempotent AndroidBuildGradleProcessor with old configuration', () {
+    String content = File(
+        'test_resources/android/build_gradle_processor_test/build_idempotent_1.gradle')
+        .readAsStringSync();
+    String matcher = File(
+        'test_resources/android/build_gradle_processor_test/build_expected.gradle')
+        .readAsStringSync();
+
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: content,
+    );
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -86,8 +114,11 @@ void main() {
   });
 
   test('Test malformed AndroidBuildGradleProcessor', () {
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: '');
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: '',
+    );
     expect(() => processor.execute(), throwsException);
   });
 
@@ -97,8 +128,11 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: content,
+    );
     expect(() => processor.execute(), throwsException);
   });
 
@@ -109,8 +143,11 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: content,
+    );
     expect(() => processor.execute(), throwsException);
   });
 
@@ -121,8 +158,11 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildGradleProcessor processor = AndroidBuildGradleProcessor(
+      K.androidFlavorizrGradleName,
+      config: flavorizr,
+      input: content,
+    );
     expect(() => processor.execute(), throwsException);
   });
 }
