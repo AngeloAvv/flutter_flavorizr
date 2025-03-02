@@ -1,5 +1,6 @@
 ## NEXT
 
+* Moved flavor dimensions to another file
 * Removed flutter:targets processor and merged main_<flavor_name>.dart into main.dart
 * Made F.appFlavor non-nullable
 * Added support for both yml and yaml files

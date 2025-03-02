@@ -1,0 +1,16 @@
+android {
+    flavorDimensions += "flavor-type"
+
+    productFlavors {
+        apple {
+            dimension "flavor-type"
+            applicationId "com.example.apple"
+            resValue "string", "app_name", "Apple App"
+        }
+        banana {
+            dimension "flavor-type"
+            applicationId "com.example.banana"
+            resValue "string", "app_name", "Banana App"
+        }
+    }
+}
