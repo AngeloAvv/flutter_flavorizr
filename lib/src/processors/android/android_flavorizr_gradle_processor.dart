@@ -56,7 +56,6 @@ class AndroidFlavorizrGradleProcessor extends StringProcessor {
     final flavorDimension =
         config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
 
-    buffer.writeln();
     buffer.writeln('    flavorDimensions += "$flavorDimension"');
     buffer.writeln();
   }
@@ -104,11 +103,10 @@ class AndroidFlavorizrGradleProcessor extends StringProcessor {
     });
 
     buffer.writeln('    }');
-    buffer.writeln();
   }
 
   void _appendEndContent(StringBuffer buffer) {
-    buffer.writeln('}');
+    buffer.write('}');
   }
 
   @override

@@ -183,7 +183,7 @@ class Processor extends AbstractProcessor<void> {
             config: flavorizr,
           ),
       'android:flavorizrGradle': () => NewFileStringProcessor(
-            K.androidBuildGradlePath,
+            K.androidFlavorizrGradlePath,
             AndroidFlavorizrGradleProcessor(
               config: flavorizr,
             ),

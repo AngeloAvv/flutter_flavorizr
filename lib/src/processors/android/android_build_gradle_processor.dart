@@ -37,7 +37,8 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
   final String _gradleFileName;
 
-  AndroidBuildGradleProcessor(this._gradleFileName, {
+  AndroidBuildGradleProcessor(
+    this._gradleFileName, {
     super.input,
     required super.config,
   });
@@ -78,24 +79,23 @@ class AndroidBuildGradleProcessor extends StringProcessor {
     int beginFlavorDimensionsMarkupPosition,
     endFlavorDimensionsMarkupPosition,
   ) {
-    if (beginFlavorDimensionsMarkupPosition >= 0 &&
-        endFlavorDimensionsMarkupPosition >= 0) {
-      final flavorDimensions = input!.substring(
-        beginFlavorDimensionsMarkupPosition - 2,
-        endFlavorDimensionsMarkupPosition +
-            _endFlavorDimensionsMarkup.length +
-            4,
-      );
+    final escapedBegin = RegExp.escape(_beginFlavorDimensionsMarkup);
+    final escapedEnd = RegExp.escape(_endFlavorDimensionsMarkup);
 
-      input = input!.replaceAll(flavorDimensions, '');
-    }
+    final regex = RegExp(
+      r'^[ \t]*' + escapedBegin + r'\n.*?\n[ \t]*' + escapedEnd + r'\n?',
+      dotAll: true,
+      multiLine: true,
+    );
+
+    input = input?.replaceAll(regex, '');
   }
 
   void _appendContent(StringBuffer buffer) {
-    buffer.writeln();
+    buffer.writeln(input);
     buffer.writeln(_beginFlavorDimensionsMarkup);
     buffer.writeln('apply from: "$_gradleFileName"');
-    buffer.writeln(_endFlavorDimensionsMarkup);
+    buffer.write(_endFlavorDimensionsMarkup);
   }
 
   @override

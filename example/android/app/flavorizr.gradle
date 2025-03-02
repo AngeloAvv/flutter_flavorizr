@@ -1,5 +1,5 @@
 android {
-    flavorDimensions "flavor-type"
+    flavorDimensions += "flavor-type"
 
     productFlavors {
         apple {
