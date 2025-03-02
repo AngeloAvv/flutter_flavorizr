@@ -19,15 +19,27 @@ jobs:
     needs:
       - test
       - analyze
-    name: Build
-    uses: ./.github/workflows/build_android_example.yml
+    name: Build (Example:${{ matrix.flavor }})
+    strategy:
+      matrix:
+        flavor: [apple, banana]
+    uses: ./.github/workflows/android.yml
+    with:
+      working-directory: example/android
+      flavor: ${{ matrix.flavor }}
 
   build_ios_example:
     needs:
       - test
       - analyze
-    name: Build
-    uses: ./.github/workflows/build_ios_example.yml
+    name: Build (Example:${{ matrix.flavor }})
+    strategy:
+      matrix:
+        flavor: [apple, banana]
+    uses: ./.github/workflows/ios.yml
+    with:
+      working-directory: example/ios
+      flavor: ${{ matrix.flavor }}
 
   release:
     needs:

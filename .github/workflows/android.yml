@@ -1,10 +1,17 @@
-name: Build Android Example
+name: Build Android
 
 on:
   workflow_call:
+    flavor:
+      required: true
+      type: string
+    inputs:
+      working-directory:
+        required: true
+        type: string
 
 jobs:
-  build:
+  android:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,6 +26,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
       - name: Build Android AAB
-        working-directory: example/android
+        working-directory: ${{ inputs.working-directory }}
         run: |
-          flutter build appbundle --release
+          flutter build appbundle --release --flavor ${{ inputs.flavor }}

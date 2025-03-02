@@ -1,0 +1,24 @@
+name: Build iOS
+
+on:
+  workflow_call:
+    flavor:
+      required: true
+      type: string
+    inputs:
+      working-directory:
+        required: true
+        type: string
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: ./.github/actions/setup
+      - name: Build iOS
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          flutter build ios --release --no-codesign --flavor ${{ inputs.flavor }}
