@@ -99,5 +99,5 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   }
 
   @override
-  String toString() => 'AndroidBuildGradleProcessor';
+  String toString() => 'AndroidBuildKotlinProcessor';
 }

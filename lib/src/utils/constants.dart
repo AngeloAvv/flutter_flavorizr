@@ -43,7 +43,8 @@ class K {
   static String androidManifestPath =
       '$androidSrcPath/main/AndroidManifest.xml';
 
-  static String androidBuildGradlePath = '$androidAppPath/build.gradle.kts';
+  static String androidBuildKotlinPath = '$androidAppPath/build.gradle.kts';
+  static String androidBuildLegacyPath = '$androidAppPath/build.gradle';
 
   static String androidFlavorizrGradleName = 'flavorizr.gradle';
 
