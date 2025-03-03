@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/android/android_build_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
@@ -36,7 +36,10 @@ void main() {
   late Flavorizr flavorizr;
 
   setUp(() {
-    Parser parser = const Parser(pubspecPath: 'test_resources/pubspec.yaml', flavorizrPath: '',);
+    Parser parser = const Parser(
+      pubspecPath: 'test_resources/pubspec.yaml',
+      flavorizrPath: '',
+    );
     try {
       flavorizr = parser.parse();
     } catch (e) {
@@ -46,7 +49,7 @@ void main() {
 
   tearDown(() {});
 
-  test('Test original AndroidBuildGradleProcessor', () {
+  test('Test original AndroidBuildLegacyProcessor', () {
     String content = File(
             'test_resources/android/build_gradle_processor_test/build_original.gradle')
         .readAsStringSync();
@@ -54,8 +57,8 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildLegacyProcessor processor =
+        AndroidBuildLegacyProcessor(config: flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -64,7 +67,7 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test idempotent AndroidBuildGradleProcessor', () {
+  test('Test idempotent AndroidBuildLegacyProcessor', () {
     String content = File(
             'test_resources/android/build_gradle_processor_test/build_idempotent.gradle')
         .readAsStringSync();
@@ -72,8 +75,8 @@ void main() {
             'test_resources/android/build_gradle_processor_test/build_expected.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildLegacyProcessor processor =
+        AndroidBuildLegacyProcessor(config: flavorizr, input: content);
     String actual = processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
@@ -82,44 +85,44 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test malformed AndroidBuildGradleProcessor', () {
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: '');
+  test('Test malformed AndroidBuildLegacyProcessor', () {
+    AndroidBuildLegacyProcessor processor =
+        AndroidBuildLegacyProcessor(config: flavorizr, input: '');
     expect(() => processor.execute(), throwsException);
   });
 
-  test('Test existing flavor dimensions exception AndroidBuildGradleProcessor',
+  test('Test existing flavor dimensions exception AndroidBuildLegacyProcessor',
       () {
     String content = File(
             'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildLegacyProcessor processor =
+        AndroidBuildLegacyProcessor(config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
   test(
-      'Test existing flavor dimensions exception with begin markup AndroidBuildGradleProcessor',
+      'Test existing flavor dimensions exception with begin markup AndroidBuildLegacyProcessor',
       () {
     String content = File(
             'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildLegacyProcessor processor =
+        AndroidBuildLegacyProcessor(config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 
   test(
-      'Test existing flavor dimensions exception with end markup AndroidBuildGradleProcessor',
+      'Test existing flavor dimensions exception with end markup AndroidBuildLegacyProcessor',
       () {
     String content = File(
             'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
         .readAsStringSync();
 
-    AndroidBuildGradleProcessor processor =
-        AndroidBuildGradleProcessor(config: flavorizr, input: content);
+    AndroidBuildLegacyProcessor processor =
+        AndroidBuildLegacyProcessor(config: flavorizr, input: content);
     expect(() => processor.execute(), throwsException);
   });
 }
