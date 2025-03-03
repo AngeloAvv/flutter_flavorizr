@@ -1,6 +1,7 @@
-import 'package:example/app.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'app.dart';
 
-Future<void> main() async {
+FutureOr<void> main() async {
   runApp(const App());
 }
