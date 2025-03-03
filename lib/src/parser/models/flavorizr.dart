@@ -45,7 +45,7 @@ class Flavorizr {
 
   @JsonKey(
     defaultValue:
-        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v3.0.0-pre/assets.zip',
+        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.2.3/assets.zip',
   )
   final String assetsUrl;
 
@@ -79,21 +79,21 @@ class Flavorizr {
     this.instructions,
     required this.assetsUrl,
     this.ide,
-  }) : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
-       iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
-       macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
-       androidFirebaseFlavors = flavors.where(
-         (_, flavor) => flavor.android?.firebase != null,
-       ),
-       androidAGConnectFlavors = flavors.where(
-         (_, flavor) => flavor.android?.agconnect != null,
-       ),
-       iosFirebaseFlavors = flavors.where(
-         (_, flavor) => flavor.ios?.firebase != null,
-       ),
-       macosFirebaseFlavors = flavors.where(
-         (_, flavor) => flavor.macos?.firebase != null,
-       );
+  })  : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
+        iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
+        macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
+        androidFirebaseFlavors = flavors.where(
+          (_, flavor) => flavor.android?.firebase != null,
+        ),
+        androidAGConnectFlavors = flavors.where(
+          (_, flavor) => flavor.android?.agconnect != null,
+        ),
+        iosFirebaseFlavors = flavors.where(
+          (_, flavor) => flavor.ios?.firebase != null,
+        ),
+        macosFirebaseFlavors = flavors.where(
+          (_, flavor) => flavor.macos?.firebase != null,
+        );
 
   factory Flavorizr.fromJson(Map json) => _$FlavorizrFromJson(json);
 
