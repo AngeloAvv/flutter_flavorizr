@@ -1,0 +1,7 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
+#include "Generated.xcconfig"
+
+FLUTTER_TARGET=lib/main_apple.dart
+ASSET_PREFIX=apple
+BUNDLE_NAME=Apple App
+BUNDLE_DISPLAY_NAME=Apple App

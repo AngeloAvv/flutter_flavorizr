@@ -1,0 +1,7 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+
+FLUTTER_TARGET=lib/main_banana.dart
+ASSET_PREFIX=banana
+BUNDLE_NAME=Banana App
+BUNDLE_DISPLAY_NAME=Banana App
