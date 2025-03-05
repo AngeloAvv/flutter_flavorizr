@@ -27,7 +27,8 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_dummy_assets_processor.dart';
-import 'package:flutter_flavorizr/src/processors/android/android_flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_kotlin_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_manifest_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_kotlin_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
@@ -40,6 +41,7 @@ import 'package:flutter_flavorizr/src/processors/commons/download_file_processor
 import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_list_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/new_file_list_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
@@ -184,19 +186,40 @@ class Processor extends AbstractProcessor<void> {
             AndroidManifestProcessor(config: flavorizr),
             config: flavorizr,
           ),
-      'android:flavorizrGradle': () => NewFileStringProcessor(
-            K.androidFlavorizrGradlePath,
-            AndroidFlavorizrGradleProcessor(
-              config: flavorizr,
-            ),
+      'android:flavorizrGradle': () => NewFileListStringProcessor(
+            [
+              K.androidBuildLegacyPath,
+              K.androidBuildKotlinPath,
+            ],
+            [
+              K.androidFlavorizrLegacyPath,
+              K.androidFlavorizrKotlinPath,
+            ],
+            [
+              AndroidFlavorizrLegacyProcessor(
+                config: flavorizr,
+              ),
+              AndroidFlavorizrKotlinProcessor(
+                config: flavorizr,
+              )
+            ],
             config: flavorizr,
           ),
-      'android:buildGradle': () => ExistingFileStringProcessor(
-            K.androidBuildGradlePath,
-            AndroidBuildGradleProcessor(
-              K.androidFlavorizrGradleName,
-              config: flavorizr,
-            ),
+      'android:buildGradle': () => ExistingFileListStringProcessor(
+            [
+              K.androidBuildLegacyPath,
+              K.androidBuildKotlinPath,
+            ],
+            [
+              AndroidBuildLegacyProcessor(
+                K.androidFlavorizrLegacyName,
+                config: flavorizr,
+              ),
+              AndroidBuildKotlinProcessor(
+                K.androidFlavorizrKotlinName,
+                config: flavorizr,
+              ),
+            ],
             config: flavorizr,
           ),
       'android:dummyAssets': () => AndroidDummyAssetsProcessor(
