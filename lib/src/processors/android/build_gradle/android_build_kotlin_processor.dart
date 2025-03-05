@@ -94,7 +94,7 @@ class AndroidBuildKotlinProcessor extends StringProcessor {
   void _appendContent(StringBuffer buffer) {
     buffer.writeln(input);
     buffer.writeln(_beginFlavorDimensionsMarkup);
-    buffer.writeln('apply from: "$_gradleFileName"');
+    buffer.writeln('apply { from("$_gradleFileName") }');
     buffer.write(_endFlavorDimensionsMarkup);
   }
 
