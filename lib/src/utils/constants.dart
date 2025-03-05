@@ -48,7 +48,8 @@ class K {
 
   static String androidFlavorizrGradleName = 'flavorizr.gradle';
 
-  static String androidFlavorizrGradlePath = '$androidAppPath/$androidFlavorizrGradleName';
+  static String androidFlavorizrGradlePath =
+      '$androidAppPath/$androidFlavorizrGradleName';
 
   static String flutterPath = 'lib';
 
