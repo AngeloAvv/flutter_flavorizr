@@ -27,7 +27,7 @@ import 'package:flutter_flavorizr/src/exception/existing_flavor_dimensions_excep
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
-class AndroidBuildGradleProcessor extends StringProcessor {
+class AndroidBuildLegacyProcessor extends StringProcessor {
   static const _androidEntryPoint = 'android {';
   static const _flavorDimensions = 'flavorDimensions';
   static const _beginFlavorDimensionsMarkup =
@@ -37,7 +37,7 @@ class AndroidBuildGradleProcessor extends StringProcessor {
 
   final String _gradleFileName;
 
-  AndroidBuildGradleProcessor(
+  AndroidBuildLegacyProcessor(
     this._gradleFileName, {
     super.input,
     required super.config,
@@ -99,5 +99,5 @@ class AndroidBuildGradleProcessor extends StringProcessor {
   }
 
   @override
-  String toString() => 'AndroidBuildGradleProcessor';
+  String toString() => 'AndroidBuildLegacyProcessor';
 }
