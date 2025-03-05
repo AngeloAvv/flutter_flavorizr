@@ -1,5 +1,9 @@
-android {
-    flavorDimensions += "flavor-type"
+import com.android.build.gradle.AppExtension
+
+val android = project.extensions.getByType(AppExtension::class.java)
+
+android.apply {
+    flavorDimensions("flavor-type")
 
     productFlavors {
         create("apple") {

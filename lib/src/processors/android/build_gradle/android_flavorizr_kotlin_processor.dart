@@ -49,14 +49,19 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
   }
 
   void _appendStartContent(StringBuffer buffer) {
-    buffer.writeln('android {');
+    buffer.writeln('import com.android.build.gradle.AppExtension');
+    buffer.writeln('');
+    buffer.writeln(
+        'val android = project.extensions.getByType(AppExtension::class.java)');
+    buffer.writeln('');
+    buffer.writeln('android.apply {');
   }
 
   void _appendFlavorsDimension(StringBuffer buffer) {
     final flavorDimension =
         config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
 
-    buffer.writeln('    flavorDimensions += "$flavorDimension"');
+    buffer.writeln('    flavorDimensions("$flavorDimension")');
     buffer.writeln();
   }
 
