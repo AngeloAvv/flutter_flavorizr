@@ -39,9 +39,9 @@ import 'package:flutter_flavorizr/src/processors/commons/copy_folder_processor.d
 import 'package:flutter_flavorizr/src/processors/commons/delete_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/download_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/existing_file_list_string_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_existing_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/new_file_list_string_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
@@ -186,7 +186,7 @@ class Processor extends AbstractProcessor<void> {
             AndroidManifestProcessor(config: flavorizr),
             config: flavorizr,
           ),
-      'android:flavorizrGradle': () => NewFileListStringProcessor(
+      'android:flavorizrGradle': () => AndroidFlavorizrGradleProcessor(
             [
               K.androidBuildLegacyPath,
               K.androidBuildKotlinPath,
@@ -205,7 +205,7 @@ class Processor extends AbstractProcessor<void> {
             ],
             config: flavorizr,
           ),
-      'android:buildGradle': () => ExistingFileListStringProcessor(
+      'android:buildGradle': () => ApplyProcessorByExistingFileProcessor(
             [
               K.androidBuildLegacyPath,
               K.androidBuildKotlinPath,

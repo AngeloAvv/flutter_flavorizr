@@ -26,52 +26,46 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
-class NewFileListStringProcessor extends AbstractFileStringProcessor {
-  NewFileListStringProcessor(
-    List<String> gradlePaths,
-    List<String> createTargetPaths,
+class ApplyProcessorByExistingFileProcessor
+    extends AbstractFileStringProcessor {
+  ApplyProcessorByExistingFileProcessor(
+    List<String> paths,
     List<StringProcessor> processors, {
-    required super.config,
-  })  : assert(gradlePaths.length == processors.length),
+    required Flavorizr config,
+  })  : assert(paths.length == processors.length),
         super(
-          _findTargetPathByExistingFile(
-              gradlePaths, createTargetPaths, processors),
-          _findProcessor(gradlePaths, createTargetPaths, processors),
+          _findExistingPath(paths, processors),
+          _findProcessor(paths, processors),
+          config: config,
         ) {
-    file.createSync(recursive: true);
-    super.execute();
+    processor.input = file.readAsStringSync();
   }
 
-  static String _findTargetPathByExistingFile(
-    List<String> gradlePaths,
-    List<String> createTargetPaths,
-    List<StringProcessor> processors,
-  ) {
-    for (int i = 0; i < gradlePaths.length; i++) {
-      final path = gradlePaths[i];
+  static String _findExistingPath(
+      List<String> paths, List<StringProcessor> processors) {
+    for (int i = 0; i < paths.length; i++) {
+      final path = paths[i];
       final file = File(path);
       if (file.existsSync()) {
-        return createTargetPaths[i];
+        return path;
       }
     }
-    throw FileNotFoundException(gradlePaths.toString());
+    throw FileNotFoundException(paths.toString());
   }
 
   static StringProcessor _findProcessor(
-    List<String> gradlePaths,
-    List<String> createTargetPaths,
-    List<StringProcessor> processors,
-  ) {
-    for (int i = 0; i < gradlePaths.length; i++) {
-      final path = gradlePaths[i];
+      List<String> paths, List<StringProcessor> processors) {
+    for (int i = 0; i < paths.length; i++) {
+      final path = paths[i];
       final file = File(path);
       if (file.existsSync()) {
         return processors[i];
       }
     }
-    throw FileNotFoundException(gradlePaths.toString());
+    throw FileNotFoundException(paths.toString());
   }
 }
