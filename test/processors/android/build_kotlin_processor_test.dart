@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_kotlin_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,16 +50,16 @@ void main() {
 
   tearDown(() {});
 
-  test('Test original AndroidBuildLegacyProcessor', () {
+  test('Test original AndroidBuildKotlinProcessor', () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_original.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_original.gradle.kts')
         .readAsStringSync();
     String matcher = File(
-            'test_resources/android/build_gradle_processor_test/build_expected.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_expected.gradle.kts')
         .readAsStringSync();
 
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: content,
     );
@@ -71,16 +71,16 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test idempotent AndroidBuildLegacyProcessor', () {
+  test('Test idempotent AndroidBuildKotlinProcessor', () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_idempotent_2.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_idempotent_2.gradle.kts')
         .readAsStringSync();
     String matcher = File(
-            'test_resources/android/build_gradle_processor_test/build_expected.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_expected.gradle.kts')
         .readAsStringSync();
 
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: content,
     );
@@ -92,17 +92,17 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test idempotent AndroidBuildLegacyProcessor with old configuration',
+  test('Test idempotent AndroidBuildKotlinProcessor with old configuration',
       () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_idempotent_1.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_idempotent_1.gradle.kts')
         .readAsStringSync();
     String matcher = File(
-            'test_resources/android/build_gradle_processor_test/build_expected.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_expected.gradle.kts')
         .readAsStringSync();
 
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: content,
     );
@@ -114,23 +114,23 @@ void main() {
     expect(actual, matcher);
   });
 
-  test('Test malformed AndroidBuildLegacyProcessor', () {
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+  test('Test malformed AndroidBuildKotlinProcessor', () {
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: '',
     );
     expect(() => processor.execute(), throwsException);
   });
 
-  test('Test existing flavor dimensions exception AndroidBuildLegacyProcessor',
+  test('Test existing flavor dimensions exception AndroidBuildKotlinProcessor',
       () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_malformed_1.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_malformed_1.gradle.kts')
         .readAsStringSync();
 
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: content,
     );
@@ -138,14 +138,14 @@ void main() {
   });
 
   test(
-      'Test existing flavor dimensions exception with begin markup AndroidBuildLegacyProcessor',
+      'Test existing flavor dimensions exception with begin markup AndroidBuildKotlinProcessor',
       () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_malformed_2.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_malformed_2.gradle.kts')
         .readAsStringSync();
 
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: content,
     );
@@ -153,14 +153,14 @@ void main() {
   });
 
   test(
-      'Test existing flavor dimensions exception with end markup AndroidBuildLegacyProcessor',
+      'Test existing flavor dimensions exception with end markup AndroidBuildKotlinProcessor',
       () {
     String content = File(
-            'test_resources/android/build_gradle_processor_test/build_malformed_3.gradle')
+            'test_resources/android/build_kotlin_processor_test/build_malformed_3.gradle.kts')
         .readAsStringSync();
 
-    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
-      K.androidFlavorizrLegacyName,
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
       config: flavorizr,
       input: content,
     );

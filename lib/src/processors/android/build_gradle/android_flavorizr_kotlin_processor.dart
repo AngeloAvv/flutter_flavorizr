@@ -78,7 +78,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
           '            applicationId = "${flavor.android?.applicationId}"');
 
       flavor.android?.customConfig.forEach((key, value) {
-        buffer.writeln('            $key $value');
+        buffer.writeln('            $key = $value');
       });
 
       final Map<String, ResValue> resValues = LinkedHashMap.from({
