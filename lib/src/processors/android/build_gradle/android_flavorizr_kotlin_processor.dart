@@ -43,6 +43,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
     _appendStartContent(buffer);
     _appendFlavorsDimension(buffer);
     _appendFlavors(buffer);
+    _appendBuildConfig(buffer);
     _appendEndContent(buffer);
 
     return buffer.toString();
@@ -91,7 +92,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
         ..addAll(flavor.android?.resValues ?? {});
       resValues.forEach((key, res) {
         buffer.writeln(
-          '            resValue(type = "${res.type}", name = "$key", value = "${res.value}")',
+          '            resValue(type = "${res.type}", name = "$key", value = "${res.wrappedValue}")',
         );
       });
 
@@ -110,6 +111,16 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
     });
 
     buffer.writeln('    }');
+  }
+
+  void _appendBuildConfig(StringBuffer buffer) {
+    final hasBuildConfigFields = config.app?.android?.buildConfigFields.isNotEmpty == true ||
+        config.androidFlavors.values.any((flavor) => flavor.android?.buildConfigFields.isNotEmpty == true);
+
+    if (hasBuildConfigFields) {
+      buffer.writeln();
+      buffer.writeln('    buildFeatures.buildConfig = true');
+    }
   }
 
   void _appendEndContent(StringBuffer buffer) {

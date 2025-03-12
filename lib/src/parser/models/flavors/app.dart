@@ -40,5 +40,7 @@ class App {
     this.icon,
   });
 
+  String get escapedName => name.replaceAll('\'', '\\\'');
+
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 }

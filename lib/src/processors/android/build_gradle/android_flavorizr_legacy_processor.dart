@@ -96,7 +96,7 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
       ]);
       buildConfigFields.forEach((key, res) {
         buffer.writeln(
-            '            buildConfigField "${res.type}", "$key", ${res.wrappedValue}');
+            '            buildConfigField "${res.type}", "$key", ${res.legacyWrappedValue}');
       });
 
       buffer.writeln('        }');

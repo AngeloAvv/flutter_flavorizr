@@ -10,12 +10,22 @@ class BuildConfigField {
   @JsonKey(required: true, disallowNullValue: true)
   final String value;
 
-  String get wrappedValue {
+  String get legacyWrappedValue {
     if (type == 'String') {
       return '"\\"$value\\""';
     }
     if (type == 'char') {
       return "'\\'$value\\''";
+    }
+    return "\"$value\"";
+  }
+
+  String get wrappedValue {
+    if (type == 'String') {
+      return '"\\"$value\\""';
+    }
+    if (type == 'char') {
+      return '"\\\'$value\\\'"';
     }
     return "\"$value\"";
   }
