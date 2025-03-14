@@ -1,0 +1,11 @@
+name: Publish Artifacts
+
+on:
+  workflow_call:
+
+jobs:
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1

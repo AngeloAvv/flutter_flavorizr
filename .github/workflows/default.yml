@@ -41,3 +41,9 @@ jobs:
       - build
     name: Release
     uses: ./.github/workflows/release.yml
+
+  publish:
+    needs:
+      - release
+    name: Publish
+    uses: ./.github/workflows/publish.yml
