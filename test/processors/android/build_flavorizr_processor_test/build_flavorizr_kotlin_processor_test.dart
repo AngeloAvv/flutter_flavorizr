@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/android/android_flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_kotlin_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../test_utils.dart';
@@ -50,12 +50,12 @@ void main() {
 
   tearDown(() {});
 
-  test('Test original AndroidFlavorizrGradleProcessor with custom config', () {
+  test('Test original AndroidFlavorizrKotlinProcessor with custom config', () {
     String matcher = File(
-            'test_resources/android/build_flavorizr_processor_test/flavorizr_expected.gradle')
+            'test_resources/android/build_flavorizr_processor_test/flavorizr_kotlin_expected.gradle.kts')
         .readAsStringSync();
 
-    AndroidFlavorizrGradleProcessor processor = AndroidFlavorizrGradleProcessor(
+    AndroidFlavorizrKotlinProcessor processor = AndroidFlavorizrKotlinProcessor(
       config: flavorizr,
       input: '',
     );

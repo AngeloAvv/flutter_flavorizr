@@ -43,11 +43,16 @@ class K {
   static String androidManifestPath =
       '$androidSrcPath/main/AndroidManifest.xml';
 
-  static String androidBuildGradlePath = '$androidAppPath/build.gradle';
+  static String androidBuildKotlinPath = '$androidAppPath/build.gradle.kts';
+  static String androidBuildLegacyPath = '$androidAppPath/build.gradle';
 
-  static String androidFlavorizrGradleName = 'flavorizr.gradle';
+  static String androidFlavorizrLegacyName = 'flavorizr.gradle';
+  static String androidFlavorizrKotlinName = 'flavorizr.gradle.kts';
 
-  static String androidFlavorizrGradlePath = '$androidAppPath/$androidFlavorizrGradleName';
+  static String androidFlavorizrLegacyPath =
+      '$androidAppPath/$androidFlavorizrLegacyName';
+  static String androidFlavorizrKotlinPath =
+      '$androidAppPath/$androidFlavorizrKotlinName';
 
   static String flutterPath = 'lib';
 

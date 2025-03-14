@@ -66,7 +66,7 @@ class FlutterFlavorsProcessor extends StringProcessor {
 
     config.flavors.forEach((String name, Flavor flavor) {
       buffer.writeln('      case Flavor.${name.toLowerCase()}:');
-      buffer.writeln('        return \'${flavor.app.name}\';');
+      buffer.writeln('        return \'${flavor.app.escapedName}\';');
     });
 
     buffer.writeln('    }');

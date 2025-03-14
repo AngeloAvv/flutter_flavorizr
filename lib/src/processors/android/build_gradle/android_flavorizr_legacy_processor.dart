@@ -30,8 +30,8 @@ import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
-class AndroidFlavorizrGradleProcessor extends StringProcessor {
-  AndroidFlavorizrGradleProcessor({
+class AndroidFlavorizrLegacyProcessor extends StringProcessor {
+  AndroidFlavorizrLegacyProcessor({
     super.input,
     required super.config,
   });
@@ -96,7 +96,7 @@ class AndroidFlavorizrGradleProcessor extends StringProcessor {
       ]);
       buildConfigFields.forEach((key, res) {
         buffer.writeln(
-            '            buildConfigField "${res.type}", "$key", ${res.wrappedValue}');
+            '            buildConfigField "${res.type}", "$key", ${res.legacyWrappedValue}');
       });
 
       buffer.writeln('        }');
@@ -110,5 +110,5 @@ class AndroidFlavorizrGradleProcessor extends StringProcessor {
   }
 
   @override
-  String toString() => 'AndroidFlavorizrGradleProcessor';
+  String toString() => 'AndroidFlavorizrLegacyProcessor';
 }
