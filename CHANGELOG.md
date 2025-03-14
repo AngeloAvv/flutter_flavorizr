@@ -1,10 +1,15 @@
 ## NEXT
 
+## 2.3.0
+
+* Added support for Flutter 3.29.x
+* Fixed "Xcodeproj is not installed" on Windows
 * Fixed Android app name with single quotes
 * Moved flavor dimensions to another file
 * Removed flutter:targets processor and merged main_<flavor_name>.dart into main.dart
 * Made F.appFlavor non-nullable
 * Added support for both yml and yaml files
+* Bumped dependencies
 
 ## 2.2.3
 
