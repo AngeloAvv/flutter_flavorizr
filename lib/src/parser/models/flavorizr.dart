@@ -50,7 +50,7 @@ class Flavorizr {
   final String assetsUrl;
 
   @JsonKey()
-  final IDE? ide;
+  final List<IDE>? ide;
 
   @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFlavors;
