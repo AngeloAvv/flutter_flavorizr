@@ -6,16 +6,20 @@ import 'package:flutter_flavorizr/src/processors/ide/vscode/vscode_launch_file_p
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
 class IDEProcessor extends AbstractProcessor {
-  final AbstractProcessor? _processor;
+  final List<AbstractProcessor>? _processors;
 
   IDEProcessor({
     required Flavorizr config,
-  })  : _processor = initProcessor(config),
+  })  : _processors = initProcessor(config),
         super(config);
 
   @override
   void execute() {
-    _processor?.execute();
+    if (_processors != null) {
+      for (final processor in _processors!) {
+        processor.execute();
+      }
+    }
   }
 
   @override
@@ -23,19 +27,20 @@ class IDEProcessor extends AbstractProcessor {
     return 'IDEProcessor: ${config.ide == null ? 'Skipping IDE file generation' : super.toString()}';
   }
 
-  static initProcessor(Flavorizr config) {
+  static List<AbstractProcessor>? initProcessor(Flavorizr config) {
+    final List<AbstractProcessor> processors = <AbstractProcessor>[];
+
     if (config.ide != null) {
-      switch (config.ide) {
-        case IDE.idea:
-          return IdeaRunConfigurationsProcessor(
-            K.ideaLaunchpath,
-            config: config,
-          );
-        case IDE.vscode:
-          return VSCodeLaunchFileProcessor(config: config);
-        default:
-          break;
+      for (final ide in config.ide!) {
+        processors.add(switch (ide) {
+          IDE.studio || IDE.idea => IdeaRunConfigurationsProcessor(
+              K.ideaLaunchpath,
+              config: config,
+            ),
+          IDE.vscode => VSCodeLaunchFileProcessor(config: config),
+        });
       }
     }
+    return processors;
   }
 }

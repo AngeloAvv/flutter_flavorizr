@@ -24,11 +24,14 @@ Flavorizr _$FlavorizrFromJson(Map json) {
         .toList(),
     assetsUrl: json['assetsUrl'] as String? ??
         'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.3.0/assets.zip',
-    ide: $enumDecodeNullable(_$IDEEnumMap, json['ide']),
+    ide: (json['ide'] as List<dynamic>?)
+        ?.map((e) => $enumDecode(_$IDEEnumMap, e))
+        .toList(),
   );
 }
 
 const _$IDEEnumMap = {
   IDE.idea: 'idea',
   IDE.vscode: 'vscode',
+  IDE.studio: 'studio',
 };
