@@ -29,17 +29,23 @@ class IDEProcessor extends AbstractProcessor {
 
   static List<AbstractProcessor>? initProcessor(Flavorizr config) {
     final List<AbstractProcessor> processors = <AbstractProcessor>[];
+    final List<IDE> ides = <IDE>[];
 
     if (config.ide != null) {
-      for (final ide in config.ide!) {
-        processors.add(switch (ide) {
-          IDE.studio || IDE.idea => IdeaRunConfigurationsProcessor(
-              K.ideaLaunchpath,
-              config: config,
-            ),
-          IDE.vscode => VSCodeLaunchFileProcessor(config: config),
-        });
-      }
+      ides.add(config.ide!);
+    }
+    if (config.ides != null && config.ides!.isNotEmpty) {
+      ides.addAll(config.ides!);
+    }
+
+    for (final ide in ides.toSet()) {
+      processors.add(switch (ide) {
+        IDE.idea => IdeaRunConfigurationsProcessor(
+            K.ideaLaunchpath,
+            config: config,
+          ),
+        IDE.vscode => VSCodeLaunchFileProcessor(config: config),
+      });
     }
     return processors;
   }

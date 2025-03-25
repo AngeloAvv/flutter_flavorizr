@@ -23,4 +23,4 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum IDE { idea, vscode, studio }
+enum IDE { idea, vscode }

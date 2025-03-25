@@ -50,7 +50,10 @@ class Flavorizr {
   final String assetsUrl;
 
   @JsonKey()
-  final List<IDE>? ide;
+  final IDE? ide;
+
+  @JsonKey()
+  final List<IDE>? ides;
 
   @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFlavors;
@@ -79,6 +82,7 @@ class Flavorizr {
     this.instructions,
     required this.assetsUrl,
     this.ide,
+    this.ides,
   })  : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
         iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
         macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
