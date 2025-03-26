@@ -6,9 +6,9 @@ part 'adaptive_icon.g.dart';
 class AdaptiveIcon {
   final String foreground;
   final String background;
-  String? monochrome;
+  final String? monochrome;
 
-  AdaptiveIcon({
+  const AdaptiveIcon({
     required this.foreground,
     required this.background,
     this.monochrome,

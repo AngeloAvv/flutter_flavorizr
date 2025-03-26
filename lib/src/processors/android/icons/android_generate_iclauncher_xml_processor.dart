@@ -1,4 +1,3 @@
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
