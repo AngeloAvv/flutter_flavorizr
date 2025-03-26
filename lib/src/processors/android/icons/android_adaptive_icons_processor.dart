@@ -21,6 +21,7 @@ class AndroidAdaptiveIconsProcessor extends QueueProcessor {
     this.backgroundSource,
     this.flavorName, {
     required Flavorizr config,
+    String? monochromeSource,
   }) : super(
           _entries.map(
             (folder, size) {
@@ -33,6 +34,7 @@ class AndroidAdaptiveIconsProcessor extends QueueProcessor {
                   folder,
                   size,
                   config: config,
+                  monochromeSource: monochromeSource,
                 ),
               );
             },
