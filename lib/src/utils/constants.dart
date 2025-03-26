@@ -24,143 +24,131 @@
  */
 
 class K {
-  static String androidAppPath = 'android/app';
+  static const String androidAppPath = 'android/app';
 
-  static String androidSrcPath = '$androidAppPath/src';
+  static const String androidSrcPath = '$androidAppPath/src';
 
-  static String androidIconPath =
-      '$androidAppPath/src/%s/res/%s/ic_launcher.png';
+  static const String androidIconPath = '$androidAppPath/src/%s/res/%s/ic_launcher.png';
 
-  static String androidAdaptiveIconBackgroundPath =
-      '$androidAppPath/src/%s/res/%s/ic_launcher_background.png';
+  static const String androidAdaptiveIconBackgroundPath = '$androidAppPath/src/%s/res/%s/ic_launcher_background.png';
 
-  static String androidAdaptiveIconForegroundPath =
-      '$androidAppPath/src/%s/res/%s/ic_launcher_foreground.png';
+  static const String androidAdaptiveIconForegroundPath = '$androidAppPath/src/%s/res/%s/ic_launcher_foreground.png';
 
   static String androidAdaptiveIconMonochromePath =
       '$androidAppPath/src/%s/res/%s/ic_launcher_monochrome.png';
 
-  static String androidAdaptiveIconXmlPath =
-      '$androidAppPath/src/%s/res/mipmap-anydpi-v26/ic_launcher.xml';
+  static const String androidAdaptiveIconXmlPath = '$androidAppPath/src/%s/res/mipmap-anydpi-v26/ic_launcher.xml';
 
-  static String androidManifestPath =
-      '$androidSrcPath/main/AndroidManifest.xml';
+  static const String androidManifestPath = '$androidSrcPath/main/AndroidManifest.xml';
 
-  static String androidBuildKotlinPath = '$androidAppPath/build.gradle.kts';
-  static String androidBuildLegacyPath = '$androidAppPath/build.gradle';
+  static const String androidBuildKotlinPath = '$androidAppPath/build.gradle.kts';
+  static const String androidBuildLegacyPath = '$androidAppPath/build.gradle';
 
-  static String androidFlavorizrLegacyName = 'flavorizr.gradle';
-  static String androidFlavorizrKotlinName = 'flavorizr.gradle.kts';
+  static const String androidFlavorizrLegacyName = 'flavorizr.gradle';
+  static const String androidFlavorizrKotlinName = 'flavorizr.gradle.kts';
 
-  static String androidFlavorizrLegacyPath =
-      '$androidAppPath/$androidFlavorizrLegacyName';
-  static String androidFlavorizrKotlinPath =
-      '$androidAppPath/$androidFlavorizrKotlinName';
+  static const String androidFlavorizrLegacyPath = '$androidAppPath/$androidFlavorizrLegacyName';
+  static const String androidFlavorizrKotlinPath = '$androidAppPath/$androidFlavorizrKotlinName';
 
-  static String flutterPath = 'lib';
+  static const String flutterPath = 'lib';
 
-  static String flutterFlavorPath = '$flutterPath/flavors.dart';
+  static const String flutterFlavorPath = '$flutterPath/flavors.dart';
 
-  static String flutterAppPath = '$flutterPath/app.dart';
+  static const String flutterAppPath = '$flutterPath/app.dart';
 
-  static String flutterMainPath = '$flutterPath/main.dart';
+  static const String flutterMainPath = '$flutterPath/main.dart';
 
-  static String flutterPagesPath = '$flutterPath/pages';
+  static const String flutterPagesPath = '$flutterPath/pages';
 
-  static String flutterMainPagePath = '$flutterPagesPath/my_home_page.dart';
+  static const String flutterMainPagePath = '$flutterPagesPath/my_home_page.dart';
 
-  static String iOSPath = 'ios';
+  static const String iOSPath = 'ios';
 
-  static String iOSFlutterPath = '$iOSPath/Flutter';
+  static const String iOSFlutterPath = '$iOSPath/Flutter';
 
-  static String iOSRunnerPath = '$iOSPath/Runner';
+  static const String iOSRunnerPath = '$iOSPath/Runner';
 
-  static String iOSRunnerProjectPath = '$iOSPath/Runner.xcodeproj';
+  static const String iOSRunnerProjectPath = '$iOSPath/Runner.xcodeproj';
 
-  static String iOSPodfilePath = '$iOSPath/Podfile';
+  static const String iOSPodfilePath = '$iOSPath/Podfile';
 
-  static String iOSPListPath = '$iOSRunnerPath/Info.plist';
+  static const String iOSPListPath = '$iOSRunnerPath/Info.plist';
 
-  static String iOSAssetsPath = '$iOSRunnerPath/Assets.xcassets';
+  static const String iOSAssetsPath = '$iOSRunnerPath/Assets.xcassets';
 
-  static String iOSAppIconPath = '$iOSAssetsPath/%sAppIcon.appiconset/%s';
+  static const String iOSAppIconPath = '$iOSAssetsPath/%sAppIcon.appiconset/%s';
 
-  static String iOSFirebaseScriptPath = '$iOSPath/firebaseScript.sh';
+  static const String iOSFirebaseScriptPath = '$iOSPath/firebaseScript.sh';
 
-  static String macOSPath = 'macos';
+  static const String macOSPath = 'macos';
 
-  static String macOSRunnerPath = '$macOSPath/Runner';
+  static const String macOSRunnerPath = '$macOSPath/Runner';
 
-  static String macOSRunnerProjectPath = '$macOSPath/Runner.xcodeproj';
+  static const String macOSRunnerProjectPath = '$macOSPath/Runner.xcodeproj';
 
-  static String macOSPodfilePath = '$macOSPath/Podfile';
+  static const String macOSPodfilePath = '$macOSPath/Podfile';
 
-  static String macOSPlistPath = '$macOSRunnerPath/Info.plist';
+  static const String macOSPlistPath = '$macOSRunnerPath/Info.plist';
 
-  static String macOSAssetsPath = '$macOSRunnerPath/Assets.xcassets';
+  static const String macOSAssetsPath = '$macOSRunnerPath/Assets.xcassets';
 
-  static String macOSAppIconPath = '$macOSAssetsPath/%sAppIcon.appiconset/%s';
+  static const String macOSAppIconPath = '$macOSAssetsPath/%sAppIcon.appiconset/%s';
 
-  static String macOSConfigsPath = '$macOSRunnerPath/Configs';
+  static const String macOSConfigsPath = '$macOSRunnerPath/Configs';
 
-  static String macOSFlutterPath = '$macOSPath/Flutter';
+  static const String macOSFlutterPath = '$macOSPath/Flutter';
 
-  static String macOSFirebaseScriptPath = '$macOSPath/firebaseScript.sh';
+  static const String macOSFirebaseScriptPath = '$macOSPath/firebaseScript.sh';
 
-  static String assetsZipPath = 'assets.tmp.zip';
+  static const String assetsZipPath = 'assets.tmp.zip';
 
-  static String tempPath = '.tmp';
+  static const String tempPath = '.tmp';
 
-  static String tempAndroidPath = '$tempPath/android';
+  static const String tempAndroidPath = '$tempPath/android';
 
-  static String tempAndroidResPath = '$tempAndroidPath/res';
+  static const String tempAndroidResPath = '$tempAndroidPath/res';
 
-  static String tempFlutterPath = '$tempPath/flutter';
+  static const String tempFlutterPath = '$tempPath/flutter';
 
-  static String tempFlutterAppPath = '$tempFlutterPath/app.dart';
+  static const String tempFlutterAppPath = '$tempFlutterPath/app.dart';
 
-  static String tempFlutterMainPath = '$tempFlutterPath/main.dart';
+  static const String tempFlutterMainPath = '$tempFlutterPath/main.dart';
 
-  static String tempFlutterPagesPath = '$tempFlutterPath/pages';
+  static const String tempFlutterPagesPath = '$tempFlutterPath/pages';
 
-  static String tempiOSPath = '$tempPath/ios';
+  static const String tempiOSPath = '$tempPath/ios';
 
-  static String tempiOSAssetsPath = '$tempiOSPath/Assets.xcassets';
+  static const String tempiOSAssetsPath = '$tempiOSPath/Assets.xcassets';
 
-  static String tempiOSLaunchScreenPath =
-      '$tempiOSPath/LaunchScreen.storyboard';
+  static const String tempiOSLaunchScreenPath = '$tempiOSPath/LaunchScreen.storyboard';
 
-  static String tempScriptsPath = '$tempPath/scripts';
+  static const String tempScriptsPath = '$tempPath/scripts';
 
-  static String tempDarwinScriptsPath = '$tempScriptsPath/darwin';
+  static const String tempDarwinScriptsPath = '$tempScriptsPath/darwin';
 
-  static String tempMacOSPath = '$tempPath/macos';
+  static const String tempMacOSPath = '$tempPath/macos';
 
-  static String tempMacOSScriptsPath = '$tempScriptsPath/macos';
+  static const String tempMacOSScriptsPath = '$tempScriptsPath/macos';
 
-  static String tempMacOSAssetsPath = '$tempMacOSPath/Assets.xcassets';
+  static const String tempMacOSAssetsPath = '$tempMacOSPath/Assets.xcassets';
 
-  static String tempDarwinCreateSchemeScriptPath =
-      '$tempDarwinScriptsPath/create_scheme.rb';
+  static const String tempDarwinCreateSchemeScriptPath = '$tempDarwinScriptsPath/create_scheme.rb';
 
-  static String tempiOSScriptsPath = '$tempScriptsPath/ios';
+  static const String tempiOSScriptsPath = '$tempScriptsPath/ios';
 
-  static String tempDarwinAddFileScriptPath =
-      '$tempDarwinScriptsPath/add_file.rb';
+  static const String tempDarwinAddFileScriptPath = '$tempDarwinScriptsPath/add_file.rb';
 
-  static String tempDarwinAddBuildConfigurationScriptPath =
-      '$tempDarwinScriptsPath/add_build_configuration.rb';
+  static const String tempDarwinAddBuildConfigurationScriptPath = '$tempDarwinScriptsPath/add_build_configuration.rb';
 
-  static String tempDarwinAddFirebaseBuildPhaseScriptPath =
-      '$tempDarwinScriptsPath/add_firebase_build_phase.rb';
+  static const String tempDarwinAddFirebaseBuildPhaseScriptPath = '$tempDarwinScriptsPath/add_firebase_build_phase.rb';
 
-  static String ideaPath = '.idea';
+  static const String ideaPath = '.idea';
 
-  static String ideaLaunchpath = '$ideaPath/runConfigurations';
+  static const String ideaLaunchpath = '$ideaPath/runConfigurations';
 
-  static String vsCodePath = '.vscode';
+  static const String vsCodePath = '.vscode';
 
-  static String vsCodeLaunchPath = '$vsCodePath/launch.json';
+  static const String vsCodeLaunchPath = '$vsCodePath/launch.json';
 
   const K._();
 }

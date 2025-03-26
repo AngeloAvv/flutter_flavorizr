@@ -23,46 +23,41 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/ide/idea/idea_launch_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:flutter_flavorizr/src/utils/constants.dart';
 
-import '../../test_utils.dart';
+import '../commons/copy_file_processor.dart';
 
-void main() {
-  late Flavorizr flavorizr;
+class FlutterMainProcessor extends AbstractProcessor {
+  final List<AbstractProcessor> _processors;
 
-  setUp(() {
-    Parser parser = const Parser(
-      pubspecPath: 'test_resources/pubspec',
-      flavorizrPath: 'test_resources/non_existent',
-    );
-    try {
-      flavorizr = parser.parse();
-    } catch (e) {
-      fail(e.toString());
+  FlutterMainProcessor({
+    required Flavorizr config,
+  })  : _processors = initProcessor(config),
+        super(config);
+
+  @override
+  void execute() {
+    for (final AbstractProcessor processor in _processors) {
+      processor.execute();
     }
-  });
+  }
 
-  tearDown(() {});
+  @override
+  String toString() => 'FlutterMainProcessor';
 
-  test('Test VSCodeLaunchProcessor', () {
-    String matcher = File(
-            'test_resources/ide/idea_launcher_processor_test/apple.xml')
-        .readAsStringSync();
+  static List<AbstractProcessor> initProcessor(Flavorizr config) {
+    final List<AbstractProcessor> processors = <AbstractProcessor>[];
+    for (final MapEntry<String, Flavor> flavor in config.flavors.entries) {
+      processors.add(CopyFileProcessor(
+        K.tempFlutterMainPath,
+        flavor.value.flutter.entrypoint,
+        config: config,
+      ));
+    }
 
-    IdeaLaunchProcessor processor = IdeaLaunchProcessor(
-      'apple',
-      config: flavorizr,
-    );
-    String actual = processor.execute();
-
-    actual = TestUtils.stripEndOfLines(actual);
-    matcher = TestUtils.stripEndOfLines(matcher);
-
-    expect(actual, matcher);
-  });
+    return processors;
+  }
 }

@@ -49,6 +49,7 @@ import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.da
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/flutter/flutter_flavors_processor.dart';
+import 'package:flutter_flavorizr/src/processors/flutter/flutter_main_processor.dart';
 import 'package:flutter_flavorizr/src/processors/google/firebase/firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
@@ -247,9 +248,7 @@ class Processor extends AbstractProcessor<void> {
             K.flutterPagesPath,
             config: flavorizr,
           ),
-      'flutter:main': () => CopyFileProcessor(
-            K.tempFlutterMainPath,
-            K.flutterMainPath,
+      'flutter:main': () => FlutterMainProcessor(
             config: flavorizr,
           ),
 

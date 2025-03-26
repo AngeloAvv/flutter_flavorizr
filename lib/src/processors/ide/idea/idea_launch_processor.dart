@@ -57,7 +57,8 @@ class IdeaLaunchProcessor extends StringProcessor {
 
         builder.element('option', attributes: {
           'name': 'filePath',
-          'value': '\$PROJECT_DIR\$/lib/main.dart',
+          'value':
+              '\$PROJECT_DIR\$/${config.flavors[_flavorName]!.flutter.entrypoint}',
         });
 
         builder.element('method', attributes: {

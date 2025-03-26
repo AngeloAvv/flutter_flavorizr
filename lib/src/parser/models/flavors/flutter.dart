@@ -23,46 +23,20 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
+import 'package:json_annotation/json_annotation.dart';
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/ide/idea/idea_launch_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import '../../../utils/constants.dart';
 
-import '../../test_utils.dart';
+part 'flutter.g.dart';
 
-void main() {
-  late Flavorizr flavorizr;
+@JsonSerializable(anyMap: true, createToJson: false)
+class Flutter {
+  @JsonKey(required: false, disallowNullValue: true)
+  final String entrypoint;
 
-  setUp(() {
-    Parser parser = const Parser(
-      pubspecPath: 'test_resources/pubspec',
-      flavorizrPath: 'test_resources/non_existent',
-    );
-    try {
-      flavorizr = parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
+  const Flutter({
+    this.entrypoint = K.flutterMainPath,
   });
 
-  tearDown(() {});
-
-  test('Test VSCodeLaunchProcessor', () {
-    String matcher = File(
-            'test_resources/ide/idea_launcher_processor_test/apple.xml')
-        .readAsStringSync();
-
-    IdeaLaunchProcessor processor = IdeaLaunchProcessor(
-      'apple',
-      config: flavorizr,
-    );
-    String actual = processor.execute();
-
-    actual = TestUtils.stripEndOfLines(actual);
-    matcher = TestUtils.stripEndOfLines(matcher);
-
-    expect(actual, matcher);
-  });
+  factory Flutter.fromJson(Map<String, dynamic> json) => _$FlutterFromJson(json);
 }
