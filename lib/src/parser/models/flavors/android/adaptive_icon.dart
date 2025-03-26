@@ -6,8 +6,13 @@ part 'adaptive_icon.g.dart';
 class AdaptiveIcon {
   final String foreground;
   final String background;
+  String? monochrome;
 
-  const AdaptiveIcon({required this.foreground, required this.background});
+  AdaptiveIcon({
+    required this.foreground,
+    required this.background,
+    this.monochrome,
+  });
 
   factory AdaptiveIcon.fromJson(Map<String, dynamic> json) =>
       _$AdaptiveIconFromJson(json);

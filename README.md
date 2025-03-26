@@ -209,7 +209,7 @@ flavorizr:
 | customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig* |
 | generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)         |
 | icon                | String |         | false    | The icon path for this android flavor                                      |
-| adaptiveIcon        | Array  |         | false    | An array which contains foreground and background of adaptive icon         |
+| adaptiveIcon        | Array  |         | false    | An array which contains foreground, background, monochrome (optional) of adaptive icon   |
 
 #### ios (under *flavorname*)
 
@@ -374,8 +374,11 @@ flavors:
       adaptiveIcon:
         foreground: "assets/adaptive_icon/appleApp/ic_launcher_foreground.png"
         background: "assets/adaptive_icon/appleApp/ic_launcher_background.png"
+        monochrome: "assets/adaptive_icon/appleApp/ic_launcher_monochrome.png"
 ```
-After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please delete adaptiveIcon manually.
+
+* monochrome (Themed icons on Android >= 13) is optional.
+* After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please delete adaptiveIcon manually.
 
 
 ## Usage
