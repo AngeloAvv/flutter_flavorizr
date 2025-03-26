@@ -32,7 +32,6 @@ import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_fl
 import 'package:flutter_flavorizr/src/processors/android/android_manifest_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_kotlin_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
-import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
