@@ -28,6 +28,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'android.dart';
 import 'app.dart';
 import 'darwin.dart';
+import 'flutter.dart';
 
 part 'flavor.g.dart';
 
@@ -35,6 +36,9 @@ part 'flavor.g.dart';
 class Flavor {
   @JsonKey(required: true, disallowNullValue: true)
   final App app;
+
+  @JsonKey(required: false, disallowNullValue: true)
+  final Flutter flutter;
 
   @JsonKey(required: false, disallowNullValue: true)
   final Android? android;
@@ -47,6 +51,7 @@ class Flavor {
 
   const Flavor({
     required this.app,
+    this.flutter = const Flutter(),
     this.android,
     this.ios,
     this.macos,

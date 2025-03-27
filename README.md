@@ -198,6 +198,12 @@ flavorizr:
 | name | String |         | true     | The name of the App           |
 | icon | String |         | false    | The icon path for this flavor |
 
+#### flutter (under *flavorname*)
+
+| key        | type   | default       | required | description          |
+|:-----------|:-------|:--------------|:---------|:---------------------|
+| entrypoint | String | lib/main.dart | false    | The path of the main |
+
 #### android (under *flavorname*)
 
 | key                 | type   | default | required | description                                                                |
