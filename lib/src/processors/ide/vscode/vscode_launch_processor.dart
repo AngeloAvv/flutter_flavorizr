@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/vscode/models/configuration.dart';
 import 'package:flutter_flavorizr/src/processors/ide/vscode/models/launch.dart';
@@ -37,19 +38,19 @@ class VSCodeLaunchProcessor extends StringProcessor {
   @override
   execute() => Launch(
         version: '0.2.0',
-        configurations: config.flavors.keys
+        configurations: config.flavors.entries
             .expand(
-              (flavorName) => Target.values.map(
+              ( MapEntry<String, Flavor> entry) => Target.values.map(
                 (target) => Configuration(
-                  name: '$flavorName ${target.name.capitalize}',
+                  name: '${entry.key} ${target.name.capitalize}',
                   flutterMode: target.name.toLowerCase(),
                   request: 'launch',
                   type: 'dart',
                   args: [
                     '--flavor',
-                    flavorName,
+                    entry.key,
                   ],
-                  program: 'lib/main.dart',
+                  program: entry.value.flutter.entrypoint,
                 ),
               ),
             )
