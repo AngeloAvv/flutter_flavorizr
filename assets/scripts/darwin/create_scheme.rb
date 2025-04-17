@@ -15,7 +15,7 @@ scheme = Xcodeproj::XCScheme.new
 scheme.launch_action.build_configuration = "Debug-#{scheme_name}"
 scheme.set_launch_target(target)
 scheme.test_action.build_configuration = "Debug-#{scheme_name}"
-scheme.profile_action.build_configuration = "Release-#{scheme_name}"
+scheme.profile_action.build_configuration = "Profile-#{scheme_name}"
 scheme.analyze_action.build_configuration = "Debug-#{scheme_name}"
 scheme.archive_action.build_configuration = "Release-#{scheme_name}"
 scheme.save_as(project_path, scheme_name)
