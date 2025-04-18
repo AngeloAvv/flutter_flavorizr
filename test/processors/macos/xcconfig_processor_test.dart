@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Angelo Cassano
+ * Copyright (c) 2025 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,33 +23,44 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
-import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/macos/xcconfig/macos_xcconfig_processor.dart';
+import 'package:flutter_test/flutter_test.dart';
 
-class MacOSXCConfigProcessor extends StringProcessor {
-  final Target _target;
+import '../../test_utils.dart';
 
-  MacOSXCConfigProcessor(
-    this._target, {
-    super.input,
-    required super.config,
+void main() {
+  late Flavorizr flavorizr;
+
+  test('Test MacOSXCConfigProcessor', () {
+    Parser parser = const Parser(
+      pubspecPath:
+          'test_resources/macos/xcconfig_processor_test/pubspec_without_variables',
+      flavorizrPath: 'test_resources/non_existent',
+    );
+    try {
+      flavorizr = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+
+    String matcher = File(
+            'test_resources/macos/xcconfig_processor_test/matcher_without_variables.xcconfig')
+        .readAsStringSync();
+
+    MacOSXCConfigProcessor processor = MacOSXCConfigProcessor(
+      Target.debug,
+      config: flavorizr,
+    );
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
   });
-
-  @override
-  String execute() {
-    StringBuffer buffer = StringBuffer();
-
-    _appendIncludes(buffer);
-
-    return buffer.toString();
-  }
-
-  void _appendIncludes(StringBuffer buffer) {
-    buffer.writeln(
-        '#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.${_target.darwinTarget}.xcconfig"');
-    buffer.writeln('#include "ephemeral/Flutter-Generated.xcconfig"');
-  }
-
-  @override
-  String toString() => 'MacOSXCConfigProcessor';
 }
