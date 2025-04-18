@@ -1,4 +1,6 @@
 ## NEXT
+
+## 2.4.0
 * Updated logging system
 
 ## 2.3.1
