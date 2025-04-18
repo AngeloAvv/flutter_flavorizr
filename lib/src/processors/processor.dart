@@ -289,11 +289,28 @@ class Processor extends AbstractProcessor<void> {
       'ios:icons': () => IOSIconsProcessor(
             config: flavorizr,
           ),
-      'ios:plist': () => ExistingFileStringProcessor(
-            K.iOSPListPath,
-            IOSPListProcessor(config: flavorizr),
-            config: flavorizr,
-          ),
+      'ios:plist': () => (flavorizr.app?.ios?.iOSPListFiles != null &&
+              flavorizr.app!.ios!.iOSPListFiles.isNotEmpty
+          ? QueueProcessor(
+              flavorizr.app!.ios!.iOSPListFiles
+                  .map<ExistingFileStringProcessor>(
+                      (String path) => ExistingFileStringProcessor(
+                            path,
+                            IOSPListProcessor(config: flavorizr),
+                            config: flavorizr,
+                          ))
+                  .toList(),
+              config: flavorizr,
+            )
+          : ExistingFileStringProcessor(
+              flavorizr.app?.ios != null &&
+                      flavorizr.app!.ios!.buildSettings
+                          .containsKey('INFOPLIST_FILE')
+                  ? flavorizr.app?.ios?.buildSettings['INFOPLIST_FILE']
+                  : K.iOSPListPath,
+              IOSPListProcessor(config: flavorizr),
+              config: flavorizr,
+            )) as AbstractProcessor<void>,
       'ios:launchScreen': () => IOSTargetsLaunchScreenFileProcessor(
             'ruby',
             K.tempDarwinAddFileScriptPath,
