@@ -40,7 +40,7 @@ class MacOSXCConfigModeFileProcessor extends QueueProcessor {
           [
             NewFileStringProcessor(
               '$path/$flavorName${target.name.capitalize}.xcconfig',
-              MacOSXCConfigProcessor(config: config),
+              MacOSXCConfigProcessor(target, config: config),
               config: config,
             ),
           ],
