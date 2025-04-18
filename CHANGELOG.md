@@ -1,5 +1,11 @@
 ## NEXT
 
+## 2.3.1
+* Fixed missing conditional Target Support Files include on MacOSXCConfigProcessor
+* Support themed icon on Android >= 13
+* Avoid new line at every run on build.gradle(.kts)
+* Bumped dependencies
+
 ## 2.3.0
 
 * Added support for Flutter 3.29.x
