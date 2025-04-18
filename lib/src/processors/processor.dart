@@ -66,6 +66,7 @@ import 'package:mason_logger/mason_logger.dart';
 
 class Processor extends AbstractProcessor<void> {
   final Map<String, AbstractProcessor<void> Function()> _availableProcessors;
+  final bool force;
 
   static const List<String> defaultInstructionSet = [
     // Prepare
@@ -118,8 +119,11 @@ class Processor extends AbstractProcessor<void> {
     'ide:config'
   ];
 
-  Processor(super.config, {required super.logger})
-      : _availableProcessors = _initAvailableProcessors(config, logger: logger);
+  Processor(
+    super.config, {
+    this.force = false,
+    required super.logger,
+  }) : _availableProcessors = _initAvailableProcessors(config, logger: logger);
 
   @override
   void execute() async {
@@ -132,11 +136,16 @@ class Processor extends AbstractProcessor<void> {
           !config.macosFlavorsAvailable && instruction.startsWith('macos'));
 
     logger.info('Flavorization process started');
-    logger.info('The following instructions will be executed:');
-    for (String instruction in instructions) {
-      logger.info(' - $instruction');
+
+    if (!force) {
+      logger.info('The following instructions will be executed:');
+      for (String instruction in instructions) {
+        logger.info(' - $instruction');
+      }
     }
-    final confirm = logger.confirm('Do you want to proceed?', defaultValue: true);
+
+    final confirm =
+        force || logger.confirm('Do you want to proceed?', defaultValue: true);
 
     if (confirm) {
       for (String instruction in instructions) {
@@ -144,8 +153,8 @@ class Processor extends AbstractProcessor<void> {
 
         progress.update('[$instruction] Executing');
 
-        AbstractProcessor? processor = _availableProcessors[instruction]
-            ?.call();
+        AbstractProcessor? processor =
+            _availableProcessors[instruction]?.call();
         if (processor == null) {
           progress.fail('[$instruction] An error has occurred');
         }

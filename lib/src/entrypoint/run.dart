@@ -37,6 +37,7 @@ import 'package:mason_logger/mason_logger.dart';
 /// implies success.
 void execute(List<String> args) {
   final argParser = ArgParser()
+    ..addFlag('force', abbr: 'f')
     ..addMultiOption(
       'processors',
       abbr: 'p',
@@ -46,6 +47,7 @@ void execute(List<String> args) {
     ..addFlag('verbose', abbr: 'v');
 
   final results = argParser.parse(args);
+  final force = results['force'] as bool? ?? false;
   final argProcessors = results['processors'];
   final level = results['verbose'] == true ? Level.verbose : Level.info;
 
@@ -68,6 +70,10 @@ void execute(List<String> args) {
     flavorizr.instructions = argProcessors;
   }
 
-  final processor = Processor(flavorizr, logger: logger);
+  final processor = Processor(
+    flavorizr,
+    force: force,
+    logger: logger,
+  );
   processor.execute();
 }
