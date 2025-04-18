@@ -34,15 +34,25 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
   AndroidFlavorizrLegacyProcessor({
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
     final buffer = StringBuffer();
 
+    logger.detail('[$AndroidFlavorizrLegacyProcessor] Generating flavors in Groovy DSL');
+
+    logger.detail('[$AndroidFlavorizrLegacyProcessor] Generating android section');
     _appendStartContent(buffer);
+
+    logger.detail('[$AndroidFlavorizrLegacyProcessor] Generating flavor dimensions');
     _appendFlavorsDimension(buffer);
+
+    logger.detail('[$AndroidFlavorizrLegacyProcessor] Generating flavors');
     _appendFlavors(buffer);
+
+    logger.detail('[$AndroidFlavorizrLegacyProcessor] Generating close android section');
     _appendEndContent(buffer);
 
     return buffer.toString();

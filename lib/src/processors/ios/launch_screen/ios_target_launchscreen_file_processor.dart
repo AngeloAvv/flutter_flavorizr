@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/replace_string_processor.dart';
@@ -39,13 +38,15 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
     String source,
     String destination,
     String flavorName, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             CopyFileProcessor(
               source,
               '$destination/${flavorName}LaunchScreen.storyboard',
               config: config,
+              logger: logger,
             ),
             RuntimeFileStringProcessor(
               '$destination/${flavorName}LaunchScreen.storyboard',
@@ -53,8 +54,10 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
                 '[[FLAVOR_NAME]]',
                 flavorName,
                 config: config,
+                logger: logger,
               ),
               config: config,
+              logger: logger,
             ),
             ShellProcessor(
               process,
@@ -65,9 +68,9 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
                     '$destination/${flavorName}LaunchScreen.storyboard'),
               ],
               config: config,
+              logger: logger,
             )
           ],
-          config: config,
         );
 
   @override

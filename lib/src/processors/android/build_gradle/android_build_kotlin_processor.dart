@@ -41,6 +41,7 @@ class AndroidBuildKotlinProcessor extends StringProcessor {
     this._gradleFileName, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
@@ -53,22 +54,43 @@ class AndroidBuildKotlinProcessor extends StringProcessor {
         input!.indexOf(_endFlavorDimensionsMarkup);
 
     if (androidPosition < 0) {
+      logger.detail(
+        '[$AndroidBuildKotlinProcessor] No android entry point found',
+        style: logger.theme.err,
+      );
+
       throw MalformedResourceException(input!);
     }
 
     if (existingFlavorDimensions &&
         (beginFlavorDimensionsMarkupPosition < 0 ||
             endFlavorDimensionsMarkupPosition < 0)) {
+      logger.detail(
+        '[$AndroidBuildKotlinProcessor] Existing flavorDimensions found but no markup',
+        style: logger.theme.err,
+      );
+
       throw ExistingFlavorDimensionsException(input!);
     }
 
     final buffer = StringBuffer();
+
+    logger.detail(
+      '[$AndroidBuildKotlinProcessor] Cleaning up existing flavors',
+      style: logger.theme.info,
+    );
 
     _cleanupFlavors(
       buffer,
       beginFlavorDimensionsMarkupPosition,
       endFlavorDimensionsMarkupPosition,
     );
+
+    logger.detail(
+      '[$AndroidBuildKotlinProcessor] Adding new gradle flavors file',
+      style: logger.theme.info,
+    );
+
     _appendContent(buffer);
 
     return buffer.toString();

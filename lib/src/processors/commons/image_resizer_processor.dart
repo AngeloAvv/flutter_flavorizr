@@ -38,15 +38,34 @@ class ImageResizerProcessor extends CopyFileProcessor {
     super.destination,
     this.size, {
     required super.config,
+    required super.logger,
   });
 
   @override
   File execute() {
+    logger.detail(
+      '[$ImageResizerProcessor] Decoding image from file `$source`',
+    );
+
     final image = decodeImage(File(source).readAsBytesSync());
+
     if (image == null) {
+      logger.detail(
+        '[$ImageResizerProcessor] Image from file `$source` does not exist',
+        style: logger.theme.err,
+      );
+
       throw FileNotFoundException(source);
     }
 
+    logger.detail(
+      '[$ImageResizerProcessor] Image decoded from file `$source`',
+      style: logger.theme.success,
+    );
+
+    logger.detail(
+      '[$ImageResizerProcessor] Resizing image from `$source` with size `$size`',
+    );
     final thumbnail = copyResize(
       image,
       width: size.width,
@@ -56,17 +75,37 @@ class ImageResizerProcessor extends CopyFileProcessor {
     final encodedImage = encodeNamedImage(destination, thumbnail);
 
     if (encodedImage == null) {
+      logger.detail(
+        '[$ImageResizerProcessor] Image from file `$source` is malformed',
+        style: logger.theme.err,
+      );
+
       throw MalformedResourceException(source);
     }
 
-    return File(destination)
+    logger.detail(
+      '[$ImageResizerProcessor] Image resized from `$source` to size `$size`',
+      style: logger.theme.success,
+    );
+
+    logger.detail(
+      '[$ImageResizerProcessor] Writing image to file `$destination`',
+    );
+    final file = File(destination)
       ..createSync(recursive: true)
       ..writeAsBytesSync(encodedImage);
+
+    logger.detail(
+      '[$ImageResizerProcessor] Image written to file `$destination`',
+      style: logger.theme.success,
+    );
+
+    return file;
   }
 
   @override
   String toString() =>
-      'ImageResizerProcessor: Resizing image to $size from $source to $destination';
+      'ImageResizerProcessor {source: $source, destination: $destination, size: $size}';
 }
 
 class Size {

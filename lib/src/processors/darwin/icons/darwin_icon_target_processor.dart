@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:sprintf/sprintf.dart';
@@ -34,7 +33,8 @@ abstract class DarwinIconTargetProcessor extends QueueProcessor {
     required String flavorName,
     required Map<String, Size> iconSet,
     required String appIconPath,
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           iconSet
               .map(
@@ -45,11 +45,11 @@ abstract class DarwinIconTargetProcessor extends QueueProcessor {
                     sprintf(appIconPath, [flavorName, fileName]),
                     size,
                     config: config,
+                    logger: logger,
                   ),
                 ),
               )
               .values,
-          config: config,
         );
 
   @override

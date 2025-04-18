@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/empty_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
@@ -40,7 +39,8 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
     required String runnerProject,
     required String firebaseScript,
     required String generatedFirebaseScriptPath,
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             ...config.iosFirebaseFlavors
@@ -52,14 +52,16 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
                       destination,
                       flavorName,
                       config: config,
+                      logger: logger,
                     ),
                   ),
                 )
                 .values,
             NewFileStringProcessor(
               '$destination/GoogleService-Info.plist',
-              EmptyFileProcessor(config: config),
+              EmptyFileProcessor(config: config, logger: logger),
               config: config,
+              logger: logger,
             ),
             ShellProcessor(
               process,
@@ -69,14 +71,17 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
                 ios_utils.flatPath('$destination/GoogleService-Info.plist'),
               ],
               config: config,
+              logger: logger,
             ),
             NewFileStringProcessor(
               generatedFirebaseScriptPath,
               DarwinFirebaseScriptProcessor(
                 flavors: config.iosFirebaseFlavors,
                 config: config,
+                logger: logger,
               ),
               config: config,
+              logger: logger,
             ),
             ShellProcessor(
               process,
@@ -86,9 +91,9 @@ class IOSTargetsFirebaseProcessor extends QueueProcessor {
                 generatedFirebaseScriptPath,
               ],
               config: config,
+              logger: logger,
             ),
           ],
-          config: config,
         );
 
   @override

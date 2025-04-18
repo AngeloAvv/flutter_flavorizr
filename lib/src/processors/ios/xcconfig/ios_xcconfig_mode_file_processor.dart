@@ -24,7 +24,6 @@
  */
 
 import 'package:flutter_flavorizr/src/extensions/extensions_string.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
@@ -42,7 +41,8 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
     String flavorName,
     Flavor flavor,
     Target target, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             NewFileStringProcessor(
@@ -52,8 +52,10 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
                 flavor,
                 target,
                 config: config,
+                logger: logger,
               ),
               config: config,
+              logger: logger,
             ),
             ShellProcessor(
               process,
@@ -65,9 +67,9 @@ class IOSXCConfigModeFileProcessor extends QueueProcessor {
                 'Flutter',
               ],
               config: config,
+              logger: logger,
             ),
           ],
-          config: config,
         );
 
   @override

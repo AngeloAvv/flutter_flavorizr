@@ -42,14 +42,23 @@ class IOSXCConfigProcessor extends StringProcessor {
     this._target, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
-    StringBuffer buffer = StringBuffer();
+    final buffer = StringBuffer();
+
+    logger.detail(
+        '[$IOSXCConfigProcessor] Generating xcconfig file for $_flavorName.${_target.name}');
 
     _appendIncludes(buffer);
     _appendBody(buffer);
+
+    logger.detail(
+      '[$IOSXCConfigProcessor] xcconfig file generated for $_flavorName.${_target.name}',
+      style: logger.theme.success,
+    );
 
     return buffer.toString();
   }

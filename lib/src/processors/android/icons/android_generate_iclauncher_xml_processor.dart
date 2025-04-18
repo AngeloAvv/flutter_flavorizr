@@ -7,11 +7,16 @@ class AndroidGenerateIclauncherXmlProcessor extends StringProcessor {
   AndroidGenerateIclauncherXmlProcessor({
     required this.adaptiveIcon,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
     final StringBuffer buffer = StringBuffer();
+
+    logger.detail(
+        '[$AndroidGenerateIclauncherXmlProcessor] Generating XML adaptive icon');
+
     buffer.writeln('<?xml version="1.0" encoding="utf-8"?>');
     buffer.writeln(
         '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">');
@@ -25,9 +30,13 @@ class AndroidGenerateIclauncherXmlProcessor extends StringProcessor {
     }
     buffer.writeln('</adaptive-icon>');
 
+    logger.detail(
+        '[$AndroidGenerateIclauncherXmlProcessor] Adaptive icon XML generated');
+
     return buffer.toString();
   }
 
   @override
-  String toString() => 'AndroidGenerateIclauncherXmlProcessor';
+  String toString() => 'AndroidGenerateIclauncherXmlProcessor: { '
+      'adaptiveIcon: $adaptiveIcon }';
 }

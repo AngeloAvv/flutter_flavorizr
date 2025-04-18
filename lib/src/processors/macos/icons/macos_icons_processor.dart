@@ -24,13 +24,13 @@
  */
 
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/icons/macos_icon_target_processor.dart';
 
 class MacOSIconsProcessor extends QueueProcessor {
   MacOSIconsProcessor({
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           config.macosFlavors
               .where((_, flavor) =>
@@ -42,11 +42,11 @@ class MacOSIconsProcessor extends QueueProcessor {
                     flavor.macos!.icon ?? flavor.app.icon ?? '',
                     flavorName,
                     config: config,
+                    logger: logger,
                   ),
                 ),
               )
               .values,
-          config: config,
         );
 
   @override

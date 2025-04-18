@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/utils/bin_utils.dart';
 class XcodeprojProcessor extends ShellProcessor {
   XcodeprojProcessor({
     required super.config,
+    required super.logger,
   }) : super(
           binaryWithExtension('gem', windowsExtension: 'cmd'),
           [
@@ -41,13 +42,25 @@ class XcodeprojProcessor extends ShellProcessor {
   @override
   void execute() {
     try {
+      logger.detail('[$XcodeprojProcessor] Checking if xcodeproj is installed');
+
       super.execute();
+
+      logger.detail(
+        '[$XcodeprojProcessor] xcodeproj is installed!',
+        style: logger.theme.success,
+      );
     } catch (_) {
+      logger.detail(
+        '[$XcodeprojProcessor] xcodeproj is not installed!',
+        style: logger.theme.err,
+      );
+
       throw Exception(
           'Xcodeproj is not installed. Please install it by running `gem install xcodeproj`');
     }
   }
 
   @override
-  String toString() => 'XcodeprojProcessor: Checking if xcodeproj is installed';
+  String toString() => 'XcodeprojProcessor';
 }

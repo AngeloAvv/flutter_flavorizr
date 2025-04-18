@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_target_launchscreen_file_processor.dart';
@@ -35,10 +34,11 @@ class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
     String project,
     String source,
     String destination, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config),
+            XcodeprojProcessor(config: config, logger: logger),
             ...config.iosFlavors.keys.map(
               (flavorName) => IOSTargetLaunchScreenFileProcessor(
                 process,
@@ -48,10 +48,10 @@ class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
                 destination,
                 flavorName,
                 config: config,
+                logger: logger,
               ),
             ),
           ],
-          config: config,
         );
 
   @override

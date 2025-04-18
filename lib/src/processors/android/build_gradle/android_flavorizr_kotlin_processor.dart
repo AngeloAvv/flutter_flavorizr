@@ -34,16 +34,28 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
   AndroidFlavorizrKotlinProcessor({
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
     final buffer = StringBuffer();
 
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating flavors in Kotlin DSL');
+
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating AppExtension');
     _appendStartContent(buffer);
+
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating flavor dimensions');
     _appendFlavorsDimension(buffer);
+
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating flavors');
     _appendFlavors(buffer);
+
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating build config');
     _appendBuildConfig(buffer);
+
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating end content');
     _appendEndContent(buffer);
 
     return buffer.toString();

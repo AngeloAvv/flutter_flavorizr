@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/google/firebase/android_firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
@@ -42,16 +41,19 @@ class FirebaseProcessor extends QueueProcessor {
     required String firebaseScript,
     required String iosGeneratedFirebaseScriptPath,
     required String macosGeneratedFirebaseScriptPath,
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             if (config.androidFirebaseFlavorsAvailable)
               AndroidFirebaseProcessor(
                 destination: androidDestination,
                 config: config,
+                logger: logger,
               ),
-            if (config.iosFirebaseFlavorsAvailable || config.macosFirebaseFlavorsAvailable)
-              XcodeprojProcessor(config: config),
+            if (config.iosFirebaseFlavorsAvailable ||
+                config.macosFirebaseFlavorsAvailable)
+              XcodeprojProcessor(config: config, logger: logger),
             if (config.iosFirebaseFlavorsAvailable)
               IOSTargetsFirebaseProcessor(
                 process: process,
@@ -61,6 +63,7 @@ class FirebaseProcessor extends QueueProcessor {
                 firebaseScript: firebaseScript,
                 generatedFirebaseScriptPath: iosGeneratedFirebaseScriptPath,
                 config: config,
+                logger: logger,
               ),
             if (config.macosFirebaseFlavorsAvailable)
               MacOSTargetsFirebaseProcessor(
@@ -71,9 +74,9 @@ class FirebaseProcessor extends QueueProcessor {
                 firebaseScript: firebaseScript,
                 generatedFirebaseScriptPath: macosGeneratedFirebaseScriptPath,
                 config: config,
+                logger: logger,
               ),
           ],
-          config: config,
         );
 
   @override

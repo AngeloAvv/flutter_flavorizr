@@ -42,7 +42,8 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
     required String runnerProject,
     required String firebaseScript,
     required String generatedFirebaseScriptPath,
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             ..._filteredFlavors(config)
@@ -54,14 +55,16 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
                       destination,
                       flavorName,
                       config: config,
+                      logger: logger,
                     ),
                   ),
                 )
                 .values,
             NewFileStringProcessor(
               '$destination/GoogleService-Info.plist',
-              EmptyFileProcessor(config: config),
+              EmptyFileProcessor(config: config, logger: logger),
               config: config,
+              logger: logger,
             ),
             ShellProcessor(
               process,
@@ -71,14 +74,17 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
                 utils.flatPath('$destination/GoogleService-Info.plist'),
               ],
               config: config,
+              logger: logger,
             ),
             NewFileStringProcessor(
               generatedFirebaseScriptPath,
               DarwinFirebaseScriptProcessor(
                 flavors: config.iosFirebaseFlavors,
                 config: config,
+                logger: logger,
               ),
               config: config,
+              logger: logger,
             ),
             ShellProcessor(
               process,
@@ -88,9 +94,9 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
                 generatedFirebaseScriptPath,
               ],
               config: config,
+              logger: logger,
             ),
           ],
-          config: config,
         );
 
   @override

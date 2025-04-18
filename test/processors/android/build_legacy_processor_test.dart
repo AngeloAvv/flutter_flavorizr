@@ -30,13 +30,16 @@ import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 import '../../test_utils.dart';
 
 void main() {
   late Flavorizr flavorizr;
+  late Logger logger;
 
   setUp(() {
+    logger = Logger(level: Level.quiet);
     Parser parser = const Parser(
       pubspecPath: 'test_resources/pubspec',
       flavorizrPath: 'test_resources/non_existent',
@@ -62,6 +65,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: content,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -83,6 +87,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: content,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -105,6 +110,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: content,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -119,6 +125,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: '',
+      logger: logger,
     );
     expect(() => processor.execute(), throwsException);
   });
@@ -133,6 +140,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: content,
+      logger: logger,
     );
     expect(() => processor.execute(), throwsException);
   });
@@ -148,6 +156,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: content,
+      logger: logger,
     );
     expect(() => processor.execute(), throwsException);
   });
@@ -163,6 +172,7 @@ void main() {
       K.androidFlavorizrLegacyName,
       config: flavorizr,
       input: content,
+      logger: logger,
     );
     expect(() => processor.execute(), throwsException);
   });

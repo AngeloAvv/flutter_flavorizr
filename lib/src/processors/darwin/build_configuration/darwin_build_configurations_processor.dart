@@ -26,7 +26,6 @@
 import 'dart:convert';
 
 import 'package:flutter_flavorizr/src/extensions/extensions_string.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
@@ -40,7 +39,8 @@ class DarwinBuildConfigurationsProcessor extends QueueProcessor {
     String file,
     String flavorName,
     Map<String, dynamic> buildConfigurations, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           Target.values.map(
             (target) => ShellProcessor(
@@ -55,9 +55,9 @@ class DarwinBuildConfigurationsProcessor extends QueueProcessor {
                 base64.encode(utf8.encode(jsonEncode(buildConfigurations))),
               ],
               config: config,
+              logger: logger,
             ),
           ),
-          config: config,
         );
 
   @override

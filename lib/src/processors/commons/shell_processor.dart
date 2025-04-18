@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 class ShellProcessor extends AbstractProcessor<void> {
   final String _path;
@@ -38,18 +39,35 @@ class ShellProcessor extends AbstractProcessor<void> {
     this._args, {
     String? workingDirectory,
     required Flavorizr config,
+    required Logger logger,
   })  : _workingDirectory = workingDirectory,
-        super(config);
+        super(config, logger: logger);
 
   @override
   void execute() {
+    logger.detail(
+      '[$ShellProcessor] Executing shell script path `$_path`'
+      ' with arguments `${_args.join(', ')}` in working directory `$_workingDirectory`',
+    );
+
     final result = Process.runSync(
       _path,
       _args,
       workingDirectory: _workingDirectory,
     );
     if (result.exitCode != 0) {
-      throw Exception(result.stderr);
+      logger.detail(
+        '[$ShellProcessor] Error executing shell script path `$_path`'
+        ' with arguments `${_args.join(', ')}` in working directory `$_workingDirectory`',
+        style: logger.theme.warn,
+      );
+      logger.warn(result.stderr);
+    } else {
+      logger.detail(
+        '[$ShellProcessor] Shell script path `$_path`'
+        ' with arguments `${_args.join(', ')}` in working directory `$_workingDirectory` executed successfully',
+        style: logger.theme.success,
+      );
     }
   }
 

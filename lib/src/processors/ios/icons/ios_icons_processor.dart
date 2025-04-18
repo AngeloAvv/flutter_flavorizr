@@ -24,13 +24,13 @@
  */
 
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/icons/ios_icon_target_processor.dart';
 
 class IOSIconsProcessor extends QueueProcessor {
   IOSIconsProcessor({
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           config.iosFlavors
               .where((_, flavor) =>
@@ -42,11 +42,11 @@ class IOSIconsProcessor extends QueueProcessor {
                     flavor.ios!.icon ?? flavor.app.icon ?? '',
                     flavorName,
                     config: config,
+                    logger: logger,
                   ),
                 ),
               )
               .values,
-          config: config,
         );
 
   @override

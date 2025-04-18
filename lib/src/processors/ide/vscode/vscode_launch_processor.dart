@@ -32,6 +32,7 @@ import 'package:flutter_flavorizr/src/processors/ide/vscode/models/launch.dart';
 class VSCodeLaunchProcessor extends StringProcessor {
   VSCodeLaunchProcessor({
     required super.config,
+    required super.logger,
   });
 
   @override

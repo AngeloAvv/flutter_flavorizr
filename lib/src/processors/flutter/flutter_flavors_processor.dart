@@ -30,14 +30,23 @@ class FlutterFlavorsProcessor extends StringProcessor {
   FlutterFlavorsProcessor({
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
-    StringBuffer buffer = StringBuffer();
+    final buffer = StringBuffer();
+
+    logger
+        .detail('[$FlutterFlavorsProcessor] Generating flavor enum and class');
 
     _appendFlavorEnum(buffer);
     _appendFlavorClass(buffer);
+
+    logger.detail(
+      '[$FlutterFlavorsProcessor] Flavor enum and class generated',
+      style: logger.theme.success,
+    );
 
     return buffer.toString();
   }
@@ -45,7 +54,7 @@ class FlutterFlavorsProcessor extends StringProcessor {
   void _appendFlavorEnum(StringBuffer buffer) {
     buffer.writeln('enum Flavor {');
 
-    for (var flavorName in config.flavors.keys) {
+    for (final flavorName in config.flavors.keys) {
       buffer.writeln('  ${flavorName.toLowerCase()},');
     }
 

@@ -30,20 +30,38 @@ class DynamicFileStringProcessor extends AbstractFileStringProcessor {
     super.path,
     super.processor, {
     required super.config,
+    required super.logger,
   });
 
   @override
   void execute() {
     if (!file.existsSync()) {
+      logger.detail(
+        '[$DynamicFileStringProcessor] File `$path` does not exist. '
+        'Skipping processor.',
+        style: logger.theme.warn,
+      );
+
       return;
     }
 
+    logger.detail(
+      '[$DynamicFileStringProcessor] Reading input from file `$path` '
+      '`$processor`',
+    );
+
     processor.input = file.readAsStringSync();
+
+    logger.detail(
+      '[$DynamicFileStringProcessor] Input read from file `$path` '
+      '`$processor`',
+      style: logger.theme.success,
+    );
 
     super.execute();
   }
 
   @override
   String toString() =>
-      "DynamicFileStringProcessor: writing on file $path with nested $processor if exists";
+      "DynamicFileStringProcessor: {path: $path, processor: $processor}";
 }

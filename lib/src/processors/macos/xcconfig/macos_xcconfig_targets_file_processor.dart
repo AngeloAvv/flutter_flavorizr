@@ -23,14 +23,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/xcconfig/macos_xcconfig_file_processor.dart';
 
 class MacOSXCConfigTargetsFileProcessor extends QueueProcessor {
   MacOSXCConfigTargetsFileProcessor(
     String path, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           config.macosFlavors
               .map(
@@ -40,11 +40,11 @@ class MacOSXCConfigTargetsFileProcessor extends QueueProcessor {
                     path,
                     flavorName,
                     config: config,
+                    logger: logger,
                   ),
                 ),
               )
               .values,
-          config: config,
         );
 
   @override

@@ -26,7 +26,6 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
@@ -35,12 +34,12 @@ class ApplyProcessorByExistingFileProcessor
   ApplyProcessorByExistingFileProcessor(
     List<String> paths,
     List<StringProcessor> processors, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   })  : assert(paths.length == processors.length),
         super(
           _findExistingPath(paths, processors),
           _findProcessor(paths, processors),
-          config: config,
         ) {
     processor.input = file.readAsStringSync();
   }
@@ -66,6 +65,7 @@ class ApplyProcessorByExistingFileProcessor
         return processors[i];
       }
     }
+
     throw FileNotFoundException(paths.toString());
   }
 }

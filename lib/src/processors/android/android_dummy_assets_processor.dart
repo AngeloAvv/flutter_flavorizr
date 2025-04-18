@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
@@ -32,7 +31,8 @@ class AndroidDummyAssetsProcessor extends QueueProcessor {
   AndroidDummyAssetsProcessor(
     String source,
     String destination, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           config.androidFlavors
               .map(
@@ -43,11 +43,11 @@ class AndroidDummyAssetsProcessor extends QueueProcessor {
                     '$destination/$flavorName/res',
                     flavor.android!,
                     config: config,
+                    logger: logger,
                   ),
                 ),
               )
               .values,
-          config: config,
         );
 
   @override

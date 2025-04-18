@@ -34,16 +34,31 @@ class DummyAssetsProcessor extends CopyFolderProcessor {
     super.destination,
     this._os, {
     required super.config,
+    required super.logger,
   });
 
   @override
   void execute() {
     if (_os.generateDummyAssets) {
+      logger.detail(
+        '[$DummyAssetsProcessor] Generating dummy assets into `$destination`',
+      );
+
       super.execute();
+
+      logger.detail(
+        '[$DummyAssetsProcessor] Dummy assets generated into `$destination`',
+        style: logger.theme.success,
+      );
     }
+
+    logger.detail(
+      '[$DummyAssetsProcessor] Skipping dummy assets generation',
+      style: logger.theme.warn,
+    );
   }
 
   @override
   String toString() =>
-      'DummyAssetProcessor: ${!_os.generateDummyAssets ? 'Skipping dummy assets' : super.toString()}';
+      'DummyAssetProcessor: { source: $source, destination: $destination }';
 }

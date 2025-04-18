@@ -1,4 +1,3 @@
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icon_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
@@ -12,16 +11,17 @@ class AndroidAdaptiveIconsProcessor extends QueueProcessor {
     'drawable-xxxhdpi': Size(width: 432, height: 432),
   };
 
-  String foregroundSource;
-  String backgroundSource;
-  String flavorName;
+  final String foregroundSource;
+  final String backgroundSource;
+  final String flavorName;
 
   AndroidAdaptiveIconsProcessor(
     this.foregroundSource,
     this.backgroundSource,
     this.flavorName, {
-    required Flavorizr config,
     String? monochromeSource,
+    required super.config,
+    required super.logger,
   }) : super(
           _entries.map(
             (folder, size) {
@@ -35,13 +35,16 @@ class AndroidAdaptiveIconsProcessor extends QueueProcessor {
                   size,
                   config: config,
                   monochromeSource: monochromeSource,
+                  logger: logger,
                 ),
               );
             },
           ).values,
-          config: config,
         );
 
   @override
-  String toString() => 'AndroidAdaptiveIconsProcessor';
+  String toString() => 'AndroidAdaptiveIconsProcessor: { '
+      'foregroundSource: $foregroundSource, '
+      'backgroundSource: $backgroundSource, '
+      'flavorName: $flavorName }';
 }

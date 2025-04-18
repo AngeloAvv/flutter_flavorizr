@@ -30,18 +30,22 @@ import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/ios/xcconfig/ios_xcconfig_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 import '../../test_utils.dart';
 
 void main() {
   late Flavorizr flavorizr;
+  late Logger logger;
 
   test('Test IOSCConfigProcessor', () {
+    logger = Logger(level: Level.quiet);
     Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/xcconfig_processor_test/pubspec_without_variables',
       flavorizrPath: 'test_resources/non_existent',
     );
+
     try {
       flavorizr = parser.parse();
     } catch (e) {
@@ -60,6 +64,7 @@ void main() {
       flavor!,
       Target.debug,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -93,6 +98,7 @@ void main() {
       flavor!,
       Target.debug,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -127,6 +133,7 @@ void main() {
       flavor!,
       Target.debug,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -161,6 +168,7 @@ void main() {
       flavor!,
       Target.release,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 

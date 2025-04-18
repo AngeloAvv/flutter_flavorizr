@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 class AndroidFlavorizrGradleProcessor extends AbstractFileStringProcessor {
   AndroidFlavorizrGradleProcessor(
@@ -35,11 +36,13 @@ class AndroidFlavorizrGradleProcessor extends AbstractFileStringProcessor {
     List<String> createTargetPaths,
     List<StringProcessor> processors, {
     required super.config,
+    required Logger logger,
   })  : assert(gradlePaths.length == processors.length),
         super(
           _findTargetPathByExistingFile(
               gradlePaths, createTargetPaths, processors),
           _findProcessor(gradlePaths, createTargetPaths, processors),
+          logger: logger,
         ) {
     file.createSync(recursive: true);
     super.execute();

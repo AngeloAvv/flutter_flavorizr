@@ -29,13 +29,16 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/google/firebase/darwin_firebase_script_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 import '../../../../test_utils.dart';
 
 void main() {
   late Flavorizr flavorizr;
+  late Logger logger;
 
   test('Test IOSFirebaseScriptProcessor with a single flavor', () {
+    logger = Logger(level: Level.quiet);
     Parser parser = const Parser(
       pubspecPath:
           'test_resources/ios/ios_firebase_script_processor_test/single_flavor_pubspec',
@@ -54,6 +57,7 @@ void main() {
     DarwinFirebaseScriptProcessor processor = DarwinFirebaseScriptProcessor(
       flavors: flavorizr.iosFirebaseFlavors,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 
@@ -82,6 +86,7 @@ void main() {
     DarwinFirebaseScriptProcessor processor = DarwinFirebaseScriptProcessor(
       flavors: flavorizr.iosFirebaseFlavors,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 

@@ -29,21 +29,27 @@ import 'package:args/args.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 /// A common entry point to parse command line arguments and execute the process
 ///
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
 void execute(List<String> args) {
-  final argParser = ArgParser();
-  argParser.addMultiOption(
-    'processors',
-    abbr: 'p',
-    allowed: Processor.defaultInstructionSet,
-    splitCommas: true,
-  );
+  final argParser = ArgParser()
+    ..addMultiOption(
+      'processors',
+      abbr: 'p',
+      allowed: Processor.defaultInstructionSet,
+      splitCommas: true,
+    )
+    ..addFlag('verbose', abbr: 'v');
+
   final results = argParser.parse(args);
   final argProcessors = results['processors'];
+  final level = results['verbose'] == true ? Level.verbose : Level.info;
+
+  final logger = Logger(level: level);
 
   const parser = Parser(
     pubspecPath: 'pubspec',
@@ -53,8 +59,8 @@ void execute(List<String> args) {
   late Flavorizr flavorizr;
   try {
     flavorizr = parser.parse();
-  } catch (e) {
-    stderr.writeln(e);
+  } catch (error) {
+    logger.err(error.toString());
     exit(65);
   }
 
@@ -62,6 +68,6 @@ void execute(List<String> args) {
     flavorizr.instructions = argProcessors;
   }
 
-  final processor = Processor(flavorizr);
+  final processor = Processor(flavorizr, logger: logger);
   processor.execute();
 }

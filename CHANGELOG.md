@@ -1,4 +1,5 @@
 ## NEXT
+* Updated logging system
 
 ## 2.3.1
 * Fixed missing conditional Target Support Files include on MacOSXCConfigProcessor

@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
@@ -33,10 +32,11 @@ class DarwinSchemasProcessor extends QueueProcessor {
     String process,
     String script,
     String path, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config),
+            XcodeprojProcessor(config: config, logger: logger),
             ...config.flavors.keys.map(
               (String flavorName) => ShellProcessor(
                 process,
@@ -46,10 +46,10 @@ class DarwinSchemasProcessor extends QueueProcessor {
                   flavorName,
                 ],
                 config: config,
+                logger: logger,
               ),
             ),
           ],
-          config: config,
         );
 
   @override

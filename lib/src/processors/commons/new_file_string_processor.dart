@@ -30,11 +30,22 @@ class NewFileStringProcessor extends AbstractFileStringProcessor {
     super.path,
     super.processor, {
     required super.config,
+    required super.logger,
   });
 
   @override
   void execute() {
+    logger.detail(
+      '[$NewFileStringProcessor] Creating file `$path`',
+    );
+
     file.createSync(recursive: true);
+
+    logger.detail(
+      '[$NewFileStringProcessor] File `$path` created',
+      style: logger.theme.success,
+    );
+
     super.execute();
   }
 }

@@ -23,25 +23,23 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_dummy_assets_processor.dart';
-import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_kotlin_processor.dart';
-import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_manifest_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_kotlin_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_kotlin_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_existing_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_folder_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/delete_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/download_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_existing_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
@@ -64,11 +62,11 @@ import 'package:flutter_flavorizr/src/processors/macos/icons/macos_icons_process
 import 'package:flutter_flavorizr/src/processors/macos/macos_plist_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/xcconfig/macos_xcconfig_targets_file_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 class Processor extends AbstractProcessor<void> {
   final Map<String, AbstractProcessor<void> Function()> _availableProcessors;
 
-  final Flavorizr _flavorizr;
   static const List<String> defaultInstructionSet = [
     // Prepare
     'assets:download',
@@ -120,70 +118,89 @@ class Processor extends AbstractProcessor<void> {
     'ide:config'
   ];
 
-  Processor(this._flavorizr)
-      : _availableProcessors = _initAvailableProcessors(_flavorizr),
-        super(_flavorizr);
+  Processor(super.config, {required super.logger})
+      : _availableProcessors = _initAvailableProcessors(config, logger: logger);
 
   @override
   void execute() async {
-    final instructions = List.from(
-        _flavorizr.instructions ?? defaultInstructionSet)
+    final instructions = List.from(config.instructions ?? defaultInstructionSet)
       ..removeWhere((instruction) =>
-          !_flavorizr.androidFlavorsAvailable &&
-          instruction.startsWith('android'))
+          !config.androidFlavorsAvailable && instruction.startsWith('android'))
       ..removeWhere((instruction) =>
-          !_flavorizr.iosFlavorsAvailable && instruction.startsWith('ios'))
+          !config.iosFlavorsAvailable && instruction.startsWith('ios'))
       ..removeWhere((instruction) =>
-          !_flavorizr.macosFlavorsAvailable && instruction.startsWith('macos'));
+          !config.macosFlavorsAvailable && instruction.startsWith('macos'));
 
+    logger.info('Flavorization process started');
+    logger.info('The following instructions will be executed:');
     for (String instruction in instructions) {
-      stdout.writeln('Executing task $instruction');
+      logger.info(' - $instruction');
+    }
+    final confirm = logger.confirm('Do you want to proceed?', defaultValue: true);
 
-      AbstractProcessor? processor = _availableProcessors[instruction]?.call();
-      if (processor == null) {
-        stderr.writeln('Cannot execute processor $instruction');
+    if (confirm) {
+      for (String instruction in instructions) {
+        final progress = logger.progress(instruction);
+
+        progress.update('[$instruction] Executing');
+
+        AbstractProcessor? processor = _availableProcessors[instruction]
+            ?.call();
+        if (processor == null) {
+          progress.fail('[$instruction] An error has occurred');
+        }
+
+        await processor?.execute();
+        progress.complete('[$instruction] Completed');
       }
 
-      await processor?.execute();
-
-      stdout.writeln();
+      logger.success('Flavorization process finished');
+    } else {
+      logger.info('Flavorization process cancelled');
     }
   }
 
   static Map<String, AbstractProcessor<void> Function()>
       _initAvailableProcessors(
-    Flavorizr flavorizr,
-  ) {
+    Flavorizr flavorizr, {
+    required Logger logger,
+  }) {
     return {
       // Commons
       'assets:download': () => DownloadFileProcessor(
             K.assetsZipPath,
             config: flavorizr,
+            logger: logger,
           ),
       'assets:extract': () => UnzipFileProcessor(
             K.assetsZipPath,
             K.tempPath,
             config: flavorizr,
+            logger: logger,
           ),
       'assets:clean': () => QueueProcessor(
             [
               DeleteFileProcessor(
                 K.assetsZipPath,
                 config: flavorizr,
+                logger: logger,
               ),
               DeleteFileProcessor(
                 K.tempPath,
                 config: flavorizr,
+                logger: logger,
               ),
             ],
             config: flavorizr,
+            logger: logger,
           ),
 
       // Android
       'android:androidManifest': () => ExistingFileStringProcessor(
             K.androidManifestPath,
-            AndroidManifestProcessor(config: flavorizr),
+            AndroidManifestProcessor(config: flavorizr, logger: logger),
             config: flavorizr,
+            logger: logger,
           ),
       'android:flavorizrGradle': () => AndroidFlavorizrGradleProcessor(
             [
@@ -197,12 +214,15 @@ class Processor extends AbstractProcessor<void> {
             [
               AndroidFlavorizrLegacyProcessor(
                 config: flavorizr,
+                logger: logger,
               ),
               AndroidFlavorizrKotlinProcessor(
                 config: flavorizr,
+                logger: logger,
               )
             ],
             config: flavorizr,
+            logger: logger,
           ),
       'android:buildGradle': () => ApplyProcessorByExistingFileProcessor(
             [
@@ -213,43 +233,55 @@ class Processor extends AbstractProcessor<void> {
               AndroidBuildLegacyProcessor(
                 K.androidFlavorizrLegacyName,
                 config: flavorizr,
+                logger: logger,
               ),
               AndroidBuildKotlinProcessor(
                 K.androidFlavorizrKotlinName,
                 config: flavorizr,
+                logger: logger,
               ),
             ],
             config: flavorizr,
+            logger: logger,
           ),
       'android:dummyAssets': () => AndroidDummyAssetsProcessor(
             K.tempAndroidResPath,
             K.androidSrcPath,
             config: flavorizr,
+            logger: logger,
           ),
       'android:icons': () => AndroidIconsProcessor(
             config: flavorizr,
+            logger: logger,
           ),
 
       //Flutter
       'flutter:flavors': () => NewFileStringProcessor(
             K.flutterFlavorPath,
-            FlutterFlavorsProcessor(config: flavorizr),
+            FlutterFlavorsProcessor(
+              config: flavorizr,
+              logger: logger,
+            ),
             config: flavorizr,
+            logger: logger,
           ),
       'flutter:app': () => CopyFileProcessor(
             K.tempFlutterAppPath,
             K.flutterAppPath,
             config: flavorizr,
+            logger: logger,
           ),
       'flutter:pages': () => CopyFolderProcessor(
             K.tempFlutterPagesPath,
             K.flutterPagesPath,
             config: flavorizr,
+            logger: logger,
           ),
       'flutter:main': () => CopyFileProcessor(
             K.tempFlutterMainPath,
             K.flutterMainPath,
             config: flavorizr,
+            logger: logger,
           ),
 
       //iOS
@@ -258,8 +290,10 @@ class Processor extends AbstractProcessor<void> {
             PodfileProcessor(
               flavors: flavorizr.iosFlavors.keys.toList(growable: false),
               config: flavorizr,
+              logger: logger,
             ),
             config: flavorizr,
+            logger: logger,
           ),
       'ios:xcconfig': () => IOSXCConfigTargetsFileProcessor(
             'ruby',
@@ -267,6 +301,7 @@ class Processor extends AbstractProcessor<void> {
             K.iOSRunnerProjectPath,
             K.iOSFlutterPath,
             config: flavorizr,
+            logger: logger,
           ),
       'ios:buildTargets': () => IOSBuildConfigurationsTargetsProcessor(
             'ruby',
@@ -274,25 +309,33 @@ class Processor extends AbstractProcessor<void> {
             K.iOSRunnerProjectPath,
             K.iOSFlutterPath,
             config: flavorizr,
+            logger: logger,
           ),
       'ios:schema': () => DarwinSchemasProcessor(
             'ruby',
             K.tempDarwinCreateSchemeScriptPath,
             K.iOSRunnerProjectPath,
             config: flavorizr,
+            logger: logger,
           ),
       'ios:dummyAssets': () => IOSDummyAssetsTargetsProcessor(
             K.tempiOSAssetsPath,
             K.iOSAssetsPath,
             config: flavorizr,
+            logger: logger,
           ),
       'ios:icons': () => IOSIconsProcessor(
             config: flavorizr,
+            logger: logger,
           ),
       'ios:plist': () => ExistingFileStringProcessor(
             K.iOSPListPath,
-            IOSPListProcessor(config: flavorizr),
+            IOSPListProcessor(
+              config: flavorizr,
+              logger: logger,
+            ),
             config: flavorizr,
+            logger: logger,
           ),
       'ios:launchScreen': () => IOSTargetsLaunchScreenFileProcessor(
             'ruby',
@@ -301,6 +344,7 @@ class Processor extends AbstractProcessor<void> {
             K.tempiOSLaunchScreenPath,
             K.iOSRunnerPath,
             config: flavorizr,
+            logger: logger,
           ),
 
       // MacOS
@@ -309,12 +353,15 @@ class Processor extends AbstractProcessor<void> {
             PodfileProcessor(
               flavors: flavorizr.macosFlavors.keys.toList(growable: false),
               config: flavorizr,
+              logger: logger,
             ),
             config: flavorizr,
+            logger: logger,
           ),
       'macos:xcconfig': () => MacOSXCConfigTargetsFileProcessor(
             K.macOSFlutterPath,
             config: flavorizr,
+            logger: logger,
           ),
       'macos:configs': () => MacOSConfigsTargetsFileProcessor(
             'ruby',
@@ -322,6 +369,7 @@ class Processor extends AbstractProcessor<void> {
             K.macOSRunnerProjectPath,
             K.macOSConfigsPath,
             config: flavorizr,
+            logger: logger,
           ),
       'macos:buildTargets': () => MacOSBuildConfigurationsTargetsProcessor(
             'ruby',
@@ -329,25 +377,33 @@ class Processor extends AbstractProcessor<void> {
             K.macOSRunnerProjectPath,
             K.macOSConfigsPath,
             config: flavorizr,
+            logger: logger,
           ),
       'macos:schema': () => DarwinSchemasProcessor(
             'ruby',
             K.tempDarwinCreateSchemeScriptPath,
             K.macOSRunnerProjectPath,
             config: flavorizr,
+            logger: logger,
           ),
       'macos:dummyAssets': () => MacOSDummyAssetsTargetsProcessor(
             K.tempMacOSAssetsPath,
             K.macOSAssetsPath,
             config: flavorizr,
+            logger: logger,
           ),
       'macos:icons': () => MacOSIconsProcessor(
             config: flavorizr,
+            logger: logger,
           ),
       'macos:plist': () => ExistingFileStringProcessor(
             K.macOSPlistPath,
-            MacOSPListProcessor(config: flavorizr),
+            MacOSPListProcessor(
+              config: flavorizr,
+              logger: logger,
+            ),
             config: flavorizr,
+            logger: logger,
           ),
 
       // Google
@@ -363,17 +419,20 @@ class Processor extends AbstractProcessor<void> {
             iosGeneratedFirebaseScriptPath: K.iOSFirebaseScriptPath,
             macosGeneratedFirebaseScriptPath: K.macOSFirebaseScriptPath,
             config: flavorizr,
+            logger: logger,
           ),
 
       // Huawei
       'huawei:agconnect': () => AGConnectProcessor(
             destination: K.androidSrcPath,
             config: flavorizr,
+            logger: logger,
           ),
 
       // IDE
       'ide:config': () => IDEProcessor(
             config: flavorizr,
+            logger: logger,
           ),
     };
   }

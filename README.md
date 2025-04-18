@@ -378,7 +378,8 @@ flavors:
 ```
 
 * monochrome (Themed icons on Android >= 13) is optional.
-* After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please delete adaptiveIcon manually.
+* After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please 
+  delete adaptiveIcon manually.
 
 
 ## Usage
@@ -389,7 +390,8 @@ When you finished defining the flavorizr configuration, you can proceed by runni
 flutter pub run flutter_flavorizr
 ```
 
-You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma:
+You can also run flutter_flavorizr with a custom set of processors by appending the -p (or 
+--processors) param followed by the processor names separated by comma:
 
 ```terminal
 flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
@@ -401,6 +403,21 @@ Example
 flutter pub run flutter_flavorizr -p assets:download
 flutter pub run flutter_flavorizr -p assets:download,assets:extract
 ```
+
+Keep in mind that the order of the processors is important. For example, if you want to run the 
+assets:extract processor, you must run it after the assets:download processor.
+Also, some processors need assets to be downloaded before running. For example, the 
+android:dummyAssets processor needs the assets:download processor to be run before.
+As a rule of thumb, you should always run both assets:download and assets:extract before running 
+any other processor.
+
+If you want to run flutter_flavorizr in verbose mode, you can append the -v (or --verbose) param:
+
+```terminal
+flutter pub run flutter_flavorizr -v
+```
+
+This will print all the logs to the console, including the ones from the processors.
 
 ## Run your flavors
 
@@ -420,9 +437,30 @@ flutter run --flavor banana
 Currently, due to a bug in the Flutter SDK, it's not possible to run the macOS flavors from the terminal.
 You can run them from XCode by selecting the proper schema and by pressing play.
 
+As a temporary workaround, you can apply the following configuration to your flavorizr config:
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+
+    android:
+      applicationId: "com.example.apple"
+    ios:
+      bundleId: "com.example.apple"
+    macos:
+      bundleId: "com.example.apple"
+      buildSettings:
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+```            
+
 ### Default processors set
 
-By default, when you do not specify a custom set of processors by appending the -p (or --processors) param, a default processors set will be used:
+By default, when you do not specify a custom set of processors by appending the -p (or --processors) 
+param, a default processors set will be used:
 
 * assets:download
 * assets:extract
@@ -464,7 +502,9 @@ customizations.
 
 ```dart
 class F {
-  static Flavor? appFlavor;
+  static late final Flavor appFlavor;
+
+  static String get name => appFlavor.name;
 
   static String get title {
     switch (appFlavor) {
@@ -472,8 +512,6 @@ class F {
         return 'Apple App';
       case Flavor.banana:
         return 'Banana App';
-      default:
-        return 'title';
     }
   }
 
@@ -495,7 +533,10 @@ can see a clear reference on the title getter defined in the F class.
 
 ### Google Firebase
 
-In order to flavorize your project and enable Firebase in your flavor you have to define a firebase object below each OS flavor. Under the firebase object you must define the config path of the google-services.json (if you are under Android configuration) or GoogleService-Info.plist (if you are under iOS or macOS configuration).
+In order to flavorize your project and enable Firebase in your flavor you have to define a firebase 
+object below each OS flavor. Under the firebase object you must define the config path of the 
+google-services.json (if you are under Android configuration) or GoogleService-Info.plist 
+(if you are under iOS or macOS configuration).
 
 As you can see in the example below, we added the path accordingly
 
@@ -529,10 +570,30 @@ flavors:
         config: ".firebase/banana/GoogleService-Info.plist"
 ```
 
+After running flutter_flavorizr, remember to add the native dependencies for the targeted operative 
+system. You can take advantage of [flutterfire_cli](https://firebase.google.com/docs/flutter/setup)
+to do so. Remember to ignore the generated firebase_options.dart file, as it will conflict with the
+flavors configuration. Do this instead:
+
+```dart
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Do not pass the options here
+  
+  runApp(const App());
+}
+```
+
 ### Huawei AppGallery Connect
 
 In order to flavorize your project and enable AppGallery Connect in your flavor  
-you have to define an agconnect object below each Android flavor. Under the agconnect object you must define the config path of the agconnect-services.json.
+you have to define an agconnect object below each Android flavor. Under the agconnect object you 
+must define the config path of the agconnect-services.json.
 
 As you can see in the example below, we added the path accordingly
 
@@ -561,6 +622,9 @@ flavors:
     ios:
       bundleId: "com.example.banana"
 ```
+
+Remember to add the native dependencies for the targeted operative system for both Firebase and 
+Huawei AppGallery Connect: flutter_flavorizr will only take care of applying the configuration.
 
 ## Troubleshooting
 How to fix the error ["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md)
