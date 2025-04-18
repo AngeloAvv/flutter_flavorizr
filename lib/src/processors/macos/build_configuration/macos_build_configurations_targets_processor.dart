@@ -24,7 +24,6 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/build_configuration/darwin_build_configurations_processor.dart';
@@ -36,10 +35,11 @@ class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
     String script,
     String project,
     String file, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config),
+            XcodeprojProcessor(config: config, logger: logger),
             ...config.macosFlavors
                 .map((String flavorName, Flavor flavor) => MapEntry(
                       flavorName,
@@ -55,11 +55,11 @@ class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                               : BuildSettingsMixin.macosDefaultBuildSettings)
                           ..addAll(flavor.macos?.buildSettings ?? {}),
                         config: config,
+                        logger: logger,
                       ),
                     ))
                 .values,
           ],
-          config: config,
         );
 
   @override

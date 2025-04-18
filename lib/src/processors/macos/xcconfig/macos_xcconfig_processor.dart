@@ -33,13 +33,21 @@ class MacOSXCConfigProcessor extends StringProcessor {
     this._target, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
-    StringBuffer buffer = StringBuffer();
+    final buffer = StringBuffer();
+
+    logger.detail('[$MacOSXCConfigProcessor] Generating xcconfig file');
 
     _appendIncludes(buffer);
+
+    logger.detail(
+      '[$MacOSXCConfigProcessor] Generated xcconfig file',
+      style: logger.theme.success,
+    );
 
     return buffer.toString();
   }

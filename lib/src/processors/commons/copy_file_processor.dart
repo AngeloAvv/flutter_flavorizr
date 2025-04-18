@@ -25,27 +25,36 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_file_processor.dart';
 
 class CopyFileProcessor extends AbstractFileProcessor {
-  final String _destination;
-
-  final String _source;
+  final String destination;
 
   CopyFileProcessor(
-    this._source,
-    this._destination, {
-    required Flavorizr config,
-  }) : super(_source, config: config);
+    super.source,
+    this.destination, {
+    required super.config,
+    required super.logger,
+  });
 
   @override
-  File execute() => file.copySync(_destination);
+  File execute() {
+    logger.detail(
+      '[$CopyFileProcessor] Copying file from `$source` to `$destination`',
+    );
+
+    final newFile = file.copySync(destination);
+
+    logger.detail(
+      '[$CopyFileProcessor] File copied from `$source` to `$destination`',
+      style: logger.theme.success,
+    );
+
+    return newFile;
+  }
 
   @override
-  String toString() => 'Copying file from $_source to $_destination';
+  String toString() => 'CopyFileProcessor: { source: $source, destination: $destination }';
 
-  String get destination => _destination;
-
-  String get source => _source;
+  String get source => path;
 }

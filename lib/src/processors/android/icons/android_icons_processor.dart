@@ -24,15 +24,15 @@
  */
 
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icon_xml_processor.dart';
+import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_icon_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 
 class AndroidIconsProcessor extends QueueProcessor {
   AndroidIconsProcessor({
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             ...config.androidFlavors
@@ -45,6 +45,7 @@ class AndroidIconsProcessor extends QueueProcessor {
                       flavor.android!.icon ?? flavor.app.icon ?? '',
                       flavorName,
                       config: config,
+                      logger: logger,
                     ),
                   ),
                 )
@@ -58,6 +59,7 @@ class AndroidIconsProcessor extends QueueProcessor {
                       flavor.android!.adaptiveIcon!,
                       flavorName,
                       config: config,
+                      logger: logger,
                     ),
                   ),
                 )
@@ -71,15 +73,15 @@ class AndroidIconsProcessor extends QueueProcessor {
                       flavor.android!.adaptiveIcon!.foreground,
                       flavor.android!.adaptiveIcon!.background,
                       flavorName,
-                      config: config,
                       monochromeSource:
                           flavor.android!.adaptiveIcon!.monochrome,
+                      config: config,
+                      logger: logger,
                     ),
                   ),
                 )
                 .values,
           ],
-          config: config,
         );
 
   @override

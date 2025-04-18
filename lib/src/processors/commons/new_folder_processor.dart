@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 class NewFolderProcessor extends AbstractProcessor {
   final String path;
@@ -35,14 +36,24 @@ class NewFolderProcessor extends AbstractProcessor {
   NewFolderProcessor(
     this.path, {
     required Flavorizr config,
-  }) : super(config);
+    required Logger logger,
+  }) : super(config, logger: logger);
 
   @override
   execute() {
     dir = Directory(path);
 
     if (!dir.existsSync()) {
+      logger.info(
+        '[$NewFolderProcessor] Creating directory $path',
+      );
+
       dir.createSync(recursive: true);
+
+      logger.detail(
+        '[$NewFolderProcessor] Directory $path created successfully',
+        style: logger.theme.success,
+      );
     }
   }
 

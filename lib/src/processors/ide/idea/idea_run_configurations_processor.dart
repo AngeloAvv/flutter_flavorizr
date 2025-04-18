@@ -23,23 +23,23 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/idea/idea_launch_file_processor.dart';
 
 class IdeaRunConfigurationsProcessor extends QueueProcessor {
   IdeaRunConfigurationsProcessor(
     String path, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           config.flavors.keys.map(
             (flavorName) => IdeaLaunchFileProcessor(
               flavorName,
               '$path/$flavorName.xml',
               config: config,
+              logger: logger,
             ),
           ),
-          config: config,
         );
 
   @override

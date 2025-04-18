@@ -50,6 +50,7 @@ class IOSIconTargetProcessor extends DarwinIconTargetProcessor {
     super.source,
     String flavorName, {
     required super.config,
+    required super.logger,
   }) : super(
           flavorName: flavorName,
           iconSet: _entries,

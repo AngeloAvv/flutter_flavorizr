@@ -34,10 +34,13 @@ class IOSPListProcessor extends StringProcessor {
   IOSPListProcessor({
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
+    logger.detail('[$IOSPListProcessor] Updating iOS PList file');
+
     XmlDocument document = XmlDocument.parse(input!);
     XmlElement root =
         (document.rootElement.children.whereType<XmlElement>().first);
@@ -49,7 +52,14 @@ class IOSPListProcessor extends StringProcessor {
       _updateUILaunchStoryboardName(root);
     }
 
-    return document.toXmlString(pretty: true);
+    final result = document.toXmlString(pretty: true);
+
+    logger.detail(
+      '[$IOSPListProcessor] iOS PList file updated',
+      style: logger.theme.success,
+    );
+
+    return result;
   }
 
   void _updateCFBundleName(XmlElement root) => _updatePListValueAtKey(

@@ -12,37 +12,26 @@ If you want to support this project, please leave a star, share this project, or
 
 ## Getting Started
 
-Let's start by setting up our environment in order to run Flutter
-Flavorizr
+Let's start by setting up our environment in order to run Flutter Flavorizr
 
 ### Prerequisites
 
 Side note: this tool works better on a new and clean Flutter project.
-Since some processors reference some existing files and a specific base
-structure, it could be possible that running Flutter Flavorizr over an
-existing project could throw errors.
+Since some processors reference some existing files and a specific base structure, it could be possible that running Flutter Flavorizr over an existing project could throw errors.
 
-Before running Flutter Flavorizr, you must install the following
-software:
+Before running Flutter Flavorizr, you must install the following software:
 
 * [Ruby](https://www.ruby-lang.org/en/documentation/installation/)
 * [Gem](https://rubygems.org/pages/download)
 * [Xcodeproj](https://github.com/CocoaPods/Xcodeproj) (through RubyGems)
 
-These prerequisites are needed to manipulate the iOS and macOS projects and
-schemes. If you are interested in flavorizing Android only, you can skip
-this step.
+These prerequisites are needed to manipulate the iOS and macOS projects and schemes. If you are interested in flavorizing Android only, you can skip this step.
 
-If your app uses a Flutter plugin and you plan to create flavors for iOS and macOS, you need to make
-sure there's an existing Podfile file under the ios/macos folder. This might lead to problems like
-["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md).
+If your app uses a Flutter plugin and you plan to create flavors for iOS and macOS, you need to make sure there's an existing Podfile file under the ios/macos folder. This might lead to problems like ["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md).
 
 ### Installation
 
-This package is intended to support development of Flutter projects. In
-general, put it under
-[dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies),
-in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
+This package is intended to support development of Flutter projects. In general, put it under [dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies), in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```yaml
 dev_dependencies:
@@ -57,16 +46,11 @@ pub get
 
 ## Create your flavors
 
-Once all of the prerequisites have been installed and you have added
-flutter_flavorizr as a dev dependency, you have to edit your
-[pubspec.yaml](https://dart.dev/tools/pub/pubspec) and define the
-flavors.
+Once all of the prerequisites have been installed and you have added flutter_flavorizr as a dev dependency, you have to edit your [pubspec.yaml](https://dart.dev/tools/pub/pubspec) and define the flavors.
 
 ### Example
 
-Create a new file named flavorizr.yaml and define the name of the
-flavors, in our example *apple* and *banana*. For each flavor you have
-to specify the *app name*, the *applicationId* and the *bundleId*.
+Create a new file named flavorizr.yaml and define the name of the flavors, in our example *apple* and *banana*. For each flavor you have to specify the *app name*, the *applicationId* and the *bundleId*.
 
 ```yaml
 flavors:
@@ -93,9 +77,7 @@ flavors:
 ```
 
 Alternatively, add a new key named flavorizr and define a sub item named *flavors*. 
-Under the flavors array you can define the name of the
-flavors, in our example *apple* and *banana*. For each flavor you have
-to specify the *app name*, the *applicationId* and the *bundleId*.
+Under the flavors array you can define the name of the flavors, in our example *apple* and *banana*. For each flavor you have to specify the *app name*, the *applicationId* and the *bundleId*.
 This way of defining flavors will be deprecated in versions 3.x
 
 ```yaml
@@ -402,6 +384,24 @@ flutter pub run flutter_flavorizr -p assets:download
 flutter pub run flutter_flavorizr -p assets:download,assets:extract
 ```
 
+Keep in mind that the order of the processors is important. For example, if you want to run the assets:extract processor, you must run it after the assets:download processor.
+Also, some processors need assets to be downloaded before running. For example, the android:dummyAssets processor needs the assets:download processor to be run before.
+As a rule of thumb, you should always run both assets:download and assets:extract before running any other processor.
+
+If you want to run flutter_flavorizr in verbose mode, you can append the -v (or --verbose) param:
+
+```terminal
+flutter pub run flutter_flavorizr -v
+```
+
+This will print all the logs to the console, including the ones from the processors.
+
+If you want to skip the confirmation step, you can append the -f (or --force) param:
+
+```terminal
+flutter pub run flutter_flavorizr -f
+```
+
 ## Run your flavors
 
 Once the process has generated the flavors, you can run them by typing
@@ -419,6 +419,26 @@ flutter run --flavor banana
 
 Currently, due to a bug in the Flutter SDK, it's not possible to run the macOS flavors from the terminal.
 You can run them from XCode by selecting the proper schema and by pressing play.
+
+As a temporary workaround, you can apply the following configuration to your flavorizr config:
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+
+    android:
+      applicationId: "com.example.apple"
+    ios:
+      bundleId: "com.example.apple"
+    macos:
+      bundleId: "com.example.apple"
+      buildSettings:
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+```            
 
 ### Default processors set
 
@@ -458,13 +478,13 @@ By default, when you do not specify a custom set of processors by appending the 
 
 ## Customize your app
 
-Flutter_flavorizr creates different dart files in the lib folder. In the
-flavors.dart file we have the F class which contains all of our
-customizations.
+Flutter_flavorizr creates different dart files in the lib folder. In the flavors.dart file we have the F class which contains all of our customizations.
 
 ```dart
 class F {
-  static Flavor? appFlavor;
+  static late final Flavor appFlavor;
+
+  static String get name => appFlavor.name;
 
   static String get title {
     switch (appFlavor) {
@@ -472,24 +492,15 @@ class F {
         return 'Apple App';
       case Flavor.banana:
         return 'Banana App';
-      default:
-        return 'title';
     }
   }
 
 }
 ```
 
-The process creates a simple title customization: a
-switch which checks the current appFlavor (defined in our app starting
-point) and returns the correct value. Here you can write whatever you
-want, you can create your custom app color palette, differentiate the
-URL action of a button, and so on.
+The process creates a simple title customization: a switch which checks the current appFlavor (defined in our app starting point) and returns the correct value. Here you can write whatever you want, you can create your custom app color palette, differentiate the URL action of a button, and so on.
 
-If you are wondering how to use these
-getters, you can find an example under the pages folder: in the
-my_home_page.dart file, the page shown after the launch of the app, we
-can see a clear reference on the title getter defined in the F class.
+If you are wondering how to use these getters, you can find an example under the pages folder: in the my_home_page.dart file, the page shown after the launch of the app, we can see a clear reference on the title getter defined in the F class.
 
 ## Third party services
 
@@ -529,10 +540,25 @@ flavors:
         config: ".firebase/banana/GoogleService-Info.plist"
 ```
 
+After running flutter_flavorizr, remember to add the native dependencies for the targeted operative system. You can take advantage of [flutterfire_cli](https://firebase.google.com/docs/flutter/setup) to do so. Remember to ignore the generated firebase_options.dart file, as it will conflict with the flavors configuration. Do this instead:
+
+```dart
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Do not pass the options here
+  
+  runApp(const App());
+}
+```
+
 ### Huawei AppGallery Connect
 
-In order to flavorize your project and enable AppGallery Connect in your flavor  
-you have to define an agconnect object below each Android flavor. Under the agconnect object you must define the config path of the agconnect-services.json.
+In order to flavorize your project and enable AppGallery Connect in your flavor you have to define an agconnect object below each Android flavor. Under the agconnect object you must define the config path of the agconnect-services.json.
 
 As you can see in the example below, we added the path accordingly
 
@@ -562,6 +588,8 @@ flavors:
       bundleId: "com.example.banana"
 ```
 
+Remember to add the native dependencies for the targeted operative system for both Firebase and Huawei AppGallery Connect: flutter_flavorizr will only take care of applying the configuration.
+
 ## Troubleshooting
 How to fix the error ["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md)
 
@@ -578,11 +606,8 @@ How to fix the error ["Unable to load contents of file list"](doc%2Ftroubleshoot
 
 Please feel free to submit new issues if you encounter problems while using this library.
 
-If you need help with the use of the library or you just want to request new features, please use
-the [Discussions](https://github.com/AngeloAvv/flutter_flavorizr/discussions) section of the 
-repository. Issues opened as questions will be automatically closed.
+If you need help with the use of the library or you just want to request new features, please use the [Discussions](https://github.com/AngeloAvv/flutter_flavorizr/discussions) section of the repository. Issues opened as questions will be automatically closed.
 
 ## License
 
-Flutter Flavorizr is available under the MIT license. See the LICENSE
-file for more info.
+Flutter Flavorizr is available under the MIT license. See the LICENSE file for more info.

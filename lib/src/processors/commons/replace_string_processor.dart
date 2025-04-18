@@ -34,14 +34,26 @@ class ReplaceStringProcessor extends StringProcessor {
     this._replace, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
-    return input!.replaceAll(_find, _replace);
+    logger.detail(
+      '[$ReplaceStringProcessor] Replacing `$_find` with `$_replace`',
+    );
+
+    final output = input!.replaceAll(_find, _replace);
+
+    logger.detail(
+      '[$ReplaceStringProcessor] Replaced `$_find` with `$_replace`',
+      style: logger.theme.success,
+    );
+
+    return output;
   }
 
   @override
   String toString() =>
-      'ReplaceStringProcessor: replacing $_find with $_replace';
+      'ReplaceStringProcessor: {find: $_find, replace: $_replace}';
 }

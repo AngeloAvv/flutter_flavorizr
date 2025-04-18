@@ -23,23 +23,23 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/huawei/agconnect/android_agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 
 class AGConnectProcessor extends QueueProcessor {
   AGConnectProcessor({
     required String destination,
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             if (config.androidAGConnectFlavorsAvailable)
               AndroidAGConnectProcessor(
                 destination: destination,
                 config: config,
+                logger: logger,
               ),
           ],
-          config: config,
         );
 
   @override

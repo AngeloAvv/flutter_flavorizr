@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
@@ -37,7 +36,8 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
     String path,
     String flavorName,
     Flavor flavor, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           Target.values.map(
             (target) => IOSXCConfigModeFileProcessor(
@@ -49,9 +49,9 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
               flavor,
               target,
               config: config,
+              logger: logger,
             ),
           ),
-          config: config,
         );
 
   @override

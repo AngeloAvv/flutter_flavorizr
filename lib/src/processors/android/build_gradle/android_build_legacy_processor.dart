@@ -41,6 +41,7 @@ class AndroidBuildLegacyProcessor extends StringProcessor {
     this._gradleFileName, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
@@ -53,22 +54,43 @@ class AndroidBuildLegacyProcessor extends StringProcessor {
         input!.indexOf(_endFlavorDimensionsMarkup);
 
     if (androidPosition < 0) {
+      logger.detail(
+        '[$AndroidBuildLegacyProcessor] No android entry point found',
+        style: logger.theme.err,
+      );
+
       throw MalformedResourceException(input!);
     }
 
     if (existingFlavorDimensions &&
         (beginFlavorDimensionsMarkupPosition < 0 ||
             endFlavorDimensionsMarkupPosition < 0)) {
+      logger.detail(
+        '[$AndroidBuildLegacyProcessor] Existing flavorDimensions found but no markup',
+        style: logger.theme.err,
+      );
+
       throw ExistingFlavorDimensionsException(input!);
     }
 
     final buffer = StringBuffer();
+
+    logger.detail(
+      '[$AndroidBuildLegacyProcessor] Cleaning up existing flavors',
+      style: logger.theme.info,
+    );
 
     _cleanupFlavors(
       buffer,
       beginFlavorDimensionsMarkupPosition,
       endFlavorDimensionsMarkupPosition,
     );
+
+    logger.detail(
+      '[$AndroidBuildLegacyProcessor] Adding new gradle flavors file',
+      style: logger.theme.info,
+    );
+
     _appendContent(buffer);
 
     return buffer.toString();

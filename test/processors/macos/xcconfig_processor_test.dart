@@ -30,13 +30,16 @@ import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/macos/xcconfig/macos_xcconfig_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 import '../../test_utils.dart';
 
 void main() {
   late Flavorizr flavorizr;
+  late Logger logger;
 
   test('Test MacOSXCConfigProcessor', () {
+    logger = Logger(level: Level.quiet);
     Parser parser = const Parser(
       pubspecPath:
           'test_resources/macos/xcconfig_processor_test/pubspec_without_variables',
@@ -55,6 +58,7 @@ void main() {
     MacOSXCConfigProcessor processor = MacOSXCConfigProcessor(
       Target.debug,
       config: flavorizr,
+      logger: logger,
     );
     String actual = processor.execute();
 

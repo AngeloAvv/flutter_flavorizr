@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 abstract class StringProcessor extends AbstractProcessor<String> {
   String? input;
@@ -32,7 +33,8 @@ abstract class StringProcessor extends AbstractProcessor<String> {
   StringProcessor({
     this.input,
     required Flavorizr config,
-  }) : super(config);
+    required Logger logger,
+  }) : super(config, logger: logger);
 
   @override
   String toString() => 'StringProcessor';

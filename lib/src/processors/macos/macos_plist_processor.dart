@@ -34,17 +34,29 @@ class MacOSPListProcessor extends StringProcessor {
   MacOSPListProcessor({
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
+    logger.detail(
+      '[$MacOSPListProcessor] Updating macOS PList file',
+    );
+
     XmlDocument document = XmlDocument.parse(input!);
     XmlElement root =
         (document.rootElement.children.whereType<XmlElement>().first);
 
     _updateCFBundleName(root);
 
-    return document.toXmlString(pretty: true);
+    final result = document.toXmlString(pretty: true);
+
+    logger.detail(
+      '[$MacOSPListProcessor] Updated macOS PList file',
+      style: logger.theme.success,
+    );
+
+    return result;
   }
 
   void _updateCFBundleName(XmlElement root) => _updatePListValueAtKey(

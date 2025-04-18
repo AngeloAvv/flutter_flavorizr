@@ -18,6 +18,7 @@ dependencies:
   image: ^4.1.7
   io: ^1.0.4
   json_annotation: ^4.8.1
+  mason_logger: ^0.3.3
   sprintf: ^7.0.0
   xml: ^6.5.0
   yaml: ^3.1.2

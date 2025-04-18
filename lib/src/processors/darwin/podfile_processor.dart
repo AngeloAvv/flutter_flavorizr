@@ -38,23 +38,43 @@ class PodfileProcessor extends StringProcessor {
     super.input,
     required this.flavors,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
+    logger.detail(
+      '[$PodfileProcessor] Updating Podfile to add flavors',
+    );
+
     final projectPosition = input!.indexOf(projectEntryPoint);
     final closedProjectPosition = input!.indexOf(projectClosure);
 
     if (projectPosition < 0) {
+      logger.detail(
+        '[$PodfileProcessor] Podfile does not contain the project entry point',
+        style: logger.theme.err,
+      );
+
       throw MalformedResourceException(input!);
     }
 
+    logger.detail(
+      '[$PodfileProcessor] Podfile project entry point found',
+    );
+
     final buffer = StringBuffer();
 
+    logger.detail('[$PodfileProcessor] Appending flavors to Podfile');
     _appendStartContent(buffer, projectPosition);
     _appendFlavors(buffer);
 
     _appendEndContent(buffer, closedProjectPosition);
+
+    logger.detail(
+      '[$PodfileProcessor] Podfile updated successfully',
+      style: logger.theme.success,
+    );
 
     return buffer.toString();
   }

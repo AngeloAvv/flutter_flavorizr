@@ -23,8 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 
@@ -34,17 +32,25 @@ class QueueProcessor extends AbstractProcessor {
   QueueProcessor(
     this.processors, {
     required Flavorizr config,
+    required super.logger,
   }) : super(config);
 
   @override
   void execute() {
-    for (AbstractProcessor processor in processors) {
-      stdout.writeln("Running $processor");
+    logger.detail(
+      '[$QueueProcessor] Executing the following processors: ${processors.join(', ')}',
+    );
 
+    for (AbstractProcessor processor in processors) {
       processor.execute();
     }
+
+    logger.detail(
+      '[$QueueProcessor] All processors (${processors.join(', ')}) executed successfully',
+      style: logger.theme.success,
+    );
   }
 
   @override
-  String toString() => 'QueueProcessor';
+  String toString() => 'QueueProcessor: {${processors.join(', ')}}';
 }

@@ -33,6 +33,7 @@ class IdeaLaunchProcessor extends StringProcessor {
     this._flavorName, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
@@ -41,6 +42,9 @@ class IdeaLaunchProcessor extends StringProcessor {
   @override
   String execute() {
     final builder = XmlBuilder();
+
+    logger.detail(
+        '[$IdeaLaunchProcessor] Generating launch configuration for $_flavorName');
 
     builder.element('component',
         attributes: {'name': 'ProjectRunConfigurationManager'}, nest: () {
@@ -66,6 +70,13 @@ class IdeaLaunchProcessor extends StringProcessor {
       });
     });
 
-    return builder.buildDocument().toXmlString(pretty: true);
+    final result = builder.buildDocument().toXmlString(pretty: true);
+
+    logger.detail(
+      '[$IdeaLaunchProcessor] Launch configuration generated',
+      style: logger.theme.success,
+    );
+
+    return result;
   }
 }

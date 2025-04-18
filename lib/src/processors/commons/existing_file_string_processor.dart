@@ -24,7 +24,6 @@
  */
 
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
@@ -32,12 +31,29 @@ class ExistingFileStringProcessor extends AbstractFileStringProcessor {
   ExistingFileStringProcessor(
     String path,
     StringProcessor processor, {
-    required Flavorizr config,
-  }) : super(path, processor, config: config) {
+    required super.config,
+    required super.logger,
+  }) : super(path, processor) {
     if (!file.existsSync()) {
+      logger.detail(
+        '[$ExistingFileStringProcessor] File not found at path `$path`',
+      );
+
       throw FileNotFoundException(this.path);
     }
 
+    logger.detail(
+      '[$ExistingFileStringProcessor] Reading file at path `$path`',
+    );
+
     processor.input = file.readAsStringSync();
+
+    logger.detail(
+      '[$ExistingFileStringProcessor] File read at path `$path`',
+      style: logger.theme.success,
+    );
   }
+
+  @override
+  String toString() => 'ExistingFileStringProcessor: {path: $path, processor: $processor}';
 }

@@ -31,20 +31,35 @@ class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
     super.path,
     super.processor, {
     required super.config,
+    required super.logger,
   });
 
   @override
   void execute() {
     if (!file.existsSync()) {
+      logger.detail(
+        '[$RuntimeFileStringProcessor] File `$path` not found, ',
+        style: logger.theme.err,
+      );
+
       throw FileNotFoundException(path);
     }
 
+    logger.detail(
+      '[$RuntimeFileStringProcessor] Reading from file `$path`',
+    );
+
     processor.input = file.readAsStringSync();
+
+    logger.detail(
+      '[$RuntimeFileStringProcessor] File `$path` read',
+      style: logger.theme.success,
+    );
 
     super.execute();
   }
 
   @override
   String toString() =>
-      "FileProcessor: creating file $path with nested $processor";
+      "FileProcessor: {path: $path, processor: $processor}";
 }

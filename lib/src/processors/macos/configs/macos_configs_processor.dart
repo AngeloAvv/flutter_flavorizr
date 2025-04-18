@@ -43,14 +43,23 @@ class MacOSConfigsProcessor extends StringProcessor {
     this._target, {
     super.input,
     required super.config,
+    required super.logger,
   });
 
   @override
   String execute() {
-    StringBuffer buffer = StringBuffer();
+    final buffer = StringBuffer();
+
+    logger.detail(
+        '[$MacOSConfigsProcessor] Generating $_flavorName.${_target.name}.xcconfig');
 
     _appendIncludes(buffer);
     _appendBody(buffer);
+
+    logger.detail(
+      '[$MacOSConfigsProcessor] Generated $_flavorName.${_target.name}.xcconfig',
+      style: logger.theme.success,
+    );
 
     return buffer.toString();
   }

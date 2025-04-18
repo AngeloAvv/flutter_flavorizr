@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_folder_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
@@ -33,20 +32,22 @@ class DarwinFirebaseProcessor extends QueueProcessor {
     String source,
     String destination,
     String flavorName, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             NewFolderProcessor(
               '$destination/$flavorName',
               config: config,
+              logger: logger,
             ),
             CopyFileProcessor(
               source,
               '$destination/$flavorName/GoogleService-Info.plist',
               config: config,
+              logger: logger,
             ),
           ],
-          config: config,
         );
 
   @override

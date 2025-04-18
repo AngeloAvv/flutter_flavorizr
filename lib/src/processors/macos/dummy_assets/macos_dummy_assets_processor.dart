@@ -23,7 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
@@ -34,7 +33,8 @@ class MacOSDummyAssetsProcessor extends QueueProcessor {
     String destination,
     String flavorName,
     Darwin os, {
-    required Flavorizr config,
+    required super.config,
+    required super.logger,
   }) : super(
           [
             DummyAssetsProcessor(
@@ -42,9 +42,9 @@ class MacOSDummyAssetsProcessor extends QueueProcessor {
               '$destination/${flavorName}AppIcon.appiconset',
               os,
               config: config,
+              logger: logger,
             ),
           ],
-          config: config,
         );
 
   @override
