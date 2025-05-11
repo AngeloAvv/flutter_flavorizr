@@ -8,6 +8,14 @@ homepage: https://www.angelocassano.it
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
+funding:
+  - https://github.com/sponsors/AngeloAvv
+
+platforms:
+  android:
+  ios:
+  macos:
+
 dependencies:
   flutter:
     sdk: flutter
