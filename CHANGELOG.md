@@ -1,5 +1,9 @@
 ## NEXT
 
+## 2.4.1
+* Fixed profile build configuration
+* Updated supported platforms
+
 ## 2.4.0
 * Updated logging system
 
