@@ -83,7 +83,7 @@ class K {
 
   static String iOSAssetsPath = '$iOSRunnerPath/Assets.xcassets';
 
-  static String iOSAppIconPath = '$iOSAssetsPath/%sAppIcon.appiconset/%s';
+  static String iOSAppIconPath = '$iOSAssetsPath/AppIcon-dev.appiconset/%s';
 
   static String iOSFirebaseScriptPath = '$iOSPath/firebaseScript.sh';
 
@@ -99,7 +99,7 @@ class K {
 
   static String macOSAssetsPath = '$macOSRunnerPath/Assets.xcassets';
 
-  static String macOSAppIconPath = '$macOSAssetsPath/%sAppIcon.appiconset/%s';
+  static String macOSAppIconPath = '$macOSAssetsPath/AppIcon-%s.appiconset/%s';
 
   static String macOSConfigsPath = '$macOSRunnerPath/Configs';
 
