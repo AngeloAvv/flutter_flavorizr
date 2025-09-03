@@ -7,40 +7,50 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 class IDEProcessor extends AbstractProcessor {
-  final AbstractProcessor? _processor;
+  final List<AbstractProcessor>? _processors;
 
   IDEProcessor({
     required Flavorizr config,
     required Logger logger,
-  })  : _processor = initProcessor(config, logger: logger),
+  })  : _processors = initProcessor(config, logger: logger),
         super(config, logger: logger);
 
   @override
   void execute() {
-    if (config.ide == null) {
+    if (_processors == null || _processors!.isEmpty) {
       logger.detail(
         'No IDE processor found. Skipping IDE file generation.',
         style: logger.theme.warn,
       );
+    } else {
+      for (final processor in _processors!) {
+        processor.execute();
+      }
     }
-
-    _processor?.execute();
   }
 
   @override
   String toString() => 'IDEProcessor';
 
-  static initProcessor(Flavorizr config, {required Logger logger}) =>
-      switch (config.ide) {
-        IDE.idea => IdeaRunConfigurationsProcessor(
-            K.ideaLaunchpath,
-            config: config,
-            logger: logger,
-          ),
-        IDE.vscode => VSCodeLaunchFileProcessor(
-            config: config,
-            logger: logger,
-          ),
-        _ => null,
-      };
+  static List<AbstractProcessor>? initProcessor(Flavorizr config,
+      {required Logger logger}) {
+    final List<AbstractProcessor> processors = <AbstractProcessor>[];
+
+    if (config.ide != null) {
+      for (final ide in config.ide!) {
+        processors.add(switch (ide) {
+          IDE.idea => IdeaRunConfigurationsProcessor(
+              K.ideaLaunchpath,
+              config: config,
+              logger: logger,
+            ),
+          IDE.vscode => VSCodeLaunchFileProcessor(
+              config: config,
+              logger: logger,
+            ),
+        });
+      }
+    }
+    return processors;
+  }
 }

@@ -115,7 +115,7 @@ flavorizr:
 | flavors                                 | Array  |                                                                                     | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                     | false    | An array of instructions to customize the flavorizr process                                   |
 | assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.4.1/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
-| ide                                     | String |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
+| ide                                     | Array  |                                                                                     | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
 
