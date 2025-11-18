@@ -13,6 +13,7 @@ android.apply {
             signingConfig = flavorSigning.green
             versionCode = 1000
             minSdkVersion = 23
+            manifestPlaceholders["appScheme"] = "appleScheme"
             resValue(type = "string", name = "app_name", value = "Apple App")
             resValue(type = "string", name = "variable_one", value = "previous variable one")
             resValue(type = "string", name = "common", value = "test common")
@@ -21,6 +22,7 @@ android.apply {
         create("banana") {
             dimension = "flavor-type"
             applicationId = "com.example.banana"
+            manifestPlaceholders["appScheme"] = "bananaScheme"
             resValue(type = "string", name = "app_name", value = "Banana\\' App")
             resValue(type = "string", name = "variable_one", value = "test variable\\' one")
             resValue(type = "string", name = "common", value = "test common")

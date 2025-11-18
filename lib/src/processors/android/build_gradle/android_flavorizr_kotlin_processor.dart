@@ -64,34 +64,35 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
   void _appendStartContent(StringBuffer buffer) {
     buffer.writeln('import com.android.build.gradle.AppExtension');
     buffer.writeln('');
-    buffer.writeln(
-        'val android = project.extensions.getByType(AppExtension::class.java)');
+    buffer.writeln('val android = project.extensions.getByType(AppExtension::class.java)');
     buffer.writeln('');
     buffer.writeln('android.apply {');
   }
 
   void _appendFlavorsDimension(StringBuffer buffer) {
-    final flavorDimension =
-        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+    final flavorDimension = config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
 
     buffer.writeln('    flavorDimensions("$flavorDimension")');
     buffer.writeln();
   }
 
   void _appendFlavors(StringBuffer buffer) {
-    final flavorDimension =
-        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+    final flavorDimension = config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
 
     buffer.writeln('    productFlavors {');
 
     config.androidFlavors.forEach((name, flavor) {
       buffer.writeln('        create("$name") {');
       buffer.writeln('            dimension = "$flavorDimension"');
-      buffer.writeln(
-          '            applicationId = "${flavor.android?.applicationId}"');
+      buffer.writeln('            applicationId = "${flavor.android?.applicationId}"');
 
       flavor.android?.customConfig.forEach((key, value) {
-        buffer.writeln('            $key = $value');
+        if (key.startsWith('manifestPlaceholders.')) {
+          final placeholderKey = key.split('.').last;
+          buffer.writeln('            manifestPlaceholders["$placeholderKey"] = "$value"');
+        } else {
+          buffer.writeln('            $key = $value');
+        }
       });
 
       final Map<String, ResValue> resValues = LinkedHashMap.from({
@@ -108,8 +109,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
         );
       });
 
-      final Map<String, BuildConfigField> buildConfigFields =
-          LinkedHashMap.fromEntries([
+      final Map<String, BuildConfigField> buildConfigFields = LinkedHashMap.fromEntries([
         ...config.app?.android?.buildConfigFields.entries ?? [],
         ...flavor.android?.buildConfigFields.entries ?? []
       ]);
