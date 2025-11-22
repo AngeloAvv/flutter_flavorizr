@@ -49,6 +49,7 @@ flavorizr:
           signingConfig: flavorSigning.green
           versionCode: 1000
           minSdkVersion: 23
+          manifestPlaceholders.appScheme: "appleScheme"
 
       ios:
         bundleId: "com.example.apple"
@@ -65,6 +66,8 @@ flavorizr:
 
       android:
         applicationId: "com.example.banana"
+        customConfig:
+          manifestPlaceholders.appScheme: "bananaScheme"
         resValues:
           variable_one:
             type: "string"
