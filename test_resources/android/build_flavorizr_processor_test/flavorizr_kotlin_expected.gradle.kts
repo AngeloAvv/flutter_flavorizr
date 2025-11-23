@@ -14,6 +14,7 @@ android.apply {
             versionCode = 1000
             minSdkVersion = 23
             manifestPlaceholders["appScheme"] = "appleScheme"
+            manifestPlaceholders["deep"]["level"]["item"] = "x"
             resValue(type = "string", name = "app_name", value = "Apple App")
             resValue(type = "string", name = "variable_one", value = "previous variable one")
             resValue(type = "string", name = "common", value = "test common")
@@ -23,6 +24,7 @@ android.apply {
             dimension = "flavor-type"
             applicationId = "com.example.banana"
             manifestPlaceholders["appScheme"] = "bananaScheme"
+            manifestPlaceholders["deep"]["level"]["item"] = "y"
             resValue(type = "string", name = "app_name", value = "Banana\\' App")
             resValue(type = "string", name = "variable_one", value = "test variable\\' one")
             resValue(type = "string", name = "common", value = "test common")
