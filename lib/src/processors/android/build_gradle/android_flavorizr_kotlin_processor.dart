@@ -87,12 +87,12 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
       buffer.writeln('            applicationId = "${flavor.android?.applicationId}"');
 
       flavor.android?.customConfig.forEach((key, value) {
-        if (key.startsWith('manifestPlaceholders.')) {
-          final placeholderKey = key.split('.').last;
-          buffer.writeln('            manifestPlaceholders["$placeholderKey"] = "$value"');
-        } else {
-          buffer.writeln('            $key = $value');
-        }
+        _processCustomConfig(
+          buffer,
+          key,
+          value,
+          '            ',
+        );
       });
 
       final Map<String, ResValue> resValues = LinkedHashMap.from({
@@ -123,6 +123,37 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
     });
 
     buffer.writeln('    }');
+  }
+
+  void _processCustomConfig(
+    StringBuffer buffer,
+    String parentKey,
+    dynamic value,
+    String indent,
+  ) {
+    if (value is Map) {
+      value.forEach((dynamic childKey, dynamic childValue) {
+        _processCustomConfig(
+          buffer,
+          '$parentKey["$childKey"]',
+          childValue,
+          indent,
+        );
+      });
+    } else {
+      final formattedValue = parentKey == 'signingConfig' ? value : _formatKotlinValue(value);
+      buffer.writeln('$indent$parentKey = $formattedValue');
+    }
+  }
+
+  String _formatKotlinValue(dynamic value) {
+    if (value is String) {
+      if (value.startsWith('"') && value.endsWith('"')) {
+        return value;
+      }
+      return '"$value"';
+    }
+    return value.toString();
   }
 
   void _appendBuildConfig(StringBuffer buffer) {
