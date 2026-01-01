@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
+import 'package:flutter_flavorizr/src/models/commons/size.dart';
 import 'package:image/image.dart';
 
 class ImageResizerProcessor extends CopyFileProcessor {
@@ -68,8 +69,8 @@ class ImageResizerProcessor extends CopyFileProcessor {
     );
     final thumbnail = copyResize(
       image,
-      width: size.width,
-      height: size.height,
+      width: size.width.toInt(),
+      height: size.height.toInt(),
       interpolation: Interpolation.average,
     );
     final encodedImage = encodeNamedImage(destination, thumbnail);
@@ -106,17 +107,4 @@ class ImageResizerProcessor extends CopyFileProcessor {
   @override
   String toString() =>
       'ImageResizerProcessor {source: $source, destination: $destination, size: $size}';
-}
-
-class Size {
-  final int width;
-  final int height;
-
-  const Size({
-    required this.width,
-    required this.height,
-  });
-
-  @override
-  String toString() => 'Size{width: $width, height: $height}';
 }

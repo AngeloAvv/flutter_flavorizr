@@ -2,6 +2,7 @@ import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:sprintf/sprintf.dart';
+import 'package:flutter_flavorizr/src/models/commons/size.dart';
 
 class AndroidAdaptiveIconProcessor extends QueueProcessor {
   final String foregroundSource;
