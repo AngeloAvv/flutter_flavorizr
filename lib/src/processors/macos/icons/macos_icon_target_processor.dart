@@ -23,19 +23,23 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
+import 'package:flutter_flavorizr/src/models/darwin/icon/darwin_idiom.dart';
+import 'package:flutter_flavorizr/src/models/macos/macos_icon.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/icons/darwin_icon_target_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
 class MacOSIconTargetProcessor extends DarwinIconTargetProcessor {
   static const _entries = {
-    'app_icon_16.png': Size(width: 16, height: 16),
-    'app_icon_32.png': Size(width: 32, height: 32),
-    'app_icon_64.png': Size(width: 64, height: 64),
-    'app_icon_128.png': Size(width: 128, height: 128),
-    'app_icon_256.png': Size(width: 256, height: 256),
-    'app_icon_512.png': Size(width: 512, height: 512),
-    'app_icon_1024.png': Size(width: 1024, height: 1024),
+    MacosIcon(size: 16, idiom: DarwinIdiom.mac, scale: 1),
+    MacosIcon(size: 16, idiom: DarwinIdiom.mac, scale: 2),
+    MacosIcon(size: 32, idiom: DarwinIdiom.mac, scale: 1),
+    MacosIcon(size: 32, idiom: DarwinIdiom.mac, scale: 2),
+    MacosIcon(size: 128, idiom: DarwinIdiom.mac, scale: 1),
+    MacosIcon(size: 128, idiom: DarwinIdiom.mac, scale: 2),
+    MacosIcon(size: 256, idiom: DarwinIdiom.mac, scale: 1),
+    MacosIcon(size: 256, idiom: DarwinIdiom.mac, scale: 2),
+    MacosIcon(size: 512, idiom: DarwinIdiom.mac, scale: 1),
+    MacosIcon(size: 512, idiom: DarwinIdiom.mac, scale: 2),
   };
 
   MacOSIconTargetProcessor(
