@@ -23,43 +23,43 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:sprintf/sprintf.dart';
-import 'package:flutter_flavorizr/src/models/commons/size.dart';
+import 'dart:convert';
 
-class AndroidIconProcessor extends QueueProcessor {
-  static const _entries = {
-    'mipmap-mdpi': Size(48, 48),
-    'mipmap-hdpi': Size(72, 72),
-    'mipmap-xhdpi': Size(96, 96),
-    'mipmap-xxhdpi': Size(144, 144),
-    'mipmap-xxxhdpi': Size(192, 192),
-  };
+import 'package:flutter_flavorizr/src/models/darwin/icon/darwin_icon.dart';
+import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
-  AndroidIconProcessor(
-    String source,
-    String flavorName, {
+class DarwinIconContentsProcessor extends StringProcessor {
+  final Set<DarwinIcon> iconSet;
+
+  DarwinIconContentsProcessor(
+    this.iconSet, {
     required super.config,
     required super.logger,
-  }) : super(
-          _entries
-              .map(
-                (folder, size) => MapEntry(
-                  folder,
-                  ImageResizerProcessor(
-                    source,
-                    sprintf(K.androidIconPath, [flavorName, folder]),
-                    size,
-                    config: config,
-                    logger: logger,
-                  ),
-                ),
-              )
-              .values,
-        );
+  });
 
   @override
-  String toString() => 'AndroidIconProcessor';
+  String toString() => 'DarwinIconContentsProcessor';
+
+  @override
+  String execute() {
+    logger.detail(
+        '[$DarwinIconContentsProcessor] Generating Contents.json for ${iconSet.length} icons');
+
+    final contentsJson = {
+      'images': iconSet.map((icon) => icon.toJson()).toList(growable: false),
+      'info': {
+        'version': 1,
+        'author': 'xcode',
+      },
+    };
+
+    logger.detail(
+        '[$DarwinIconContentsProcessor] Generated Contents.json for ${iconSet.length} icons');
+
+    final json = jsonEncode(contentsJson);
+
+    logger.detail('[$DarwinIconContentsProcessor] Contents.json: $json');
+
+    return json;
+  }
 }
