@@ -23,9 +23,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:checked_yaml/checked_yaml.dart';
 
 import 'config/app.dart';
 import 'enums.dart';
@@ -49,8 +49,8 @@ class Flavorizr {
   )
   final String assetsUrl;
 
-  @JsonKey()
-  final IDE? ide;
+  @JsonKey(fromJson: _ideListFromJson)
+  final List<IDE>? ide;
 
   @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFlavors;
@@ -114,4 +114,30 @@ class Flavorizr {
   bool get iosFirebaseFlavorsAvailable => iosFirebaseFlavors.isNotEmpty;
 
   bool get macosFirebaseFlavorsAvailable => macosFirebaseFlavors.isNotEmpty;
+}
+
+List<IDE>? _ideListFromJson(dynamic json) {
+  if (json == null) {
+    return null;
+  }
+
+  final output = switch (json) {
+    final List list => list
+        .map((e) => IDE.values.firstWhere(
+              (ide) => ide.name.toLowerCase() == e.toString().toLowerCase(),
+            ))
+        .toList(growable: false),
+    final String str => [
+        IDE.values.firstWhere(
+          (ide) => ide.name.toLowerCase() == str.toLowerCase(),
+        )
+      ],
+    _ => null,
+  };
+
+  if (output != null) {
+    return output;
+  }
+
+  throw FormatException('Invalid format for IDE list');
 }

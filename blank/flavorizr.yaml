@@ -25,7 +25,8 @@ flavors:
     macos:
       bundleId: "com.example.banana"
 
-ide: idea
+ide:
+  - idea
 
 instructions:
   - 'android:androidManifest'
