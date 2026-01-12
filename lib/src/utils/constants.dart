@@ -57,6 +57,8 @@ class K {
   static String androidFlavorizrKotlinPath =
       '$androidAppPath/$androidFlavorizrKotlinName';
 
+  static String darwinAppIconContentsFileName = 'Contents.json';
+
   static String flutterPath = 'lib';
 
   static String flutterFlavorPath = '$flutterPath/flavors.dart';

@@ -1,14 +1,14 @@
 import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icon_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
+import 'package:flutter_flavorizr/src/models/commons/size.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 
 class AndroidAdaptiveIconsProcessor extends QueueProcessor {
   static const _entries = {
-    'drawable-mdpi': Size(width: 108, height: 108),
-    'drawable-hdpi': Size(width: 162, height: 162),
-    'drawable-xhdpi': Size(width: 216, height: 216),
-    'drawable-xxhdpi': Size(width: 324, height: 324),
-    'drawable-xxxhdpi': Size(width: 432, height: 432),
+    'drawable-mdpi': Size(108, 108),
+    'drawable-hdpi': Size(162, 162),
+    'drawable-xhdpi': Size(216, 216),
+    'drawable-xxhdpi': Size(324, 324),
+    'drawable-xxxhdpi': Size(432, 432),
   };
 
   final String foregroundSource;
