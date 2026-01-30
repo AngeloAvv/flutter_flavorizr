@@ -64,7 +64,6 @@ void main() {
       logger: logger,
     );
     String actual = processor.execute();
-
     actual = TestUtils.stripEndOfLines(actual);
     matcher = TestUtils.stripEndOfLines(matcher);
 

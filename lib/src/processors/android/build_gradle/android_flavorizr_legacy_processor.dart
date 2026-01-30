@@ -63,27 +63,29 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
   }
 
   void _appendFlavorsDimension(StringBuffer buffer) {
-    final flavorDimension =
-        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+    final flavorDimension = config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
 
     buffer.writeln('    flavorDimensions += "$flavorDimension"');
     buffer.writeln();
   }
 
   void _appendFlavors(StringBuffer buffer) {
-    final flavorDimension =
-        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+    final flavorDimension = config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
 
     buffer.writeln('    productFlavors {');
 
     config.androidFlavors.forEach((name, flavor) {
       buffer.writeln('        $name {');
       buffer.writeln('            dimension "$flavorDimension"');
-      buffer.writeln(
-          '            applicationId "${flavor.android?.applicationId}"');
+      buffer.writeln('            applicationId "${flavor.android?.applicationId}"');
 
       flavor.android?.customConfig.forEach((key, value) {
-        buffer.writeln('            $key $value');
+        _processLegacyCustomConfig(
+          buffer,
+          key,
+          value,
+          '            ',
+        );
       });
 
       final Map<String, ResValue> resValues = LinkedHashMap.from({
@@ -95,18 +97,15 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
         ..addAll(config.app?.android?.resValues ?? {})
         ..addAll(flavor.android?.resValues ?? {});
       resValues.forEach((key, res) {
-        buffer.writeln(
-            '            resValue "${res.type}", "$key", "${res.wrappedValue}"');
+        buffer.writeln('            resValue "${res.type}", "$key", "${res.wrappedValue}"');
       });
 
-      final Map<String, BuildConfigField> buildConfigFields =
-          LinkedHashMap.fromEntries([
+      final Map<String, BuildConfigField> buildConfigFields = LinkedHashMap.fromEntries([
         ...config.app?.android?.buildConfigFields.entries ?? [],
         ...flavor.android?.buildConfigFields.entries ?? []
       ]);
       buildConfigFields.forEach((key, res) {
-        buffer.writeln(
-            '            buildConfigField "${res.type}", "$key", ${res.legacyWrappedValue}');
+        buffer.writeln('            buildConfigField "${res.type}", "$key", ${res.legacyWrappedValue}');
       });
 
       buffer.writeln('        }');
@@ -117,6 +116,37 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
 
   void _appendEndContent(StringBuffer buffer) {
     buffer.write('}');
+  }
+
+  void _processLegacyCustomConfig(
+    StringBuffer buffer,
+    String parentKey,
+    dynamic value,
+    String indent,
+  ) {
+    if (value is Map) {
+      value.forEach((childKey, childValue) {
+        _processLegacyCustomConfig(
+          buffer,
+          '$parentKey.$childKey',
+          childValue,
+          indent,
+        );
+      });
+    } else {
+      final formattedValue = parentKey == 'signingConfig' ? value : _formatGroovyValue(value);
+      buffer.writeln('$indent$parentKey $formattedValue');
+    }
+  }
+
+  String _formatGroovyValue(dynamic value) {
+    if (value is String) {
+      if (value.startsWith('"') && value.endsWith('"')) {
+        return value;
+      }
+      return '"$value"';
+    }
+    return value.toString();
   }
 
   @override
