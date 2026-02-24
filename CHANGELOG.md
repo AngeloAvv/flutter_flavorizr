@@ -1,5 +1,11 @@
 ## NEXT
 
+## 2.4.2
+* Fixed incorrect LD_RUNPATH_SEARCH_PATHS for macOS build settings
+* Fixed missing contents.json when generating darwin icons
+* Added support for multiple ide values
+* Bumped dependencies
+
 ## 2.4.1
 * Fixed profile build configuration
 * Updated supported platforms
