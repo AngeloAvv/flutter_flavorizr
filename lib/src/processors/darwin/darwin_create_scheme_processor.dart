@@ -24,8 +24,6 @@
  */
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
-import 'package:dart_xcodeproj/src/scheme/buildable_product_runnable.dart';
-import 'package:dart_xcodeproj/src/scheme/buildable_reference.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 import 'package:mason_logger/mason_logger.dart';
