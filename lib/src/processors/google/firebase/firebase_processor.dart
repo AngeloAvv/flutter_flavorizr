@@ -25,20 +25,16 @@
 
 import 'package:flutter_flavorizr/src/processors/android/google/firebase/android_firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/google/firebase/ios_targets_firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/google/firebase/macos_targets_firebase_processor.dart';
 
 class FirebaseProcessor extends QueueProcessor {
   FirebaseProcessor({
-    required String process,
     required String androidDestination,
     required String iosDestination,
     required String macosDestination,
-    required String addFileScript,
     required String iosRunnerProject,
     required String macosRunnerProject,
-    required String firebaseScript,
     required String iosGeneratedFirebaseScriptPath,
     required String macosGeneratedFirebaseScriptPath,
     required super.config,
@@ -51,27 +47,18 @@ class FirebaseProcessor extends QueueProcessor {
                 config: config,
                 logger: logger,
               ),
-            if (config.iosFirebaseFlavorsAvailable ||
-                config.macosFirebaseFlavorsAvailable)
-              XcodeprojProcessor(config: config, logger: logger),
             if (config.iosFirebaseFlavorsAvailable)
               IOSTargetsFirebaseProcessor(
-                process: process,
                 destination: iosDestination,
-                addFileScript: addFileScript,
                 runnerProject: iosRunnerProject,
-                firebaseScript: firebaseScript,
                 generatedFirebaseScriptPath: iosGeneratedFirebaseScriptPath,
                 config: config,
                 logger: logger,
               ),
             if (config.macosFirebaseFlavorsAvailable)
               MacOSTargetsFirebaseProcessor(
-                process: process,
                 destination: macosDestination,
-                addFileScript: addFileScript,
                 runnerProject: macosRunnerProject,
-                firebaseScript: firebaseScript,
                 generatedFirebaseScriptPath: macosGeneratedFirebaseScriptPath,
                 config: config,
                 logger: logger,

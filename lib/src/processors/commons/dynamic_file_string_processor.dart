@@ -34,7 +34,7 @@ class DynamicFileStringProcessor extends AbstractFileStringProcessor {
   });
 
   @override
-  void execute() {
+  Future<void> execute() async {
     if (!file.existsSync()) {
       logger.detail(
         '[$DynamicFileStringProcessor] File `$path` does not exist. '
@@ -58,7 +58,7 @@ class DynamicFileStringProcessor extends AbstractFileStringProcessor {
       style: logger.theme.success,
     );
 
-    super.execute();
+    await super.execute();
   }
 
   @override

@@ -53,7 +53,7 @@ void main() {
 
   tearDown(() {});
 
-  test('Test VSCodeLaunchProcessor', () {
+  test('Test VSCodeLaunchProcessor', () async {
     String matcher =
         File('test_resources/ide/vscode_launch_processor_test/launch.json')
             .readAsStringSync();
@@ -62,7 +62,7 @@ void main() {
       config: flavorizr,
       logger: logger,
     );
-    String actual = processor.execute();
+    String actual = await processor.execute();
 
     actual = TestUtils.stripEndOfLines(actual);
     matcher = TestUtils.stripEndOfLines(matcher);

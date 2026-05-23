@@ -24,27 +24,19 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_create_scheme_processor.dart';
 
 class DarwinSchemasProcessor extends QueueProcessor {
   DarwinSchemasProcessor(
-    String process,
-    String script,
     String path, {
     required super.config,
     required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config, logger: logger),
             ...config.flavors.keys.map(
-              (String flavorName) => ShellProcessor(
-                process,
-                [
-                  script,
-                  path,
-                  flavorName,
-                ],
+              (String flavorName) => DarwinCreateSchemeProcessor(
+                path,
+                flavorName,
                 config: config,
                 logger: logger,
               ),

@@ -23,18 +23,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:convert';
-
 import 'package:flutter_flavorizr/src/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_build_configuration_processor.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart' as utils;
 
 class DarwinBuildConfigurationsProcessor extends QueueProcessor {
   DarwinBuildConfigurationsProcessor(
-    String process,
-    String script,
     String project,
     String file,
     String flavorName,
@@ -43,17 +39,13 @@ class DarwinBuildConfigurationsProcessor extends QueueProcessor {
     required super.logger,
   }) : super(
           Target.values.map(
-            (target) => ShellProcessor(
-              process,
-              [
-                script,
-                project,
-                utils.flatPath(
-                    '$file/$flavorName${target.name.capitalize}.xcconfig'),
-                flavorName,
-                target.name.capitalize,
-                base64.encode(utf8.encode(jsonEncode(buildConfigurations))),
-              ],
+            (target) => DarwinAddBuildConfigurationProcessor(
+              project,
+              utils.flatPath(
+                  '$file/$flavorName${target.name.capitalize}.xcconfig'),
+              flavorName,
+              target.name.capitalize,
+              buildConfigurations,
               config: config,
               logger: logger,
             ),

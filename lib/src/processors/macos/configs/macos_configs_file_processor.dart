@@ -30,8 +30,6 @@ import 'package:flutter_flavorizr/src/processors/macos/configs/macos_configs_mod
 
 class MacOSConfigsFileProcessor extends QueueProcessor {
   MacOSConfigsFileProcessor(
-    String process,
-    String script,
     String project,
     String path,
     String flavorName,
@@ -41,8 +39,6 @@ class MacOSConfigsFileProcessor extends QueueProcessor {
   }) : super(
           Target.values.map(
             (target) => MacOSConfigsModeFileProcessor(
-              process,
-              script,
               project,
               path,
               flavorName,

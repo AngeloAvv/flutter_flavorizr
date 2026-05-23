@@ -27,13 +27,11 @@ import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dar
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/replace_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/runtime_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart' as ios_utils;
 
 class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
   IOSTargetLaunchScreenFileProcessor(
-    String process,
-    String script,
     String project,
     String source,
     String destination,
@@ -59,17 +57,13 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
               config: config,
               logger: logger,
             ),
-            ShellProcessor(
-              process,
-              [
-                script,
-                project,
-                ios_utils.flatPath(
-                    '$destination/${flavorName}LaunchScreen.storyboard'),
-              ],
+            DarwinAddFileProcessor(
+              project,
+              ios_utils.flatPath(
+                  '$destination/${flavorName}LaunchScreen.storyboard'),
               config: config,
               logger: logger,
-            )
+            ),
           ],
         );
 

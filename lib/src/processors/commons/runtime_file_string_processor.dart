@@ -35,7 +35,7 @@ class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
   });
 
   @override
-  void execute() {
+  Future<void> execute() async {
     if (!file.existsSync()) {
       logger.detail(
         '[$RuntimeFileStringProcessor] File `$path` not found, ',
@@ -56,7 +56,7 @@ class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
       style: logger.theme.success,
     );
 
-    super.execute();
+    await super.execute();
   }
 
   @override

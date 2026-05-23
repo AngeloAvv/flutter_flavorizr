@@ -132,29 +132,9 @@ class K {
   static String tempiOSLaunchScreenPath =
       '$tempiOSPath/LaunchScreen.storyboard';
 
-  static String tempScriptsPath = '$tempPath/scripts';
-
-  static String tempDarwinScriptsPath = '$tempScriptsPath/darwin';
-
   static String tempMacOSPath = '$tempPath/macos';
 
-  static String tempMacOSScriptsPath = '$tempScriptsPath/macos';
-
   static String tempMacOSAssetsPath = '$tempMacOSPath/Assets.xcassets';
-
-  static String tempDarwinCreateSchemeScriptPath =
-      '$tempDarwinScriptsPath/create_scheme.rb';
-
-  static String tempiOSScriptsPath = '$tempScriptsPath/ios';
-
-  static String tempDarwinAddFileScriptPath =
-      '$tempDarwinScriptsPath/add_file.rb';
-
-  static String tempDarwinAddBuildConfigurationScriptPath =
-      '$tempDarwinScriptsPath/add_build_configuration.rb';
-
-  static String tempDarwinAddFirebaseBuildPhaseScriptPath =
-      '$tempDarwinScriptsPath/add_firebase_build_phase.rb';
 
   static String ideaPath = '.idea';
 

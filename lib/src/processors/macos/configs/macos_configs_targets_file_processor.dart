@@ -24,27 +24,21 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/configs/macos_configs_file_processor.dart';
 
 class MacOSConfigsTargetsFileProcessor extends QueueProcessor {
   MacOSConfigsTargetsFileProcessor(
-    String process,
-    String script,
     String project,
     String path, {
     required super.config,
     required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config, logger: logger),
             ...config.macosFlavors
                 .map(
                   (flavorName, flavor) => MapEntry(
                     flavorName,
                     MacOSConfigsFileProcessor(
-                      process,
-                      script,
                       project,
                       path,
                       flavorName,

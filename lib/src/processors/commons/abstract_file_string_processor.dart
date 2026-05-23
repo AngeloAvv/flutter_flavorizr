@@ -37,8 +37,8 @@ abstract class AbstractFileStringProcessor extends AbstractFileProcessor {
   });
 
   @override
-  void execute() {
-    String result = processor.execute();
+  Future<void> execute() async {
+    final result = await processor.execute();
     file.writeAsStringSync(result);
   }
 

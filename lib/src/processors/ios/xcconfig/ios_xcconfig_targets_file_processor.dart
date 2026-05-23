@@ -24,27 +24,21 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/xcconfig/ios_xcconfig_file_processor.dart';
 
 class IOSXCConfigTargetsFileProcessor extends QueueProcessor {
   IOSXCConfigTargetsFileProcessor(
-    String process,
-    String script,
     String project,
     String path, {
     required super.config,
     required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config, logger: logger),
             ...config.iosFlavors
                 .map(
                   (flavorName, flavor) => MapEntry(
                     flavorName,
                     IOSXCConfigFileProcessor(
-                      process,
-                      script,
                       project,
                       path,
                       flavorName,

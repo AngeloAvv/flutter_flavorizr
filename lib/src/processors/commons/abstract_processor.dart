@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:async';
+
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:mason_logger/mason_logger.dart';
 
@@ -32,5 +34,5 @@ abstract class AbstractProcessor<T> {
 
   const AbstractProcessor(this.config, {required this.logger});
 
-  T execute();
+  FutureOr<T> execute();
 }

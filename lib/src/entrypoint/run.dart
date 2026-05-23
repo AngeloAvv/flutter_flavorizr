@@ -35,7 +35,7 @@ import 'package:mason_logger/mason_logger.dart';
 ///
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
-void execute(List<String> args) {
+Future<void> execute(List<String> args) async {
   final argParser = ArgParser()
     ..addFlag('force', abbr: 'f')
     ..addMultiOption(
@@ -75,5 +75,5 @@ void execute(List<String> args) {
     force: force,
     logger: logger,
   );
-  processor.execute();
+  await processor.execute();
 }
