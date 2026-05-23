@@ -34,7 +34,7 @@ class NewFileStringProcessor extends AbstractFileStringProcessor {
   });
 
   @override
-  void execute() {
+  Future<void> execute() async {
     logger.detail(
       '[$NewFileStringProcessor] Creating file `$path`',
     );
@@ -46,6 +46,6 @@ class NewFileStringProcessor extends AbstractFileStringProcessor {
       style: logger.theme.success,
     );
 
-    super.execute();
+    await super.execute();
   }
 }

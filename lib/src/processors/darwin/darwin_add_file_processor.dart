@@ -23,34 +23,55 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
+import 'package:path/path.dart' as p;
 
-class QueueProcessor extends AbstractProcessor {
-  Iterable<AbstractProcessor> processors;
+class DarwinAddFileProcessor extends AbstractProcessor<void> {
+  final String projectPath;
+  final String filePath;
+  final String? groupName;
 
-  QueueProcessor(
-    this.processors, {
+  const DarwinAddFileProcessor(
+    this.projectPath,
+    this.filePath, {
+    this.groupName,
     required Flavorizr config,
-    required super.logger,
-  }) : super(config);
+    required Logger logger,
+  }) : super(config, logger: logger);
 
   @override
   Future<void> execute() async {
-    logger.detail(
-      '[$QueueProcessor] Executing the following processors: ${processors.join(', ')}',
-    );
+    final project = await XcodeProject.open(projectPath);
+    final group = groupName == null
+        ? project.mainGroup
+        : project.groups.firstWhere((g) => g.name == groupName);
 
-    for (AbstractProcessor processor in processors) {
-      await processor.execute();
+    final alreadyAdded = group.children
+        .whereType<PBXFileReference>()
+        .any((f) => f.path == filePath);
+
+    if (!alreadyAdded) {
+      final fileRef = project
+          .newObject<PBXFileReference>((g, u) => PBXFileReference(g, u));
+      fileRef.path = filePath;
+      fileRef.sourceTree = '<group>';
+      fileRef.lastKnownFileType =
+          FileTypes.byExtension[p.extension(filePath).toLowerCase()];
+      group.children.add(fileRef);
+
+      final target = project.targets.first as PBXNativeTarget;
+      target.buildPhases
+          .whereType<PBXResourcesBuildPhase>()
+          .first
+          .addFileReference(fileRef);
+
+      await project.save();
     }
-
-    logger.detail(
-      '[$QueueProcessor] All processors (${processors.join(', ')}) executed successfully',
-      style: logger.theme.success,
-    );
   }
 
   @override
-  String toString() => 'QueueProcessor: {${processors.join(', ')}}';
+  String toString() => 'DarwinAddFileProcessor';
 }

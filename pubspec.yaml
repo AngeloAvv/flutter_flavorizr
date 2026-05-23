@@ -1,12 +1,12 @@
 name: flutter_flavorizr
 description: A flutter utility to easily create flavors in your flutter application
-version: 2.4.2
+version: 2.5.0
 repository: https://github.com/AngeloAvv/flutter_flavorizr
 issue_tracker: https://github.com/AngeloAvv/flutter_flavorizr/issues
 homepage: https://www.angelocassano.it
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.9.0 <4.0.0"
 
 funding:
   - https://github.com/sponsors/AngeloAvv
@@ -23,10 +23,12 @@ dependencies:
   args: ^2.4.2
   checked_yaml: ^2.0.3
   collection: ^1.18.0
+  dart_xcodeproj: ^0.1.0
   image: ^4.1.7
   io: ^1.0.4
   json_annotation: ^4.8.1
   mason_logger: ^0.3.3
+  path: ^1.9.0
   sprintf: ^7.0.0
   xml: ^6.5.0
   yaml: ^3.1.2

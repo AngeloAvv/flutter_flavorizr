@@ -23,34 +23,51 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
+import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
 
-class QueueProcessor extends AbstractProcessor {
-  Iterable<AbstractProcessor> processors;
+class DarwinAddFirebaseBuildPhaseProcessor extends AbstractProcessor<void> {
+  final String projectPath;
+  final String scriptFilePath;
 
-  QueueProcessor(
-    this.processors, {
+  const DarwinAddFirebaseBuildPhaseProcessor(
+    this.projectPath,
+    this.scriptFilePath, {
     required Flavorizr config,
-    required super.logger,
-  }) : super(config);
+    required Logger logger,
+  }) : super(config, logger: logger);
 
   @override
   Future<void> execute() async {
-    logger.detail(
-      '[$QueueProcessor] Executing the following processors: ${processors.join(', ')}',
-    );
+    final content = File(scriptFilePath).readAsStringSync();
+    final project = await XcodeProject.open(projectPath);
+    final target = project.targets.first as PBXNativeTarget;
 
-    for (AbstractProcessor processor in processors) {
-      await processor.execute();
+    final existing = target.buildPhases
+        .whereType<PBXShellScriptBuildPhase>()
+        .where((phase) => phase.name == 'Firebase Setup')
+        .toList();
+    for (final phase in existing) {
+      target.buildPhases.remove(phase);
     }
 
-    logger.detail(
-      '[$QueueProcessor] All processors (${processors.join(', ')}) executed successfully',
-      style: logger.theme.success,
-    );
+    final phase = project.newObject<PBXShellScriptBuildPhase>(
+        (g, u) => PBXShellScriptBuildPhase(g, u));
+    phase.name = 'Firebase Setup';
+    phase.shellPath = '/bin/sh';
+    phase.shellScript = content;
+    phase.runOnlyForDeploymentPostprocessing = '0';
+    phase.outputPaths = [r'$(SRCROOT)/Runner/GoogleService-Info.plist'];
+    target.buildPhases.add(phase);
+    target.buildPhases.move(phase, 0);
+
+    await project.save();
   }
 
   @override
-  String toString() => 'QueueProcessor: {${processors.join(', ')}}';
+  String toString() => 'DarwinAddFirebaseBuildPhaseProcessor';
 }

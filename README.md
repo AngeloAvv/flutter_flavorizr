@@ -19,23 +19,13 @@ Let's start by setting up our environment in order to run Flutter Flavorizr
 Side note: this tool works better on a new and clean Flutter project.
 Since some processors reference some existing files and a specific base structure, it could be possible that running Flutter Flavorizr over an existing project could throw errors.
 
-Before running Flutter Flavorizr, you must install the following software:
-
-* [Ruby](https://www.ruby-lang.org/en/documentation/installation/)
-* [Gem](https://rubygems.org/pages/download)
-* [Xcodeproj](https://github.com/CocoaPods/Xcodeproj) (through RubyGems)
-
-These prerequisites are needed to manipulate the iOS and macOS projects and schemes. If you are interested in flavorizing Android only, you can skip this step.
-
-If your app uses a Flutter plugin and you plan to create flavors for iOS and macOS, you need to make sure there's an existing Podfile file under the ios/macos folder. This might lead to problems like ["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md).
-
 ### Installation
 
 This package is intended to support development of Flutter projects. In general, put it under [dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies), in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
 
 ```yaml
 dev_dependencies:
-  flutter_flavorizr: ^2.4.2
+  flutter_flavorizr: ^2.5.0
 ```
 
 You can install packages from the command line:
@@ -46,7 +36,7 @@ pub get
 
 ## Create your flavors
 
-Once all of the prerequisites have been installed and you have added flutter_flavorizr as a dev dependency, you have to edit your [pubspec.yaml](https://dart.dev/tools/pub/pubspec) and define the flavors.
+Once you have added flutter_flavorizr as a dev dependency, you have to edit your [pubspec.yaml](https://dart.dev/tools/pub/pubspec) and define the flavors.
 
 ### Example
 

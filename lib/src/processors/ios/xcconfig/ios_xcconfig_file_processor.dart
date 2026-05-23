@@ -30,8 +30,6 @@ import 'package:flutter_flavorizr/src/processors/ios/xcconfig/ios_xcconfig_mode_
 
 class IOSXCConfigFileProcessor extends QueueProcessor {
   IOSXCConfigFileProcessor(
-    String process,
-    String script,
     String project,
     String path,
     String flavorName,
@@ -41,8 +39,6 @@ class IOSXCConfigFileProcessor extends QueueProcessor {
   }) : super(
           Target.values.map(
             (target) => IOSXCConfigModeFileProcessor(
-              process,
-              script,
               project,
               path,
               flavorName,

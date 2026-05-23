@@ -126,7 +126,7 @@ class Processor extends AbstractProcessor<void> {
   }) : _availableProcessors = _initAvailableProcessors(config, logger: logger);
 
   @override
-  void execute() async {
+  Future<void> execute() async {
     final instructions = List.from(config.instructions ?? defaultInstructionSet)
       ..removeWhere((instruction) =>
           !config.androidFlavorsAvailable && instruction.startsWith('android'))
@@ -305,24 +305,18 @@ class Processor extends AbstractProcessor<void> {
             logger: logger,
           ),
       'ios:xcconfig': () => IOSXCConfigTargetsFileProcessor(
-            'ruby',
-            K.tempDarwinAddFileScriptPath,
             K.iOSRunnerProjectPath,
             K.iOSFlutterPath,
             config: flavorizr,
             logger: logger,
           ),
       'ios:buildTargets': () => IOSBuildConfigurationsTargetsProcessor(
-            'ruby',
-            K.tempDarwinAddBuildConfigurationScriptPath,
             K.iOSRunnerProjectPath,
             K.iOSFlutterPath,
             config: flavorizr,
             logger: logger,
           ),
       'ios:schema': () => DarwinSchemasProcessor(
-            'ruby',
-            K.tempDarwinCreateSchemeScriptPath,
             K.iOSRunnerProjectPath,
             config: flavorizr,
             logger: logger,
@@ -347,8 +341,6 @@ class Processor extends AbstractProcessor<void> {
             logger: logger,
           ),
       'ios:launchScreen': () => IOSTargetsLaunchScreenFileProcessor(
-            'ruby',
-            K.tempDarwinAddFileScriptPath,
             K.iOSRunnerProjectPath,
             K.tempiOSLaunchScreenPath,
             K.iOSRunnerPath,
@@ -373,24 +365,18 @@ class Processor extends AbstractProcessor<void> {
             logger: logger,
           ),
       'macos:configs': () => MacOSConfigsTargetsFileProcessor(
-            'ruby',
-            K.tempDarwinAddFileScriptPath,
             K.macOSRunnerProjectPath,
             K.macOSConfigsPath,
             config: flavorizr,
             logger: logger,
           ),
       'macos:buildTargets': () => MacOSBuildConfigurationsTargetsProcessor(
-            'ruby',
-            K.tempDarwinAddBuildConfigurationScriptPath,
             K.macOSRunnerProjectPath,
             K.macOSConfigsPath,
             config: flavorizr,
             logger: logger,
           ),
       'macos:schema': () => DarwinSchemasProcessor(
-            'ruby',
-            K.tempDarwinCreateSchemeScriptPath,
             K.macOSRunnerProjectPath,
             config: flavorizr,
             logger: logger,
@@ -417,14 +403,11 @@ class Processor extends AbstractProcessor<void> {
 
       // Google
       'google:firebase': () => FirebaseProcessor(
-            process: 'ruby',
             androidDestination: K.androidSrcPath,
             iosDestination: K.iOSRunnerPath,
             macosDestination: K.macOSRunnerPath,
-            addFileScript: K.tempDarwinAddFileScriptPath,
             iosRunnerProject: K.iOSRunnerProjectPath,
             macosRunnerProject: K.macOSRunnerProjectPath,
-            firebaseScript: K.tempDarwinAddFirebaseBuildPhaseScriptPath,
             iosGeneratedFirebaseScriptPath: K.iOSFirebaseScriptPath,
             macosGeneratedFirebaseScriptPath: K.macOSFirebaseScriptPath,
             config: flavorizr,

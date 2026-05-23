@@ -24,13 +24,10 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/xcodeproj_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_target_launchscreen_file_processor.dart';
 
 class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
   IOSTargetsLaunchScreenFileProcessor(
-    String process,
-    String script,
     String project,
     String source,
     String destination, {
@@ -38,11 +35,8 @@ class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
     required super.logger,
   }) : super(
           [
-            XcodeprojProcessor(config: config, logger: logger),
             ...config.iosFlavors.keys.map(
               (flavorName) => IOSTargetLaunchScreenFileProcessor(
-                process,
-                script,
                 project,
                 source,
                 destination,

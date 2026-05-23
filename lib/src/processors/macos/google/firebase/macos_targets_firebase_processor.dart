@@ -29,18 +29,16 @@ import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/empty_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_firebase_build_phase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/google/firebase/darwin_firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/google/firebase/darwin_firebase_script_processor.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart' as utils;
 
 class MacOSTargetsFirebaseProcessor extends QueueProcessor {
   MacOSTargetsFirebaseProcessor({
-    required String process,
     required String destination,
-    required String addFileScript,
     required String runnerProject,
-    required String firebaseScript,
     required String generatedFirebaseScriptPath,
     required super.config,
     required super.logger,
@@ -66,13 +64,9 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
               config: config,
               logger: logger,
             ),
-            ShellProcessor(
-              process,
-              [
-                addFileScript,
-                runnerProject,
-                utils.flatPath('$destination/GoogleService-Info.plist'),
-              ],
+            DarwinAddFileProcessor(
+              runnerProject,
+              utils.flatPath('$destination/GoogleService-Info.plist'),
               config: config,
               logger: logger,
             ),
@@ -86,13 +80,9 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
               config: config,
               logger: logger,
             ),
-            ShellProcessor(
-              process,
-              [
-                firebaseScript,
-                runnerProject,
-                generatedFirebaseScriptPath,
-              ],
+            DarwinAddFirebaseBuildPhaseProcessor(
+              runnerProject,
+              generatedFirebaseScriptPath,
               config: config,
               logger: logger,
             ),

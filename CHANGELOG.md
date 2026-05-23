@@ -1,5 +1,8 @@
 ## NEXT
 
+## 2.5.0
+* Replaced Ruby xcodeproj gem with dart_xcodeproj — no Ruby/gem installation required
+
 ## 2.4.2
 * Fixed incorrect LD_RUNPATH_SEARCH_PATHS for macOS build settings
 * Fixed missing contents.json when generating darwin icons
