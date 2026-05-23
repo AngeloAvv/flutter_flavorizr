@@ -31,5 +31,6 @@ android.apply {
         }
     }
 
+    buildFeatures.resValues = true
     buildFeatures.buildConfig = true
 }

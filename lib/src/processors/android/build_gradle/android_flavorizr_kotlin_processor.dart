@@ -129,8 +129,10 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
     final hasBuildConfigFields = config.app?.android?.buildConfigFields.isNotEmpty == true ||
         config.androidFlavors.values.any((flavor) => flavor.android?.buildConfigFields.isNotEmpty == true);
 
+    buffer.writeln();
+    buffer.writeln('    buildFeatures.resValues = true');
+
     if (hasBuildConfigFields) {
-      buffer.writeln();
       buffer.writeln('    buildFeatures.buildConfig = true');
     }
   }
