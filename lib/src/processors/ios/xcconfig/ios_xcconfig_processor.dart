@@ -67,6 +67,16 @@ class IOSXCConfigProcessor extends StringProcessor {
     buffer.writeln(
         '#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.${_target.darwinTarget}.xcconfig"');
     buffer.writeln('#include "Generated.xcconfig"');
+
+    final globalIncludes = config.app?.ios?.includes ?? [];
+    final flavorIncludes = _flavor.ios?.includes ?? [];
+
+    for (final include in [...globalIncludes, ...flavorIncludes]) {
+      if (include.target == null || include.target == _target) {
+        final directive = include.optional ? '#include?' : '#include';
+        buffer.writeln('$directive "${include.value}"');
+      }
+    }
   }
 
   void _appendBody(StringBuffer buffer) {

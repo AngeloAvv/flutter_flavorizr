@@ -12,7 +12,5 @@ Firebase _$FirebaseFromJson(Map json) {
     requiredKeys: const ['config'],
     disallowNullValues: const ['config'],
   );
-  return Firebase(
-    config: json['config'] as String,
-  );
+  return Firebase(config: json['config'] as String);
 }

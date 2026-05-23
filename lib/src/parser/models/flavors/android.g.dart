@@ -18,29 +18,37 @@ Android _$AndroidFromJson(Map json) {
       'resValues',
       'buildConfigFields',
       'agconnect',
-      'adaptiveIcon'
+      'adaptiveIcon',
     ],
   );
   return Android(
     applicationId: json['applicationId'] as String,
-    customConfig: (json['customConfig'] as Map?)?.map(
+    customConfig:
+        (json['customConfig'] as Map?)?.map(
           (k, e) => MapEntry(k as String, e),
         ) ??
         {},
-    resValues: (json['resValues'] as Map?)?.map(
-          (k, e) => MapEntry(k as String,
-              ResValue.fromJson(Map<String, dynamic>.from(e as Map))),
+    resValues:
+        (json['resValues'] as Map?)?.map(
+          (k, e) => MapEntry(
+            k as String,
+            ResValue.fromJson(Map<String, dynamic>.from(e as Map)),
+          ),
         ) ??
         {},
-    buildConfigFields: (json['buildConfigFields'] as Map?)?.map(
-          (k, e) => MapEntry(k as String,
-              BuildConfigField.fromJson(Map<String, dynamic>.from(e as Map))),
+    buildConfigFields:
+        (json['buildConfigFields'] as Map?)?.map(
+          (k, e) => MapEntry(
+            k as String,
+            BuildConfigField.fromJson(Map<String, dynamic>.from(e as Map)),
+          ),
         ) ??
         {},
     agconnect: json['agconnect'] == null
         ? null
         : AGConnect.fromJson(
-            Map<String, dynamic>.from(json['agconnect'] as Map)),
+            Map<String, dynamic>.from(json['agconnect'] as Map),
+          ),
     generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
     firebase: json['firebase'] == null
         ? null
@@ -49,6 +57,7 @@ Android _$AndroidFromJson(Map json) {
     adaptiveIcon: json['adaptiveIcon'] == null
         ? null
         : AdaptiveIcon.fromJson(
-            Map<String, dynamic>.from(json['adaptiveIcon'] as Map)),
+            Map<String, dynamic>.from(json['adaptiveIcon'] as Map),
+          ),
   );
 }

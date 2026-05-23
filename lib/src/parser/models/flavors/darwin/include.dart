@@ -23,24 +23,28 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/include.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'ios.g.dart';
+part 'include.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class IOS with BuildSettingsMixin {
-  @JsonKey(disallowNullValue: true, defaultValue: [])
-  final List<Include> includes;
+class Include {
+  @JsonKey(disallowNullValue: true)
+  final Target? target;
 
-  IOS({
-    Map<String, dynamic> buildSettings = const {},
-    this.includes = const [],
-  }) {
-    this.buildSettings = BuildSettingsMixin.iosDefaultBuildSettings;
-    this.buildSettings.addAll(buildSettings);
-  }
+  @JsonKey(required: true, disallowNullValue: true)
+  final String value;
 
-  factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
+  @JsonKey(disallowNullValue: true, defaultValue: false)
+  final bool optional;
+
+  const Include({
+    required this.value,
+    this.target,
+    this.optional = false,
+  });
+
+  factory Include.fromJson(Map<String, dynamic> json) =>
+      _$IncludeFromJson(json);
 }

@@ -12,8 +12,5 @@ App _$AppFromJson(Map json) {
     requiredKeys: const ['name'],
     disallowNullValues: const ['name', 'icon'],
   );
-  return App(
-    name: json['name'] as String,
-    icon: json['icon'] as String?,
-  );
+  return App(name: json['name'] as String, icon: json['icon'] as String?);
 }

@@ -7,11 +7,6 @@ part of 'pubspec.dart';
 // **************************************************************************
 
 Pubspec _$PubspecFromJson(Map json) {
-  $checkKeys(
-    json,
-    requiredKeys: const ['flavorizr'],
-  );
-  return Pubspec(
-    flavorizr: Flavorizr.fromJson(json['flavorizr'] as Map),
-  );
+  $checkKeys(json, requiredKeys: const ['flavorizr']);
+  return Pubspec(flavorizr: Flavorizr.fromJson(json['flavorizr'] as Map));
 }

@@ -12,7 +12,5 @@ AGConnect _$AGConnectFromJson(Map json) {
     requiredKeys: const ['config'],
     disallowNullValues: const ['config'],
   );
-  return AGConnect(
-    config: json['config'] as String,
-  );
+  return AGConnect(config: json['config'] as String);
 }

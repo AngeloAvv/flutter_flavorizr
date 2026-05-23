@@ -156,12 +156,14 @@ flavorizr:
 | key           | type       | default | required | description                                                                                    |
 |:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
 | buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+| includes      | Array      | []      | false    | A list of xcconfig files to include in every iOS flavor xcconfig                               |
 
 #### macos (under app)
 
 | key           | type       | default | required | description                                                                                    |
 |:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
 | buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
+| includes      | Array      | []      | false    | A list of xcconfig files to include in every macOS flavor xcconfig                             |
 
 #### app (under *flavorname*)
 
@@ -191,6 +193,7 @@ flavorizr:
 | buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
 | variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
+| includes            | Array      | []      | false    | A list of xcconfig files to include in the generated xcconfig for this flavor                                 |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 | icon                | String     |         | false    | The icon path for this iOS flavor                                                                             |
 
@@ -202,6 +205,7 @@ flavorizr:
 | buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
 | variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
+| includes            | Array      | []      | false    | A list of xcconfig files to include in the generated xcconfig for this flavor                                 |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 | icon                | String     |         | false    | The icon path for this macOS flavor                                                                           | 
 
@@ -299,6 +303,44 @@ flavors:
           target: "Debug"
           value: "variable2"        
 ```
+
+#### include (for iOS and macOS)
+
+| key      | type   | default | required | description                                                                                                                                                                                                                                          |
+|:---------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| value    | String |         | true     | The path of the xcconfig file to include                                                                                                                                                                                                             |
+| target   | String |         | false    | The type of the [target](https://medium.com/geekculture/what-are-debug-and-release-modes-in-xcode-how-to-check-app-is-running-in-debug-mode-8dadad6a3428) (debug, release, profile). Do not specify a target if you want to apply it to all of them. |
+| optional | bool   | false   | false    | If `true`, uses `#include?` — the build will not fail if the file is missing. Defaults to `false` (`#include`).                                                                                                                                      |
+
+Global includes (under `app.ios` or `app.macos`) are merged with flavor-specific includes. Global entries come first; flavor entries are appended and take precedence for any duplicate keys.
+
+```yaml
+flavorizr:
+  app:
+    ios:
+      includes:
+        - value: "Shared/base.xcconfig"          # applied to all targets
+        - value: "Shared/debug.xcconfig"
+          target: debug                          # applied to debug only
+
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+
+      ios:
+        bundleId: "com.example.apple"
+        includes:
+          - value: "Apple/flavor.xcconfig"
+          - value: "Apple/optional.xcconfig"
+            optional: true                       # → #include? "Apple/optional.xcconfig"
+          - value: "Apple/release.xcconfig"
+            target: release
+```
+
 #### customConfig (for Android only)
 
 You can define any custom property for android

@@ -2,6 +2,8 @@
 
 ## 2.5.0
 * Replaced Ruby xcodeproj gem with dart_xcodeproj — no Ruby/gem installation required
+* iOS/macOS app icon asset catalogs now use a `-<flavor>` suffix in their naming
+* Added `includes` key to iOS and macOS xcconfig configuration (global under `app.ios`/`app.macos` and per-flavor) — supports optional per-target scoping and `#include?` via the `optional` flag
 
 ## 2.4.2
 * Fixed incorrect LD_RUNPATH_SEARCH_PATHS for macOS build settings

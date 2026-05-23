@@ -7,10 +7,7 @@ part of 'app.dart';
 // **************************************************************************
 
 App _$AppFromJson(Map json) {
-  $checkKeys(
-    json,
-    disallowNullValues: const ['android', 'ios'],
-  );
+  $checkKeys(json, disallowNullValues: const ['android', 'ios']);
   return App(
     android: json['android'] == null
         ? null

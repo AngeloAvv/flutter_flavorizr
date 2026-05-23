@@ -12,8 +12,5 @@ ResValue _$ResValueFromJson(Map json) {
     requiredKeys: const ['type', 'value'],
     disallowNullValues: const ['type', 'value'],
   );
-  return ResValue(
-    type: json['type'] as String,
-    value: json['value'] as String,
-  );
+  return ResValue(type: json['type'] as String, value: json['value'] as String);
 }
