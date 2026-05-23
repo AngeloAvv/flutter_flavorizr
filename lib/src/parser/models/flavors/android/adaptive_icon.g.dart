@@ -7,7 +7,7 @@ part of 'adaptive_icon.dart';
 // **************************************************************************
 
 AdaptiveIcon _$AdaptiveIconFromJson(Map json) => AdaptiveIcon(
-      foreground: json['foreground'] as String,
-      background: json['background'] as String,
-      monochrome: json['monochrome'] as String?,
-    );
+  foreground: json['foreground'] as String,
+  background: json['background'] as String,
+  monochrome: json['monochrome'] as String?,
+);

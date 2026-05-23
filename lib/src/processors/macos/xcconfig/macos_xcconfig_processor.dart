@@ -24,12 +24,17 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
 class MacOSXCConfigProcessor extends StringProcessor {
+  final String _flavorName;
+  final Flavor _flavor;
   final Target _target;
 
   MacOSXCConfigProcessor(
+    this._flavorName,
+    this._flavor,
     this._target, {
     super.input,
     required super.config,
@@ -40,12 +45,13 @@ class MacOSXCConfigProcessor extends StringProcessor {
   String execute() {
     final buffer = StringBuffer();
 
-    logger.detail('[$MacOSXCConfigProcessor] Generating xcconfig file');
+    logger.detail(
+        '[$MacOSXCConfigProcessor] Generating xcconfig file for $_flavorName.${_target.name}');
 
     _appendIncludes(buffer);
 
     logger.detail(
-      '[$MacOSXCConfigProcessor] Generated xcconfig file',
+      '[$MacOSXCConfigProcessor] Generated xcconfig file for $_flavorName.${_target.name}',
       style: logger.theme.success,
     );
 
@@ -56,6 +62,16 @@ class MacOSXCConfigProcessor extends StringProcessor {
     buffer.writeln(
         '#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.${_target.darwinTarget}.xcconfig"');
     buffer.writeln('#include "ephemeral/Flutter-Generated.xcconfig"');
+
+    final globalIncludes = config.app?.macos?.includes ?? [];
+    final flavorIncludes = _flavor.macos?.includes ?? [];
+
+    for (final include in [...globalIncludes, ...flavorIncludes]) {
+      if (include.target == null || include.target == _target) {
+        final directive = include.optional ? '#include?' : '#include';
+        buffer.writeln('$directive "${include.value}"');
+      }
+    }
   }
 
   @override

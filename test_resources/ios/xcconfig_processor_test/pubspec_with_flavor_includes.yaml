@@ -1,0 +1,42 @@
+name: flutterflavorizr_example
+description: Demonstrates how to use the flutterflavorizr plugin.
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_flavorizr:
+    path: ../
+
+
+flavorizr:
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+
+      ios:
+        bundleId: "com.example.apple"
+        includes:
+          - value: "Apple/flavor.xcconfig"
+          - value: "Apple/debug-flavor.xcconfig"
+            target: debug
+
+
+flutter:
+  uses-material-design: true

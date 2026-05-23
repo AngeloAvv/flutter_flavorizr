@@ -177,4 +177,109 @@ void main() {
 
     expect(actual, matcher);
   });
+
+  test('Test IOSXCConfigProcessor with global includes', () {
+    Parser parser = const Parser(
+      pubspecPath:
+          'test_resources/ios/xcconfig_processor_test/pubspec_with_global_includes',
+      flavorizrPath: 'test_resources/non_existent',
+    );
+
+    try {
+      flavorizr = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_with_global_includes.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = flavorizr.flavors.keys.first;
+    final flavor = flavorizr.flavors[flavorName];
+
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+      flavorName,
+      flavor!,
+      Target.debug,
+      config: flavorizr,
+      logger: logger,
+    );
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
+
+  test('Test IOSXCConfigProcessor with flavor includes', () {
+    Parser parser = const Parser(
+      pubspecPath:
+          'test_resources/ios/xcconfig_processor_test/pubspec_with_flavor_includes',
+      flavorizrPath: 'test_resources/non_existent',
+    );
+
+    try {
+      flavorizr = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_with_flavor_includes.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = flavorizr.flavors.keys.first;
+    final flavor = flavorizr.flavors[flavorName];
+
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+      flavorName,
+      flavor!,
+      Target.debug,
+      config: flavorizr,
+      logger: logger,
+    );
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
+
+  test('Test IOSXCConfigProcessor with includes and target', () {
+    Parser parser = const Parser(
+      pubspecPath:
+          'test_resources/ios/xcconfig_processor_test/pubspec_with_includes_and_target',
+      flavorizrPath: 'test_resources/non_existent',
+    );
+
+    try {
+      flavorizr = parser.parse();
+    } catch (e) {
+      fail(e.toString());
+    }
+
+    String matcher = File(
+            'test_resources/ios/xcconfig_processor_test/matcher_with_includes_and_target.xcconfig')
+        .readAsStringSync();
+
+    final flavorName = flavorizr.flavors.keys.first;
+    final flavor = flavorizr.flavors[flavorName];
+
+    IOSXCConfigProcessor processor = IOSXCConfigProcessor(
+      flavorName,
+      flavor!,
+      Target.release,
+      config: flavorizr,
+      logger: logger,
+    );
+    String actual = processor.execute();
+
+    actual = TestUtils.stripEndOfLines(actual);
+    matcher = TestUtils.stripEndOfLines(matcher);
+
+    expect(actual, matcher);
+  });
 }

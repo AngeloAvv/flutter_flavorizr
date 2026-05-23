@@ -24,13 +24,20 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/include.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'macos.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
 class MacOS with BuildSettingsMixin {
-  MacOS({Map<String, dynamic> buildSettings = const {}}) {
+  @JsonKey(disallowNullValue: true, defaultValue: [])
+  final List<Include> includes;
+
+  MacOS({
+    Map<String, dynamic> buildSettings = const {},
+    this.includes = const [],
+  }) {
     this.buildSettings = BuildSettingsMixin.macosDefaultBuildSettings;
     this.buildSettings.addAll(buildSettings);
   }

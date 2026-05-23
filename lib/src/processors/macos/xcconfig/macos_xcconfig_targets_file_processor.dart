@@ -34,11 +34,12 @@ class MacOSXCConfigTargetsFileProcessor extends QueueProcessor {
   }) : super(
           config.macosFlavors
               .map(
-                (flavorName, _) => MapEntry(
+                (flavorName, flavor) => MapEntry(
                   flavorName,
                   MacOSXCConfigFileProcessor(
                     path,
                     flavorName,
+                    flavor,
                     config: config,
                     logger: logger,
                   ),
