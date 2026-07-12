@@ -152,6 +152,7 @@ flavorizr:
 | macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
 | macos:plist             | macOS         | Updates the info.plist file                                             |
 | linux:cmake             | Linux         | Sets the application ID for each flavor in CMakeLists.txt               |
+| linux:runnerCmake       | Linux         | Forwards FLUTTER_APP_FLAVOR into runner/CMakeLists.txt so it's available to native code |
 | linux:myApplication     | Linux         | Sets the window title for each flavor in my_application.cc              |
 
 #### android (under app)
@@ -515,6 +516,7 @@ By default, when you do not specify a custom set of processors by appending the 
 * macos:icons
 * macos:plist
 * linux:cmake
+* linux:runnerCmake
 * linux:myApplication
 * google:firebase
 * huawei:agconnect

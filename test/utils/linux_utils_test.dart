@@ -31,22 +31,20 @@ void main() {
     const begin = '# ----- BEGIN FOO -----';
     const end = '# ----- END FOO -----';
 
-    test(
-      'removes a previously injected block and its surrounding blank lines',
-      () {
-        const content =
-            'before\n'
-            '\n'
-            '$begin\n'
-            'generated line 1\n'
-            'generated line 2\n'
-            '$end\n'
-            '\n'
-            'after';
+    test('removes a previously injected block, collapsing the surrounding '
+        'blank lines into a single one', () {
+      const content =
+          'before\n'
+          '\n'
+          '$begin\n'
+          'generated line 1\n'
+          'generated line 2\n'
+          '$end\n'
+          '\n'
+          'after';
 
-        expect(cleanupMarkupBlock(content, begin, end), 'beforeafter');
-      },
-    );
+      expect(cleanupMarkupBlock(content, begin, end), 'before\n\nafter');
+    });
 
     test('is a no-op when the markup block is absent', () {
       const content = 'before\nafter';
@@ -54,7 +52,8 @@ void main() {
       expect(cleanupMarkupBlock(content, begin, end), content);
     });
 
-    test('removes an empty block with no content between the markers', () {
+    test('removes an empty block with no content between the markers, without '
+        'merging the surrounding lines', () {
       const content =
           'before\n'
           '\n'
@@ -63,7 +62,17 @@ void main() {
           '\n'
           'after';
 
-      expect(cleanupMarkupBlock(content, begin, end), 'beforeafter');
+      expect(cleanupMarkupBlock(content, begin, end), 'before\n\nafter');
+    });
+
+    test('does not eat the line that directly precedes the block', () {
+      const content =
+          'before\n'
+          '$begin\n'
+          '$end\n'
+          'after';
+
+      expect(cleanupMarkupBlock(content, begin, end), 'before\nafter');
     });
 
     test('rerunning cleanup on its own output fully removes the markers', () {
@@ -78,7 +87,7 @@ void main() {
       final firstPass = cleanupMarkupBlock(content, begin, end);
       final secondPass = cleanupMarkupBlock(firstPass, begin, end);
 
-      expect(firstPass, 'beforeafter');
+      expect(firstPass, 'before\n\nafter');
       expect(secondPass, firstPass);
       expect(secondPass.contains(begin), isFalse);
       expect(secondPass.contains(end), isFalse);
@@ -94,7 +103,7 @@ void main() {
           '\r\n'
           'after';
 
-      expect(cleanupMarkupBlock(content, begin, end), 'beforeafter');
+      expect(cleanupMarkupBlock(content, begin, end), 'before\n\nafter');
     });
 
     test('removes multiple occurrences of the block', () {
@@ -109,7 +118,7 @@ void main() {
           '$end\n'
           'c';
 
-      expect(cleanupMarkupBlock(content, begin, end), 'abc');
+      expect(cleanupMarkupBlock(content, begin, end), 'a\nb\nc');
     });
   });
 

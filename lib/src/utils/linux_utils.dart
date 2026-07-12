@@ -23,9 +23,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/// Strips a previously injected `beginMarkup`/`endMarkup` block (plus any
-/// blank lines surrounding it), so re-running a processor doesn't duplicate
-/// it. Tolerates both LF and CRLF line endings.
+/// Strips a previously injected `beginMarkup`/`endMarkup` block, so
+/// re-running a processor doesn't duplicate it. Only removes the block's own
+/// lines (never the newline that terminates whatever precedes it), then
+/// collapses any run of blank lines left behind by the removal down to a
+/// single blank line. Tolerates both LF and CRLF line endings.
 String cleanupMarkupBlock(
   String content,
   String beginMarkup,
@@ -34,17 +36,19 @@ String cleanupMarkupBlock(
   final escapedBegin = RegExp.escape(beginMarkup);
   final escapedEnd = RegExp.escape(endMarkup);
 
-  final regex = RegExp(
-    r'(?:\r?\n)*[ \t]*' +
+  final blockRegex = RegExp(
+    r'[ \t]*' +
         escapedBegin +
-        r'\r?\n.*?(?:\r?\n)?[ \t]*' +
+        r'\r?\n(?:.*?\r?\n)?[ \t]*' +
         escapedEnd +
-        r'(?:\r?\n)*',
+        r'\r?\n?',
     dotAll: true,
     multiLine: true,
   );
 
-  return content.replaceAll(regex, '');
+  final withoutBlock = content.replaceAll(blockRegex, '');
+
+  return withoutBlock.replaceAll(RegExp(r'(?:\r?\n){3,}'), '\n\n');
 }
 
 /// Strips any leading line breaks (LF or CRLF).

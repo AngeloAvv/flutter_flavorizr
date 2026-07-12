@@ -115,6 +115,8 @@ class K {
 
   static String linuxCMakeListsPath = '$linuxPath/CMakeLists.txt';
 
+  static String linuxRunnerCMakeListsPath = '$linuxRunnerPath/CMakeLists.txt';
+
   static String linuxMyApplicationPath = '$linuxRunnerPath/my_application.cc';
 
   static String assetsZipPath = 'assets.tmp.zip';

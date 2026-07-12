@@ -60,6 +60,7 @@ instructions:
   - 'macos:icons'
   - 'macos:plist'
   - 'linux:cmake'
+  - 'linux:runnerCmake'
   - 'linux:myApplication'
   - 'google:firebase'
   - 'huawei:agconnect'

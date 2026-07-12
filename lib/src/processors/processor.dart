@@ -57,6 +57,7 @@ import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_targets_l
 import 'package:flutter_flavorizr/src/processors/ios/xcconfig/ios_xcconfig_targets_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
+import 'package:flutter_flavorizr/src/processors/linux/linux_runner_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/build_configuration/macos_build_configurations_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/configs/macos_configs_targets_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_assets_targets_processor.dart';
@@ -110,6 +111,7 @@ class Processor extends AbstractProcessor<void> {
 
     // Linux
     'linux:cmake',
+    'linux:runnerCmake',
     'linux:myApplication',
 
     // Google
@@ -381,6 +383,12 @@ class Processor extends AbstractProcessor<void> {
       'linux:cmake': () => ExistingFileStringProcessor(
         K.linuxCMakeListsPath,
         LinuxCMakeListsProcessor(config: flavorizr, logger: logger),
+        config: flavorizr,
+        logger: logger,
+      ),
+      'linux:runnerCmake': () => ExistingFileStringProcessor(
+        K.linuxRunnerCMakeListsPath,
+        LinuxRunnerCMakeListsProcessor(config: flavorizr, logger: logger),
         config: flavorizr,
         logger: logger,
       ),
