@@ -26,6 +26,7 @@
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/src/utils/linux_utils.dart';
 
 class LinuxCMakeListsProcessor extends StringProcessor {
   static final RegExp _applicationIdSetter = RegExp(
@@ -65,9 +66,7 @@ class LinuxCMakeListsProcessor extends StringProcessor {
       '[$LinuxCMakeListsProcessor] Found APPLICATION_ID setter, injecting per-flavor overrides',
     );
 
-    final rest = cleaned
-        .substring(anchorMatch.end)
-        .replaceFirst(RegExp(r'^\n+'), '');
+    final rest = stripLeadingLineBreaks(cleaned.substring(anchorMatch.end));
 
     final buffer = StringBuffer(cleaned.substring(0, anchorMatch.end));
     buffer.writeln();
@@ -85,18 +84,8 @@ class LinuxCMakeListsProcessor extends StringProcessor {
     return buffer.toString();
   }
 
-  String _cleanupExistingBlock(String content) {
-    final escapedBegin = RegExp.escape(_beginMarkup);
-    final escapedEnd = RegExp.escape(_endMarkup);
-
-    final regex = RegExp(
-      r'\n*[ \t]*' + escapedBegin + r'\n.*?\n[ \t]*' + escapedEnd + r'\n*',
-      dotAll: true,
-      multiLine: true,
-    );
-
-    return content.replaceAll(regex, '');
-  }
+  String _cleanupExistingBlock(String content) =>
+      cleanupMarkupBlock(content, _beginMarkup, _endMarkup);
 
   void _appendBlock(StringBuffer buffer) {
     buffer.writeln(_beginMarkup);
@@ -109,7 +98,7 @@ class LinuxCMakeListsProcessor extends StringProcessor {
 
       buffer.writeln('  $keyword(FLUTTER_APP_FLAVOR STREQUAL "${entry.key}")');
       buffer.writeln(
-        '    set(APPLICATION_ID "${entry.value.linux!.applicationId}")',
+        '    set(APPLICATION_ID "${escapeQuotedString(entry.value.linux!.applicationId)}")',
       );
     }
 

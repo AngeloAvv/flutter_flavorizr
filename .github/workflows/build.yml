@@ -55,20 +55,28 @@ jobs:
       - name: Build Android AAB
         if: ${{ inputs.platform == 'android' }}
         working-directory: ${{ inputs.working-directory }}/android
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build appbundle --release --flavor ${{ inputs.flavor }}
+          flutter build appbundle --release --flavor "$FLUTTER_FLAVOR"
       - name: Build iOS
         if: ${{ inputs.platform == 'ios' }}
         working-directory: ${{ inputs.working-directory }}/ios
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build ios --release --no-codesign --flavor ${{ inputs.flavor }}
+          flutter build ios --release --no-codesign --flavor "$FLUTTER_FLAVOR"
       - name: Build macOS
         if: ${{ inputs.platform == 'macos' }}
         working-directory: ${{ inputs.working-directory }}/macos
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build macos --release --flavor ${{ inputs.flavor }}
+          flutter build macos --release --flavor "$FLUTTER_FLAVOR"
       - name: Build Linux
         if: ${{ inputs.platform == 'linux' }}
         working-directory: ${{ inputs.working-directory }}/linux
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build linux --release --flavor ${{ inputs.flavor }}
+          flutter build linux --release --flavor "$FLUTTER_FLAVOR"

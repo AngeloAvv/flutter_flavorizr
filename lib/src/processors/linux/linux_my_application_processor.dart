@@ -26,6 +26,7 @@
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
+import 'package:flutter_flavorizr/src/utils/linux_utils.dart';
 
 class LinuxMyApplicationProcessor extends StringProcessor {
   // Present when `my_application.cc` already declares a `window_title`
@@ -43,7 +44,7 @@ class LinuxMyApplicationProcessor extends StringProcessor {
     r'gtk_window_set_title\(window, "([^"]*)"\);',
   );
   static final RegExp _useHeaderBarAnchor = RegExp(
-    r'[ \t]*if \(use_header_bar\) \{\n',
+    r'[ \t]*if \(use_header_bar\) \{\r?\n',
   );
 
   static const _beginMarkup =
@@ -80,9 +81,9 @@ class LinuxMyApplicationProcessor extends StringProcessor {
       '[$LinuxMyApplicationProcessor] Found window_title declaration, injecting per-flavor overrides',
     );
 
-    final rest = withVariable
-        .substring(anchorMatch.end)
-        .replaceFirst(RegExp(r'^\n+'), '');
+    final rest = stripLeadingLineBreaks(
+      withVariable.substring(anchorMatch.end),
+    );
 
     final buffer = StringBuffer(withVariable.substring(0, anchorMatch.end));
     buffer.writeln();
@@ -131,18 +132,8 @@ class LinuxMyApplicationProcessor extends StringProcessor {
         '${result.substring(insertionPoint)}';
   }
 
-  String _cleanupExistingBlock(String content) {
-    final escapedBegin = RegExp.escape(_beginMarkup.trim());
-    final escapedEnd = RegExp.escape(_endMarkup.trim());
-
-    final regex = RegExp(
-      r'\n*[ \t]*' + escapedBegin + r'\n.*?\n[ \t]*' + escapedEnd + r'\n*',
-      dotAll: true,
-      multiLine: true,
-    );
-
-    return content.replaceAll(regex, '');
-  }
+  String _cleanupExistingBlock(String content) =>
+      cleanupMarkupBlock(content, _beginMarkup.trim(), _endMarkup.trim());
 
   void _appendBlock(StringBuffer buffer) {
     buffer.writeln(_beginMarkup);
@@ -156,15 +147,15 @@ class LinuxMyApplicationProcessor extends StringProcessor {
       buffer.writeln(
         '  $keyword (g_strcmp0(FLUTTER_APP_FLAVOR, "${entry.key}") == 0) {',
       );
-      buffer.writeln('    window_title = "${_escape(entry.value.app.name)}";');
+      buffer.writeln(
+        '    window_title = "${escapeQuotedString(entry.value.app.name)}";',
+      );
     }
 
     buffer.writeln('  }');
     buffer.writeln('  #endif');
     buffer.write(_endMarkup);
   }
-
-  String _escape(String value) => value.replaceAll('"', '\\"');
 
   @override
   String toString() => 'LinuxMyApplicationProcessor';
