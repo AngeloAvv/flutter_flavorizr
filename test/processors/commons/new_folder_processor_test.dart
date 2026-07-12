@@ -26,54 +26,53 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/commons/new_folder_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
-    );
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
+  });
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+  test('Test NewFolderProcessor creates a nested directory that does not exist', () {
+    TestUtils.withTempDir((dir) {
+      final path = '${dir.path}/a/b/c';
+      expect(Directory(path).existsSync(), isFalse);
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
+      final processor = NewFolderProcessor(
+        path,
+        config: flavorizr,
+        logger: logger,
+      );
 
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
+      processor.execute();
 
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
+      expect(Directory(path).existsSync(), isTrue);
+      expect(processor.dir.path, path);
+    });
+  });
 
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
+  test('Test NewFolderProcessor is a no-op when directory already exists', () {
+    TestUtils.withTempDir((dir) {
+      final path = '${dir.path}/already_exists';
+      Directory(path).createSync(recursive: true);
 
-    final result = body(dir);
+      final processor = NewFolderProcessor(
+        path,
+        config: flavorizr,
+        logger: logger,
+      );
 
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
+      expect(() => processor.execute(), returnsNormally);
+      expect(Directory(path).existsSync(), isTrue);
+    });
+  });
 
-    cleanUp();
-    return result;
-  }
 }

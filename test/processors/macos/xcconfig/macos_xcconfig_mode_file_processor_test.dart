@@ -26,54 +26,46 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
+import 'package:flutter_flavorizr/src/processors/macos/xcconfig/macos_xcconfig_mode_file_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
+import 'package:path/path.dart' as p;
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr(
+      'test_resources/macos/xcconfig_processor_test/pubspec_without_variables',
     );
+  });
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+  test('MacOSXCConfigModeFileProcessor.execute writes the flavor xcconfig file',
+      () {
+    TestUtils.withTempDir((dir) async {
+      final flavorName = flavorizr.macosFlavors.keys.first;
+      final flavor = flavorizr.macosFlavors[flavorName]!;
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
+      final processor = MacOSXCConfigModeFileProcessor(
+        dir.path,
+        flavorName,
+        flavor,
+        Target.debug,
+        config: flavorizr,
+        logger: logger,
+      );
 
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
+      await processor.execute();
 
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
-
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
-
-    final result = body(dir);
-
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
-
-    cleanUp();
-    return result;
-  }
+      final xcconfigFile =
+          File(p.join(dir.path, '${flavorName}Debug.xcconfig'));
+      expect(xcconfigFile.existsSync(), isTrue);
+      expect(xcconfigFile.readAsStringSync(), isNotEmpty);
+    });
+  });
 }

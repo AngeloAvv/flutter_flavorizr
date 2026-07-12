@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Angelo Cassano
+ * Copyright (c) 2024 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,15 +23,32 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/processors/commons/empty_file_processor.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 
-String binaryWithExtension(
-  String fileName, {
-  String windowsExtension = 'exe',
-}) {
-  if (Platform.isWindows) {
-    return [fileName, windowsExtension].join('.');
-  }
+import '../../test_utils.dart';
 
-  return fileName;
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
+
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
+  });
+
+  test('Test EmptyFileProcessor input is empty string', () {
+    final processor = EmptyFileProcessor(config: flavorizr, logger: logger);
+
+    expect(processor.input, '');
+  });
+
+  test('Test EmptyFileProcessor execute returns empty string', () {
+    final processor = EmptyFileProcessor(config: flavorizr, logger: logger);
+
+    expect(processor.execute(), '');
+  });
+
 }

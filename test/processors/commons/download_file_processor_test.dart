@@ -23,57 +23,38 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
+// NOTE: `DownloadFileProcessor.execute()` performs a real network call via
+// `HttpClient`. Per the test plan, we deliberately do NOT invoke `execute()`
+// here to avoid a real network dependency in the test suite. This test only
+// covers constructor/field wiring (the URL is taken from `config.assetsUrl`)
+// and `toString()`. The download behavior itself is left uncovered as an
+// accepted gap.
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/commons/download_file_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
+  });
+
+  test('Test DownloadFileProcessor exposes path and reads url from config.assetsUrl', () {
+    final processor = DownloadFileProcessor(
+      'destination/path.zip',
+      config: flavorizr,
+      logger: logger,
     );
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+    expect(processor.path, 'destination/path.zip');
+    expect(processor.toString(), contains(flavorizr.assetsUrl));
+  });
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
-
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
-
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
-
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
-
-    final result = body(dir);
-
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
-
-    cleanUp();
-    return result;
-  }
 }

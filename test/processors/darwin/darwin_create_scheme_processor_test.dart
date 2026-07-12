@@ -26,54 +26,49 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_create_scheme_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:io/io.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
-    );
+  const exampleProjectPath = 'example/ios/Runner.xcodeproj';
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
+  });
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
+  test(
+      'Test DarwinCreateSchemeProcessor writes an xcscheme file with the flavor build configurations',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final projectPath = '${dir.path}/Runner.xcodeproj';
+      copyPathSync(exampleProjectPath, projectPath);
 
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
+      final processor = DarwinCreateSchemeProcessor(
+        projectPath,
+        'orange',
+        config: flavorizr,
+        logger: logger,
+      );
 
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
+      await processor.execute();
 
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
+      final schemeFile =
+          File('$projectPath/xcshareddata/xcschemes/orange.xcscheme');
+      expect(schemeFile.existsSync(), isTrue);
 
-    final result = body(dir);
+      final content = schemeFile.readAsStringSync();
+      expect(content, contains('Debug-orange'));
+      expect(content, contains('Release-orange'));
+      expect(content, contains('Profile-orange'));
+    });
+  });
 
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
-
-    cleanUp();
-    return result;
-  }
 }

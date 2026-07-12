@@ -23,57 +23,56 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/commons/shell_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
+  });
+
+  test('Test ShellProcessor runs a successful command without throwing', () {
+    final processor = ShellProcessor(
+      'true',
+      const [],
+      config: flavorizr,
+      logger: logger,
     );
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+    expect(() => processor.execute(), returnsNormally);
+  });
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
+  test('Test ShellProcessor handles a failing command without throwing', () {
+    final processor = ShellProcessor(
+      'false',
+      const [],
+      config: flavorizr,
+      logger: logger,
+    );
 
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
+    expect(() => processor.execute(), returnsNormally);
+  });
 
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
+  test('Test ShellProcessor passes arguments and working directory to the process', () {
+    TestUtils.withTempDir((dir) {
+      final processor = ShellProcessor(
+        'ls',
+        const ['-a'],
+        workingDirectory: dir.path,
+        config: flavorizr,
+        logger: logger,
+      );
 
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
+      expect(() => processor.execute(), returnsNormally);
+    });
+  });
 
-    final result = body(dir);
-
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
-
-    cleanUp();
-    return result;
-  }
 }

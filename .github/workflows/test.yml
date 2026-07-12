@@ -12,4 +12,20 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup
       - name: Run Tests
-        run: flutter test
+        run: flutter test --coverage
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+      - name: Strip generated/model files from coverage
+        run: lcov --remove coverage/lcov.info '**/*.g.dart' 'lib/src/models/*' 'lib/src/parser/models/*' -o coverage/lcov.info
+      - name: Coverage summary
+        run: lcov --summary coverage/lcov.info
+      - name: Enforce coverage threshold
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 75
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
