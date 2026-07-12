@@ -31,7 +31,7 @@ import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 /// back in per-flavor at CMake configure time.
 class WindowsRunnerRcContentProcessor extends StringProcessor {
   static const _iconAnchor = r'"resources\\app_icon.ico"';
-  static const _iconReplacement = '"resources\\\\@RUNNER_APP_ICON@"';
+  static const _iconReplacement = r'"resources\\@RUNNER_APP_ICON@"';
 
   static final RegExp _fileDescriptionLiteral = RegExp(
     r'(VALUE "FileDescription", ")[^"]*(" "\\0")',

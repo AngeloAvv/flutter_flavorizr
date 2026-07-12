@@ -60,7 +60,7 @@ flavorizr:
       app:
         name: "Apple App"
       windows:
-        icon: "$sourceFixture"
+        icon: '$sourceFixture'
 
     banana:
       app:

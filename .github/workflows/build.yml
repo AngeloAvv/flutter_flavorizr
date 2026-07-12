@@ -30,7 +30,9 @@ jobs:
       - name: Copy assets
         if: ${{ inputs.flavorize }}
         shell: bash
-        run: cp -r assets ${{ inputs.working-directory }}/.tmp
+        env:
+          WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        run: cp -r assets "$WORKING_DIRECTORY/.tmp"
       - name: Create project
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
