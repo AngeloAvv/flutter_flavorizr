@@ -109,6 +109,14 @@ class K {
 
   static String macOSFirebaseScriptPath = '$macOSPath/firebaseScript.sh';
 
+  static String linuxPath = 'linux';
+
+  static String linuxRunnerPath = '$linuxPath/runner';
+
+  static String linuxCMakeListsPath = '$linuxPath/CMakeLists.txt';
+
+  static String linuxMyApplicationPath = '$linuxRunnerPath/my_application.cc';
+
   static String assetsZipPath = 'assets.tmp.zip';
 
   static String tempPath = '.tmp';

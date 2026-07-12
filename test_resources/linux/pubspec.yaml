@@ -1,0 +1,38 @@
+name: flutterflavorizr_example
+description: Demonstrates how to use the flutterflavorizr plugin.
+publish_to: 'none'
+
+environment:
+  sdk: "<4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_flavorizr:
+    path: ../../
+
+
+flavorizr:
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      linux:
+        applicationId: "com.example.apple"
+
+    banana:
+      app:
+        name: "Banana App"
+
+      linux:
+        applicationId: "com.example.banana"
+
+
+flutter:
+  uses-material-design: true

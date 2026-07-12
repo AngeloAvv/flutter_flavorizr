@@ -25,37 +25,14 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
-import 'android.dart';
-import 'app.dart';
-import 'darwin.dart';
-import 'linux.dart';
-
-part 'flavor.g.dart';
+part 'linux.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class Flavor {
+class Linux {
   @JsonKey(required: true, disallowNullValue: true)
-  final App app;
+  final String applicationId;
 
-  @JsonKey(required: false, disallowNullValue: true)
-  final Android? android;
+  const Linux({required this.applicationId});
 
-  @JsonKey(required: false, disallowNullValue: true)
-  final Darwin? ios;
-
-  @JsonKey(required: false, disallowNullValue: true)
-  final Darwin? macos;
-
-  @JsonKey(required: false, disallowNullValue: true)
-  final Linux? linux;
-
-  const Flavor({
-    required this.app,
-    this.android,
-    this.ios,
-    this.macos,
-    this.linux,
-  });
-
-  factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);
+  factory Linux.fromJson(Map<String, dynamic> json) => _$LinuxFromJson(json);
 }

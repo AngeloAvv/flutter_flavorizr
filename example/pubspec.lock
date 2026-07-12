@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: async
-      sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
+      sha256: e2eb0491ba5ddb6177742d2da23904574082139b07c1e33b8503b9f46f3e1a37
       url: "https://pub.dev"
     source: hosted
-    version: "2.13.0"
+    version: "2.13.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -101,10 +101,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
+      sha256: "6d7fd89431262d8f3125e81b50d3847a091d846eafcd4fdb88dd06f36d705a45"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.4"
+    version: "2.2.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -142,10 +142,10 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
       url: "https://pub.dev"
     source: hosted
-    version: "4.9.0"
+    version: "4.12.0"
   leak_tracker:
     dependency: transitive
     description:
@@ -174,10 +174,10 @@ packages:
     dependency: transitive
     description:
       name: mason_logger
-      sha256: "6d5a989ff41157915cb5162ed6e41196d5e31b070d2f86e1c2edf216996a158c"
+      sha256: "1d46102c6f299c0df7fe986dd3dd3271d57c2ec7c00ae590660b7c3018810048"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.3"
+    version: "0.3.5"
   matcher:
     dependency: transitive
     description:
@@ -222,10 +222,10 @@ packages:
     dependency: transitive
     description:
       name: posix
-      sha256: "6323a5b0fa688b6a010df4905a56b00181479e6d10534cecfecede2aa55add61"
+      sha256: "185ef7606574f789b40f289c233efa52e96dead518aed988e040a10737febb07"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.3"
+    version: "6.5.0"
   propertylistserialization:
     dependency: transitive
     description:
@@ -243,10 +243,10 @@ packages:
     dependency: transitive
     description:
       name: source_span
-      sha256: "254ee5351d6cb365c859e20ee823c3bb479bf4a293c22d17a9f1bf144ce86f7c"
+      sha256: "56a02f1f4cd1a2d96303c0144c93bd6d909eea6bee6bf5a0e0b685edbd4c47ab"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.1"
+    version: "1.10.2"
   sprintf:
     dependency: transitive
     description:
@@ -315,18 +315,18 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: ddfa8d30d89985b96407efce8acbdd124701f96741f2d981ca860662f1c0dc02
+      sha256: "0016aef94fc66495ac78af5859181e3f3bf2026bd8eecc72b9565601e19ab360"
       url: "https://pub.dev"
     source: hosted
-    version: "15.0.0"
+    version: "15.2.0"
   win32:
     dependency: transitive
     description:
       name: win32
-      sha256: "66814138c3562338d05613a6e368ed8cfb237ad6d64a9e9334be3f309acfca03"
+      sha256: d7cb55e04cd34096cd3a79b3330245f54cb96a370a1c27adb3c84b917de8b08e
       url: "https://pub.dev"
     source: hosted
-    version: "5.14.0"
+    version: "5.15.0"
   xml:
     dependency: transitive
     description:

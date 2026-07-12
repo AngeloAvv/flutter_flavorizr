@@ -1,8 +1,18 @@
 name: Setup Flutter environment and get dependencies
 
+inputs:
+  platform:
+    required: false
+    default: ''
+
 runs:
   using: "composite"
   steps:
+    - name: Use Flutter master (Linux flavor support isn't in a stable release yet)
+      if: ${{ inputs.platform == 'linux' }}
+      shell: bash
+      run: echo '{"flutter":"master"}' > .fvmrc
+
     - name: Install Flutter
       uses: kuhnroyal/flutter-fvm-config-action/setup@v3
 

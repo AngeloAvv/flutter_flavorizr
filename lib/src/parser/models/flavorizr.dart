@@ -62,6 +62,9 @@ class Flavorizr {
   late Map<String, Flavor> macosFlavors;
 
   @JsonKey(includeFromJson: false)
+  late Map<String, Flavor> linuxFlavors;
+
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFirebaseFlavors;
 
   @JsonKey(includeFromJson: false)
@@ -79,21 +82,22 @@ class Flavorizr {
     this.instructions,
     required this.assetsUrl,
     this.ide,
-  })  : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
-        iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
-        macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
-        androidFirebaseFlavors = flavors.where(
-          (_, flavor) => flavor.android?.firebase != null,
-        ),
-        androidAGConnectFlavors = flavors.where(
-          (_, flavor) => flavor.android?.agconnect != null,
-        ),
-        iosFirebaseFlavors = flavors.where(
-          (_, flavor) => flavor.ios?.firebase != null,
-        ),
-        macosFirebaseFlavors = flavors.where(
-          (_, flavor) => flavor.macos?.firebase != null,
-        );
+  }) : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
+       iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
+       macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
+       linuxFlavors = flavors.where((_, flavor) => flavor.linux != null),
+       androidFirebaseFlavors = flavors.where(
+         (_, flavor) => flavor.android?.firebase != null,
+       ),
+       androidAGConnectFlavors = flavors.where(
+         (_, flavor) => flavor.android?.agconnect != null,
+       ),
+       iosFirebaseFlavors = flavors.where(
+         (_, flavor) => flavor.ios?.firebase != null,
+       ),
+       macosFirebaseFlavors = flavors.where(
+         (_, flavor) => flavor.macos?.firebase != null,
+       );
 
   factory Flavorizr.fromJson(Map json) => _$FlavorizrFromJson(json);
 
@@ -105,6 +109,8 @@ class Flavorizr {
   bool get iosFlavorsAvailable => iosFlavors.isNotEmpty;
 
   bool get macosFlavorsAvailable => macosFlavors.isNotEmpty;
+
+  bool get linuxFlavorsAvailable => linuxFlavors.isNotEmpty;
 
   bool get androidFirebaseFlavorsAvailable => androidFirebaseFlavors.isNotEmpty;
 
@@ -122,16 +128,19 @@ List<IDE>? _ideListFromJson(dynamic json) {
   }
 
   final output = switch (json) {
-    final List list => list
-        .map((e) => IDE.values.firstWhere(
+    final List list =>
+      list
+          .map(
+            (e) => IDE.values.firstWhere(
               (ide) => ide.name.toLowerCase() == e.toString().toLowerCase(),
-            ))
-        .toList(growable: false),
+            ),
+          )
+          .toList(growable: false),
     final String str => [
-        IDE.values.firstWhere(
-          (ide) => ide.name.toLowerCase() == str.toLowerCase(),
-        )
-      ],
+      IDE.values.firstWhere(
+        (ide) => ide.name.toLowerCase() == str.toLowerCase(),
+      ),
+    ],
     _ => null,
   };
 
