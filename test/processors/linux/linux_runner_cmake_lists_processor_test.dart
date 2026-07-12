@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_runner_cmake_lists_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,7 +95,10 @@ void main() {
         logger: logger,
       );
 
-      expect(() => processor.execute(), throwsException);
+      expect(
+        () => processor.execute(),
+        throwsA(isA<MalformedResourceException>()),
+      );
     },
   );
 }
