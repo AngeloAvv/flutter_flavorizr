@@ -1,4 +1,5 @@
 ## NEXT
+* Added support for Linux platform (`linux:cmake`, `linux:runnerCmake`, `linux:myApplication` processors)
 
 ## 2.5.0
 * Replaced Ruby xcodeproj gem with dart_xcodeproj — no Ruby/gem installation required

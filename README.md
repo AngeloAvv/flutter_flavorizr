@@ -54,7 +54,9 @@ flavors:
     ios:
       bundleId: "com.example.apple"
     macos:
-      bundleId: "com.example.apple"  
+      bundleId: "com.example.apple"
+    linux:
+      applicationId: "com.example.apple"
   banana:
     app:
       name: "Banana App"
@@ -65,6 +67,8 @@ flavors:
       bundleId: "com.example.banana"
     macos:
       bundleId: "com.example.banana"
+    linux:
+      applicationId: "com.example.banana"
 ```
 
 Alternatively, add a new key named flavorizr and define a sub item named *flavors*. 
@@ -83,7 +87,9 @@ flavorizr:
       ios:
         bundleId: "com.example.apple"
       macos:
-        bundleId: "com.example.apple"        
+        bundleId: "com.example.apple"
+      linux:
+        applicationId: "com.example.apple"
     banana:
       app:
         name: "Banana App"
@@ -94,6 +100,8 @@ flavorizr:
         bundleId: "com.example.banana"
       macos:
         bundleId: "com.example.banana"
+      linux:
+        applicationId: "com.example.banana"
 ```
 
 ### Available fields
@@ -143,6 +151,9 @@ flavorizr:
 | macos:dummyAssets       | macOS         | Generates some default icons for your custom flavors                    |
 | macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
 | macos:plist             | macOS         | Updates the info.plist file                                             |
+| linux:cmake             | Linux         | Sets the application ID for each flavor in CMakeLists.txt               |
+| linux:runnerCmake       | Linux         | Forwards FLUTTER_APP_FLAVOR into runner/CMakeLists.txt so it's available to native code |
+| linux:myApplication     | Linux         | Sets the window title for each flavor in my_application.cc              |
 
 #### android (under app)
 
@@ -504,6 +515,9 @@ By default, when you do not specify a custom set of processors by appending the 
 * macos:dummyAssets
 * macos:icons
 * macos:plist
+* linux:cmake
+* linux:runnerCmake
+* linux:myApplication
 * google:firebase
 * huawei:agconnect
 * assets:clean

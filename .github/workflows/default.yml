@@ -3,6 +3,8 @@ name: Pipeline
 on:
   pull_request:
   push:
+    branches:
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +27,7 @@ jobs:
     strategy:
       matrix:
         flavor: [ apple, banana ]
-        platform: [ android, ios, macos ]
+        platform: [ android, ios, macos, linux ]
         working-directory: [ blank, example ]
         include:
           - flavorize: false

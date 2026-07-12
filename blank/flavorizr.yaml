@@ -13,6 +13,8 @@ flavors:
       bundleId: "com.example.apple"
     macos:
       bundleId: "com.example.apple"
+    linux:
+      applicationId: "com.example.apple"
 
   banana:
     app:
@@ -24,6 +26,8 @@ flavors:
       bundleId: "com.example.banana"
     macos:
       bundleId: "com.example.banana"
+    linux:
+      applicationId: "com.example.banana"
 
 ide:
   - idea
@@ -55,6 +59,9 @@ instructions:
   - 'macos:dummyAssets'
   - 'macos:icons'
   - 'macos:plist'
+  - 'linux:cmake'
+  - 'linux:runnerCmake'
+  - 'linux:myApplication'
   - 'google:firebase'
   - 'huawei:agconnect'
   - 'ide:config'

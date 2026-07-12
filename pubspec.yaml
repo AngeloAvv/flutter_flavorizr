@@ -15,6 +15,7 @@ platforms:
   android:
   ios:
   macos:
+  linux:
 
 dependencies:
   flutter:

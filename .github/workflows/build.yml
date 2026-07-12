@@ -19,12 +19,14 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ inputs.platform == 'android' && 'ubuntu-latest' || 'macos-latest' }}
+    runs-on: ${{ (inputs.platform == 'android' || inputs.platform == 'linux') && 'ubuntu-latest' || 'macos-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Setup Flutter
         uses: ./.github/actions/setup
+        with:
+          platform: ${{ inputs.platform }}
       - name: Copy assets
         if: ${{ inputs.flavorize }}
         run: cp -r assets ${{ inputs.working-directory }}/.tmp
@@ -45,18 +47,36 @@ jobs:
       - name: Setup Android SDK
         if: ${{ inputs.platform == 'android' }}
         uses: android-actions/setup-android@v4
+      - name: Install Linux build dependencies
+        if: ${{ inputs.platform == 'linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev clang cmake
       - name: Build Android AAB
         if: ${{ inputs.platform == 'android' }}
         working-directory: ${{ inputs.working-directory }}/android
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build appbundle --release --flavor ${{ inputs.flavor }}
+          flutter build appbundle --release --flavor "$FLUTTER_FLAVOR"
       - name: Build iOS
         if: ${{ inputs.platform == 'ios' }}
         working-directory: ${{ inputs.working-directory }}/ios
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build ios --release --no-codesign --flavor ${{ inputs.flavor }}
+          flutter build ios --release --no-codesign --flavor "$FLUTTER_FLAVOR"
       - name: Build macOS
         if: ${{ inputs.platform == 'macos' }}
         working-directory: ${{ inputs.working-directory }}/macos
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
-          flutter build macos --release --flavor ${{ inputs.flavor }}
+          flutter build macos --release --flavor "$FLUTTER_FLAVOR"
+      - name: Build Linux
+        if: ${{ inputs.platform == 'linux' }}
+        working-directory: ${{ inputs.working-directory }}/linux
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
+        run: |
+          flutter build linux --release --flavor "$FLUTTER_FLAVOR"
