@@ -15,10 +15,10 @@ jobs:
         run: |
           dart pub global activate junitreport
           echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-      - name: Run Tests
-        run: set -o pipefail; flutter test --machine --coverage | tojunit -o report.xml
       - name: Install lcov
         run: sudo apt-get update && sudo apt-get install -y lcov
+      - name: Run Tests
+        run: set -o pipefail; flutter test --machine --coverage | tojunit -o report.xml
       - name: Strip generated/model files from coverage
         run: lcov --remove coverage/lcov.info '**/*.g.dart' 'lib/src/models/*' 'lib/src/parser/models/*' -o coverage/lcov.info
       - name: Coverage summary
@@ -31,11 +31,5 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v7
         with:
-          files: coverage/lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Upload test results to Codecov
-        if: always()
-        uses: codecov/test-results-action@v1
-        with:
-          files: report.xml
+          files: report.xml, coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
