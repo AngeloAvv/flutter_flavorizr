@@ -1,0 +1,15 @@
+name: precedence_test
+description: Fixture used to verify flavorizr file takes precedence over pubspec.
+publish_to: 'none'
+
+environment:
+  sdk: "<4.0.0"
+
+flavorizr:
+  flavors:
+    fromPubspecFile:
+      app:
+        name: "From Pubspec File"
+
+      android:
+        applicationId: "com.example.frompubspecfile"

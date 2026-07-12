@@ -1,0 +1,36 @@
+name: flutterflavorizr_example
+description: Demonstrates how to use the flutterflavorizr plugin.
+publish_to: 'none'
+
+environment:
+  sdk: "<4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_flavorizr:
+    path: ../
+
+
+flavorizr:
+  app:
+    android:
+      flavorDimensions: "flavor-type"
+
+  flavors:
+    apple:
+      app:
+        name: "Apple App"
+
+      android:
+        applicationId: "com.example.apple"
+        agconnect:
+          config: "test_resources/android/agconnect_processor_test/agconnect-services.json"
+
+flutter:
+  uses-material-design: true

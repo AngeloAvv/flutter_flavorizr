@@ -26,54 +26,41 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/processors/ide/idea/idea_launch_file_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
-    );
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
+  });
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+  test('Test IdeaLaunchFileProcessor writes the run configuration XML for the flavor',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final path = '${dir.path}/example.xml';
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
+      final processor = IdeaLaunchFileProcessor(
+        'example',
+        path,
+        config: flavorizr,
+        logger: logger,
+      );
 
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
+      await processor.execute();
 
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
+      final actual = File(path).readAsStringSync();
+      TestUtils.expectMatchesFile(
+        actual,
+        'test_resources/ide/idea_launcher_processor_test/example.xml',
+      );
+    });
+  });
 
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
-
-    final result = body(dir);
-
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
-
-    cleanUp();
-    return result;
-  }
 }

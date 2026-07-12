@@ -23,57 +23,45 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
+import 'package:flutter_flavorizr/src/processors/macos/configs/macos_configs_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-class TestUtils {
-  static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+import '../../../test_utils.dart';
 
-  static Logger quietLogger() => Logger(level: Level.quiet);
+void main() {
+  late Flavorizr flavorizr;
+  late Logger logger;
 
-  static Flavorizr parseFlavorizr(
-    String pubspecPath, {
-    String flavorizrPath = 'test_resources/non_existent',
-  }) {
-    final parser = Parser(
-      pubspecPath: pubspecPath,
-      flavorizrPath: flavorizrPath,
+  setUp(() {
+    logger = TestUtils.quietLogger();
+    flavorizr = TestUtils.parseFlavorizr(
+      'test_resources/macos/configs_processor_test/pubspec',
+    );
+  });
+
+  test(
+      'MacOSConfigsProcessor.execute generates the expected Configs xcconfig content for a flavor/target',
+      () {
+    final flavorName = flavorizr.macosFlavors.keys.first;
+    final flavor = flavorizr.macosFlavors[flavorName]!;
+
+    final processor = MacOSConfigsProcessor(
+      flavorName,
+      flavor,
+      Target.debug,
+      config: flavorizr,
+      logger: logger,
     );
 
-    try {
-      return parser.parse();
-    } catch (e) {
-      fail(e.toString());
-    }
-  }
+    final actual = processor.execute();
 
-  static void expectMatchesFile(String actual, String expectedFilePath) {
-    final expected = File(expectedFilePath).readAsStringSync();
+    TestUtils.expectMatchesFile(
+      actual,
+      'test_resources/macos/configs_processor_test/matcher_apple_debug.xcconfig',
+    );
+  });
 
-    expect(stripEndOfLines(actual), stripEndOfLines(expected));
-  }
-
-  static T withTempDir<T>(T Function(Directory dir) body) {
-    final dir = Directory.systemTemp.createTempSync('flavorizr_test_');
-
-    void cleanUp() {
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-      }
-    }
-
-    final result = body(dir);
-
-    if (result is Future) {
-      return result.whenComplete(cleanUp) as T;
-    }
-
-    cleanUp();
-    return result;
-  }
 }

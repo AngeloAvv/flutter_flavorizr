@@ -1,0 +1,7 @@
+flavors:
+  fromFlavorizrFile:
+    app:
+      name: "From Flavorizr File"
+
+    android:
+      applicationId: "com.example.fromflavorizrfile"

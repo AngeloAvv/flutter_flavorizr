@@ -1,0 +1,4 @@
+flavors:
+  apple:
+    android:
+      applicationId: "com.example.apple"
