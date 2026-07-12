@@ -15,6 +15,7 @@ flavors:
       bundleId: "com.example.apple"
     linux:
       applicationId: "com.example.apple"
+    windows: {}
 
   banana:
     app:
@@ -28,6 +29,7 @@ flavors:
       bundleId: "com.example.banana"
     linux:
       applicationId: "com.example.banana"
+    windows: {}
 
 ide:
   - idea

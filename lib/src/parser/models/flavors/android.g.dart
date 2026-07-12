@@ -11,8 +11,8 @@ Android _$AndroidFromJson(Map json) {
     json,
     requiredKeys: const ['applicationId'],
     disallowNullValues: const [
-      'firebase',
       'icon',
+      'firebase',
       'applicationId',
       'customConfig',
       'resValues',

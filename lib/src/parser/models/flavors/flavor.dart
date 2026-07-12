@@ -29,6 +29,7 @@ import 'android.dart';
 import 'app.dart';
 import 'darwin.dart';
 import 'linux.dart';
+import 'windows.dart';
 
 part 'flavor.g.dart';
 
@@ -49,12 +50,16 @@ class Flavor {
   @JsonKey(required: false, disallowNullValue: true)
   final Linux? linux;
 
+  @JsonKey(required: false, disallowNullValue: true)
+  final Windows? windows;
+
   const Flavor({
     required this.app,
     this.android,
     this.ios,
     this.macos,
     this.linux,
+    this.windows,
   });
 
   factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);

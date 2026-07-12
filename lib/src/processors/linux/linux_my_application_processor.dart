@@ -26,7 +26,7 @@
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
-import 'package:flutter_flavorizr/src/utils/linux_utils.dart';
+import 'package:flutter_flavorizr/src/utils/desktop_utils.dart';
 
 class LinuxMyApplicationProcessor extends StringProcessor {
   // Present when `my_application.cc` already declares a `window_title`

@@ -119,6 +119,22 @@ class K {
 
   static String linuxMyApplicationPath = '$linuxRunnerPath/my_application.cc';
 
+  static String windowsPath = 'windows';
+
+  static String windowsRunnerPath = '$windowsPath/runner';
+
+  static String windowsRunnerCMakeListsPath = '$windowsRunnerPath/CMakeLists.txt';
+
+  static String windowsMainCppPath = '$windowsRunnerPath/main.cpp';
+
+  static String windowsMainCppTemplatePath = '$windowsRunnerPath/main.cpp.in';
+
+  static String windowsRunnerRcPath = '$windowsRunnerPath/Runner.rc';
+
+  static String windowsRunnerRcTemplatePath = '$windowsRunnerPath/Runner.rc.in';
+
+  static String windowsIconsPath = '$windowsRunnerPath/resources';
+
   static String assetsZipPath = 'assets.tmp.zip';
 
   static String tempPath = '.tmp';
@@ -145,6 +161,10 @@ class K {
   static String tempMacOSPath = '$tempPath/macos';
 
   static String tempMacOSAssetsPath = '$tempMacOSPath/Assets.xcassets';
+
+  static String tempWindowsPath = '$tempPath/windows';
+
+  static String tempWindowsIconPath = '$tempWindowsPath/app_icon.ico';
 
   static String ideaPath = '.idea';
 

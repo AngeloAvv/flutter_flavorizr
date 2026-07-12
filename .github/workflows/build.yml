@@ -19,7 +19,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ (inputs.platform == 'android' || inputs.platform == 'linux') && 'ubuntu-latest' || 'macos-latest' }}
+    runs-on: ${{ (inputs.platform == 'android' || inputs.platform == 'linux') && 'ubuntu-latest' || (inputs.platform == 'windows' && 'windows-latest') || 'macos-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -29,14 +29,17 @@ jobs:
           platform: ${{ inputs.platform }}
       - name: Copy assets
         if: ${{ inputs.flavorize }}
+        shell: bash
         run: cp -r assets ${{ inputs.working-directory }}/.tmp
       - name: Create project
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
+        shell: bash
         run: flutter create .
       - name: Run flutter_flavorizr
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
+        shell: bash
         run: flutter pub run flutter_flavorizr -f
       - name: Set up JDK 17
         if: ${{ inputs.platform == 'android' }}
@@ -80,3 +83,11 @@ jobs:
           FLUTTER_FLAVOR: ${{ inputs.flavor }}
         run: |
           flutter build linux --release --flavor "$FLUTTER_FLAVOR"
+      - name: Build Windows
+        if: ${{ inputs.platform == 'windows' }}
+        working-directory: ${{ inputs.working-directory }}/windows
+        shell: bash
+        env:
+          FLUTTER_FLAVOR: ${{ inputs.flavor }}
+        run: |
+          flutter build windows --release --flavor "$FLUTTER_FLAVOR"

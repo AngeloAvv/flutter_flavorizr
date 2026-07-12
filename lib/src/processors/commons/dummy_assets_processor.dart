@@ -23,11 +23,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavors/commons/os.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/dummy_assets_mixin.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_folder_processor.dart';
 
 class DummyAssetsProcessor extends CopyFolderProcessor {
-  final OS _os;
+  final DummyAssetsMixin _os;
 
   DummyAssetsProcessor(
     super.source,

@@ -65,6 +65,9 @@ class Flavorizr {
   late Map<String, Flavor> linuxFlavors;
 
   @JsonKey(includeFromJson: false)
+  late Map<String, Flavor> windowsFlavors;
+
+  @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFirebaseFlavors;
 
   @JsonKey(includeFromJson: false)
@@ -86,6 +89,7 @@ class Flavorizr {
        iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
        macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
        linuxFlavors = flavors.where((_, flavor) => flavor.linux != null),
+       windowsFlavors = flavors.where((_, flavor) => flavor.windows != null),
        androidFirebaseFlavors = flavors.where(
          (_, flavor) => flavor.android?.firebase != null,
        ),
@@ -111,6 +115,8 @@ class Flavorizr {
   bool get macosFlavorsAvailable => macosFlavors.isNotEmpty;
 
   bool get linuxFlavorsAvailable => linuxFlavors.isNotEmpty;
+
+  bool get windowsFlavorsAvailable => windowsFlavors.isNotEmpty;
 
   bool get androidFirebaseFlavorsAvailable => androidFirebaseFlavors.isNotEmpty;
 
