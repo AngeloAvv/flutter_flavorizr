@@ -37,7 +37,7 @@ String cleanupMarkupBlock(
   final regex = RegExp(
     r'(?:\r?\n)*[ \t]*' +
         escapedBegin +
-        r'\r?\n.*?\r?\n[ \t]*' +
+        r'\r?\n.*?(?:\r?\n)?[ \t]*' +
         escapedEnd +
         r'(?:\r?\n)*',
     dotAll: true,

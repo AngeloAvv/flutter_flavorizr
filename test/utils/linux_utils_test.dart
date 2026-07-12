@@ -54,6 +54,36 @@ void main() {
       expect(cleanupMarkupBlock(content, begin, end), content);
     });
 
+    test('removes an empty block with no content between the markers', () {
+      const content =
+          'before\n'
+          '\n'
+          '$begin\n'
+          '$end\n'
+          '\n'
+          'after';
+
+      expect(cleanupMarkupBlock(content, begin, end), 'beforeafter');
+    });
+
+    test('rerunning cleanup on its own output fully removes the markers', () {
+      const content =
+          'before\n'
+          '\n'
+          '$begin\n'
+          '$end\n'
+          '\n'
+          'after';
+
+      final firstPass = cleanupMarkupBlock(content, begin, end);
+      final secondPass = cleanupMarkupBlock(firstPass, begin, end);
+
+      expect(firstPass, 'beforeafter');
+      expect(secondPass, firstPass);
+      expect(secondPass.contains(begin), isFalse);
+      expect(secondPass.contains(end), isFalse);
+    });
+
     test('supports CRLF line endings', () {
       const content =
           'before\r\n'
