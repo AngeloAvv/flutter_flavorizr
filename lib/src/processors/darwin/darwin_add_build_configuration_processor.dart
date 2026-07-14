@@ -55,12 +55,16 @@ class DarwinAddBuildConfigurationProcessor extends AbstractProcessor<void> {
     final fileRef = project.files.firstWhere((f) => f.path == xconfigPath);
     final nativeTarget = project.targets.first as PBXNativeTarget;
 
-    final targetConfig = project.newObject<XCBuildConfiguration>(
-        (g, u) => XCBuildConfiguration(g, u));
-    targetConfig.name = configName;
+    final targetConfigList = nativeTarget.buildConfigurationList!;
+    var targetConfig = targetConfigList[configName];
+    if (targetConfig == null) {
+      targetConfig = project
+          .newObject<XCBuildConfiguration>((g, u) => XCBuildConfiguration(g, u));
+      targetConfig.name = configName;
+      targetConfigList.buildConfigurations.add(targetConfig);
+    }
     targetConfig.buildSettings = {'PRODUCT_NAME': r'$(TARGET_NAME)'};
     targetConfig.baseConfigurationReference = fileRef;
-    nativeTarget.buildConfigurationList!.buildConfigurations.add(targetConfig);
 
     final baseConfig =
         project.buildConfigurations.firstWhere((c) => c.name == mode);
