@@ -109,6 +109,12 @@ void main() {
               .firstWhere((c) => c.name == '$mode-orange')
               .uuid,
       };
+      final originalProjectUuids = {
+        for (final mode in modes)
+          mode: afterFirst.buildConfigurations
+              .firstWhere((c) => c.name == '$mode-orange')
+              .uuid,
+      };
 
       for (final mode in modes) {
         await run(mode, 'Flutter/appleDebug.xcconfig');
@@ -126,13 +132,13 @@ void main() {
 
         expect(targetMatches.length, 1,
             reason: '$mode-orange must not be duplicated on the target');
-        expect(
-          reopened.buildConfigurations
-              .where((c) => c.name == '$mode-orange')
-              .length,
-          1,
-          reason: '$mode-orange must not be duplicated on the project',
-        );
+
+        final projectMatches = reopened.buildConfigurations
+            .where((c) => c.name == '$mode-orange')
+            .toList();
+        expect(projectMatches.length, 1,
+            reason: '$mode-orange must not be duplicated on the project');
+        expect(projectMatches.single.uuid, originalProjectUuids[mode]);
 
         final config = targetMatches.single;
         expect(config.uuid, originalUuids[mode]);
