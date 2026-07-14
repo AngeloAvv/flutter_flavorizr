@@ -78,6 +78,77 @@ void main() {
   });
 
   test(
+      'Test DarwinAddBuildConfigurationProcessor is idempotent and updates configurations in place on rerun',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final projectPath = '${dir.path}/Runner.xcodeproj';
+      copyPathSync(exampleProjectPath, projectPath);
+
+      const modes = ['Debug', 'Profile', 'Release'];
+
+      Future<void> run(String mode, String xcconfig) =>
+          DarwinAddBuildConfigurationProcessor(
+            projectPath,
+            xcconfig,
+            'orange',
+            mode,
+            const {'PRODUCT_BUNDLE_IDENTIFIER': 'com.example.orange'},
+            config: flavorizr,
+            logger: logger,
+          ).execute();
+
+      for (final mode in modes) {
+        await run(mode, 'Flutter/apple$mode.xcconfig');
+      }
+
+      final afterFirst = await XcodeProject.open(projectPath);
+      final originalUuids = {
+        for (final mode in modes)
+          mode: afterFirst.targets.first.buildConfigurationList!
+              .buildConfigurations
+              .firstWhere((c) => c.name == '$mode-orange')
+              .uuid,
+      };
+      final originalProjectUuids = {
+        for (final mode in modes)
+          mode: afterFirst.buildConfigurations
+              .firstWhere((c) => c.name == '$mode-orange')
+              .uuid,
+      };
+
+      for (final mode in modes) {
+        await run(mode, 'Flutter/appleDebug.xcconfig');
+      }
+
+      final reopened = await XcodeProject.open(projectPath);
+      final target = reopened.targets.first;
+      final debugRef = reopened.files
+          .firstWhere((f) => f.path == 'Flutter/appleDebug.xcconfig');
+
+      for (final mode in modes) {
+        final targetMatches = target.buildConfigurationList!.buildConfigurations
+            .where((c) => c.name == '$mode-orange')
+            .toList();
+
+        expect(targetMatches.length, 1,
+            reason: '$mode-orange must not be duplicated on the target');
+
+        final projectMatches = reopened.buildConfigurations
+            .where((c) => c.name == '$mode-orange')
+            .toList();
+        expect(projectMatches.length, 1,
+            reason: '$mode-orange must not be duplicated on the project');
+        expect(projectMatches.single.uuid, originalProjectUuids[mode]);
+
+        final config = targetMatches.single;
+        expect(config.uuid, originalUuids[mode]);
+        expect(config.buildSettings['PRODUCT_NAME'], r'$(TARGET_NAME)');
+        expect(config.baseConfigurationReference?.uuid, debugRef.uuid);
+      }
+    });
+  });
+
+  test(
       'Test DarwinAddBuildConfigurationProcessor throws when the xcconfig file reference does not exist',
       () async {
     await TestUtils.withTempDir((dir) async {
