@@ -69,20 +69,40 @@ void main() {
       expect(content, contains('Release-orange'));
       expect(content, contains('Profile-orange'));
 
+      final launchActionMatch = RegExp(
+        r'<LaunchAction[\s\S]*?</LaunchAction>',
+      ).firstMatch(content);
+      expect(launchActionMatch, isNotNull);
+      expect(
+        launchActionMatch!.group(0),
+        contains('BuildableProductRunnable'),
+      );
+
       final profileActionMatch = RegExp(
         r'<ProfileAction[\s\S]*?</ProfileAction>',
       ).firstMatch(content);
       expect(profileActionMatch, isNotNull);
+      final profileActionContent = profileActionMatch!.group(0)!;
+      expect(profileActionContent, contains('BuildableProductRunnable'));
+      expect(profileActionContent, contains('BuildableName = "Runner.app"'));
+      expect(profileActionContent, contains('BlueprintName = "Runner"'));
       expect(
-        profileActionMatch!.group(0),
-        contains('BuildableProductRunnable'),
+        profileActionContent,
+        contains('ReferencedContainer = "container:Runner.xcodeproj"'),
       );
 
       final testActionMatch = RegExp(
         r'<TestAction[\s\S]*?</TestAction>',
       ).firstMatch(content);
       expect(testActionMatch, isNotNull);
-      expect(testActionMatch!.group(0), contains('MacroExpansion'));
+      final testActionContent = testActionMatch!.group(0)!;
+      expect(testActionContent, contains('MacroExpansion'));
+      expect(testActionContent, contains('BuildableName = "Runner.app"'));
+      expect(testActionContent, contains('BlueprintName = "Runner"'));
+      expect(
+        testActionContent,
+        contains('ReferencedContainer = "container:Runner.xcodeproj"'),
+      );
     });
   });
 
