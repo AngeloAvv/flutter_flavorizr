@@ -28,6 +28,11 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 import 'package:mason_logger/mason_logger.dart';
 
+const _testProductTypes = {
+  'com.apple.product-type.bundle.unit-test',
+  'com.apple.product-type.bundle.ui-testing',
+};
+
 class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
   final String projectPath;
   final String schemeName;
@@ -68,14 +73,11 @@ class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
     macroExpansion.setBuildableReference(ref);
     scheme.testAction.addMacroExpansion(macroExpansion);
 
-    const testProductTypes = {
-      'com.apple.product-type.bundle.unit-test',
-      'com.apple.product-type.bundle.ui-testing',
-    };
-    for (final testTarget in project.targets.whereType<PBXNativeTarget>()) {
-      if (!testProductTypes.contains(testTarget.productType)) {
-        continue;
-      }
+    final testTargets = project.targets
+        .whereType<PBXNativeTarget>()
+        .where((target) => _testProductTypes.contains(target.productType));
+
+    for (final testTarget in testTargets) {
       final testRef = BuildableReference()
         ..setReferenceTarget(
           testTarget.uuid,
