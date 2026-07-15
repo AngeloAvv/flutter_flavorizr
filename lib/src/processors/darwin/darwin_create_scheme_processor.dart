@@ -62,6 +62,11 @@ class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
     runnable.runnableDebuggingMode = '0';
     runnable.buildableReference = ref;
     scheme.launchAction.buildableProductRunnable = runnable;
+    scheme.profileAction.buildableProductRunnable = runnable;
+
+    final macroExpansion = MacroExpansion();
+    macroExpansion.setBuildableReference(ref);
+    scheme.testAction.addMacroExpansion(macroExpansion);
 
     await scheme.saveAs(
         '$projectPath/xcshareddata/xcschemes/$schemeName.xcscheme');

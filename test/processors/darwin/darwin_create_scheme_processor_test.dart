@@ -68,6 +68,21 @@ void main() {
       expect(content, contains('Debug-orange'));
       expect(content, contains('Release-orange'));
       expect(content, contains('Profile-orange'));
+
+      final profileActionMatch = RegExp(
+        r'<ProfileAction[\s\S]*?</ProfileAction>',
+      ).firstMatch(content);
+      expect(profileActionMatch, isNotNull);
+      expect(
+        profileActionMatch!.group(0),
+        contains('BuildableProductRunnable'),
+      );
+
+      final testActionMatch = RegExp(
+        r'<TestAction[\s\S]*?</TestAction>',
+      ).firstMatch(content);
+      expect(testActionMatch, isNotNull);
+      expect(testActionMatch!.group(0), contains('MacroExpansion'));
     });
   });
 
