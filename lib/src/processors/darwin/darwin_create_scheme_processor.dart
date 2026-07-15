@@ -79,7 +79,7 @@ class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
       final testRef = BuildableReference()
         ..setReferenceTarget(
           testTarget.uuid,
-          '${testTarget.name}.xctest',
+          '${testTarget.productName ?? testTarget.name}.xctest',
           testTarget.name!,
           'container:${project.name}.xcodeproj',
         );
