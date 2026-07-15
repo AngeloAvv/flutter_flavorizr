@@ -26,6 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
+import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/ico_encoder_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,6 +96,28 @@ void main() {
         expect(
           () => processor.execute(),
           throwsA(isA<FileNotFoundException>()),
+        );
+      });
+    },
+  );
+
+  test(
+    'Test IcoEncoderProcessor throws when source file is not a decodable image',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final source = p.join(dir.path, 'not_an_image.png');
+        File(source).writeAsStringSync('this is definitely not an image' * 8);
+
+        final processor = IcoEncoderProcessor(
+          source,
+          p.join(dir.path, 'app_icon.ico'),
+          config: flavorizr,
+          logger: logger,
+        );
+
+        expect(
+          () => processor.execute(),
+          throwsA(isA<MalformedResourceException>()),
         );
       });
     },

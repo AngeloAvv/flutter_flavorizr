@@ -67,6 +67,12 @@ flavorizr:
         name: "Banana App"
       windows: {}
 
+    cherry:
+      app:
+        name: "Cherry App"
+        icon: '$sourceFixture'
+      windows: {}
+
 flutter:
   uses-material-design: true
 ''';
@@ -91,7 +97,7 @@ flutter:
 
         final processor = WindowsIconsProcessor(config: flavorizr, logger: logger);
 
-        expect(processor.processors.length, 1);
+        expect(processor.processors.length, 2);
       });
     },
   );
@@ -122,6 +128,24 @@ flutter:
 
         expect(File('${K.windowsIconsPath}/apple.ico').existsSync(), isTrue);
         expect(File('${K.windowsIconsPath}/banana.ico').existsSync(), isFalse);
+      });
+    },
+  );
+
+  test(
+    'Test WindowsIconsProcessor falls back to app.icon when windows.icon is not set',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final pubspecPath = '${dir.path}/pubspec.yaml';
+        File(pubspecPath).writeAsStringSync(buildPubspecYaml());
+
+        flavorizr = TestUtils.parseFlavorizr(pubspecPath.replaceAll('.yaml', ''));
+
+        Directory.current = dir;
+
+        await WindowsIconsProcessor(config: flavorizr, logger: logger).execute();
+
+        expect(File('${K.windowsIconsPath}/cherry.ico').existsSync(), isTrue);
       });
     },
   );
