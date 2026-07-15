@@ -3,7 +3,7 @@
 A flutter utility to easily create flavors in your flutter application
 
 [![Pub](https://img.shields.io/pub/v/flutter_flavorizr.svg)](https://pub.dev/packages/flutter_flavorizr)
-![Dart CI](https://github.com/AngeloAvv/flutter_flavorizr/workflows/Dart%20CI/badge.svg)
+[![Pipeline](https://github.com/AngeloAvv/flutter_flavorizr/actions/workflows/default.yml/badge.svg)](https://github.com/AngeloAvv/flutter_flavorizr/actions/workflows/default.yml)
 [![codecov](https://codecov.io/gh/AngeloAvv/flutter_flavorizr/graph/badge.svg?token=D8V72QVK72)](https://codecov.io/gh/AngeloAvv/flutter_flavorizr)
 [![Star on GitHub](https://img.shields.io/github/stars/AngeloAvv/flutter_flavorizr.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/AngeloAvv/flutter_flavorizr)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
@@ -26,7 +26,7 @@ This package is intended to support development of Flutter projects. In general,
 
 ```yaml
 dev_dependencies:
-  flutter_flavorizr: ^2.5.0
+  flutter_flavorizr: ^2.6.0
 ```
 
 You can install packages from the command line:
@@ -117,7 +117,7 @@ flavorizr:
 | app                                     | Object |                                                                                            | false    | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                            | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                            | false    | An array of instructions to customize the flavorizr process                                   |
-| assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.4.2/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
+| assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | Array  |                                                                                            | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>

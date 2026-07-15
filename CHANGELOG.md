@@ -1,29 +1,36 @@
-## NEXT
+## 2.6.0
+
 * Added support for Linux platform (`linux:cmake`, `linux:runnerCmake`, `linux:myApplication` processors)
 * Added support for Windows platform (`windows:cmake`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:dummyAssets`, `windows:icons` processors) — sets the per-flavor window title and app icon
 * Generated flavor schemes now include testable references for unit-test and UI-testing targets
 * Fixed generated Xcode schemes: added `BuildableProductRunnable` to `ProfileAction` and `MacroExpansion` to `TestAction`
 * Fixed duplicate build configurations being created on native targets when re-running flavorizr on an already-configured project
+* Bumped dependencies
 
 ## 2.5.0
+
 * Replaced Ruby xcodeproj gem with dart_xcodeproj — no Ruby/gem installation required
 * iOS/macOS app icon asset catalogs now use a `-<flavor>` suffix in their naming
 * Added `includes` key to iOS and macOS xcconfig configuration (global under `app.ios`/`app.macos` and per-flavor) — supports optional per-target scoping and `#include?` via the `optional` flag
 
 ## 2.4.2
+
 * Fixed incorrect LD_RUNPATH_SEARCH_PATHS for macOS build settings
 * Fixed missing contents.json when generating darwin icons
 * Added support for multiple ide values
 * Bumped dependencies
 
 ## 2.4.1
+
 * Fixed profile build configuration
 * Updated supported platforms
 
 ## 2.4.0
+
 * Updated logging system
 
 ## 2.3.1
+
 * Fixed missing conditional Target Support Files include on MacOSXCConfigProcessor
 * Support themed icon on Android >= 13
 * Avoid new line at every run on build.gradle(.kts)
