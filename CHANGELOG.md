@@ -1,6 +1,8 @@
 ## NEXT
 * Added support for Linux platform (`linux:cmake`, `linux:runnerCmake`, `linux:myApplication` processors)
 * Added support for Windows platform (`windows:cmake`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:dummyAssets`, `windows:icons` processors) — sets the per-flavor window title and app icon
+* Generated flavor schemes now include testable references for unit-test and UI-testing targets
+* Fixed missing macro expansion for profile action in generated Xcode schemes
 
 ## 2.5.0
 * Replaced Ruby xcodeproj gem with dart_xcodeproj — no Ruby/gem installation required
