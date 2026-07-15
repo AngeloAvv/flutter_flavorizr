@@ -103,7 +103,40 @@ void main() {
         testActionContent,
         contains('ReferencedContainer = "container:Runner.xcodeproj"'),
       );
+      expect(testActionContent, contains('<Testables>'));
+      expect(
+        testActionContent,
+        contains('BuildableName = "RunnerTests.xctest"'),
+      );
+      expect(testActionContent, contains('BlueprintName = "RunnerTests"'));
     });
   });
 
+  test(
+      'Test DarwinCreateSchemeProcessor does not duplicate testables when run twice',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final projectPath = '${dir.path}/Runner.xcodeproj';
+      copyPathSync(exampleProjectPath, projectPath);
+
+      final processor = DarwinCreateSchemeProcessor(
+        projectPath,
+        'orange',
+        config: flavorizr,
+        logger: logger,
+      );
+
+      await processor.execute();
+      await processor.execute();
+
+      final content =
+          File('$projectPath/xcshareddata/xcschemes/orange.xcscheme')
+              .readAsStringSync();
+
+      expect(
+        'BuildableName = "RunnerTests.xctest"'.allMatches(content).length,
+        1,
+      );
+    });
+  });
 }

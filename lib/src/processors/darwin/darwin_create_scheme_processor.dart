@@ -68,6 +68,28 @@ class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
     macroExpansion.setBuildableReference(ref);
     scheme.testAction.addMacroExpansion(macroExpansion);
 
+    const testProductTypes = {
+      'com.apple.product-type.bundle.unit-test',
+      'com.apple.product-type.bundle.ui-testing',
+    };
+    for (final testTarget in project.targets.whereType<PBXNativeTarget>()) {
+      if (!testProductTypes.contains(testTarget.productType)) {
+        continue;
+      }
+      final testRef = BuildableReference()
+        ..setReferenceTarget(
+          testTarget.uuid,
+          '${testTarget.name}.xctest',
+          testTarget.name!,
+          'container:${project.name}.xcodeproj',
+        );
+      final testable = TestableReference()
+        ..skipped = false
+        ..parallelizable = false
+        ..addBuildableReference(testRef);
+      scheme.testAction.addTestable(testable);
+    }
+
     await scheme.saveAs(
         '$projectPath/xcshareddata/xcschemes/$schemeName.xcscheme');
   }
