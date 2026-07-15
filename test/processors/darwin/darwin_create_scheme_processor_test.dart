@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_create_scheme_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,30 +46,138 @@ void main() {
   });
 
   test(
-      'Test DarwinCreateSchemeProcessor writes an xcscheme file with the flavor build configurations',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+    'Test DarwinCreateSchemeProcessor writes an xcscheme file with the flavor build configurations',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      final processor = DarwinCreateSchemeProcessor(
-        projectPath,
-        'orange',
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = DarwinCreateSchemeProcessor(
+          projectPath,
+          'orange',
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await processor.execute();
+        await processor.execute();
 
-      final schemeFile =
-          File('$projectPath/xcshareddata/xcschemes/orange.xcscheme');
-      expect(schemeFile.existsSync(), isTrue);
+        final schemeFile = File(
+          '$projectPath/xcshareddata/xcschemes/orange.xcscheme',
+        );
+        expect(schemeFile.existsSync(), isTrue);
 
-      final content = schemeFile.readAsStringSync();
-      expect(content, contains('Debug-orange'));
-      expect(content, contains('Release-orange'));
-      expect(content, contains('Profile-orange'));
-    });
-  });
+        final content = schemeFile.readAsStringSync();
+        expect(content, contains('Debug-orange'));
+        expect(content, contains('Release-orange'));
+        expect(content, contains('Profile-orange'));
 
+        final launchActionMatch = RegExp(
+          r'<LaunchAction[\s\S]*?</LaunchAction>',
+        ).firstMatch(content);
+        expect(launchActionMatch, isNotNull);
+        expect(
+          launchActionMatch!.group(0),
+          contains('BuildableProductRunnable'),
+        );
+
+        final profileActionMatch = RegExp(
+          r'<ProfileAction[\s\S]*?</ProfileAction>',
+        ).firstMatch(content);
+        expect(profileActionMatch, isNotNull);
+        final profileActionContent = profileActionMatch!.group(0)!;
+        expect(profileActionContent, contains('BuildableProductRunnable'));
+        expect(profileActionContent, contains('BuildableName = "Runner.app"'));
+        expect(profileActionContent, contains('BlueprintName = "Runner"'));
+        expect(
+          profileActionContent,
+          contains('ReferencedContainer = "container:Runner.xcodeproj"'),
+        );
+
+        final testActionMatch = RegExp(
+          r'<TestAction[\s\S]*?</TestAction>',
+        ).firstMatch(content);
+        expect(testActionMatch, isNotNull);
+        final testActionContent = testActionMatch!.group(0)!;
+        expect(testActionContent, contains('MacroExpansion'));
+        expect(testActionContent, contains('BuildableName = "Runner.app"'));
+        expect(testActionContent, contains('BlueprintName = "Runner"'));
+        expect(
+          testActionContent,
+          contains('ReferencedContainer = "container:Runner.xcodeproj"'),
+        );
+        expect(testActionContent, contains('<Testables>'));
+        expect(
+          testActionContent,
+          contains('BuildableName = "RunnerTests.xctest"'),
+        );
+        expect(testActionContent, contains('BlueprintName = "RunnerTests"'));
+      });
+    },
+  );
+
+  test(
+    'Test DarwinCreateSchemeProcessor does not duplicate testables when run twice',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
+
+        final processor = DarwinCreateSchemeProcessor(
+          projectPath,
+          'orange',
+          config: flavorizr,
+          logger: logger,
+        );
+
+        await processor.execute();
+        await processor.execute();
+
+        final content = File(
+          '$projectPath/xcshareddata/xcschemes/orange.xcscheme',
+        ).readAsStringSync();
+
+        expect(
+          'BuildableName = "RunnerTests.xctest"'.allMatches(content).length,
+          1,
+        );
+      });
+    },
+  );
+
+  test(
+    'Test DarwinCreateSchemeProcessor generates testables for unit-test and ui-testing targets',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
+
+        // The example project ships a unit-test target (RunnerTests); add a
+        // ui-testing target so both product types are exercised.
+        final project = await XcodeProject.open(projectPath);
+        final uiTestTarget =
+            project.newObject<PBXNativeTarget>((g, u) => PBXNativeTarget(g, u))
+              ..name = 'RunnerUITests'
+              ..productName = 'RunnerUITests'
+              ..productType = 'com.apple.product-type.bundle.ui-testing';
+        project.targets.add(uiTestTarget);
+        await project.save();
+
+        final processor = DarwinCreateSchemeProcessor(
+          projectPath,
+          'orange',
+          config: flavorizr,
+          logger: logger,
+        );
+
+        await processor.execute();
+
+        final content = File(
+          '$projectPath/xcshareddata/xcschemes/orange.xcscheme',
+        ).readAsStringSync();
+
+        expect(content, contains('BuildableName = "RunnerTests.xctest"'));
+        expect(content, contains('BuildableName = "RunnerUITests.xctest"'));
+      });
+    },
+  );
 }

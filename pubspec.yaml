@@ -25,7 +25,7 @@ dependencies:
   args: ^2.4.2
   checked_yaml: ^2.0.3
   collection: ^1.18.0
-  dart_xcodeproj: ^0.2.0
+  dart_xcodeproj: ^0.3.0
   image: ^4.9.1
   io: ^1.0.4
   json_annotation: ^4.8.1
