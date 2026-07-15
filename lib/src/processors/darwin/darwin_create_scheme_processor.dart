@@ -28,6 +28,11 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 import 'package:mason_logger/mason_logger.dart';
 
+const _testProductTypes = {
+  'com.apple.product-type.bundle.unit-test',
+  'com.apple.product-type.bundle.ui-testing',
+};
+
 class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
   final String projectPath;
   final String schemeName;
@@ -67,6 +72,25 @@ class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
     final macroExpansion = MacroExpansion();
     macroExpansion.setBuildableReference(ref);
     scheme.testAction.addMacroExpansion(macroExpansion);
+
+    final testTargets = project.targets
+        .whereType<PBXNativeTarget>()
+        .where((target) => _testProductTypes.contains(target.productType));
+
+    for (final testTarget in testTargets) {
+      final testRef = BuildableReference()
+        ..setReferenceTarget(
+          testTarget.uuid,
+          '${testTarget.productName ?? testTarget.name}.xctest',
+          testTarget.name!,
+          'container:${project.name}.xcodeproj',
+        );
+      final testable = TestableReference()
+        ..skipped = false
+        ..parallelizable = false
+        ..addBuildableReference(testRef);
+      scheme.testAction.addTestable(testable);
+    }
 
     await scheme.saveAs(
         '$projectPath/xcshareddata/xcschemes/$schemeName.xcscheme');
