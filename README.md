@@ -57,6 +57,7 @@ flavors:
       bundleId: "com.example.apple"
     linux:
       applicationId: "com.example.apple"
+    windows: {}
   banana:
     app:
       name: "Banana App"
@@ -69,6 +70,7 @@ flavors:
       bundleId: "com.example.banana"
     linux:
       applicationId: "com.example.banana"
+    windows: {}
 ```
 
 Alternatively, add a new key named flavorizr and define a sub item named *flavors*. 
@@ -90,6 +92,7 @@ flavorizr:
         bundleId: "com.example.apple"
       linux:
         applicationId: "com.example.apple"
+      windows: {}
     banana:
       app:
         name: "Banana App"
@@ -102,6 +105,7 @@ flavorizr:
         bundleId: "com.example.banana"
       linux:
         applicationId: "com.example.banana"
+      windows: {}
 ```
 
 ### Available fields
@@ -154,6 +158,11 @@ flavorizr:
 | linux:cmake             | Linux         | Sets the application ID for each flavor in CMakeLists.txt               |
 | linux:runnerCmake       | Linux         | Forwards FLUTTER_APP_FLAVOR into runner/CMakeLists.txt so it's available to native code |
 | linux:myApplication     | Linux         | Sets the window title for each flavor in my_application.cc              |
+| windows:mainCppTemplate | Windows       | Templates main.cpp into main.cpp.in so its window title can be set per flavor |
+| windows:runnerRcTemplate| Windows       | Templates Runner.rc into Runner.rc.in so its icon/window title can be set per flavor |
+| windows:cmake           | Windows       | Sets the icon/window title for each flavor in runner/CMakeLists.txt and wires the .in templates via configure_file |
+| windows:dummyAssets     | Windows       | Generates a default icon for your custom flavors                        |
+| windows:icons           | Windows       | Creates an icon for each flavor according to the icon directive          |
 
 #### android (under app)
 
@@ -220,6 +229,19 @@ flavorizr:
 | includes            | Array      | []      | false    | A list of xcconfig files to include in the generated xcconfig for this flavor                                 |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 | icon                | String     |         | false    | The icon path for this macOS flavor                                                                           | 
+
+#### linux (under *flavorname*)
+
+| key           | type   | default | required | description                                    |
+|:--------------|:-------|:--------|:---------|:------------------------------------------------|
+| applicationId | String |         | true     | The GTK application ID of the Linux App        |
+
+#### windows (under *flavorname*)
+
+| key                 | type   | default | required | description                                                         |
+|:--------------------|:-------|:--------|:---------|:---------------------------------------------------------------------|
+| generateDummyAssets | bool   | true    | false    | True if you want to generate a dummy icon (.ico) for this flavor     |
+| icon                | String |         | false    | The icon path for this Windows flavor                                |
 
 #### firebase
 
@@ -518,6 +540,11 @@ By default, when you do not specify a custom set of processors by appending the 
 * linux:cmake
 * linux:runnerCmake
 * linux:myApplication
+* windows:mainCppTemplate
+* windows:runnerRcTemplate
+* windows:cmake
+* windows:dummyAssets
+* windows:icons
 * google:firebase
 * huawei:agconnect
 * assets:clean

@@ -1,5 +1,6 @@
 ## NEXT
 * Added support for Linux platform (`linux:cmake`, `linux:runnerCmake`, `linux:myApplication` processors)
+* Added support for Windows platform (`windows:cmake`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:dummyAssets`, `windows:icons` processors) — sets the per-flavor window title and app icon
 
 ## 2.5.0
 * Replaced Ruby xcodeproj gem with dart_xcodeproj — no Ruby/gem installation required

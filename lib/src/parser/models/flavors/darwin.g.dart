@@ -11,8 +11,8 @@ Darwin _$DarwinFromJson(Map json) {
     json,
     requiredKeys: const ['bundleId'],
     disallowNullValues: const [
-      'firebase',
       'icon',
+      'firebase',
       'bundleId',
       'variables',
       'includes',

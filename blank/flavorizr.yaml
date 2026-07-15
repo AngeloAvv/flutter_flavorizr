@@ -15,6 +15,7 @@ flavors:
       bundleId: "com.example.apple"
     linux:
       applicationId: "com.example.apple"
+    windows: {}
 
   banana:
     app:
@@ -28,6 +29,7 @@ flavors:
       bundleId: "com.example.banana"
     linux:
       applicationId: "com.example.banana"
+    windows: {}
 
 ide:
   - idea
@@ -62,6 +64,11 @@ instructions:
   - 'linux:cmake'
   - 'linux:runnerCmake'
   - 'linux:myApplication'
+  - 'windows:mainCppTemplate'
+  - 'windows:runnerRcTemplate'
+  - 'windows:cmake'
+  - 'windows:dummyAssets'
+  - 'windows:icons'
   - 'google:firebase'
   - 'huawei:agconnect'
   - 'ide:config'

@@ -26,12 +26,19 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/dummy_assets_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dummy_assets_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 import '../../test_utils.dart';
+
+class _TestDummyAssetsConfig extends OS with DummyAssetsMixin {
+  _TestDummyAssetsConfig({bool generateDummyAssets = true}) {
+    this.generateDummyAssets = generateDummyAssets;
+  }
+}
 
 void main() {
   late Flavorizr flavorizr;
@@ -49,7 +56,7 @@ void main() {
       Directory(source).createSync(recursive: true);
       File('$source/asset.png').writeAsStringSync('asset content');
 
-      const os = OS(generateDummyAssets: true);
+      final os = _TestDummyAssetsConfig(generateDummyAssets: true);
 
       final processor = DummyAssetsProcessor(
         source,
@@ -72,7 +79,7 @@ void main() {
       Directory(source).createSync(recursive: true);
       File('$source/asset.png').writeAsStringSync('asset content');
 
-      const os = OS(generateDummyAssets: false);
+      final os = _TestDummyAssetsConfig(generateDummyAssets: false);
 
       final processor = DummyAssetsProcessor(
         source,

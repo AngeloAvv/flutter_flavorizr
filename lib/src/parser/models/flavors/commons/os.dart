@@ -23,22 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavors/google/firebase/firebase.dart';
-import 'package:json_annotation/json_annotation.dart';
-
-class OS {
-  @JsonKey(defaultValue: true)
-  final bool generateDummyAssets;
-
-  @JsonKey(disallowNullValue: true)
-  final Firebase? firebase;
-
-  @JsonKey(disallowNullValue: true)
-  final String? icon;
-
-  const OS({
-    this.generateDummyAssets = true,
-    this.firebase,
-    this.icon,
-  });
-}
+/// Common marker base for every OS-specific flavor config (Android, Darwin,
+/// Windows, ...). Deliberately empty — shared fields live in standalone
+/// mixins (`FirebaseMixin`, `IconMixin`, `DummyAssetsMixin`) so each platform
+/// can opt into only the capabilities it actually supports.
+abstract class OS {}

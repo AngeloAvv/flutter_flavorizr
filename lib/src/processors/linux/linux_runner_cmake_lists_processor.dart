@@ -25,7 +25,7 @@
 
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
-import 'package:flutter_flavorizr/src/utils/linux_utils.dart';
+import 'package:flutter_flavorizr/src/utils/desktop_utils.dart';
 
 /// Forwards `FLUTTER_APP_FLAVOR` as a preprocessor define so
 /// `my_application.cc` can read it via `#ifdef FLUTTER_APP_FLAVOR`. Freshly

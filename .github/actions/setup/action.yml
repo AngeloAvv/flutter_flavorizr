@@ -8,8 +8,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Use Flutter master (Linux flavor support isn't in a stable release yet)
-      if: ${{ inputs.platform == 'linux' }}
+    - name: Use Flutter master (Linux/Windows flavor support isn't in a stable release yet)
+      if: ${{ inputs.platform == 'linux' || inputs.platform == 'windows' }}
       shell: bash
       run: echo '{"flutter":"master"}' > .fvmrc
 

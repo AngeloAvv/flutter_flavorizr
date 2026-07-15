@@ -64,6 +64,11 @@ import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_
 import 'package:flutter_flavorizr/src/processors/macos/icons/macos_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/macos_plist_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/xcconfig/macos_xcconfig_targets_file_processor.dart';
+import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icons_processor.dart';
+import 'package:flutter_flavorizr/src/processors/windows/windows_dummy_assets_processor.dart';
+import 'package:flutter_flavorizr/src/processors/windows/windows_main_cpp_template_processor.dart';
+import 'package:flutter_flavorizr/src/processors/windows/windows_runner_cmake_lists_processor.dart';
+import 'package:flutter_flavorizr/src/processors/windows/windows_runner_rc_template_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:mason_logger/mason_logger.dart';
 
@@ -114,6 +119,13 @@ class Processor extends AbstractProcessor<void> {
     'linux:runnerCmake',
     'linux:myApplication',
 
+    // Windows
+    'windows:mainCppTemplate',
+    'windows:runnerRcTemplate',
+    'windows:cmake',
+    'windows:dummyAssets',
+    'windows:icons',
+
     // Google
     'google:firebase',
 
@@ -130,26 +142,37 @@ class Processor extends AbstractProcessor<void> {
   Processor(super.config, {this.force = false, required super.logger})
     : _availableProcessors = _initAvailableProcessors(config, logger: logger);
 
+  /// Resolves the configured (or default) instruction set, dropping any
+  /// platform-specific instructions for platforms with no flavors defined.
+  List<String> resolveInstructions() =>
+      List<String>.from(config.instructions ?? defaultInstructionSet)
+        ..removeWhere(
+          (instruction) =>
+              !config.androidFlavorsAvailable &&
+              instruction.startsWith('android'),
+        )
+        ..removeWhere(
+          (instruction) =>
+              !config.iosFlavorsAvailable && instruction.startsWith('ios'),
+        )
+        ..removeWhere(
+          (instruction) =>
+              !config.macosFlavorsAvailable &&
+              instruction.startsWith('macos'),
+        )
+        ..removeWhere(
+          (instruction) =>
+              !config.linuxFlavorsAvailable && instruction.startsWith('linux'),
+        )
+        ..removeWhere(
+          (instruction) =>
+              !config.windowsFlavorsAvailable &&
+              instruction.startsWith('windows'),
+        );
+
   @override
   Future<void> execute() async {
-    final instructions = List.from(config.instructions ?? defaultInstructionSet)
-      ..removeWhere(
-        (instruction) =>
-            !config.androidFlavorsAvailable &&
-            instruction.startsWith('android'),
-      )
-      ..removeWhere(
-        (instruction) =>
-            !config.iosFlavorsAvailable && instruction.startsWith('ios'),
-      )
-      ..removeWhere(
-        (instruction) =>
-            !config.macosFlavorsAvailable && instruction.startsWith('macos'),
-      )
-      ..removeWhere(
-        (instruction) =>
-            !config.linuxFlavorsAvailable && instruction.startsWith('linux'),
-      );
+    final instructions = resolveInstructions();
 
     logger.info('Flavorization process started');
 
@@ -398,6 +421,33 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
+
+      // Windows
+      'windows:mainCppTemplate': () => WindowsMainCppTemplateProcessor(
+        K.windowsMainCppPath,
+        K.windowsMainCppTemplatePath,
+        config: flavorizr,
+        logger: logger,
+      ),
+      'windows:runnerRcTemplate': () => WindowsRunnerRcTemplateProcessor(
+        K.windowsRunnerRcPath,
+        K.windowsRunnerRcTemplatePath,
+        config: flavorizr,
+        logger: logger,
+      ),
+      'windows:cmake': () => ExistingFileStringProcessor(
+        K.windowsRunnerCMakeListsPath,
+        WindowsRunnerCMakeListsProcessor(config: flavorizr, logger: logger),
+        config: flavorizr,
+        logger: logger,
+      ),
+      'windows:dummyAssets': () => WindowsDummyAssetsProcessor(
+        K.tempWindowsIconPath,
+        config: flavorizr,
+        logger: logger,
+      ),
+      'windows:icons': () =>
+          WindowsIconsProcessor(config: flavorizr, logger: logger),
 
       // Google
       'google:firebase': () => FirebaseProcessor(

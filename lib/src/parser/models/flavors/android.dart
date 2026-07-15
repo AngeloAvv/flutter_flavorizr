@@ -26,6 +26,9 @@
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/dummy_assets_mixin.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/firebase_mixin.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/icon_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/google/firebase/firebase.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/huawei/agconnect/agconnect.dart';
@@ -34,7 +37,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'android.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class Android extends OS {
+class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
 
@@ -59,11 +62,15 @@ class Android extends OS {
     this.resValues = const {},
     this.buildConfigFields = const {},
     this.agconnect,
-    super.generateDummyAssets,
-    super.firebase,
-    super.icon,
+    bool generateDummyAssets = true,
+    Firebase? firebase,
+    String? icon,
     this.adaptiveIcon,
-  });
+  }) {
+    this.generateDummyAssets = generateDummyAssets;
+    this.firebase = firebase;
+    this.icon = icon;
+  }
 
   factory Android.fromJson(Map<String, dynamic> json) =>
       _$AndroidFromJson(json);

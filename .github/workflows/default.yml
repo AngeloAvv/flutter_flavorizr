@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         flavor: [ apple, banana ]
-        platform: [ android, ios, macos, linux ]
+        platform: [ android, ios, macos, linux, windows ]
         working-directory: [ blank, example ]
         include:
           - flavorize: false

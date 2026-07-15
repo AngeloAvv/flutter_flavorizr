@@ -1,0 +1,13 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 75%
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false

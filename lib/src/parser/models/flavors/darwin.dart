@@ -24,6 +24,9 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/dummy_assets_mixin.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/firebase_mixin.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavors/commons/icon_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/os.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/include.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/variable.dart';
@@ -33,7 +36,8 @@ import 'package:json_annotation/json_annotation.dart';
 part 'darwin.g.dart';
 
 @JsonSerializable(anyMap: true, createToJson: false)
-class Darwin extends OS with BuildSettingsMixin {
+class Darwin extends OS
+    with BuildSettingsMixin, FirebaseMixin, IconMixin, DummyAssetsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String bundleId;
 
@@ -48,10 +52,13 @@ class Darwin extends OS with BuildSettingsMixin {
     this.variables = const {},
     this.includes = const [],
     Map<String, dynamic> buildSettings = const {},
-    super.generateDummyAssets,
-    super.firebase,
-    super.icon,
+    bool generateDummyAssets = true,
+    Firebase? firebase,
+    String? icon,
   }) {
+    this.generateDummyAssets = generateDummyAssets;
+    this.firebase = firebase;
+    this.icon = icon;
     this.buildSettings = {
       "PRODUCT_BUNDLE_IDENTIFIER": bundleId,
     };

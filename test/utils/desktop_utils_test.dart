@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/utils/linux_utils.dart';
+import 'package:flutter_flavorizr/src/utils/desktop_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
