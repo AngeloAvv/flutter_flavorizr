@@ -10,3 +10,4 @@ analyzer:
     - "assets/**"
     - "test_resources/**"
     - "**/*.g.dart"
+    - build/**
