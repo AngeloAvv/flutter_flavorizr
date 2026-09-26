@@ -17,4 +17,6 @@ android.apply {
             resValue(type = "string", name = "app_name", value = "Banana App")
         }
     }
+
+    buildFeatures.resValues = true
 }
