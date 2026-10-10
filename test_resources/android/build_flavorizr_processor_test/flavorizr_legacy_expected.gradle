@@ -9,6 +9,8 @@ android {
             signingConfig flavorSigning.green
             versionCode 1000
             minSdkVersion 23
+            manifestPlaceholders.appScheme "appleScheme"
+            manifestPlaceholders.deep.level.item "x"
             resValue "string", "app_name", "Apple App"
             resValue "string", "variable_one", "previous variable one"
             resValue "string", "common", "test common"
@@ -17,6 +19,8 @@ android {
         banana {
             dimension "flavor-type"
             applicationId "com.example.banana"
+            manifestPlaceholders.appScheme "bananaScheme"
+            manifestPlaceholders.deep.level.item "y"
             resValue "string", "app_name", "Banana\\' App"
             resValue "string", "variable_one", "test variable\\' one"
             resValue "string", "common", "test common"
