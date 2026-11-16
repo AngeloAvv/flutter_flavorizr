@@ -57,14 +57,14 @@ class _SampleFlavorsProcessor extends FlavorizrProcessor {
     final flavors = File(ctx.resolve(K.flutterFlavorPath));
     await flavors.create(recursive: true);
     await flavors.writeAsString(content);
-    ctx.track(const Artifact('lib/flavors.dart'));
+    ctx.track(const Artifact.managed('lib/flavors.dart'));
 
     final icon = File(ctx.resolveProject(iconSource));
     if (icon.existsSync()) {
       final target = File(ctx.resolve(iconTarget));
       await target.create(recursive: true);
       await icon.copy(target.path);
-      ctx.track(const Artifact(iconTarget));
+      ctx.track(const Artifact.managed(iconTarget));
     }
   }
 }
