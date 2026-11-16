@@ -93,8 +93,6 @@ void main() {
       config: Flavorizr.parse(_config(flavors)),
       projectRoot: project,
       paths: [
-        'android/app/build.gradle',
-        'android/app/build.gradle.kts',
         'android/app/flavorizr.gradle',
         'android/app/flavorizr.gradle.kts',
         _manifestPath,

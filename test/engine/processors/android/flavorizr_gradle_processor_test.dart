@@ -103,9 +103,10 @@ void main() {
 
   File inRoot(String path) => File(p.join(root.path, path));
 
-  void createGradle(String name) => inRoot('android/app/$name')
-    ..createSync(recursive: true)
-    ..writeAsStringSync('// $name');
+  void createGradle(String name) =>
+      File(p.join(projectRoot.path, 'android/app/$name'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('// $name');
 
   setUp(() {
     final temp = Directory.systemTemp.createTempSync('flavorizr_gradle_');
@@ -203,7 +204,9 @@ void main() {
 
     test('overwrites a stale `flavorizr.gradle.kts` of the project', () async {
       createGradle('build.gradle.kts');
-      inRoot('android/app/flavorizr.gradle.kts').writeAsStringSync('stale');
+      inRoot('android/app/flavorizr.gradle.kts')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('stale');
 
       await const FlavorizrGradleProcessor().apply(contextFor(_oneFlavor));
 

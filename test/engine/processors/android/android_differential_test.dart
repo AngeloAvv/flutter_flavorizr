@@ -157,7 +157,7 @@ void main() {
             FlavorizrContext(
               config: config,
               root: portedProject,
-              projectRoot: legacyProject,
+              projectRoot: portedProject,
               logger: logger,
             ),
           );
@@ -191,7 +191,7 @@ void main() {
         FlavorizrContext(
           config: config,
           root: portedProject,
-          projectRoot: legacyProject,
+          projectRoot: portedProject,
           logger: logger,
         ),
       );

@@ -110,9 +110,9 @@ void main() {
     });
 
     test('reads tags separated by any white space the XML parser accepts', () {
-      for (final space in [' ', '\u000b', '\u000c', ' ', '\u0085']) {
+      for (final space in ['\u00a0', '\u000b', '\u000c', '\u2003', '\u0085']) {
         final source =
-            '<manifest xmlns:android="x"><application${space}android:label${space}=${space}"a"$space/></manifest>';
+            '<manifest xmlns:android="x"><application${space}android:label$space=$space"a"$space/></manifest>';
 
         expect(
           AndroidManifestEditor.withAppLabel(source),
@@ -123,7 +123,7 @@ void main() {
     });
 
     test('rejects, and does not hang on, a tag it cannot read', () {
-      for (final space in [' ', '\u000b', ' ']) {
+      for (final space in ['\u00a0', '\u000b', '\u2003']) {
         expect(
           () => AndroidManifestEditor.withAppLabel(
             '<manifest><application$space/></manifest>',

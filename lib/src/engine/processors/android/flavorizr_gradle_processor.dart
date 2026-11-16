@@ -42,12 +42,10 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 ///
 /// The DSL follows the build file of the app, like in 2.x: Groovy when
 /// `android/app/build.gradle` exists, otherwise Kotlin when
-/// `android/app/build.gradle.kts` does. The build file is looked up in the
-/// workspace, which therefore has to contain both
-/// `android/app/build.gradle` and `android/app/build.gradle.kts` when they
-/// exist (the whole `android/app` folder is fine too). The content is
-/// produced by the generators of the 2.x processors, which stay the single
-/// source of it until they are retired.
+/// `android/app/build.gradle.kts` does. The build file is a user input, so it
+/// is looked up in the real project and nothing needs to copy it to the
+/// workspace. The content is produced by the generators of the 2.x processors,
+/// which stay the single source of it until they are retired.
 class FlavorizrGradleProcessor extends FlavorizrProcessor {
   /// Creates the processor.
   const FlavorizrGradleProcessor();
@@ -57,45 +55,63 @@ class FlavorizrGradleProcessor extends FlavorizrProcessor {
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
-    final (buildPath, targetPath, generate) = _dsl(ctx);
+    final dsl = _dslOf(ctx);
 
-    ctx.logger.detail('[$id] Found `$buildPath`, generating `$targetPath`');
+    ctx.logger.detail(
+      '[$id] Found `${dsl.buildPath}`, generating `${dsl.targetPath}`',
+    );
 
-    final target = File(ctx.resolve(targetPath));
+    final target = File(ctx.resolve(dsl.targetPath));
 
-    await target.create(recursive: true);
-    await target.writeAsString(generate());
-    ctx.track(Artifact.managed(targetPath));
+    await target.parent.create(recursive: true);
+    await target.writeAsString(dsl.generate(ctx));
+    ctx.track(Artifact.managed(dsl.targetPath));
   }
 
-  /// The build file of the project, the flavorizr file that goes with it and
-  /// what generates the content of the latter.
-  (String, String, String Function()) _dsl(FlavorizrContext ctx) {
-    final candidates = [
-      (
-        K.androidBuildLegacyPath,
-        K.androidFlavorizrLegacyPath,
-        () => AndroidFlavorizrLegacyProcessor(
-          config: ctx.config,
-          logger: ctx.logger,
-        ).execute(),
-      ),
-      (
-        K.androidBuildKotlinPath,
-        K.androidFlavorizrKotlinPath,
-        () => AndroidFlavorizrKotlinProcessor(
-          config: ctx.config,
-          logger: ctx.logger,
-        ).execute(),
-      ),
-    ];
+  static _Dsl _dslOf(FlavorizrContext ctx) {
+    final candidates = [_groovy, _kotlin];
 
     for (final candidate in candidates) {
-      if (File(ctx.resolve(candidate.$1)).existsSync()) return candidate;
+      if (File(ctx.resolveProject(candidate.buildPath)).existsSync()) {
+        return candidate;
+      }
     }
 
     throw FileNotFoundException(
-      [for (final candidate in candidates) candidate.$1].toString(),
+      [for (final candidate in candidates) candidate.buildPath].toString(),
     );
   }
+
+  static final _Dsl _groovy = _Dsl(
+    buildPath: K.androidBuildLegacyPath,
+    targetPath: K.androidFlavorizrLegacyPath,
+    generate: (ctx) => AndroidFlavorizrLegacyProcessor(
+      config: ctx.config,
+      logger: ctx.logger,
+    ).execute(),
+  );
+
+  static final _Dsl _kotlin = _Dsl(
+    buildPath: K.androidBuildKotlinPath,
+    targetPath: K.androidFlavorizrKotlinPath,
+    generate: (ctx) => AndroidFlavorizrKotlinProcessor(
+      config: ctx.config,
+      logger: ctx.logger,
+    ).execute(),
+  );
+}
+
+/// A build script language: the build file that tells a project uses it, the
+/// flavorizr file that goes with it and what generates the content of the
+/// latter.
+final class _Dsl {
+  final String buildPath;
+  final String targetPath;
+  final String Function(FlavorizrContext ctx) generate;
+
+  const _Dsl({
+    required this.buildPath,
+    required this.targetPath,
+    required this.generate,
+  });
 }
