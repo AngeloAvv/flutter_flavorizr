@@ -184,7 +184,8 @@ class ShadowWorkspace {
         canonicalPath(entry.key): entry.value,
     };
     final hashOwned = hasher ?? (_, bytes) => digestOf(bytes);
-    final current = await _scanShadow();
+    final scan = await _scanShadow();
+    final current = scan.files;
     final changes = <FileChange>[];
 
     for (final path in {..._baseline.keys, ...current.keys}) {
@@ -207,7 +208,9 @@ class ShadowWorkspace {
           ownership: artifact?.ownership,
           // A file outside the whitelist was never copied, so there is no
           // baseline to tell whether the real one changed: it is not written.
-          disposition: !_isWhitelisted(path)
+          // Neither is a file a processor replaced with a link: it did not
+          // delete it.
+          disposition: !_isWhitelisted(path) || _isUnderLink(path, scan.links)
               ? ChangeDisposition.blocked
               : artifact == null
               ? ChangeDisposition.untracked
@@ -230,6 +233,9 @@ class ShadowWorkspace {
   bool _isWhitelisted(String path) => paths.any(
     (allowed) => allowed == path || p.posix.isWithin(allowed, path),
   );
+
+  bool _isUnderLink(String path, Set<String> links) =>
+      links.any((link) => link == path || p.posix.isWithin(link, path));
 
   Future<ChangeDisposition> _judge({
     required Artifact artifact,
@@ -302,20 +308,24 @@ class ShadowWorkspace {
     return switch (ownership) {
       Ownership.scaffold => ChangeDisposition.keep,
       Ownership.local => ChangeDisposition.apply,
-      Ownership.managed || Ownership.patched =>
+      Ownership.managed =>
         recordedHash != null && recordedHash == currentHash
             ? ChangeDisposition.apply
             : ChangeDisposition.conflict,
+      // A patched file owns only some regions or keys, and the rest of the
+      // file is the user's: removing it whole is never silent.
+      Ownership.patched => ChangeDisposition.conflict,
     };
   }
 
-  /// The digest of every file in the workspace, by canonical path. Ignored
-  /// folders and links are left out.
-  Future<Map<String, String>> _scanShadow() async {
+  /// Scans the workspace: the digest of every file and the symbolic links, by
+  /// canonical path. Ignored folders are left out. Links are never followed.
+  Future<({Map<String, String> files, Set<String> links})> _scanShadow() async {
     final files = <String, String>{};
+    final links = <String>{};
 
     await for (final entity in root.list(recursive: true, followLinks: false)) {
-      if (entity is! File) continue;
+      if (entity is! File && entity is! Link) continue;
 
       final relative = p.posix.joinAll(
         p.split(p.relative(entity.path, from: root.path)),
@@ -323,10 +333,14 @@ class ShadowWorkspace {
 
       if (p.posix.split(relative).any(isIgnoredName)) continue;
 
-      files[relative] = digestOf(await entity.readAsBytes());
+      if (entity is Link) {
+        links.add(relative);
+      } else {
+        files[relative] = digestOf(await (entity as File).readAsBytes());
+      }
     }
 
-    return files;
+    return (files: files, links: links);
   }
 
   /// Writes the changes of [diff] to the real project, all or nothing as far as
@@ -381,6 +395,8 @@ class ShadowWorkspace {
           baseline: baseline,
         );
       case FileSystemEntityType.directory:
+        // Also when empty: a processor may write a new file into it.
+        await Directory(resolveIn(shadowRoot, path)).create(recursive: true);
         await for (final entity in Directory(source).list(followLinks: false)) {
           final name = p.basename(entity.path);
           final child = '$path/$name';

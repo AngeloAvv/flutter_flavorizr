@@ -322,6 +322,82 @@ void main() {
       expect(disposition(diff, 'lib/edited.dart'), ChangeDisposition.conflict);
     });
 
+    test('a deleted patched file is a conflict, whatever the hash', () async {
+      // A patched file owns only some regions: the rest is the user's.
+      fx.project.write('android/app/build.gradle', 'user + owned');
+      final shadow = await fx.create(['android/app']);
+      shadow.delete('android/app/build.gradle');
+
+      final diff = await shadow.diff(
+        tracked: [const Artifact.patched('android/app/build.gradle')],
+        recordedHashes: {
+          'android/app/build.gradle': digestOf('user + owned'.codeUnits),
+        },
+      );
+
+      expect(
+        disposition(diff, 'android/app/build.gradle'),
+        ChangeDisposition.conflict,
+      );
+    });
+
+    group('replaced by a link in the shadow', () {
+      late Directory outside;
+
+      setUp(() {
+        outside = Directory(p.join(fx.scratch.path, 'outside'))..createSync();
+        File(p.join(outside.path, 'secret.txt')).writeAsStringSync('secret');
+      });
+
+      test('a file is blocked, not reported as deleted', () async {
+        fx.project.write('lib/a.dart', 'a');
+        final shadow = await fx.create(['lib']);
+        File(p.join(shadow.root.path, 'lib', 'a.dart')).deleteSync();
+        Link(
+          p.join(shadow.root.path, 'lib', 'a.dart'),
+        ).createSync(p.join(outside.path, 'secret.txt'));
+
+        final diff = await shadow.diff(
+          tracked: [const Artifact.local('lib/a.dart')],
+        );
+
+        expect(disposition(diff, 'lib/a.dart'), ChangeDisposition.blocked);
+
+        await shadow.copyBack(diff);
+
+        expect(fx.project.read('lib/a.dart'), 'a');
+      });
+
+      test('a folder blocks every file below it', () async {
+        fx.project.write('lib/sub/a.dart', 'a');
+        fx.project.write('lib/sub/b.dart', 'b');
+        final shadow = await fx.create(['lib']);
+        Directory(p.join(shadow.root.path, 'lib', 'sub')).deleteSync(
+          recursive: true,
+        );
+        Link(
+          p.join(shadow.root.path, 'lib', 'sub'),
+        ).createSync(outside.path);
+
+        final diff = await shadow.diff(
+          tracked: [
+            const Artifact.local('lib/sub/a.dart'),
+            const Artifact.local('lib/sub/b.dart'),
+          ],
+        );
+
+        expect(diff.blocked.map((c) => c.path), [
+          'lib/sub/a.dart',
+          'lib/sub/b.dart',
+        ]);
+
+        await shadow.copyBack(diff);
+
+        expect(fx.project.read('lib/sub/a.dart'), 'a');
+        expect(fx.project.read('lib/sub/b.dart'), 'b');
+      });
+    }, skip: Platform.isWindows ? 'creating links needs privileges' : false);
+
     test('a deleted local file is removed', () async {
       fx.project.write('.idea/a.xml', 'x');
       final shadow = await fx.create(['.idea']);

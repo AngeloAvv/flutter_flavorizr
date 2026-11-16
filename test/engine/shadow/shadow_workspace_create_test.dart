@@ -68,6 +68,17 @@ void main() {
       expect(shadow.read('android/app/src/main/res/b.xml'), 'b');
     });
 
+    test('creates an empty whitelisted folder, ready to be written', () async {
+      Directory(fx.project.abs('lib/sub')).createSync(recursive: true);
+
+      final shadow = await fx.create(['lib/sub']);
+
+      File(p.join(shadow.root.path, 'lib', 'sub', 'a.dart')).writeAsStringSync(
+        'a',
+      );
+      expect(shadow.read('lib/sub/a.dart'), 'a');
+    });
+
     test('tolerates a whitelisted path that does not exist yet', () async {
       final shadow = await fx.create(['lib/flavors.dart']);
 
