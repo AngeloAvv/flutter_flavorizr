@@ -80,11 +80,10 @@ void main() {
       await expectLater(
         resolver(terminal: terminal).resolve(diff),
         throwsA(
-          isA<UnresolvedConflictsException>().having(
-            (e) => e.paths,
-            'paths',
-            ['lib/a.dart', 'lib/b.dart'],
-          ),
+          isA<UnresolvedConflictsException>().having((e) => e.paths, 'paths', [
+            'lib/a.dart',
+            'lib/b.dart',
+          ]),
         ),
       );
       expect(terminal.prompts, isEmpty);
@@ -110,15 +109,18 @@ void main() {
       expect(resolution.kept, isEmpty);
     });
 
-    test('--on-conflict=keep approves nothing and keeps every conflict', () async {
-      final resolution = await resolver(
-        terminal: terminal,
-        policy: ConflictPolicy.keep,
-      ).resolve(diff);
+    test(
+      '--on-conflict=keep approves nothing and keeps every conflict',
+      () async {
+        final resolution = await resolver(
+          terminal: terminal,
+          policy: ConflictPolicy.keep,
+        ).resolve(diff);
 
-      expect(resolution.approved, isEmpty);
-      expect(resolution.kept, {'lib/a.dart', 'lib/b.dart'});
-    });
+        expect(resolution.approved, isEmpty);
+        expect(resolution.kept, {'lib/a.dart', 'lib/b.dart'});
+      },
+    );
   });
 
   group('with --yes on a TTY', () {

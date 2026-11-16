@@ -50,6 +50,29 @@ final class ConflictResolution {
     required Iterable<String> kept,
   }) : approved = Set.unmodifiable(approved),
        kept = Set.unmodifiable(kept);
+
+  /// [diff] with the [kept] conflicts relabelled as [ChangeDisposition.keep],
+  /// which is what copy-back wants: it refuses a diff holding a conflict that
+  /// is not in `approvedConflicts`, so a kept one must stop being a conflict.
+  ///
+  /// Pass the result to `ShadowWorkspace.copyBack`, together with [approved]
+  /// as its `approvedConflicts`. [diff] itself is not modified.
+  WorkspaceDiff applyTo(WorkspaceDiff diff) => WorkspaceDiff(
+    diff.changes.map(
+      (change) =>
+          change.disposition == ChangeDisposition.conflict &&
+              kept.contains(change.path)
+          ? FileChange(
+              path: change.path,
+              kind: change.kind,
+              ownership: change.ownership,
+              disposition: ChangeDisposition.keep,
+              before: change.before,
+              after: change.after,
+            )
+          : change,
+    ),
+  );
 }
 
 /// Decides, for every conflict of a diff, whether it may be overwritten.
@@ -121,7 +144,15 @@ class ConflictResolver {
         case _Choice.keep:
           kept.add(change.path);
         case _Choice.overwriteAll:
-          approved.addAll(conflicts.skip(index).map((change) => change.path));
+          final remaining = conflicts.skip(index).toList();
+
+          // Say what "all" covers: it includes files nobody has looked at, and
+          // deletions.
+          terminal.write(
+            'Overwriting all remaining files:\n'
+            '${remaining.map((c) => '  - ${c.path}${c.kind == ChangeKind.deleted ? ' (delete)' : ''}\n').join()}',
+          );
+          approved.addAll(remaining.map((change) => change.path));
 
           return ConflictResolution(approved: approved, kept: kept);
         case null:

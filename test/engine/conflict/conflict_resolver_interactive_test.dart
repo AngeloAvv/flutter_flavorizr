@@ -49,18 +49,21 @@ void main() {
   ).resolve(of ?? diff);
 
   group('on a TTY without a policy', () {
-    test('asks for each conflict, in path order, and only for conflicts', () async {
-      final terminal = FakeTerminal(answers: ['o', 'o', 'o']);
+    test(
+      'asks for each conflict, in path order, and only for conflicts',
+      () async {
+        final terminal = FakeTerminal(answers: ['o', 'o', 'o']);
 
-      await resolveWith(terminal);
+        await resolveWith(terminal);
 
-      expect(terminal.prompts, hasLength(3));
-      expect(
-        terminal.output.toString(),
-        stringContainsInOrder(['lib/a.dart', 'lib/b.dart', 'lib/c.dart']),
-      );
-      expect(terminal.output.toString(), isNot(contains('lib/z.dart')));
-    });
+        expect(terminal.prompts, hasLength(3));
+        expect(
+          terminal.output.toString(),
+          stringContainsInOrder(['lib/a.dart', 'lib/b.dart', 'lib/c.dart']),
+        );
+        expect(terminal.output.toString(), isNot(contains('lib/z.dart')));
+      },
+    );
 
     test('the prompt offers the four choices', () async {
       final terminal = FakeTerminal(answers: ['k', 'k', 'k']);
@@ -100,23 +103,45 @@ void main() {
       expect(resolution.kept, {'lib/b.dart'});
     });
 
-    test('overwrite all approves this file and the ones left, unasked', () async {
-      final terminal = FakeTerminal(answers: ['k', 'a']);
-      final resolution = await resolveWith(terminal);
+    test(
+      'overwrite all approves this file and the ones left, unasked',
+      () async {
+        final terminal = FakeTerminal(answers: ['k', 'a']);
+        final resolution = await resolveWith(terminal);
 
-      expect(resolution.kept, {'lib/a.dart'});
-      expect(resolution.approved, {'lib/b.dart', 'lib/c.dart'});
-      expect(terminal.prompts, hasLength(2));
-    });
+        expect(resolution.kept, {'lib/a.dart'});
+        expect(resolution.approved, {'lib/b.dart', 'lib/c.dart'});
+        expect(terminal.prompts, hasLength(2));
+      },
+    );
 
-    test('answers are case insensitive, trimmed and may be spelled out', () async {
-      final resolution = await resolveWith(
-        FakeTerminal(answers: ['  OVERWRITE ', 'Keep', 'K']),
+    test('overwrite all lists what it covers, deletions marked', () async {
+      final terminal = FakeTerminal(answers: ['a']);
+
+      await resolveWith(terminal);
+
+      expect(
+        terminal.output.toString(),
+        stringContainsInOrder([
+          'Overwriting all remaining files:',
+          '  - lib/a.dart',
+          '  - lib/b.dart (delete)',
+          '  - lib/c.dart',
+        ]),
       );
-
-      expect(resolution.approved, {'lib/a.dart'});
-      expect(resolution.kept, {'lib/b.dart', 'lib/c.dart'});
     });
+
+    test(
+      'answers are case insensitive, trimmed and may be spelled out',
+      () async {
+        final resolution = await resolveWith(
+          FakeTerminal(answers: ['  OVERWRITE ', 'Keep', 'K']),
+        );
+
+        expect(resolution.approved, {'lib/a.dart'});
+        expect(resolution.kept, {'lib/b.dart', 'lib/c.dart'});
+      },
+    );
 
     test('an unknown answer asks again for the same file', () async {
       final terminal = FakeTerminal(answers: ['', 'maybe', 'o', 'o', 'o']);
@@ -239,11 +264,10 @@ void main() {
       await expectLater(
         resolveWith(terminal),
         throwsA(
-          isA<UnresolvedConflictsException>().having(
-            (e) => e.paths,
-            'paths',
-            ['lib/b.dart', 'lib/c.dart'],
-          ),
+          isA<UnresolvedConflictsException>().having((e) => e.paths, 'paths', [
+            'lib/b.dart',
+            'lib/c.dart',
+          ]),
         ),
       );
     });

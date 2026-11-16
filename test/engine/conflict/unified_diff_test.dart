@@ -102,9 +102,10 @@ void main() {
       ..[8] = 'nine';
 
     expect(
-      RegExp('^@@', multiLine: true).allMatches(
-        diff(lines(base), lines(changed)),
-      ),
+      RegExp(
+        '^@@',
+        multiLine: true,
+      ).allMatches(diff(lines(base), lines(changed))),
       hasLength(1),
     );
   });
@@ -186,7 +187,10 @@ void main() {
     final updated = lines(List.generate(5000, (i) => 'new $i'));
     final result = diff(old, updated);
 
-    expect(result, startsWith('--- a/f.txt\n+++ b/f.txt\n@@ -1,5000 +1,5000 @@'));
+    expect(
+      result,
+      startsWith('--- a/f.txt\n+++ b/f.txt\n@@ -1,5000 +1,5000 @@'),
+    );
     expect('\n-old'.allMatches(result), hasLength(5000));
     expect('\n+new'.allMatches(result), hasLength(5000));
   });

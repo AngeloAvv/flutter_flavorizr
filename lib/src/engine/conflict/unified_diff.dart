@@ -60,8 +60,7 @@ String unifiedDiff({
 
   if (edits.every((edit) => edit.kind == _Kind.same)) return '';
 
-  String paint(String code, String text) =>
-      color ? '$code$text$_reset' : text;
+  String paint(String code, String text) => color ? '$code$text$_reset' : text;
 
   final out = StringBuffer()
     ..writeln(paint(_bold, '--- $oldLabel'))
