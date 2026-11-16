@@ -109,11 +109,16 @@ Future<CopyBackResult> copyBackChanges({
   final staged = <String, String>{};
   final createdDirectories = <Directory>[];
 
+  // Best effort: cleaning up must never hide the error that caused it.
   Future<void> cleanUp({required bool directories}) async {
     for (final path in staged.values) {
-      final file = File(path);
+      try {
+        final file = File(path);
 
-      if (file.existsSync()) await file.delete();
+        if (file.existsSync()) await file.delete();
+      } on FileSystemException {
+        // Leave it: the original error matters more.
+      }
     }
 
     staged.clear();
@@ -122,14 +127,19 @@ Future<CopyBackResult> copyBackChanges({
 
     // Deepest first, so that parents are empty by the time they are tried.
     for (final directory in createdDirectories.reversed) {
-      if (directory.existsSync() && directory.listSync().isEmpty) {
-        await directory.delete();
+      try {
+        if (directory.existsSync() && directory.listSync().isEmpty) {
+          await directory.delete();
+        }
+      } on FileSystemException {
+        // Leave it: the original error matters more.
       }
     }
   }
 
   try {
     var counter = 0;
+    final stamp = DateTime.now().microsecondsSinceEpoch;
 
     for (final change in writes) {
       if (change.kind == ChangeKind.deleted) continue;
@@ -149,10 +159,23 @@ Future<CopyBackResult> copyBackChanges({
 
       createdDirectories.addAll(await _createParents(target));
 
-      final stagedFile = File(
-        p.join(p.dirname(target), '.${p.basename(target)}.${counter++}.tmp'),
+      // A name nobody is likely to own, and one that is never reused, so that
+      // staging cannot overwrite a file of the user.
+      var stagedFile = File(
+        p.join(p.dirname(target), '.${p.basename(target)}.$stamp.$counter.tmp'),
       );
 
+      while (await stagedFile.exists()) {
+        counter++;
+        stagedFile = File(
+          p.join(
+            p.dirname(target),
+            '.${p.basename(target)}.$stamp.$counter.tmp',
+          ),
+        );
+      }
+
+      counter++;
       staged[change.path] = stagedFile.path;
       await stagedFile.writeAsBytes(bytes);
     }

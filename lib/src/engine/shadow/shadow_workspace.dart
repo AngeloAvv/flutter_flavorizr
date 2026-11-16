@@ -45,6 +45,11 @@ import 'package:path/path.dart' as p;
 /// The workspace remembers the digest of every file at the moment it was
 /// copied, which is what a later diff is computed against and what copy-back
 /// checks the real project against.
+///
+/// Known limits: file permissions (e.g. an executable bit) are not preserved,
+/// since files are written as new content; and the real-file check right before
+/// the renames narrows, but cannot close, the window in which another process
+/// may write to the project.
 class ShadowWorkspace {
   /// The real project the workspace was copied from.
   final Directory projectRoot;
@@ -100,7 +105,11 @@ class ShadowWorkspace {
         );
       }
     } on Object {
-      await temporary.delete(recursive: true);
+      try {
+        await temporary.delete(recursive: true);
+      } on FileSystemException {
+        // Do not hide the error that made the copy fail.
+      }
 
       rethrow;
     }
@@ -136,7 +145,11 @@ class ShadowWorkspace {
     try {
       return await body(shadow);
     } finally {
-      await shadow.dispose();
+      try {
+        await shadow.dispose();
+      } on FileSystemException {
+        // A leftover temporary directory must not hide what [body] threw.
+      }
     }
   }
 
@@ -192,7 +205,11 @@ class ShadowWorkspace {
           path: path,
           kind: kind,
           ownership: artifact?.ownership,
-          disposition: artifact == null
+          // A file outside the whitelist was never copied, so there is no
+          // baseline to tell whether the real one changed: it is not written.
+          disposition: !_isWhitelisted(path)
+              ? ChangeDisposition.blocked
+              : artifact == null
               ? ChangeDisposition.untracked
               : await _judge(
                   artifact: artifact,
@@ -209,6 +226,10 @@ class ShadowWorkspace {
 
     return WorkspaceDiff(changes);
   }
+
+  bool _isWhitelisted(String path) => paths.any(
+    (allowed) => allowed == path || p.posix.isWithin(allowed, path),
+  );
 
   Future<ChangeDisposition> _judge({
     required Artifact artifact,

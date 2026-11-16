@@ -131,6 +131,20 @@ void main() {
     ChangeDisposition? disposition(WorkspaceDiff diff, String path) =>
         diff.changes.singleWhere((c) => c.path == path).disposition;
 
+    test('a file written outside the whitelist is blocked', () async {
+      fx.project.write('pubspec.yaml', 'name: x');
+      final shadow = await fx.create(['lib']);
+
+      shadow.write('pubspec.yaml', 'name: y');
+
+      final diff = await shadow.diff(
+        tracked: [const Artifact.managed('pubspec.yaml')],
+      );
+
+      expect(disposition(diff, 'pubspec.yaml'), ChangeDisposition.blocked);
+      expect(diff.blocked.single.path, 'pubspec.yaml');
+    });
+
     test('a file nobody tracked is reported as untracked', () async {
       final shadow = await fx.create(['lib']);
 

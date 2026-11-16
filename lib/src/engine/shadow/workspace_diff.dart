@@ -63,7 +63,8 @@ enum ChangeDisposition {
   untracked,
 
   /// The real path is, or goes through, a symbolic link or is not a regular
-  /// file: it is never written, whatever the approvals.
+  /// file, or the file lies outside the paths the workspace was copied from: it
+  /// is never written, whatever the approvals.
   blocked,
 }
 
