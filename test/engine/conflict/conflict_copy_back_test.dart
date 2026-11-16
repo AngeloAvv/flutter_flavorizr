@@ -242,7 +242,34 @@ void main() {
 
       expect(await content.readDesired('lib/link.txt'), isNull);
       expect(await content.readCurrent('lib/link.txt'), isNull);
-    });
+    }, skip: Platform.isWindows ? 'creating links needs privileges' : false);
+
+    test(
+      'a file that cannot be read has no content, instead of failing',
+      () async {
+        fx.project.write('lib/a.dart', 'a');
+        shadow = await fx.create(['lib']);
+        final path = fx.project.abs('lib/a.dart');
+
+        Process.runSync('chmod', ['000', path]);
+        addTearDown(() => Process.runSync('chmod', ['644', path]));
+
+        // Running as root ignores the mode: nothing to prove then.
+        if (await File(
+          path,
+        ).readAsBytes().then((_) => true, onError: (_) => false)) {
+          markTestSkipped('the file is readable whatever its mode (root)');
+
+          return;
+        }
+
+        expect(
+          await ShadowConflictContent(shadow).readCurrent('lib/a.dart'),
+          isNull,
+        );
+      },
+      skip: Platform.isWindows ? 'file modes do not apply' : false,
+    );
 
     test('is a ConflictContent', () async {
       await prepare();
