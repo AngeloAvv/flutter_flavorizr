@@ -68,6 +68,7 @@ final class InvalidLockedPath {
   /// Why the path is not valid.
   final String reason;
 
+  /// Creates an invalid path.
   const InvalidLockedPath({
     required this.processorId,
     required this.path,
@@ -87,6 +88,7 @@ final class StaleScan {
   /// deleted.
   final List<InvalidLockedPath> invalid;
 
+  /// Creates a scan.
   StaleScan({
     required Iterable<StaleArtifact> stale,
     required Iterable<InvalidLockedPath> invalid,
@@ -116,7 +118,8 @@ StaleScan findStaleArtifacts({
 
   final producedPaths = <String>{
     for (final artifacts in produced.values)
-      for (final artifact in artifacts) _key(canonicalPath(artifact.path)),
+      for (final artifact in artifacts)
+        pathIdentity(canonicalPath(artifact.path)),
   };
   final keptByOthers = <String>{
     for (final MapEntry(key: id, value: lock) in previous.processors.entries)
@@ -142,8 +145,8 @@ StaleScan findStaleArtifacts({
         continue;
       }
 
-      if (producedPaths.contains(_key(canonical)) ||
-          keptByOthers.contains(_key(canonical))) {
+      if (producedPaths.contains(pathIdentity(canonical)) ||
+          keptByOthers.contains(pathIdentity(canonical))) {
         continue;
       }
 
@@ -185,7 +188,7 @@ Iterable<String> _pathsOf(ProcessorLock lock) sync* {
     ...lock.inputs.keys,
   ]) {
     try {
-      yield _key(canonicalPath(path));
+      yield pathIdentity(canonicalPath(path));
     } on ArgumentError {
       continue;
     }
@@ -196,4 +199,4 @@ Iterable<String> _pathsOf(ProcessorLock lock) sync* {
 /// (macOS, Windows) `Lib/A.dart` and `lib/a.dart` are one file, and deleting the
 /// old spelling would delete what the run just wrote. On a case-sensitive one
 /// the cost is a stale file that stays until it is removed by hand.
-String _key(String canonicalPath) => canonicalPath.toLowerCase();
+String pathIdentity(String path) => path.toLowerCase();

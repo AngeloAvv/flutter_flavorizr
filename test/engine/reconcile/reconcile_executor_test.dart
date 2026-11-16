@@ -127,17 +127,22 @@ void main() {
         );
         final resolution = await ConflictResolver(
           terminal: FakeTerminal(isInteractive: false),
-          content: ShadowConflictContent(shadow),
+          content: reconciliation.conflictContent(
+            ShadowConflictContent(shadow),
+          ),
           policy: ConflictPolicy.keep,
         ).resolve(diff);
+        // Built before anything is written, written after everything was.
+        final lock = reconciliation.lockAfter(
+          diff: diff,
+          resolution: resolution,
+        );
 
         await shadow.copyBack(
           resolution.applyTo(diff),
           approvedConflicts: resolution.approved,
         );
-        await store.write(
-          reconciliation.lockAfter(diff: diff, resolution: resolution),
-        );
+        await store.write(lock);
       },
     );
   }

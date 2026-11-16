@@ -245,6 +245,30 @@ void main() {
       );
     });
 
+    test(
+      'a file another processor shares as patched is never deleted',
+      () async {
+        fixture.project.write('android/build.gradle', 'user + regions');
+
+        final result = await plan([
+          staleOf(
+            'android/build.gradle',
+            Ownership.managed,
+            recordedHash: hashOf('user + regions'),
+          ),
+          const StaleArtifact(
+            processorId: 'other',
+            path: 'android/build.gradle',
+            ownership: Ownership.patched,
+            recordedHash: 'h',
+          ),
+        ]);
+
+        expect(result.changes, isEmpty);
+        expect(result.released, hasLength(2));
+      },
+    );
+
     test('a file two processors owned is deleted once', () async {
       fixture.project.write('android/a.xml', 'generated');
       final stale = [

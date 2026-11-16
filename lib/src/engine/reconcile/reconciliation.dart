@@ -26,6 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
+import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/deletion_plan.dart';
@@ -85,25 +86,59 @@ final class Reconciliation {
   /// [diff], the changes of the shadow workspace, together with the deletions.
   WorkspaceDiff applyTo(WorkspaceDiff diff) => deletions.applyTo(diff);
 
-  /// The lock to write after the run, once the copy-back of [diff] (the one
-  /// [applyTo] returned) succeeded.
+  /// [inner] adjusted for the conflicts of the deletions: the shadow workspace
+  /// still holds the stale files (nothing removes them there), so [inner] would
+  /// serve one as the content the run wants, and the diff of a deletion would
+  /// say that nothing changes. Pass the result to the `ConflictResolver`.
+  ConflictContent conflictContent(ConflictContent inner) =>
+      _DeletionAwareContent(inner, {
+        for (final change in deletions.changes) change.path,
+      });
+
+  /// The lock to write once the copy-back of [diff] (the one [applyTo]
+  /// returned) succeeded.
   ///
-  /// The files the run did not write are not recorded as if it had: the ones
-  /// [resolution] says to keep, and the ones [diff] blocked. They keep what the
-  /// lock had for them.
+  /// Compute it *before* the copy-back and write it after: if it cannot be
+  /// built (see `updateLock`) nothing has been changed yet.
+  ///
+  /// The files the run did not write or delete are not recorded as if it had:
+  /// the ones [resolution] says to keep, the ones [diff] blocked and the stale
+  /// ones nobody deleted (e.g. a processor removed them in the workspace on its
+  /// own, which is never copied back). They keep what the lock had for them.
   FlavorizrLock lockAfter({
     required WorkspaceDiff diff,
     required ConflictResolution resolution,
-  }) => updateLock(
-    previous: _previous,
-    flavorizrVersion: _flavorizrVersion,
-    produced: _produced,
-    ownedHashes: _ownedHashes,
-    desiredFlavors: _desiredFlavors,
-    availableProcessors: _availableProcessors,
-    stale: _stale,
-    retained: {...resolution.kept, ...diff.blocked.map((c) => c.path)},
-  );
+  }) {
+    final deleted = {
+      for (final change in deletions.changes)
+        if (diff.changes.any((c) => identical(c, change)) &&
+            (change.disposition == ChangeDisposition.apply ||
+                (change.disposition == ChangeDisposition.conflict &&
+                    resolution.approved.contains(change.path))))
+          change.path,
+    };
+    final dealtWith = {
+      ...deleted,
+      for (final stale in [...deletions.gone, ...deletions.released])
+        stale.path,
+    };
+
+    return updateLock(
+      previous: _previous,
+      flavorizrVersion: _flavorizrVersion,
+      produced: _produced,
+      ownedHashes: _ownedHashes,
+      desiredFlavors: _desiredFlavors,
+      availableProcessors: _availableProcessors,
+      stale: _stale,
+      retained: {
+        ...resolution.kept,
+        ...diff.blocked.map((change) => change.path),
+        for (final stale in _stale)
+          if (!dealtWith.contains(stale.path)) stale.path,
+      },
+    );
+  }
 
   /// The plan as text: the flavors that change (a rename is spelled out as a
   /// removal plus an addition), then what is deleted, and what is left in
@@ -127,6 +162,22 @@ final class Reconciliation {
 
   @override
   String toString() => render();
+}
+
+/// A [ConflictContent] that has no desired content for the paths that are
+/// deleted.
+final class _DeletionAwareContent implements ConflictContent {
+  final ConflictContent _inner;
+  final Set<String> _deleted;
+
+  _DeletionAwareContent(this._inner, this._deleted);
+
+  @override
+  Future<List<int>?> readCurrent(String path) => _inner.readCurrent(path);
+
+  @override
+  Future<List<int>?> readDesired(String path) async =>
+      _deleted.contains(path) ? null : _inner.readDesired(path);
 }
 
 /// Computes the reconciliation of a run.

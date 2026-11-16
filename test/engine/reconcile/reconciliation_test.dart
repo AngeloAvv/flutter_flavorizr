@@ -33,6 +33,7 @@ import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -87,8 +88,13 @@ void main() {
     Map<String, String> desiredFlavors = const {'dev': 'f-dev'},
     Map<String, List<Artifact>>? produced,
     Map<String, String>? hashes,
+    void Function(ShadowWorkspace shadow)? edit,
+    FakeTerminal? terminal,
   }) async {
     final shadow = await fixture.create(['android', 'ios', 'lib']);
+
+    edit?.call(shadow);
+
     final outputs =
         produced ??
         {
@@ -116,20 +122,20 @@ void main() {
       await shadow.diff(tracked: outputs.values.expand((a) => a)),
     );
     final resolution = await ConflictResolver(
-      terminal: FakeTerminal(isInteractive: false),
-      content: ShadowConflictContent(shadow),
-      policy: policy,
+      terminal: terminal ?? FakeTerminal(isInteractive: false),
+      content: reconciliation.conflictContent(ShadowConflictContent(shadow)),
+      policy: terminal == null ? policy : null,
     ).resolve(diff);
+    // Before the copy-back: a lock that cannot be built must fail while the
+    // project is still untouched.
+    final lock = reconciliation.lockAfter(diff: diff, resolution: resolution);
 
     await shadow.copyBack(
       resolution.applyTo(diff),
       approvedConflicts: resolution.approved,
     );
 
-    return (
-      reconciliation: reconciliation,
-      lock: reconciliation.lockAfter(diff: diff, resolution: resolution),
-    );
+    return (reconciliation: reconciliation, lock: lock);
   }
 
   test(
@@ -182,6 +188,33 @@ void main() {
     expect(
       kept.lock.processors['android']!.files['android/prod.xml'],
       managed('android prod'),
+    );
+  });
+
+  test('the diff of a deletion shows what would be lost', () async {
+    final terminal = FakeTerminal(answers: ['d', 'k']);
+
+    await commit(terminal: terminal);
+
+    expect(terminal.output.toString(), contains('main prod'));
+    expect(
+      terminal.output.toString(),
+      isNot(contains('No textual differences')),
+    );
+    expect(fixture.project.read('lib/main_prod.dart'), 'main prod');
+  });
+
+  test('a stale file a processor removed by itself keeps its record', () async {
+    // The processor deleted it in the workspace without tracking it: copy-back
+    // never writes that, so the file stays and the lock must still know it.
+    final result = await commit(
+      edit: (shadow) => shadow.delete('ios/prod.xcconfig'),
+    );
+
+    expect(fixture.project.read('ios/prod.xcconfig'), 'ios prod');
+    expect(
+      result.lock.processors['ios']!.files.keys,
+      contains('ios/prod.xcconfig'),
     );
   });
 

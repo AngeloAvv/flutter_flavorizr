@@ -66,7 +66,9 @@ FlavorizrLock updateLock({
   Set<String> retained = const {},
 }) {
   final previousProcessors = previous?.processors ?? const {};
-  final isFullRun = availableProcessors.every(produced.containsKey);
+  final isFullRun =
+      availableProcessors.isNotEmpty &&
+      availableProcessors.every(produced.containsKey);
   final processors = {...previousProcessors}
     ..removeWhere((id, _) => produced.containsKey(id));
 

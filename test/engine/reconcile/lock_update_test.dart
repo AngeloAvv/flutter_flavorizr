@@ -162,6 +162,17 @@ void main() {
       expect(lock.flavors, {'dev': 'f1', 'beta': 'f3'});
     });
 
+    test('without any processor available the run is not a full one', () {
+      final lock = update(
+        previous: lockOf(flavors: {'prod': 'f2'}),
+        produced: {'android': const []},
+        flavors: {'dev': 'f1'},
+        available: const {},
+      );
+
+      expect(lock.flavors, {'prod': 'f2'});
+    });
+
     test('a partial first run records no flavors', () {
       final lock = update(
         produced: {'android': const []},

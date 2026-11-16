@@ -44,15 +44,17 @@ final class DeletionPlan {
   /// when approved, [ChangeDisposition.blocked] never.
   final List<FileChange> changes;
 
-  /// The stale files that are *patched*: the file is shared with the user and
-  /// only the owned parts are the tool's, so it is never deleted. It is left in
-  /// place and the lock stops owning it.
+  /// The stale files that are never deleted, because the file is shared: a
+  /// *patched* file only has some owned parts, and the rest is the user's (the
+  /// same goes for a file some other processor records as patched). They are
+  /// left in place and the lock stops owning them.
   final List<StaleArtifact> released;
 
   /// The stale files that do not exist in the project anymore: nothing to
   /// delete.
   final List<StaleArtifact> gone;
 
+  /// Creates a plan.
   DeletionPlan({
     required Iterable<FileChange> changes,
     required Iterable<StaleArtifact> released,
@@ -62,13 +64,6 @@ final class DeletionPlan {
        ),
        released = List.unmodifiable(released),
        gone = List.unmodifiable(gone);
-
-  /// The paths of the deletions that cannot be carried out, whatever the user
-  /// answers: the file stays, and so does its record in the lock.
-  Set<String> get blockedPaths => {
-    for (final change in changes)
-      if (change.disposition == ChangeDisposition.blocked) change.path,
-  };
 
   /// [diff], the changes of the shadow workspace, together with the deletions.
   ///
@@ -114,18 +109,26 @@ Future<DeletionPlan> planDeletions({
   final released = <StaleArtifact>[];
   final gone = <StaleArtifact>[];
   final deleting = <String>{};
+  // A file some processor records as patched is shared with the user, whoever
+  // else claims it as its own.
+  final shared = {
+    for (final artifact in stale)
+      if (artifact.ownership == Ownership.patched)
+        pathIdentity(canonicalPath(artifact.path)),
+  };
 
   for (final artifact in stale) {
     final path = canonicalPath(artifact.path);
 
     if (artifact.ownership == Ownership.patched ||
-        artifact.ownership == Ownership.local) {
+        artifact.ownership == Ownership.local ||
+        shared.contains(pathIdentity(path))) {
       released.add(artifact);
       continue;
     }
 
     // Two processors may have owned the same file: it is deleted once.
-    if (!deleting.add(path.toLowerCase())) continue;
+    if (!deleting.add(pathIdentity(path))) continue;
 
     FileChange change(ChangeDisposition disposition, {String? before}) =>
         FileChange(
