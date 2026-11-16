@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
@@ -123,6 +124,36 @@ void main() {
       expect(file.lastModifiedSync().toUtc(), modified);
       expect(ctx.tracked, [Artifact.patched(K.androidManifestPath)]);
     });
+
+    test(
+      'keeps the byte order mark and the line endings of the file',
+      () async {
+        final bytes = [
+          0xef,
+          0xbb,
+          0xbf,
+          ...utf8.encode(
+            '<manifest xmlns:android="x">\r\n'
+            '<application android:label="é"/>\r\n</manifest>',
+          ),
+        ];
+        manifest(root)
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(bytes);
+
+        await AndroidManifestPatchProcessor().apply(ctx);
+
+        expect(manifest(root).readAsBytesSync(), [
+          0xef,
+          0xbb,
+          0xbf,
+          ...utf8.encode(
+            '<manifest xmlns:android="x">\r\n'
+            '<application android:label="@string/app_name"/>\r\n</manifest>',
+          ),
+        ]);
+      },
+    );
 
     test('fails when there is no manifest', () {
       expect(

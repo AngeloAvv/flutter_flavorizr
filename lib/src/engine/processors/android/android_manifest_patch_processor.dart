@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
@@ -44,6 +45,12 @@ class AndroidManifestPatchProcessor extends FlavorizrProcessor {
   /// Creates the processor.
   const AndroidManifestPatchProcessor();
 
+  static const List<int> _bom = [0xef, 0xbb, 0xbf];
+
+  static bool _startsWithBom(List<int> bytes) =>
+      bytes.length >= _bom.length &&
+      _bom.indexed.every((entry) => bytes[entry.$1] == entry.$2);
+
   @override
   String get id => 'android:androidManifest';
 
@@ -59,11 +66,14 @@ class AndroidManifestPatchProcessor extends FlavorizrProcessor {
       throw FileNotFoundException(K.androidManifestPath);
     }
 
-    final source = await file.readAsString();
+    // Decoding drops a byte order mark, which has to be written back.
+    final bytes = await file.readAsBytes();
+    final hasBom = _startsWithBom(bytes);
+    final source = utf8.decode(hasBom ? bytes.sublist(_bom.length) : bytes);
     final patched = AndroidManifestEditor.withAppLabel(source);
 
     if (patched != source) {
-      await file.writeAsString(patched);
+      await file.writeAsBytes([if (hasBom) ..._bom, ...utf8.encode(patched)]);
     }
 
     ctx.track(Artifact.patched(K.androidManifestPath));
