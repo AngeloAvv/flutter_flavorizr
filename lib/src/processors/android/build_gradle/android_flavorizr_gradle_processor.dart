@@ -41,9 +41,12 @@ class AndroidFlavorizrGradleProcessor extends AbstractFileStringProcessor {
           _findTargetPathByExistingFile(
               gradlePaths, createTargetPaths, processors),
           _findProcessor(gradlePaths, createTargetPaths, processors),
-        ) {
+        );
+
+  @override
+  Future<void> execute() async {
     file.createSync(recursive: true);
-    super.execute();
+    await super.execute();
   }
 
   static String _findTargetPathByExistingFile(
