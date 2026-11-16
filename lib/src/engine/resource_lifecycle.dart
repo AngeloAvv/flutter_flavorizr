@@ -32,6 +32,9 @@ import 'package:flutter_flavorizr/src/exception/unregistered_resource_exception.
 
 /// Applies one step of the plan, with a context that gives access to the
 /// resources the step requires.
+///
+/// The context is created for the step alone. When the runner returns, the
+/// artifacts the step tracked on it are tracked on the context of the run too.
 typedef StepRunner =
     Future<void> Function(PlanStep step, FlavorizrContext stepContext);
 
@@ -138,7 +141,7 @@ class ResourceLifecycle {
     final open = <ResourceKey<Object?>, Object?>{};
     (Object, StackTrace)? failure;
 
-    Future<void> tearDown(List<ResourceKey<Object?>> keys) async {
+    Future<void> tearDownAll(List<ResourceKey<Object?>> keys) async {
       for (final key in keys.reversed) {
         final value = open.remove(key);
         try {
@@ -161,21 +164,22 @@ class ResourceLifecycle {
           open[key] = await _resources[key]!.setup(ctx);
         }
 
-        await runStep(
-          step,
-          FlavorizrContext(
-            config: ctx.config,
-            root: ctx.root,
-            projectRoot: ctx.projectRoot,
-            logger: ctx.logger,
-            previousFlavors: ctx.previousFlavors,
-            resources: {
-              for (final key in step.processor.requires) key: open[key],
-            },
-          ),
+        final stepContext = FlavorizrContext(
+          config: ctx.config,
+          root: ctx.root,
+          projectRoot: ctx.projectRoot,
+          logger: ctx.logger,
+          previousFlavors: ctx.previousFlavors,
+          resources: {
+            for (final key in step.processor.requires) key: open[key],
+          },
         );
+        await runStep(step, stepContext);
 
-        await tearDown([
+        // What the step declared is handed back to the context of the run.
+        stepContext.tracked.forEach(ctx.track);
+
+        await tearDownAll([
           for (final key in open.keys)
             if (_teardownAfter[index].contains(key)) key,
         ]);
@@ -188,7 +192,7 @@ class ResourceLifecycle {
     }
 
     // Whatever is still open is there because the run was aborted.
-    await tearDown(open.keys.toList());
+    await tearDownAll(open.keys.toList());
 
     final failed = failure;
     if (failed != null) {

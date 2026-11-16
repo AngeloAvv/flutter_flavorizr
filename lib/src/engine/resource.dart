@@ -55,7 +55,9 @@ abstract class Resource<T> {
   /// [success] is `true` when nothing has failed in the run so far: it lets
   /// the resource persist its state only when the run went well, e.g. save
   /// the Xcode project, and discard it otherwise. It is `false` once any
-  /// processor, setup or earlier teardown has failed.
+  /// processor, setup or earlier teardown has failed. A resource is torn down
+  /// right after its last consumer, so it is not told about the failure of a
+  /// processor that runs later.
   ///
   /// When [teardown] throws, the other resources are still torn down. Its
   /// error fails the run only when nothing had failed before: it never masks

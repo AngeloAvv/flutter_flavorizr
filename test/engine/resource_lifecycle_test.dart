@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
@@ -35,8 +36,20 @@ import 'package:flutter_flavorizr/src/exception/duplicate_resource_exception.dar
 import 'package:flutter_flavorizr/src/exception/unregistered_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 
 import '../test_utils.dart';
+
+/// A logger that keeps the warnings it is asked to print.
+class _RecordingLogger extends Logger {
+  final List<String?> warnings = [];
+
+  _RecordingLogger() : super(level: Level.quiet);
+
+  @override
+  void warn(String? message, {String tag = 'WARN', LogStyle? style}) =>
+      warnings.add(message);
+}
 
 /// A resource that records what happens to it in [events].
 class _FakeResource extends Resource<String> {
@@ -350,7 +363,7 @@ flavors:
       );
 
       test(
-        'still tears down a resource that was already finished as successful',
+        'keeps success for a resource torn down before the failure',
         () async {
           final assets = _FakeResource('assets', events);
           final plan = planOf([
@@ -497,6 +510,67 @@ flavors:
 
         expect(events, contains('teardown assets'));
       });
+    });
+
+    test(
+      'hands the artifacts a step tracked back to the run context',
+      () async {
+        final plan = planOf([_FakeProcessor('a', events)]);
+
+        await ResourceLifecycle(plan, []).run(ctx, (step, stepCtx) async {
+          stepCtx.track(const Artifact.managed('android/app/build.gradle'));
+        });
+
+        expect(ctx.tracked, [
+          const Artifact.managed('android/app/build.gradle'),
+        ]);
+      },
+    );
+
+    test(
+      'tears down and rethrows when a step throws a non-Exception',
+      () async {
+        final xcode = _FakeResource('xcode', events);
+        final plan = planOf([
+          _FakeProcessor(
+            'a',
+            events,
+            needs: [xcode],
+            error: 'not an exception',
+          ),
+        ]);
+
+        await expectLater(run(plan, [xcode]), throwsA('not an exception'));
+
+        expect(xcode.teardownSuccess, [false]);
+      },
+    );
+
+    test('logs the teardown errors it drops', () async {
+      final logger = _RecordingLogger();
+      final xcode = _FakeResource(
+        'xcode',
+        events,
+        teardownError: StateError('teardown'),
+      );
+      final plan = planOf([
+        _FakeProcessor('a', events, needs: [xcode], error: StateError('x')),
+      ]);
+      final loggingCtx = FlavorizrContext(
+        config: ctx.config,
+        root: ctx.root,
+        projectRoot: ctx.projectRoot,
+        logger: logger,
+      );
+
+      await expectLater(
+        ResourceLifecycle(plan, [
+          xcode,
+        ]).run(loggingCtx, (step, stepCtx) => step.processor.apply(stepCtx)),
+        throwsStateError,
+      );
+
+      expect(logger.warnings.single, contains('"xcode"'));
     });
 
     test('fails at plan time when a resource is registered twice', () {
