@@ -138,7 +138,7 @@ packages:
     source: hosted
     version: "3.1.2"
   crypto:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: crypto
       sha256: e3626ae6270383c9e3a549f34c9e4cd26c09ae6a9adaab2bf4737a00340efdc4
