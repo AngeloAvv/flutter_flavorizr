@@ -100,6 +100,16 @@ final class FileChange {
     required this.after,
   });
 
+  /// The same change with another [disposition].
+  FileChange withDisposition(ChangeDisposition disposition) => FileChange(
+    path: path,
+    kind: kind,
+    ownership: ownership,
+    disposition: disposition,
+    before: before,
+    after: after,
+  );
+
   String get _symbol => switch (kind) {
     ChangeKind.added => '+',
     ChangeKind.modified => '~',
@@ -111,6 +121,9 @@ final class FileChange {
     final owner = ownership?.name ?? 'untracked';
     final note = switch (disposition) {
       ChangeDisposition.apply || ChangeDisposition.untracked => '',
+      // A scaffold file is the user's once it exists: it is never a conflict.
+      ChangeDisposition.keep when ownership == Ownership.scaffold =>
+        ' [skipped (user-owned)]',
       ChangeDisposition.keep => ' [kept]',
       ChangeDisposition.conflict => ' [conflict]',
       ChangeDisposition.blocked => ' [blocked]',
