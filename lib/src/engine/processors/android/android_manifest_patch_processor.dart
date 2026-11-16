@@ -23,13 +23,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/android/bom_text_file.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -44,12 +44,6 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 class AndroidManifestPatchProcessor extends FlavorizrProcessor {
   /// Creates the processor.
   const AndroidManifestPatchProcessor();
-
-  static const List<int> _bom = [0xef, 0xbb, 0xbf];
-
-  static bool _startsWithBom(List<int> bytes) =>
-      bytes.length >= _bom.length &&
-      _bom.indexed.every((entry) => bytes[entry.$1] == entry.$2);
 
   @override
   String get id => 'android:androidManifest';
@@ -66,14 +60,11 @@ class AndroidManifestPatchProcessor extends FlavorizrProcessor {
       throw FileNotFoundException(K.androidManifestPath);
     }
 
-    // Decoding drops a byte order mark, which has to be written back.
-    final bytes = await file.readAsBytes();
-    final hasBom = _startsWithBom(bytes);
-    final source = utf8.decode(hasBom ? bytes.sublist(_bom.length) : bytes);
+    final (text: source, :hasBom) = await BomTextFile.read(file);
     final patched = AndroidManifestEditor.withAppLabel(source);
 
     if (patched != source) {
-      await file.writeAsBytes([if (hasBom) ..._bom, ...utf8.encode(patched)]);
+      await BomTextFile.write(file, patched, hasBom: hasBom);
     }
 
     ctx.track(Artifact.patched(K.androidManifestPath));
