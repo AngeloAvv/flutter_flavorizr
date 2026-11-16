@@ -39,6 +39,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';
 import 'android_icon_source_test.dart' show gradientPng;
+import 'posix_paths.dart';
 
 /// Runs the 2.x `android:icons` processor and the ported one on identical
 /// projects and compares every generated file byte for byte.
@@ -139,7 +140,7 @@ flavors:
 
   Map<String, List<int>> snapshot(Directory directory) => {
     for (final file in directory.listSync(recursive: true).whereType<File>())
-      p.relative(file.path, from: directory.path): file.readAsBytesSync(),
+      relativePosix(file.path, from: directory.path): file.readAsBytesSync(),
   };
 
   /// What a processor produced, without the fixtures.
@@ -208,6 +209,35 @@ flavors:
       ctx.tracked.map((artifact) => artifact.path).toSet(),
       actual.keys.toSet(),
     );
+  });
+
+  test('an ICO source is the same file as in 2.x, byte for byte', () async {
+    final image = img.Image(width: 32, height: 32, numChannels: 4)
+      ..clear(img.ColorRgba8(10, 200, 30, 255));
+    final files = {'assets/apple.ico': img.encodeIco(image)};
+    createProject(legacyProject, files);
+    createProject(portedProject, files);
+    const yaml = '''
+flavors:
+  apple:
+    app:
+      name: "Apple"
+      icon: "assets/apple.ico"
+    android:
+      applicationId: "com.example.apple"
+''';
+
+    await runLegacy(yaml);
+    await runPorted(yaml);
+
+    final expected = generated(legacyProject);
+    final actual = snapshot(workspace);
+
+    expect(expected.keys, hasLength(5));
+    expect(actual.keys.toSet(), expected.keys.toSet());
+    for (final path in expected.keys) {
+      expect(actual[path], expected[path], reason: path);
+    }
   });
 
   test('the ported processor leaves the project as it was', () async {

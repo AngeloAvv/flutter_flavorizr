@@ -39,6 +39,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';
 import 'android_icon_source_test.dart' show gradientPng;
+import 'posix_paths.dart';
 
 const _sizes = {
   'mipmap-mdpi': 48,
@@ -172,7 +173,7 @@ void main() {
       await const AndroidIconsProcessor().apply(contextFor(yaml));
       final first = {
         for (final file in root.listSync(recursive: true).whereType<File>())
-          p.relative(file.path, from: root.path): file.readAsBytesSync(),
+          relativePosix(file.path, from: root.path): file.readAsBytesSync(),
       };
 
       final other = Directory(p.join(root.parent.path, 'other'))..createSync();
@@ -181,7 +182,7 @@ void main() {
       );
       final second = {
         for (final file in other.listSync(recursive: true).whereType<File>())
-          p.relative(file.path, from: other.path): file.readAsBytesSync(),
+          relativePosix(file.path, from: other.path): file.readAsBytesSync(),
       };
 
       expect(first.keys, hasLength(10));
