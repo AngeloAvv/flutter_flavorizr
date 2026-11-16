@@ -379,7 +379,12 @@ class ShadowWorkspace {
             skippedLinks: skippedLinks,
           );
         }
-      case _:
+      case FileSystemEntityType.link:
+      case FileSystemEntityType.notFound:
+      case FileSystemEntityType.pipe:
+      case FileSystemEntityType.unixDomainSock:
+        // Nothing to copy: the path does not exist yet, or it is not a regular
+        // file nor a folder.
         return;
     }
   }
