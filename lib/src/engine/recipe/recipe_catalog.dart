@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/closest_match.dart';
+import 'package:flutter_flavorizr/src/engine/recipe/recipe_listing.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
 import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
@@ -82,10 +83,7 @@ class RecipeCatalog {
         );
       }
       if (ids.contains(name)) {
-        throw InvalidRecipeNameException(
-          name,
-          'it is the id of a processor',
-        );
+        throw InvalidRecipeNameException(name, 'it is the id of a processor');
       }
     }
 
@@ -176,6 +174,29 @@ class RecipeCatalog {
       messages: messages.toList(growable: false),
     );
   }
+
+  /// Every recipe with what it contains and expands to, the built-in ones
+  /// first, in the order they are documented, then the ones of the user by
+  /// name.
+  List<RecipeListing> listing() => [
+    for (final name in [
+      ...builtInRecipes.keys,
+      ..._sorted(
+        _recipes.keys.where((name) => !builtInRecipes.containsKey(name)),
+      ),
+    ])
+      RecipeListing(
+        name: name,
+        builtIn: builtInRecipes.containsKey(name),
+        isDefault: name == _defaultTarget,
+        members: _recipes[name]!,
+        expansion: resolve([name]).processorIds,
+      ),
+  ];
+
+  /// What `flavorizr list` prints for the recipes: [listing] as text, one
+  /// blank line between recipes.
+  String renderListing() => '${listing().join('\n\n')}\n';
 
   void _requireKnown(String name, {String? recipe}) {
     if (_recipes.containsKey(name) || _processorIds.contains(name)) {

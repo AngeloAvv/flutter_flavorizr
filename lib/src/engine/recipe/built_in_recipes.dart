@@ -110,7 +110,12 @@ const Map<String, List<String>> builtInRecipes = {
     'windows:dummyAssets',
     'windows:icons',
   ],
-  'flutter': ['flutter:flavors', 'flutter:app', 'flutter:pages', 'flutter:main'],
+  'flutter': [
+    'flutter:flavors',
+    'flutter:app',
+    'flutter:pages',
+    'flutter:main',
+  ],
   'icons': ['android:icons', 'ios:icons', 'macos:icons', 'windows:icons'],
   'firebase': ['google:firebase'],
   'ide': ['ide:config'],

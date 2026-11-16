@@ -81,17 +81,20 @@ void main() {
       ]);
     });
 
-    test('every member of a built-in recipe is a known processor or recipe', () {
-      for (final entry in builtInRecipes.entries) {
-        for (final member in entry.value) {
-          expect(
-            _ids.contains(member) || builtInRecipes.containsKey(member),
-            isTrue,
-            reason: '${entry.key} names unknown member $member',
-          );
+    test(
+      'every member of a built-in recipe is a known processor or recipe',
+      () {
+        for (final entry in builtInRecipes.entries) {
+          for (final member in entry.value) {
+            expect(
+              _ids.contains(member) || builtInRecipes.containsKey(member),
+              isTrue,
+              reason: '${entry.key} names unknown member $member',
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
     test('a member that matches no available processor is ignored', () {
       final catalog = _catalog(processorIds: ['linux:cmake']);
@@ -357,9 +360,10 @@ void main() {
 
   group('platforms without flavors', () {
     test('a platform recipe is skipped with an info message', () {
-      final resolution = _catalog().resolve([
-        'android',
-      ], platformsWithoutFlavors: {'android'});
+      final resolution = _catalog().resolve(
+        ['android'],
+        platformsWithoutFlavors: {'android'},
+      );
 
       expect(resolution.processorIds, isEmpty);
       expect(resolution.messages, [
@@ -379,21 +383,18 @@ void main() {
           'all',
         ], platformsWithoutFlavors: skipped);
 
-        expect(
-          resolution.processorIds,
-          [
-            for (final id in _ids)
-              if (!skipped.contains(id.split(':').first)) id,
-          ],
-          reason: '$skipped',
-        );
+        expect(resolution.processorIds, [
+          for (final id in _ids)
+            if (!skipped.contains(id.split(':').first)) id,
+        ], reason: '$skipped');
       }
     });
 
     test('each skipped platform is reported once', () {
-      final resolution = _catalog().resolve([
-        'all',
-      ], platformsWithoutFlavors: {'ios', 'linux'});
+      final resolution = _catalog().resolve(
+        ['all'],
+        platformsWithoutFlavors: {'ios', 'linux'},
+      );
 
       expect(resolution.messages, [
         'Skipping "ios": no flavors are configured for ios.',
@@ -402,9 +403,10 @@ void main() {
     });
 
     test('a processor of a skipped platform is dropped from any recipe', () {
-      final resolution = _catalog().resolve([
-        'icons',
-      ], platformsWithoutFlavors: {'ios', 'macos'});
+      final resolution = _catalog().resolve(
+        ['icons'],
+        platformsWithoutFlavors: {'ios', 'macos'},
+      );
 
       expect(resolution.processorIds, ['android:icons', 'windows:icons']);
       expect(resolution.messages, [
@@ -414,10 +416,10 @@ void main() {
     });
 
     test('a processor requested by id is skipped like the legacy filter', () {
-      final resolution = _catalog().resolve([
-        'ios:plist',
-        'ide:config',
-      ], platformsWithoutFlavors: {'ios'});
+      final resolution = _catalog().resolve(
+        ['ios:plist', 'ide:config'],
+        platformsWithoutFlavors: {'ios'},
+      );
 
       expect(resolution.processorIds, ['ide:config']);
       expect(resolution.messages, [
@@ -433,9 +435,10 @@ void main() {
         processorIds: [..._ids, 'acme:sentry'],
       );
 
-      final resolution = catalog.resolve([
-        'ci',
-      ], platformsWithoutFlavors: {'android'});
+      final resolution = catalog.resolve(
+        ['ci'],
+        platformsWithoutFlavors: {'android'},
+      );
 
       expect(resolution.processorIds, [
         'linux:cmake',
@@ -455,6 +458,112 @@ void main() {
     });
   });
 
+  group('listing', () {
+    test('lists the built-in recipes first, then the user ones by name', () {
+      final listing = _catalog(
+        recipes: {
+          'zeta': ['ide'],
+          'alpha': ['ios:plist'],
+        },
+      ).listing();
+
+      expect(listing.map((recipe) => recipe.name), [
+        'all',
+        'android',
+        'ios',
+        'macos',
+        'linux',
+        'windows',
+        'flutter',
+        'icons',
+        'firebase',
+        'ide',
+        'alpha',
+        'zeta',
+      ]);
+      expect(listing.map((recipe) => recipe.builtIn), [
+        ...List.filled(10, true),
+        false,
+        false,
+      ]);
+    });
+
+    test('shows what a recipe contains and what it expands to', () {
+      final listing = _catalog(
+        recipes: {
+          'ci': ['linux', 'inner', 'ios:plist'],
+          'inner': ['ide'],
+        },
+      ).listing();
+
+      final ci = listing.singleWhere((recipe) => recipe.name == 'ci');
+      expect(ci.members, ['linux', 'inner', 'ios:plist']);
+      expect(ci.expansion, [
+        'linux:cmake',
+        'linux:runnerCmake',
+        'linux:myApplication',
+        'ide:config',
+        'ios:plist',
+      ]);
+    });
+
+    test('marks the recipe that runs without a target', () {
+      expect(
+        _catalog()
+            .listing()
+            .where((recipe) => recipe.isDefault)
+            .map((recipe) => recipe.name),
+        ['all'],
+      );
+      expect(
+        _catalog(
+              recipes: {
+                'ci': ['ios'],
+              },
+              defaultRecipe: 'ci',
+            )
+            .listing()
+            .where((recipe) => recipe.isDefault)
+            .map((recipe) => recipe.name),
+        ['ci'],
+      );
+    });
+
+    test('renders the recipes as text', () {
+      final text = _catalog(
+        recipes: {
+          'ci': ['linux', 'ios:plist'],
+          'none': [],
+        },
+        defaultRecipe: 'ci',
+        processorIds: ['linux:cmake', 'ios:plist', 'ide:config'],
+      ).renderListing();
+
+      expect(
+        text,
+        contains('''
+ci (default)
+  contains: linux, ios:plist
+  expands to: linux:cmake, ios:plist
+'''),
+      );
+      expect(
+        text,
+        contains('''
+ide (built-in)
+  contains: ide:config
+'''),
+      );
+      expect(
+        text,
+        contains('''
+none
+  contains: nothing
+'''),
+      );
+    });
+  });
+
   group('targets', () {
     test('a processor id is a target of its own', () {
       final resolution = _catalog().resolve(['ios:plist']);
@@ -469,7 +578,10 @@ void main() {
         'ios:plist',
       ]);
       expect(resolution.processorIds.first, 'ios:plist');
-      expect(resolution.processorIds.toSet().length, resolution.processorIds.length);
+      expect(
+        resolution.processorIds.toSet().length,
+        resolution.processorIds.length,
+      );
     });
 
     test('no target runs all', () {
