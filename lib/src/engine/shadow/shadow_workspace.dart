@@ -351,6 +351,11 @@ class ShadowWorkspace {
   /// `ProjectChangedException` when a real file changed since it was copied,
   /// and an `UnapprovedConflictsException` for a conflict nobody approved.
   /// Both leave the project untouched.
+  ///
+  /// Writes are atomic per file, not across files, and a process that edits a
+  /// target in the few calls between its last check and its rename still loses
+  /// that edit: there is no lock nor compare-and-swap to prevent it. See the
+  /// known limit in [copyBackChanges].
   Future<CopyBackResult> copyBack(
     WorkspaceDiff diff, {
     Set<String> approvedConflicts = const {},

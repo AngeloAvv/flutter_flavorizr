@@ -64,6 +64,28 @@ class _FailingFiles implements CopyBackFiles {
   }
 }
 
+/// Runs [afterReplace] once, right after the first file was replaced.
+class _EditingFiles implements CopyBackFiles {
+  final CopyBackFiles _real = const LocalCopyBackFiles();
+  final void Function() afterReplace;
+  bool _done = false;
+
+  _EditingFiles({required this.afterReplace});
+
+  @override
+  Future<void> replace(String staged, String target) async {
+    await _real.replace(staged, target);
+
+    if (!_done) {
+      _done = true;
+      afterReplace();
+    }
+  }
+
+  @override
+  Future<void> remove(String target) => _real.remove(target);
+}
+
 void main() {
   late ShadowFixture fx;
 
@@ -355,6 +377,79 @@ void main() {
       }, skip: Platform.isWindows ? 'creating links needs privileges' : false);
     });
 
+    group('symbolic links in the shadow', () {
+      late Directory outside;
+
+      setUp(() {
+        outside = Directory(p.join(fx.scratch.path, 'outside'))..createSync();
+      });
+
+      test('are rejected even when they hold the reviewed bytes', () async {
+        fx.project.write('lib/a.dart', 'a1');
+        final shadow = await fx.create(['lib']);
+        shadow.write('lib/a.dart', 'a2');
+        final diff = await shadow.diff(
+          tracked: [const Artifact.local('lib/a.dart')],
+        );
+
+        // Same bytes as the reviewed ones, but living outside the workspace.
+        final target = File(p.join(outside.path, 'a2.dart'))
+          ..writeAsStringSync('a2');
+        File(p.join(shadow.root.path, 'lib', 'a.dart')).deleteSync();
+        Link(p.join(shadow.root.path, 'lib', 'a.dart')).createSync(target.path);
+
+        await expectLater(shadow.copyBack(diff), throwsStateError);
+        expect(fx.project.read('lib/a.dart'), 'a1');
+        expect(leftovers(), isEmpty);
+      });
+
+      test('are rejected when a parent folder is one', () async {
+        fx.project.write('lib/sub/a.dart', 'a1');
+        final shadow = await fx.create(['lib']);
+        shadow.write('lib/sub/a.dart', 'a2');
+        final diff = await shadow.diff(
+          tracked: [const Artifact.local('lib/sub/a.dart')],
+        );
+
+        File(p.join(outside.path, 'a.dart')).writeAsStringSync('a2');
+        Directory(
+          p.join(shadow.root.path, 'lib', 'sub'),
+        ).deleteSync(recursive: true);
+        Link(p.join(shadow.root.path, 'lib', 'sub')).createSync(outside.path);
+
+        await expectLater(shadow.copyBack(diff), throwsStateError);
+        expect(fx.project.read('lib/sub/a.dart'), 'a1');
+      });
+
+      test(
+        'a dangling link at the staging path is not written through',
+        () async {
+          fx.project.write('lib/a.dart', 'a1');
+          final shadow = await fx.create(['lib']);
+          shadow.write('lib/a.dart', 'a2');
+          final diff = await shadow.diff(
+            tracked: [const Artifact.local('lib/a.dart')],
+          );
+          final victim = File(p.join(outside.path, 'victim.txt'));
+
+          // The first name the copy-back would try.
+          Link(
+            fx.project.abs('lib/.a.dart.fixed.0.tmp'),
+          ).createSync(victim.path);
+
+          await copyBackChanges(
+            projectRoot: fx.project.root,
+            shadowRoot: shadow.root,
+            diff: diff,
+            stagingSuffix: (attempt) => 'fixed.$attempt',
+          );
+
+          expect(victim.existsSync(), isFalse);
+          expect(fx.project.read('lib/a.dart'), 'a2');
+        },
+      );
+    }, skip: Platform.isWindows ? 'creating links needs privileges' : false);
+
     group('when the workspace changed after the diff', () {
       test('refuses to write something nobody reviewed', () async {
         fx.project.write('lib/a.dart', 'a1');
@@ -417,6 +512,33 @@ void main() {
         expect(fx.project.read('lib/a.dart'), 'a2');
         expect(fx.project.read('lib/b.dart'), 'b1');
         expect(fx.project.read('lib/c.dart'), 'c1');
+      });
+
+      test('re-checks each file right before its own rename', () async {
+        final (shadow, diff) = await three();
+        final files = _EditingFiles(
+          // After a is written, someone edits c.
+          afterReplace: () => fx.project.write('lib/c.dart', 'edited late'),
+        );
+
+        await expectLater(
+          shadow.copyBack(diff, files: files),
+          throwsA(
+            isA<CopyBackInterruptedException>()
+                .having((e) => e.applied, 'applied', [
+                  'lib/a.dart',
+                  'lib/b.dart',
+                ])
+                .having((e) => e.pending, 'pending', ['lib/c.dart'])
+                .having(
+                  (e) => e.cause,
+                  'cause',
+                  isA<ProjectChangedException>(),
+                ),
+          ),
+        );
+        expect(fx.project.read('lib/c.dart'), 'edited late');
+        expect(leftovers(), isEmpty);
       });
 
       test('leaves no staged file behind', () async {

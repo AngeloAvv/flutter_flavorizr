@@ -81,13 +81,22 @@ final class CopyBackResult {
 ///    [CopyBackInterruptedException] lists what was already applied.
 ///
 /// A staged file lives in the folder of its target, which guarantees the rename
-/// does not cross filesystems.
+/// does not cross filesystems. It is created exclusively, and its name gets
+/// [stagingSuffix] for the given attempt (a timestamp by default).
+///
+/// **Known limit.** The filesystem offers no lock nor compare-and-swap, so a
+/// process that writes a target between its last check and its rename still
+/// loses that write. Each target is checked right before its own rename, which
+/// leaves a window of a few filesystem calls, not the duration of the run. This
+/// is a best effort, not a guarantee against concurrent writers: run
+/// flutter_flavorizr while nothing else edits the project.
 Future<CopyBackResult> copyBackChanges({
   required Directory projectRoot,
   required Directory shadowRoot,
   required WorkspaceDiff diff,
   Set<String> approvedConflicts = const {},
   CopyBackFiles files = const LocalCopyBackFiles(),
+  String Function(int attempt)? stagingSuffix,
 }) async {
   final unapproved = diff.conflicts
       .where((change) => !approvedConflicts.contains(change.path))
@@ -138,15 +147,13 @@ Future<CopyBackResult> copyBackChanges({
   }
 
   try {
-    var counter = 0;
     final stamp = DateTime.now().microsecondsSinceEpoch;
+    final suffixOf = stagingSuffix ?? (attempt) => '$stamp.$attempt';
 
     for (final change in writes) {
       if (change.kind == ChangeKind.deleted) continue;
 
-      final bytes = await File(
-        resolveIn(shadowRoot, change.path),
-      ).readAsBytes();
+      final bytes = await _readShadowFile(shadowRoot, change.path);
 
       if (digestOf(bytes) != change.after) {
         throw StateError(
@@ -159,23 +166,12 @@ Future<CopyBackResult> copyBackChanges({
 
       createdDirectories.addAll(await _createParents(target));
 
-      // A name nobody is likely to own, and one that is never reused, so that
-      // staging cannot overwrite a file of the user.
-      var stagedFile = File(
-        p.join(p.dirname(target), '.${p.basename(target)}.$stamp.$counter.tmp'),
+      final stagedFile = await _reserve(
+        directory: p.dirname(target),
+        name: p.basename(target),
+        suffixOf: suffixOf,
       );
 
-      while (await stagedFile.exists()) {
-        counter++;
-        stagedFile = File(
-          p.join(
-            p.dirname(target),
-            '.${p.basename(target)}.$stamp.$counter.tmp',
-          ),
-        );
-      }
-
-      counter++;
       staged[change.path] = stagedFile.path;
       await stagedFile.writeAsBytes(bytes);
     }
@@ -193,6 +189,12 @@ Future<CopyBackResult> copyBackChanges({
     final target = resolveIn(projectRoot, change.path);
 
     try {
+      // Right before its own rename: the shorter the interval, the less a
+      // concurrent edit can be lost. See the limits in the dartdoc above.
+      if (!await _isUnchanged(projectRoot, change)) {
+        throw ProjectChangedException([change.path]);
+      }
+
       if (change.kind == ChangeKind.deleted) {
         await files.remove(target);
       } else {
@@ -239,6 +241,50 @@ Future<bool> _isUnchanged(Directory projectRoot, FileChange change) async {
 
   return type == FileSystemEntityType.file &&
       digestOf(await File(path).readAsBytes()) == change.before;
+}
+
+/// Reads the file [path] of the shadow workspace, refusing to follow links: a
+/// link could hold the reviewed bytes yet live outside of the workspace, and a
+/// matching digest does not make it safe.
+Future<List<int>> _readShadowFile(Directory shadowRoot, String path) async {
+  final file = resolveIn(shadowRoot, path);
+
+  if (goesThroughLink(shadowRoot, path) ||
+      await FileSystemEntity.type(file, followLinks: false) !=
+          FileSystemEntityType.file) {
+    throw StateError(
+      '`$path` is not a regular file in the shadow workspace anymore (it may '
+      'be a symbolic link): compute the diff again.',
+    );
+  }
+
+  return File(file).readAsBytes();
+}
+
+/// Creates the staging file for [name] in [directory], failing if the path is
+/// taken. Creation is exclusive, so it never follows a link (not even a
+/// dangling one) and never shares a file with another run; when the path is
+/// taken it moves on to the next suffix.
+Future<File> _reserve({
+  required String directory,
+  required String name,
+  required String Function(int attempt) suffixOf,
+}) async {
+  const maxAttempts = 100;
+
+  for (var attempt = 0; ; attempt++) {
+    final file = File(p.join(directory, '.$name.${suffixOf(attempt)}.tmp'));
+
+    try {
+      return await file.create(exclusive: true);
+    } on FileSystemException {
+      final taken =
+          await FileSystemEntity.type(file.path, followLinks: false) !=
+          FileSystemEntityType.notFound;
+
+      if (!taken || attempt >= maxAttempts) rethrow;
+    }
+  }
 }
 
 /// Creates the missing folders above [target] and returns them in the order
