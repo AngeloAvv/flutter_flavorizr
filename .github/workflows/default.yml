@@ -21,6 +21,13 @@ jobs:
     name: Testing
     uses: ./.github/workflows/analyze.yml
 
+  parity:
+    name: Golden parity
+    needs:
+      - test
+      - analyze
+    uses: ./.github/workflows/parity.yml
+
   build:
     name: Build (${{ matrix.platform }}|${{ matrix.working-directory }}|${{ matrix.flavor }}|flavorize:${{ matrix.flavorize }})
     needs:
@@ -57,7 +64,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [test, analyze, build]
+    needs: [test, analyze, parity, build]
     runs-on: ubuntu-latest
     steps:
       - name: Fail unless every required job succeeded

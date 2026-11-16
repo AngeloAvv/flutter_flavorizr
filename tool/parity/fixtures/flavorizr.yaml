@@ -1,0 +1,86 @@
+app:
+  android:
+    flavorDimensions: "flavor-type"
+
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+
+    android:
+      applicationId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/google-services.json"
+    ios:
+      bundleId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/GoogleService-Info.plist"
+    macos:
+      bundleId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/GoogleService-Info.plist"
+    linux:
+      applicationId: "com.example.apple"
+    windows: {}
+
+  banana:
+    app:
+      name: "Banana App"
+
+    android:
+      applicationId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/google-services.json"
+    ios:
+      bundleId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/GoogleService-Info.plist"
+    macos:
+      bundleId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/GoogleService-Info.plist"
+    linux:
+      applicationId: "com.example.banana"
+    windows: {}
+
+ide:
+  - idea
+
+instructions:
+  - 'android:androidManifest'
+  - 'android:flavorizrGradle'
+  - 'android:buildGradle'
+  - 'android:dummyAssets'
+  - 'android:icons'
+  - 'android:adaptiveIcons'
+  - 'flutter:flavors'
+  - 'flutter:app'
+  - 'flutter:pages'
+  - 'flutter:main'
+  - 'ios:podfile'
+  - 'ios:xcconfig'
+  - 'ios:buildTargets'
+  - 'ios:schema'
+  - 'ios:dummyAssets'
+  - 'ios:icons'
+  - 'ios:plist'
+  - 'ios:launchScreen'
+  - 'macos:podfile'
+  - 'macos:xcconfig'
+  - 'macos:configs'
+  - 'macos:buildTargets'
+  - 'macos:schema'
+  - 'macos:dummyAssets'
+  - 'macos:icons'
+  - 'macos:plist'
+  - 'linux:cmake'
+  - 'linux:runnerCmake'
+  - 'linux:myApplication'
+  - 'windows:mainCppTemplate'
+  - 'windows:runnerRcTemplate'
+  - 'windows:cmake'
+  - 'windows:dummyAssets'
+  - 'windows:icons'
+  - 'google:firebase'
+  - 'huawei:agconnect'
+  - 'ide:config'

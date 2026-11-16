@@ -1,0 +1,9 @@
+# Differences from the golden that are intended, one entry per file or glob.
+# Every entry needs a reason: say why the new output is allowed to differ.
+#
+# - path: android/app/src/main/res/**
+#   reason: M5 stops generating the dummy launcher assets (#527)
+#
+# `*` matches within a path segment, `**` across segments. Paths are relative
+# to the generated project, binaries are listed as `<file>.sha256`.
+[]

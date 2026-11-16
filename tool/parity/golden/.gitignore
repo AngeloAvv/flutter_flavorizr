@@ -1,0 +1,4 @@
+# The golden holds the generated project verbatim, IDE files included, and the
+# repository ignores those everywhere else.
+!.idea
+!*.iml
