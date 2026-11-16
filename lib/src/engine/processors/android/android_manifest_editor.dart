@@ -114,7 +114,9 @@ abstract final class AndroidManifestEditor {
     while (position < end) {
       skipSpaces();
 
-      if (position >= end || source[position] == '>' || source[position] == '/') {
+      if (position >= end ||
+          source[position] == '>' ||
+          source[position] == '/') {
         break;
       }
 

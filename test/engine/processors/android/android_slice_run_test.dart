@@ -62,14 +62,15 @@ String _config(Iterable<String> flavors) =>
       name: "$flavor app"
     android:
       applicationId: "com.example.$flavor"
-''']
-        .join()}';
+'''].join()}';
 
 /// Hashes the owned content of an artifact, like the lock does: the whole file
 /// for a managed one, the label for the manifest.
 String _hash(Artifact artifact, List<int> bytes) =>
     artifact.ownership == Ownership.patched
-    ? digestOf(utf8.encode(AndroidManifestEditor.ownedContent(utf8.decode(bytes))))
+    ? digestOf(
+        utf8.encode(AndroidManifestEditor.ownedContent(utf8.decode(bytes))),
+      )
     : digestOf(bytes);
 
 void main() {
@@ -144,26 +145,29 @@ void main() {
           ..writeAsStringSync('// the build file of the user\n');
       });
 
-      test('writes the flavors file and relabels the application, nothing else', () async {
-        final diff = await run(['apple', 'banana'], gradle);
+      test(
+        'writes the flavors file and relabels the application, nothing else',
+        () async {
+          final diff = await run(['apple', 'banana'], gradle);
 
-        expect(diff.changes.map((change) => change.describe()), [
-          '+ android/app/flavorizr.$gradle (managed)',
-          '~ $_manifestPath (patched)',
-        ]);
-        expect(
-          file('android/app/flavorizr.$gradle').readAsStringSync(),
-          allOf(contains('apple'), contains('banana')),
-        );
-        expect(
-          file(_manifestPath).readAsStringSync(),
-          _manifest.replaceFirst('"example"', '"@string/app_name"'),
-        );
-        expect(
-          file('android/app/build.$gradle').readAsStringSync(),
-          '// the build file of the user\n',
-        );
-      });
+          expect(diff.changes.map((change) => change.describe()), [
+            '+ android/app/flavorizr.$gradle (managed)',
+            '~ $_manifestPath (patched)',
+          ]);
+          expect(
+            file('android/app/flavorizr.$gradle').readAsStringSync(),
+            allOf(contains('apple'), contains('banana')),
+          );
+          expect(
+            file(_manifestPath).readAsStringSync(),
+            _manifest.replaceFirst('"example"', '"@string/app_name"'),
+          );
+          expect(
+            file('android/app/build.$gradle').readAsStringSync(),
+            '// the build file of the user\n',
+          );
+        },
+      );
 
       test('an idempotent re-run produces an empty diff', () async {
         await run(['apple', 'banana'], gradle);
@@ -212,10 +216,9 @@ void main() {
       test('a hand edit of the label is a conflict', () async {
         await run(['apple'], gradle);
         file(_manifestPath).writeAsStringSync(
-          file(_manifestPath).readAsStringSync().replaceFirst(
-            '@string/app_name',
-            'my own label',
-          ),
+          file(
+            _manifestPath,
+          ).readAsStringSync().replaceFirst('@string/app_name', 'my own label'),
         );
 
         final diff = await run(['apple'], gradle);

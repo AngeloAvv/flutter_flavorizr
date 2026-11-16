@@ -136,7 +136,9 @@ void main() {
         _groovyApple,
       );
       expect(inRoot('android/app/flavorizr.gradle.kts').existsSync(), isFalse);
-      expect(ctx.tracked, [const Artifact.managed('android/app/flavorizr.gradle')]);
+      expect(ctx.tracked, [
+        const Artifact.managed('android/app/flavorizr.gradle'),
+      ]);
     });
 
     test('writes `flavorizr.gradle.kts` next to a Kotlin build file', () async {
