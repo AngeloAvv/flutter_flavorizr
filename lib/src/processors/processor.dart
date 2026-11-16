@@ -330,6 +330,7 @@ class Processor extends AbstractProcessor<void> {
       ),
       'ios:schema': () => DarwinSchemasProcessor(
         K.iOSRunnerProjectPath,
+        flavors: flavorizr.iosFlavors,
         config: flavorizr,
         logger: logger,
       ),
@@ -384,6 +385,7 @@ class Processor extends AbstractProcessor<void> {
       ),
       'macos:schema': () => DarwinSchemasProcessor(
         K.macOSRunnerProjectPath,
+        flavors: flavorizr.macosFlavors,
         config: flavorizr,
         logger: logger,
       ),
