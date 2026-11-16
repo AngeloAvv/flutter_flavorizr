@@ -43,7 +43,9 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 /// The DSL follows the build file of the app, like in 2.x: Groovy when
 /// `android/app/build.gradle` exists, otherwise Kotlin when
 /// `android/app/build.gradle.kts` does. The build file is looked up in the
-/// workspace, which therefore has to contain `android/app`. The content is
+/// workspace, which therefore has to contain both
+/// `android/app/build.gradle` and `android/app/build.gradle.kts` when they
+/// exist (the whole `android/app` folder is fine too). The content is
 /// produced by the generators of the 2.x processors, which stay the single
 /// source of it until they are retired.
 class FlavorizrGradleProcessor extends FlavorizrProcessor {
