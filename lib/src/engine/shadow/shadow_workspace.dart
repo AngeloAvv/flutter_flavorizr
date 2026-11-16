@@ -114,6 +114,32 @@ class ShadowWorkspace {
     );
   }
 
+  /// Creates a workspace, runs [body] with it and deletes it afterwards,
+  /// whether [body] returns or throws.
+  ///
+  /// This is the way to use a workspace: the temporary directory never outlives
+  /// the run, and a failure inside [body], such as a failing processor, leaves
+  /// the real project untouched since it is never written before
+  /// [copyBack].
+  static Future<T> run<T>({
+    required Directory projectRoot,
+    required Iterable<String> paths,
+    required Future<T> Function(ShadowWorkspace shadow) body,
+    Directory? tempParent,
+  }) async {
+    final shadow = await create(
+      projectRoot: projectRoot,
+      paths: paths,
+      tempParent: tempParent,
+    );
+
+    try {
+      return await body(shadow);
+    } finally {
+      await shadow.dispose();
+    }
+  }
+
   /// The canonical paths that were left out because they are, or live behind, a
   /// symbolic link.
   List<String> get skippedLinks => _skippedLinks;
