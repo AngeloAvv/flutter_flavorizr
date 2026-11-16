@@ -73,9 +73,9 @@ void main() {
 
       final shadow = await fx.create(['lib/sub']);
 
-      File(p.join(shadow.root.path, 'lib', 'sub', 'a.dart')).writeAsStringSync(
-        'a',
-      );
+      File(
+        p.join(shadow.root.path, 'lib', 'sub', 'a.dart'),
+      ).writeAsStringSync('a');
       expect(shadow.read('lib/sub/a.dart'), 'a');
     });
 

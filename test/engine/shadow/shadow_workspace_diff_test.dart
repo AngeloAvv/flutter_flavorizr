@@ -372,12 +372,10 @@ void main() {
         fx.project.write('lib/sub/a.dart', 'a');
         fx.project.write('lib/sub/b.dart', 'b');
         final shadow = await fx.create(['lib']);
-        Directory(p.join(shadow.root.path, 'lib', 'sub')).deleteSync(
-          recursive: true,
-        );
-        Link(
+        Directory(
           p.join(shadow.root.path, 'lib', 'sub'),
-        ).createSync(outside.path);
+        ).deleteSync(recursive: true);
+        Link(p.join(shadow.root.path, 'lib', 'sub')).createSync(outside.path);
 
         final diff = await shadow.diff(
           tracked: [
