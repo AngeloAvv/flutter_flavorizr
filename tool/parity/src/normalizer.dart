@@ -36,7 +36,9 @@ class Normalizer {
 
   /// Normalizes [content], the text of the file at [relativePath].
   String normalize(String relativePath, String content) {
-    final stripped = content.replaceAll(_timestamp, '<TIMESTAMP>');
+    final stripped = content
+        .replaceAll('\r\n', '\n')
+        .replaceAll(_timestamp, '<TIMESTAMP>');
 
     if (relativePath.endsWith('.pbxproj')) {
       return normalizePbxproj(stripped);

@@ -106,6 +106,16 @@ void main() {
   const normalizer = Normalizer();
   const path = 'ios/Runner.xcodeproj/project.pbxproj';
 
+  group('line endings', () {
+    test('CRLF and LF normalize to the same content', () {
+      // git may rewrite the line endings of a committed golden.
+      expect(
+        normalizer.normalize('android/gradlew.bat', '@echo off\r\nexit 0\r\n'),
+        normalizer.normalize('android/gradlew.bat', '@echo off\nexit 0\n'),
+      );
+    });
+  });
+
   group('timestamps', () {
     test('ISO 8601 timestamps are stripped from any text file', () {
       const first = '# Generated on 2026-11-16T10:20:30.123Z by flavorizr\n';
