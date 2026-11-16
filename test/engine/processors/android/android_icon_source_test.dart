@@ -207,6 +207,62 @@ void main() {
           );
         });
 
+        /// An ICO of one 32 x 32 entry whose payload is a 32 bit DIB (no PNG)
+        /// that declares [width] x [height] pixels in its own header. The pixels
+        /// are present, so a decoder that trusts the header does decode it.
+        Uint8List icoWithDib({required int width, required int height}) {
+          final dib = ByteData(40 + width * height * 4)
+            ..setUint32(0, 40, Endian.little)
+            ..setInt32(4, width, Endian.little)
+            // The height of an ICO DIB is doubled: the AND mask follows.
+            ..setInt32(8, height * 2, Endian.little)
+            ..setUint16(12, 1, Endian.little)
+            ..setUint16(14, 32, Endian.little);
+          final entry = ByteData(16)
+            ..setUint8(0, 32)
+            ..setUint8(1, 32)
+            ..setUint16(4, 1, Endian.little)
+            ..setUint16(6, 32, Endian.little)
+            ..setUint32(8, dib.lengthInBytes, Endian.little)
+            ..setUint32(12, 22, Endian.little);
+
+          return (BytesBuilder()
+                ..add([0, 0, 1, 0, 1, 0])
+                ..add(entry.buffer.asUint8List())
+                ..add(dib.buffer.asUint8List()))
+              .toBytes();
+        }
+
+        test('accepts an ICO with a DIB payload of a plausible size', () {
+          final source = AndroidIconSource.decode(
+            icoWithDib(width: 32, height: 32),
+            name: 'dib.ico',
+          );
+
+          expect(img.decodePng(source.renderPng(48, 48))!.width, 48);
+        });
+
+        test('refuses a DIB that declares a width the entry does not, even '
+            'though the entry says 32', () {
+          expect(
+            () => AndroidIconSource.decode(
+              icoWithDib(width: AndroidIconSource.maxSide * 2, height: 32),
+              name: 'wide.ico',
+            ),
+            throwsA(isA<MalformedResourceException>()),
+          );
+        });
+
+        test('refuses a DIB that declares a height the entry does not', () {
+          expect(
+            () => AndroidIconSource.decode(
+              icoWithDib(width: 32, height: AndroidIconSource.maxSide * 2),
+              name: 'tall.ico',
+            ),
+            throwsA(isA<MalformedResourceException>()),
+          );
+        });
+
         test('refuses an ICO without any image', () {
           expect(
             () => AndroidIconSource.decode(

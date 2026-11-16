@@ -92,13 +92,13 @@ final class AndroidIconSource {
   static bool _fitsBounds(img.DecodeInfo info, Uint8List bytes) {
     if (info is img.IcoInfo) {
       // The info of an ICO has no size: the sizes are those of its entries, and
-      // the first one is the one decoded. An entry is 256 x 256 at most, but a
-      // PNG embedded in it declares a size of its own.
+      // the first one is the one decoded. What the entry declares is not what
+      // the decoder uses, so the stored image is looked at.
       if (info.images.isEmpty) {
         return false;
       }
 
-      return _embeddedPngFits(bytes, info.images.first.bytesOffset);
+      return _storedImageFits(bytes, info.images.first.bytesOffset);
     }
 
     return info.width > 0 &&
@@ -109,29 +109,47 @@ final class AndroidIconSource {
 
   static const _pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
-  /// Whether the PNG at [offset] (the signature, then the IHDR chunk, whose
-  /// size is at 16) declares a size within [maxSide]. Data that is not a PNG
-  /// (a BMP) is bounded by the 256 pixels of the ICO entry.
-  static bool _embeddedPngFits(Uint8List bytes, int offset) {
-    const headerEnd = 24;
+  /// Whether the image stored at [offset] of an ICO declares a size within
+  /// [maxSide].
+  ///
+  /// The directory entry says 256 x 256 at most, but the decoder does not use
+  /// it: it takes the size from the data itself, which is either a PNG (the
+  /// signature, then the IHDR chunk, whose size is at 16) or a DIB (its
+  /// BITMAPINFOHEADER, with the width at 4 and the height at 8). The height of
+  /// an ICO DIB counts the AND mask too, so the image is half of it.
+  static bool _storedImageFits(Uint8List bytes, int offset) {
+    const pngHeaderEnd = 24;
+    const dibHeaderEnd = 12;
 
-    if (offset < 0 || offset + _pngSignature.length > bytes.length) {
+    if (offset < 0 || offset > bytes.length) {
       return false;
     }
 
-    for (var i = 0; i < _pngSignature.length; i++) {
-      if (bytes[offset + i] != _pngSignature[i]) {
-        return true;
+    final stored = ByteData.sublistView(bytes, offset);
+    final isPng =
+        stored.lengthInBytes >= _pngSignature.length &&
+        Iterable<int>.generate(
+          _pngSignature.length,
+        ).every((i) => stored.getUint8(i) == _pngSignature[i]);
+
+    final int width;
+    final int height;
+
+    if (isPng) {
+      if (stored.lengthInBytes < pngHeaderEnd) {
+        return false;
       }
-    }
 
-    if (offset + headerEnd > bytes.length) {
-      return false;
-    }
+      width = stored.getUint32(16);
+      height = stored.getUint32(20);
+    } else {
+      if (stored.lengthInBytes < dibHeaderEnd) {
+        return false;
+      }
 
-    final header = ByteData.sublistView(bytes, offset);
-    final width = header.getUint32(16);
-    final height = header.getUint32(20);
+      width = stored.getInt32(4, Endian.little);
+      height = stored.getInt32(8, Endian.little).abs() ~/ 2;
+    }
 
     return width > 0 && height > 0 && width <= maxSide && height <= maxSide;
   }
