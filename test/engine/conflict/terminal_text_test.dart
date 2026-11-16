@@ -46,6 +46,23 @@ void main() {
     expect(printable('a\u009Bb\u0085c'), 'a\u{FFFD}b\u{FFFD}c');
   });
 
+  group('printablePath', () {
+    test('a path on one line is untouched', () {
+      expect(printablePath('lib/src/a b.dart'), 'lib/src/a b.dart');
+    });
+
+    test('newlines and tabs are made visible, so a path is one line', () {
+      expect(
+        printablePath('lib/a.dart\n  - lib/b.dart\t!'),
+        'lib/a.dart␊  - lib/b.dart␉!',
+      );
+    });
+
+    test('control characters are made visible as in file content', () {
+      expect(printablePath('a\x1B[2J\r\u009Bb'), 'a␛[2J␍\u{FFFD}b');
+    });
+  });
+
   test('a path cannot hide the end of its line', () {
     expect(printable('lib/a.dart\r  OK'), isNot(contains('\r')));
   });

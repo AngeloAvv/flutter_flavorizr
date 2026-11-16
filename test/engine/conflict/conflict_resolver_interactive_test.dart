@@ -303,6 +303,43 @@ void main() {
         expect(terminal.output.toString(), contains('lib/␛[2Ja.dart'));
       });
 
+      test('a path with a newline is never shown as two entries', () async {
+        const path = 'lib/a.dart\n  - lib/b.dart';
+        final terminal = FakeTerminal(answers: ['a', 'n', 'k']);
+
+        await resolveWith(terminal, of: WorkspaceDiff([conflict(path)]));
+
+        final output = terminal.output.toString();
+
+        expect(output, contains('lib/a.dart␊  - lib/b.dart'));
+        expect(output, isNot(contains('\n  - lib/b.dart')));
+      });
+
+      test(
+        'a file differing only by an escape character is still shown',
+        () async {
+          // The escape character is displayed as `␛`: a file that really holds
+          // that symbol must not be taken for one holding the escape.
+          final terminal = FakeTerminal(answers: ['d', 'k']);
+
+          await resolveWith(
+            terminal,
+            content: FakeContent(
+              current: {'lib/a.dart': 'a\x1Bb\n'},
+              desired: {'lib/a.dart': 'a␛b\n'},
+            ),
+            of: WorkspaceDiff([conflict('lib/a.dart')]),
+          );
+
+          final output = terminal.output.toString();
+
+          expect(output, isNot(contains('No textual differences')));
+          expect(output, contains('-a␛b'));
+          expect(output, contains('+a␛b'));
+          expect(output, isNot(contains('\x1B')));
+        },
+      );
+
       test('says so when there is nothing to show', () async {
         final terminal = FakeTerminal(answers: ['d', 'k']);
 

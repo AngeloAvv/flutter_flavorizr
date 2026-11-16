@@ -162,7 +162,7 @@ class ConflictResolver {
     List<FileChange> remaining,
   ) async {
     terminal.write(
-      '\n${printable(change.path)} was edited by hand and flavorizr wants to '
+      '\n${printablePath(change.path)} was edited by hand and flavorizr wants to '
       '${_verb(change)} it.\n',
     );
 
@@ -199,7 +199,7 @@ class ConflictResolver {
   Future<bool?> _confirmAll(List<FileChange> remaining) async {
     terminal.write(
       'This overwrites all remaining files:\n'
-      '${remaining.map((c) => '  - ${printable(c.path)}'
+      '${remaining.map((c) => '  - ${printablePath(c.path)}'
           '${c.kind == ChangeKind.deleted ? ' (delete)' : ''}\n').join()}',
     );
 
@@ -239,13 +239,17 @@ class ConflictResolver {
       return 'Binary files differ.\n';
     }
 
-    final path = printable(change.path);
+    final path = printablePath(change.path);
     final diff = unifiedDiff(
       oldText: currentText,
       newText: desiredText,
       oldLabel: 'a/$path',
       newLabel: 'b/$path',
       color: terminal.supportsColor,
+      // Made visible only once the lines are compared, or two files that only
+      // differ by a control character and the symbol standing for it would
+      // look identical.
+      display: printable,
     );
 
     return diff.isEmpty
@@ -253,12 +257,13 @@ class ConflictResolver {
         : '- your file   + what flavorizr would write\n$diff';
   }
 
-  /// The text of [bytes] ready to be printed, or `null` when they are not text.
+  /// The text of [bytes], or `null` when they are not text. It is not safe to
+  /// print as is: see [printable].
   String? _decode(List<int> bytes) {
     try {
       final text = utf8.decode(bytes);
 
-      return text.contains('\u0000') ? null : printable(text);
+      return text.contains('\u0000') ? null : text;
     } on FormatException {
       return null;
     }

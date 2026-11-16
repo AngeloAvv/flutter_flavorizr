@@ -32,11 +32,19 @@
 /// was printed before. They are replaced by their visible symbol (`␛`, `␍`,
 /// ...), and the C1 controls, which some terminals obey too, by `�`. Newlines
 /// and tabs are kept.
-String printable(String text) {
+String printable(String text) => _visible(text, keepWhitespace: true);
+
+/// Makes the file [path] safe to print on a terminal, on a single line.
+///
+/// Like [printable], but newlines and tabs are replaced too (`␊`, `␉`): a path
+/// holding a newline could otherwise pass for two entries of a list.
+String printablePath(String path) => _visible(path, keepWhitespace: false);
+
+String _visible(String text, {required bool keepWhitespace}) {
   final out = StringBuffer();
 
   for (final unit in text.runes) {
-    if (unit == 0x0A || unit == 0x09) {
+    if (keepWhitespace && (unit == 0x0A || unit == 0x09)) {
       out.writeCharCode(unit);
     } else if (unit < 0x20) {
       out.writeCharCode(0x2400 + unit);

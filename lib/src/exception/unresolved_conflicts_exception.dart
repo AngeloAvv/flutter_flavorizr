@@ -42,7 +42,7 @@ class UnresolvedConflictsException implements Exception {
   String toString() =>
       'Aborted: these files were edited by hand and the run would change '
       'them, so nothing was written:\n'
-      '${paths.map((path) => '  - ${printable(path)}').join('\n')}\n'
+      '${paths.map((path) => '  - ${printablePath(path)}').join('\n')}\n'
       'Run again on a terminal to choose for each file, or pass '
       '--on-conflict=keep|overwrite to decide for all of them.';
 }

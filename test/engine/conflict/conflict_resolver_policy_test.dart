@@ -96,6 +96,15 @@ void main() {
       );
     });
 
+    test('the failure shows a path with a newline as one entry', () {
+      final message = UnresolvedConflictsException([
+        'lib/a.dart\n  - lib/b.dart',
+      ]).toString();
+
+      expect(message, contains('  - lib/a.dart␊  - lib/b.dart\n'));
+      expect('\n  - '.allMatches(message), hasLength(1));
+    });
+
     test('the failure tells how to resolve', () {
       final message = UnresolvedConflictsException(
         diff.conflicts.map((change) => change.path),
