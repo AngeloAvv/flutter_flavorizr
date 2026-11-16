@@ -85,6 +85,14 @@ abstract final class LockCodec {
     String content, {
     required String runningVersion,
   }) {
+    if (!isVersion(runningVersion)) {
+      throw ArgumentError.value(
+        runningVersion,
+        'runningVersion',
+        'must be a semantic version',
+      );
+    }
+
     final Object? parsed;
 
     try {
@@ -106,7 +114,7 @@ abstract final class LockCodec {
         processors: {
           for (final entry in _asMap(root['processors'], 'processors').entries)
             _asString(entry.key, 'a processor id'): _decodeProcessor(
-              entry.key as String,
+              '${entry.key}',
               entry.value,
             ),
         },
@@ -160,8 +168,9 @@ abstract final class LockCodec {
     return ProcessorLock(
       files: {
         for (final entry in _asMap(
-          processor['files'] ?? YamlMap(),
+          processor['files'],
           '$id files',
+          optional: true,
         ).entries)
           _asString(entry.key, 'a file path of $id'): _decodeFile(
             '$id ${entry.key}',
@@ -172,15 +181,16 @@ abstract final class LockCodec {
       keys: _decodeNested(id, 'keys', processor['keys']),
       objects: {
         for (final entry in _asMap(
-          processor['objects'] ?? YamlMap(),
+          processor['objects'],
           '$id objects',
+          optional: true,
         ).entries)
           _asString(entry.key, 'a file path of $id'): {
             for (final uuid in _asList(entry.value, '$id objects ${entry.key}'))
               _asString(uuid, '$id objects ${entry.key}'),
           },
       },
-      inputs: _decodeStrings('$id inputs', processor['inputs']),
+      inputs: _decodeStrings('$id inputs', processor['inputs'], optional: true),
     );
   }
 
@@ -189,15 +199,19 @@ abstract final class LockCodec {
     String section,
     Object? node,
   ) => {
-    for (final entry in _asMap(node ?? YamlMap(), '$id $section').entries)
+    for (final entry in _asMap(node, '$id $section', optional: true).entries)
       _asString(entry.key, 'a file path of $id'): _decodeStrings(
         '$id $section ${entry.key}',
         entry.value,
       ),
   };
 
-  static Map<String, String> _decodeStrings(String where, Object? node) => {
-    for (final entry in _asMap(node ?? YamlMap(), where).entries)
+  static Map<String, String> _decodeStrings(
+    String where,
+    Object? node, {
+    bool optional = false,
+  }) => {
+    for (final entry in _asMap(node, where, optional: optional).entries)
       _asString(entry.key, 'a key of $where'): _asString(
         entry.value,
         '$where ${entry.key}',
@@ -221,8 +235,9 @@ abstract final class LockCodec {
     );
   }
 
-  static YamlMap _asMap(Object? node, String where) {
+  static YamlMap _asMap(Object? node, String where, {bool optional = false}) {
     if (node is YamlMap) return node;
+    if (node == null && optional) return YamlMap();
 
     throw MalformedLockFileException('$where must be a mapping');
   }

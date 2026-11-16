@@ -28,6 +28,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_codec.dart';
+import 'package:flutter_flavorizr/src/exception/malformed_lock_file_exception.dart';
 import 'package:path/path.dart' as p;
 
 /// Reads and writes `flavorizr.lock` in the root of a project.
@@ -61,8 +62,17 @@ class LockStore {
 
     if (!await file.exists()) return null;
 
+    final String content;
+
+    try {
+      content = utf8.decode(await file.readAsBytes());
+    } on FormatException {
+      throw const MalformedLockFileException('the file is not valid UTF-8');
+    }
+
     return LockCodec.decode(
-      await file.readAsString(),
+      // An editor may have saved the lock with a byte order mark.
+      content.startsWith('\uFEFF') ? content.substring(1) : content,
       runningVersion: runningVersion,
     );
   }
@@ -75,7 +85,13 @@ class LockStore {
     final file = _file;
     final temporary = File('${file.path}.tmp');
 
-    await temporary.writeAsBytes(utf8.encode(LockCodec.encode(lock)));
-    await temporary.rename(file.path);
+    try {
+      await temporary.writeAsBytes(utf8.encode(LockCodec.encode(lock)));
+      await temporary.rename(file.path);
+    } on Object {
+      if (await temporary.exists()) await temporary.delete();
+
+      rethrow;
+    }
   }
 }

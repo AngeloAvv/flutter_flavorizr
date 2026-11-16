@@ -27,8 +27,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
+import 'package:flutter_flavorizr/src/engine/lock/lock_codec.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/exception/malformed_lock_file_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_lock_version_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -120,6 +122,34 @@ void main() {
       );
 
       expect(store.read(), throwsA(isA<UnsupportedLockVersionException>()));
+    });
+
+    test('reads a lock saved with a byte order mark', () async {
+      final text = LockCodec.encode(sample());
+      File(
+        p.join(project.path, 'flavorizr.lock'),
+      ).writeAsBytesSync([0xEF, 0xBB, 0xBF, ...utf8.encode(text)]);
+
+      expect(await store.read(), sample());
+    });
+
+    test('reports a lock that is not UTF-8 as malformed', () async {
+      File(
+        p.join(project.path, 'flavorizr.lock'),
+      ).writeAsBytesSync([0xFF, 0xFE, 0x41]);
+
+      expect(store.read(), throwsA(isA<MalformedLockFileException>()));
+    });
+
+    test('leaves no temporary file when the write fails', () async {
+      // A directory in the place of the lock makes the final rename fail.
+      Directory(p.join(project.path, 'flavorizr.lock')).createSync();
+
+      await expectLater(store.write(sample()), throwsA(isA<IOException>()));
+
+      expect(project.listSync().map((e) => p.basename(e.path)), [
+        'flavorizr.lock',
+      ]);
     });
   });
 }

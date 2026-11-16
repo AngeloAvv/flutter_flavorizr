@@ -71,12 +71,16 @@ Notes:
 * Hashes are opaque strings. The engine decides how they are computed (the
   recommended spelling is `<algorithm>:<hex digest>`, such as `sha256:...`).
 * Paths are relative to the project root and use `/`.
-* Unknown keys at the same `schemaVersion` are ignored on read.
+* `flavors` and `processors` are required on read, the sections of a processor
+  are optional. Unknown keys at the same `schemaVersion` are ignored on read.
+* A UTF-8 byte order mark at the start of the file is tolerated on read.
 
 ## Determinism
 
 The same logical content is always written to the same bytes, so two runs with
-no changes produce a byte-identical lock and merge conflicts stay small:
+no changes produce a byte-identical lock and merge conflicts stay small. The
+lock records `flavorizrVersion`, so the bytes are identical for the same
+flutter_flavorizr version: upgrading the tool rewrites that one line.
 
 * every mapping is written with its keys sorted by code unit, and the lists of
   `objects` are sorted;

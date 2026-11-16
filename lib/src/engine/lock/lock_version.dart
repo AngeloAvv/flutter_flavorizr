@@ -23,6 +23,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/// Whether [version] is a semantic version (`1.2.3`, `1.2.3-beta.1`,
+/// `1.2.3+build`).
+bool isVersion(String version) => _SemVer.pattern.hasMatch(version);
+
 /// Compares two semantic versions (`1.2.3`, `1.2.3-beta.1`, `1.2.3+build`),
 /// ignoring build metadata.
 ///
@@ -56,10 +60,12 @@ int compareVersions(String a, String b) {
   return left.preRelease.length.compareTo(right.preRelease.length);
 }
 
+final _numeric = RegExp(r'^(0|[1-9][0-9]*)$');
+
 // Numeric identifiers are lower than alphanumeric ones and compare as numbers.
 int _compareIdentifiers(String a, String b) {
-  final numberA = int.tryParse(a);
-  final numberB = int.tryParse(b);
+  final numberA = _numeric.hasMatch(a) ? int.tryParse(a) : null;
+  final numberB = _numeric.hasMatch(b) ? int.tryParse(b) : null;
 
   if (numberA != null && numberB != null) return numberA.compareTo(numberB);
   if (numberA != null) return -1;
@@ -69,7 +75,7 @@ int _compareIdentifiers(String a, String b) {
 }
 
 final class _SemVer {
-  static final _pattern = RegExp(
+  static final pattern = RegExp(
     r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)'
     r'(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?'
     r'(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
@@ -81,7 +87,7 @@ final class _SemVer {
   const _SemVer(this.core, this.preRelease);
 
   factory _SemVer.parse(String version) {
-    final match = _pattern.firstMatch(version);
+    final match = pattern.firstMatch(version);
 
     if (match == null) {
       throw FormatException('Not a semantic version', version);

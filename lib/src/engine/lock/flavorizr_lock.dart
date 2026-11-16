@@ -33,6 +33,8 @@ import 'package:flutter_flavorizr/src/engine/ownership.dart';
 /// algorithms: hashes are opaque strings computed by the engine, and the
 /// serialization lives in `LockCodec`.
 final class FlavorizrLock {
+  static const _equality = DeepCollectionEquality();
+
   /// The version of the lock format this flavorizr writes and understands.
   ///
   /// It is bumped whenever the format changes in a way an older flavorizr
@@ -64,14 +66,14 @@ final class FlavorizrLock {
   bool operator ==(Object other) =>
       other is FlavorizrLock &&
       other.flavorizrVersion == flavorizrVersion &&
-      const DeepCollectionEquality().equals(other.flavors, flavors) &&
-      const DeepCollectionEquality().equals(other.processors, processors);
+      _equality.equals(other.flavors, flavors) &&
+      _equality.equals(other.processors, processors);
 
   @override
   int get hashCode => Object.hash(
     flavorizrVersion,
-    const DeepCollectionEquality().hash(flavors),
-    const DeepCollectionEquality().hash(processors),
+    _equality.hash(flavors),
+    _equality.hash(processors),
   );
 
   @override
@@ -82,6 +84,8 @@ final class FlavorizrLock {
 
 /// What one processor owns in the project.
 final class ProcessorLock {
+  static const _equality = DeepCollectionEquality();
+
   /// The files the processor owns, by path relative to the project root.
   final Map<String, LockedFile> files;
 
@@ -128,19 +132,19 @@ final class ProcessorLock {
   @override
   bool operator ==(Object other) =>
       other is ProcessorLock &&
-      const DeepCollectionEquality().equals(other.files, files) &&
-      const DeepCollectionEquality().equals(other.regions, regions) &&
-      const DeepCollectionEquality().equals(other.keys, keys) &&
-      const DeepCollectionEquality().equals(other.objects, objects) &&
-      const DeepCollectionEquality().equals(other.inputs, inputs);
+      _equality.equals(other.files, files) &&
+      _equality.equals(other.regions, regions) &&
+      _equality.equals(other.keys, keys) &&
+      _equality.equals(other.objects, objects) &&
+      _equality.equals(other.inputs, inputs);
 
   @override
   int get hashCode => Object.hash(
-    const DeepCollectionEquality().hash(files),
-    const DeepCollectionEquality().hash(regions),
-    const DeepCollectionEquality().hash(keys),
-    const DeepCollectionEquality().hash(objects),
-    const DeepCollectionEquality().hash(inputs),
+    _equality.hash(files),
+    _equality.hash(regions),
+    _equality.hash(keys),
+    _equality.hash(objects),
+    _equality.hash(inputs),
   );
 }
 

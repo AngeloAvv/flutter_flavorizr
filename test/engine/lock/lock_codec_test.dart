@@ -463,6 +463,38 @@ void main() {
     });
   });
 
+  group('running version', () {
+    test('is not blamed on the lock when it is not a version', () {
+      expect(
+        () => LockCodec.decode(
+          'schemaVersion: 1\nflavorizrVersion: 3.0.0\n'
+          'flavors: {}\nprocessors: {}\n',
+          runningVersion: 'abc',
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('compares numeric pre-release identifiers as numbers only', () {
+      String lockText(String version) =>
+          'schemaVersion: 1\nflavorizrVersion: $version\n'
+          'flavors: {}\nprocessors: {}\n';
+
+      // `0x10` is alphanumeric, so it is higher than any number.
+      expect(
+        () => LockCodec.decode(
+          lockText('1.0.0-0x10'),
+          runningVersion: '1.0.0-20',
+        ),
+        throwsA(isA<UnsupportedLockVersionException>()),
+      );
+      expect(
+        LockCodec.decode(lockText('1.0.0-20'), runningVersion: '1.0.0-0x10'),
+        isA<FlavorizrLock>(),
+      );
+    });
+  });
+
   group('malformed input', () {
     void expectMalformed(String text) => expect(
       () => LockCodec.decode(text, runningVersion: '3.0.0'),
@@ -487,6 +519,25 @@ void main() {
         'schemaVersion: 0\nflavorizrVersion: 3.0.0\n'
         'flavors: {}\nprocessors: {}\n',
       );
+    });
+
+    test('is refused when a required section is missing', () {
+      expectMalformed(
+        'schemaVersion: 1\nflavorizrVersion: 3.0.0\nprocessors: {}\n',
+      );
+      expectMalformed(
+        'schemaVersion: 1\nflavorizrVersion: 3.0.0\nflavors: {}\n',
+      );
+    });
+
+    test('ignores keys it does not know at the same schema version', () {
+      final lock = LockCodec.decode(
+        'schemaVersion: 1\nflavorizrVersion: 3.0.0\nflavors: {}\n'
+        'processors:\n  p:\n    extra: 1\nextra: [a]\n',
+        runningVersion: '3.0.0',
+      );
+
+      expect(lock.processors, {'p': ProcessorLock()});
     });
 
     test('is refused when a section has the wrong shape', () {
