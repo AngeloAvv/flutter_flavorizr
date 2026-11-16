@@ -53,10 +53,7 @@ Future<void> execute(List<String> args) async {
 
   final logger = Logger(level: level);
 
-  const parser = Parser(
-    pubspecPath: 'pubspec',
-    flavorizrPath: 'flavorizr',
-  );
+  const parser = Parser(pubspecPath: 'pubspec', flavorizrPath: 'flavorizr');
 
   late Flavorizr flavorizr;
   try {
@@ -70,10 +67,12 @@ Future<void> execute(List<String> args) async {
     flavorizr.instructions = argProcessors;
   }
 
-  final processor = Processor(
-    flavorizr,
-    force: force,
-    logger: logger,
-  );
-  await processor.execute();
+  final processor = Processor(flavorizr, force: force, logger: logger);
+
+  try {
+    await processor.execute();
+  } catch (error) {
+    logger.err(error.toString());
+    exit(ExitCode.software.code);
+  }
 }

@@ -35,7 +35,6 @@ import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
@@ -158,8 +157,7 @@ void main() {
   Future<ExecutionReport> execute(
     List<_FakeProcessor> processors, {
     List<_FakeResource> resources = const [],
-    Future<void> Function(ShadowWorkspace shadow, FlavorizrContext ctx)?
-    commit,
+    Future<void> Function(ShadowWorkspace shadow, FlavorizrContext ctx)? commit,
     Directory? tempParent,
   }) => PlanExecutor(logger: logger).execute(
     planOf(processors),
@@ -206,14 +204,11 @@ void main() {
         tempParent = Directory(p.join(fx.scratch.path, 'tmp'))..createSync();
         fx.project.write('lib/a.dart', 'hand written');
 
-        report = await execute(
-          [
-            _FakeProcessor('a', events),
-            _FakeProcessor('b', events, error: error),
-            _FakeProcessor('c', events),
-          ],
-          tempParent: tempParent,
-        );
+        report = await execute([
+          _FakeProcessor('a', events),
+          _FakeProcessor('b', events, error: error),
+          _FakeProcessor('c', events),
+        ], tempParent: tempParent);
       });
 
       test('stops there and reports what ran, failed and was skipped', () {
@@ -269,10 +264,7 @@ void main() {
           flavorizrVersion: '2.9.0',
           flavors: {'apple': 'hash'},
         );
-        await LockStore(
-          fx.project.root,
-          runningVersion: '3.0.0',
-        ).write(lock);
+        await LockStore(fx.project.root, runningVersion: '3.0.0').write(lock);
         final before = fx.project.read(LockStore.fileName);
 
         final report = await execute([
@@ -329,9 +321,12 @@ void main() {
           setupError: StateError('no xcode'),
         );
 
-        await execute([
-          _FakeProcessor('a', events, needs: [xcode]),
-        ], resources: [xcode]);
+        await execute(
+          [
+            _FakeProcessor('a', events, needs: [xcode]),
+          ],
+          resources: [xcode],
+        );
 
         expect(logger.errors, [
           'Failed: Bad state: no xcode\n'
@@ -427,9 +422,12 @@ void main() {
         final error = StateError('xcode is stuck');
         final xcode = _FakeResource('xcode', events, teardownError: error);
 
-        final report = await execute([
-          _FakeProcessor('a', events, needs: [xcode]),
-        ], resources: [xcode]);
+        final report = await execute(
+          [
+            _FakeProcessor('a', events, needs: [xcode]),
+          ],
+          resources: [xcode],
+        );
 
         expect(report.succeeded, isFalse);
         expect(report.error, same(error));
