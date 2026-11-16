@@ -1,0 +1,44 @@
+name: flutterflavorizr_example
+description: Demonstrates how to use the flutterflavorizr plugin.
+publish_to: 'none'
+
+environment:
+  sdk: "<4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_flavorizr:
+    path: ../
+
+
+flavorizr:
+  flavors:
+    cherry:
+      app:
+        name: "Cherry App"
+
+      android:
+        applicationId: "com.example.cherry"
+
+      ios:
+        bundleId: "com.example.cherry"
+
+    date:
+      app:
+        name: "Date App"
+
+      android:
+        applicationId: "com.example.date"
+
+    elderberry:
+      app:
+        name: "Elderberry App"
+
+      macos:
+        bundleId: "com.example.elderberry"

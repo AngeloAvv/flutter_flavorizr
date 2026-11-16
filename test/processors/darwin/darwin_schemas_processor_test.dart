@@ -48,11 +48,12 @@ void main() {
   test('Test DarwinSchemasProcessor queues one DarwinCreateSchemeProcessor per flavor', () {
     final processor = DarwinSchemasProcessor(
       'project.xcodeproj',
+      flavors: flavorizr.iosFlavors,
       config: flavorizr,
       logger: logger,
     );
 
-    expect(processor.processors.length, flavorizr.flavors.length);
+    expect(processor.processors.length, flavorizr.iosFlavors.length);
     expect(processor.processors, everyElement(isA<DarwinCreateSchemeProcessor>()));
   });
 
@@ -64,13 +65,14 @@ void main() {
 
       final processor = DarwinSchemasProcessor(
         projectPath,
+        flavors: flavorizr.iosFlavors,
         config: flavorizr,
         logger: logger,
       );
 
       await processor.execute();
 
-      for (final flavorName in flavorizr.flavors.keys) {
+      for (final flavorName in flavorizr.iosFlavors.keys) {
         expect(
           File('$projectPath/xcshareddata/xcschemes/$flavorName.xcscheme')
               .existsSync(),
@@ -80,4 +82,104 @@ void main() {
     });
   });
 
+  test(
+      'Test DarwinSchemasProcessor skips flavors without an iOS configuration',
+      () {
+    final mixedConfig = TestUtils.parseFlavorizr(
+      'test_resources/darwin/schemas_processor_test/mixed_platforms_pubspec',
+    );
+
+    expect(
+      mixedConfig.flavors.keys,
+      containsAll(<String>['cherry', 'date', 'elderberry']),
+    );
+    expect(mixedConfig.iosFlavors.keys, <String>['cherry']);
+
+    final processor = DarwinSchemasProcessor(
+      'project.xcodeproj',
+      flavors: mixedConfig.iosFlavors,
+      config: mixedConfig,
+      logger: logger,
+    );
+
+    expect(processor.processors.length, 1);
+    expect(
+      (processor.processors.single as DarwinCreateSchemeProcessor).schemeName,
+      'cherry',
+    );
+  });
+
+  test(
+      'Test DarwinSchemasProcessor creates no iOS scheme for a flavor without an iOS configuration',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final projectPath = '${dir.path}/Runner.xcodeproj';
+      copyPathSync(exampleProjectPath, projectPath);
+
+      final mixedConfig = TestUtils.parseFlavorizr(
+        'test_resources/darwin/schemas_processor_test/mixed_platforms_pubspec',
+      );
+
+      final processor = DarwinSchemasProcessor(
+        projectPath,
+        flavors: mixedConfig.iosFlavors,
+        config: mixedConfig,
+        logger: logger,
+      );
+
+      await processor.execute();
+
+      expect(
+        File('$projectPath/xcshareddata/xcschemes/cherry.xcscheme').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$projectPath/xcshareddata/xcschemes/date.xcscheme').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$projectPath/xcshareddata/xcschemes/elderberry.xcscheme')
+            .existsSync(),
+        isFalse,
+      );
+    });
+  });
+
+  test(
+      'Test DarwinSchemasProcessor creates no macOS scheme for a flavor without a macOS configuration',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final projectPath = '${dir.path}/Runner.xcodeproj';
+      copyPathSync(exampleProjectPath, projectPath);
+
+      final mixedConfig = TestUtils.parseFlavorizr(
+        'test_resources/darwin/schemas_processor_test/mixed_platforms_pubspec',
+      );
+
+      expect(mixedConfig.macosFlavors.keys, <String>['elderberry']);
+
+      final processor = DarwinSchemasProcessor(
+        projectPath,
+        flavors: mixedConfig.macosFlavors,
+        config: mixedConfig,
+        logger: logger,
+      );
+
+      await processor.execute();
+
+      expect(
+        File('$projectPath/xcshareddata/xcschemes/elderberry.xcscheme')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File('$projectPath/xcshareddata/xcschemes/cherry.xcscheme').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('$projectPath/xcshareddata/xcschemes/date.xcscheme').existsSync(),
+        isFalse,
+      );
+    });
+  });
 }
