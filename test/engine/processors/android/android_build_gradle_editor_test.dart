@@ -167,10 +167,44 @@ android {
         );
       });
 
-      test('only the first one, the others are the user\'s', () {
+      test('the first one, and drops the others: it would apply the file '
+          'twice', () {
         expect(
-          _edit('android {\n}\n$_groovyApply\n$_groovyApply\n'),
-          'android {\n}\n$_groovyRegion\n$_groovyApply\n',
+          _edit('android {\n}\n$_groovyApply\nfoo()\n$_groovyApply\n'),
+          'android {\n}\n$_groovyRegion\nfoo()\n',
+        );
+      });
+
+      test('with the line ending of the line, in a file of mixed ones', () {
+        expect(
+          _edit('android {\n}\r\n$_groovyApply\r\nfoo()\n'),
+          'android {\n}\r\n${_groovyRegion.replaceAll('\n', '\r\n')}\r\nfoo()\n',
+        );
+      });
+
+      test('the last line of a file with no line break', () {
+        expect(
+          _edit('android {\n}\n$_groovyApply'),
+          'android {\n}\n$_groovyRegion',
+        );
+      });
+
+      test('not when it is in a block comment, and the region is appended', () {
+        const source =
+            'android {\n}\n/*\n$_groovyApply\n*/\n/* one */ // two\n';
+
+        expect(_edit(source), '$source$_groovyRegion');
+      });
+
+      test('after a block comment is closed, and not fooled by what looks '
+          'like one in a string or a line comment', () {
+        expect(
+          _edit(
+            'android {\n}\n/* a\n b */\nx = "src/**/*.kt" // /*\n'
+            "y = 'it\\'s /*'\n$_groovyApply\n",
+          ),
+          'android {\n}\n/* a\n b */\nx = "src/**/*.kt" // /*\n'
+          "y = 'it\\'s /*'\n$_groovyRegion\n",
         );
       });
 
@@ -249,6 +283,20 @@ android {
           '${_groovyRegion.replaceAll('\n', '\r\n  ')}\r\n// more',
         ),
         base,
+      );
+    });
+
+    test('does not fail when the markers do not form a region, and tells it '
+        'from a region', () {
+      final broken = AndroidBuildGradleEditor.ownedContent(
+        '$_base$_begin\n$_groovyApply\n',
+      );
+
+      expect(broken, contains(_begin));
+      expect(broken, isNot(AndroidBuildGradleEditor.ownedContent(_base)));
+      expect(
+        broken,
+        isNot(AndroidBuildGradleEditor.ownedContent('$_base$_groovyRegion')),
       );
     });
 
