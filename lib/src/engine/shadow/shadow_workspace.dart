@@ -25,7 +25,11 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/artifact.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/engine/ownership_rules.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 import 'package:path/path.dart' as p;
 
@@ -116,6 +120,167 @@ class ShadowWorkspace {
   /// The digest of every file at the moment it was copied, by canonical path.
   Map<String, String> get baseline => _baseline;
 
+  /// Computes what processors changed in the workspace, against the files as
+  /// they were when it was copied.
+  ///
+  /// Every change is judged with the ownership rules of its artifact (see
+  /// `decideArtifactAction`), where [tracked] are the artifacts processors
+  /// declared and [recordedHashes] the hashes in the lock, by path. [hasher]
+  /// computes the hash of the owned content of a file, and defaults to the
+  /// digest of the whole file. [overwriteScaffold] is the
+  /// `--overwrite-scaffold` flag. A change to a file nobody tracked is
+  /// reported as untracked and is never copied back.
+  Future<WorkspaceDiff> diff({
+    Iterable<Artifact> tracked = const [],
+    Map<String, String> recordedHashes = const {},
+    bool overwriteScaffold = false,
+    ArtifactHasher? hasher,
+  }) async {
+    final artifacts = {
+      for (final artifact in tracked) canonicalPath(artifact.path): artifact,
+    };
+    final recorded = {
+      for (final entry in recordedHashes.entries)
+        canonicalPath(entry.key): entry.value,
+    };
+    final hashOwned = hasher ?? (_, bytes) => digestOf(bytes);
+    final current = await _scanShadow();
+    final changes = <FileChange>[];
+
+    for (final path in {..._baseline.keys, ...current.keys}) {
+      final before = _baseline[path];
+      final after = current[path];
+
+      if (before == after) continue;
+
+      final kind = before == null
+          ? ChangeKind.added
+          : after == null
+          ? ChangeKind.deleted
+          : ChangeKind.modified;
+      final artifact = artifacts[path];
+
+      changes.add(
+        FileChange(
+          path: path,
+          kind: kind,
+          ownership: artifact?.ownership,
+          disposition: artifact == null
+              ? ChangeDisposition.untracked
+              : await _judge(
+                  artifact: artifact,
+                  kind: kind,
+                  recordedHash: recorded[path],
+                  overwriteScaffold: overwriteScaffold,
+                  hashOwned: hashOwned,
+                ),
+          before: before,
+          after: after,
+        ),
+      );
+    }
+
+    return WorkspaceDiff(changes);
+  }
+
+  Future<ChangeDisposition> _judge({
+    required Artifact artifact,
+    required ChangeKind kind,
+    required String? recordedHash,
+    required bool overwriteScaffold,
+    required ArtifactHasher hashOwned,
+  }) async {
+    final path = canonicalPath(artifact.path);
+    final real = File(resolveIn(projectRoot, path));
+
+    if (goesThroughLink(projectRoot, path) ||
+        await FileSystemEntity.type(real.path, followLinks: false) ==
+            FileSystemEntityType.directory) {
+      return ChangeDisposition.blocked;
+    }
+
+    final exists = await real.exists();
+    final currentHash = exists
+        ? hashOwned(artifact, await real.readAsBytes())
+        : null;
+
+    if (kind == ChangeKind.deleted) {
+      return _judgeDeletion(
+        ownership: artifact.ownership,
+        exists: exists,
+        currentHash: currentHash,
+        recordedHash: recordedHash,
+      );
+    }
+
+    final desired = hashOwned(
+      artifact,
+      await File(resolveIn(root, path)).readAsBytes(),
+    );
+    final state = exists
+        ? ArtifactState.existing(
+            currentHash: currentHash!,
+            recordedHash: recordedHash,
+            desiredHash: desired,
+          )
+        : ArtifactState.missing(
+            recordedHash: recordedHash,
+            desiredHash: desired,
+          );
+
+    return switch (decideArtifactAction(
+      artifact.ownership,
+      state,
+      overwriteScaffold: overwriteScaffold,
+    )) {
+      ArtifactAction.create ||
+      ArtifactAction.overwrite ||
+      ArtifactAction.patch => ChangeDisposition.apply,
+      ArtifactAction.skip => ChangeDisposition.keep,
+      ArtifactAction.conflict => ChangeDisposition.conflict,
+    };
+  }
+
+  /// The rules for a file the workspace deleted, which `decideArtifactAction`
+  /// does not cover: a run removes what it owns, never what is the user's.
+  ChangeDisposition _judgeDeletion({
+    required Ownership ownership,
+    required bool exists,
+    required String? currentHash,
+    required String? recordedHash,
+  }) {
+    if (!exists) return ChangeDisposition.keep;
+
+    return switch (ownership) {
+      Ownership.scaffold => ChangeDisposition.keep,
+      Ownership.local => ChangeDisposition.apply,
+      Ownership.managed || Ownership.patched =>
+        recordedHash != null && recordedHash == currentHash
+            ? ChangeDisposition.apply
+            : ChangeDisposition.conflict,
+    };
+  }
+
+  /// The digest of every file in the workspace, by canonical path. Ignored
+  /// folders and links are left out.
+  Future<Map<String, String>> _scanShadow() async {
+    final files = <String, String>{};
+
+    await for (final entity in root.list(recursive: true, followLinks: false)) {
+      if (entity is! File) continue;
+
+      final relative = p.posix.joinAll(
+        p.split(p.relative(entity.path, from: root.path)),
+      );
+
+      if (p.posix.split(relative).any(isIgnoredName)) continue;
+
+      files[relative] = digestOf(await entity.readAsBytes());
+    }
+
+    return files;
+  }
+
   /// Deletes the workspace. It is safe to call it more than once.
   Future<void> dispose() async {
     if (await root.exists()) {
@@ -148,9 +313,7 @@ class ShadowWorkspace {
           baseline: baseline,
         );
       case FileSystemEntityType.directory:
-        await for (final entity in Directory(
-          source,
-        ).list(followLinks: false)) {
+        await for (final entity in Directory(source).list(followLinks: false)) {
           final name = p.basename(entity.path);
           final child = '$path/$name';
 

@@ -75,31 +75,34 @@ void main() {
       expect(shadow.root.existsSync(), isTrue);
     });
 
-    test('never copies ignored folders found inside a whitelisted one', () async {
-      for (final ignored in [
-        'build',
-        '.dart_tool',
-        '.git',
-        '.gradle',
-        '.cxx',
-        'Pods',
-        '.symlinks',
-        'ephemeral',
-      ]) {
-        fx.project.write('ios/$ignored/file.txt', 'x');
-      }
-      fx.project.write('ios/Runner/Info.plist', 'plist');
+    test(
+      'never copies ignored folders found inside a whitelisted one',
+      () async {
+        for (final ignored in [
+          'build',
+          '.dart_tool',
+          '.git',
+          '.gradle',
+          '.cxx',
+          'Pods',
+          '.symlinks',
+          'ephemeral',
+        ]) {
+          fx.project.write('ios/$ignored/file.txt', 'x');
+        }
+        fx.project.write('ios/Runner/Info.plist', 'plist');
 
-      final shadow = await fx.create(['ios']);
+        final shadow = await fx.create(['ios']);
 
-      expect(shadow.read('ios/Runner/Info.plist'), 'plist');
-      expect(
-        Directory(p.join(shadow.root.path, 'ios')).listSync().map(
-          (e) => p.basename(e.path),
-        ),
-        ['Runner'],
-      );
-    });
+        expect(shadow.read('ios/Runner/Info.plist'), 'plist');
+        expect(
+          Directory(
+            p.join(shadow.root.path, 'ios'),
+          ).listSync().map((e) => p.basename(e.path)),
+          ['Runner'],
+        );
+      },
+    );
 
     test('rejects a whitelisted path that leaves the project', () async {
       expect(
@@ -141,9 +144,9 @@ void main() {
       });
 
       test('are skipped when whitelisted themselves', () async {
-        Link(fx.project.abs('link.txt')).createSync(
-          p.join(outside.path, 'secret.txt'),
-        );
+        Link(
+          fx.project.abs('link.txt'),
+        ).createSync(p.join(outside.path, 'secret.txt'));
 
         final shadow = await fx.create(['link.txt']);
 
