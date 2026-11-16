@@ -26,6 +26,9 @@
 import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/exception/dependency_cycle_exception.dart';
+import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
+import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeProcessor extends FlavorizrProcessor {
@@ -67,8 +70,10 @@ void main() {
     test('pulls in a dependency and runs it first, marked auto', () {
       final plan = resolveExecutionPlan(
         [
-          const _FakeProcessor('android:buildGradle',
-              dependsOn: {'android:flavorizrGradle'}),
+          const _FakeProcessor(
+            'android:buildGradle',
+            dependsOn: {'android:flavorizrGradle'},
+          ),
           const _FakeProcessor('android:flavorizrGradle'),
         ],
         requested: ['android:buildGradle'],
@@ -125,15 +130,18 @@ void main() {
         const _FakeProcessor('b'),
       ];
 
-      expect(
-        _ids(resolveExecutionPlan(processors, requested: ['a', 'b'])),
-        ['b', 'a'],
-      );
+      expect(_ids(resolveExecutionPlan(processors, requested: ['a', 'b'])), [
+        'b',
+        'a',
+      ]);
     });
 
     test('never pulls in a processor through after', () {
       final plan = resolveExecutionPlan(
-        [const _FakeProcessor('a', after: {'b'}), const _FakeProcessor('b')],
+        [
+          const _FakeProcessor('a', after: {'b'}),
+          const _FakeProcessor('b'),
+        ],
         requested: ['a'],
       );
 
@@ -142,7 +150,9 @@ void main() {
 
     test('ignores an after that points at an unknown id', () {
       final plan = resolveExecutionPlan(
-        [const _FakeProcessor('a', after: {'ghost'})],
+        [
+          const _FakeProcessor('a', after: {'ghost'}),
+        ],
         requested: ['a'],
       );
 
@@ -184,10 +194,12 @@ void main() {
       ];
 
       for (final input in [processors, processors.reversed.toList()]) {
-        expect(
-          _ids(resolveExecutionPlan(input, requested: ['d', 'c', 'b'])),
-          ['a', 'b', 'c', 'd'],
-        );
+        expect(_ids(resolveExecutionPlan(input, requested: ['d', 'c', 'b'])), [
+          'a',
+          'b',
+          'c',
+          'd',
+        ]);
       }
     });
 
@@ -197,6 +209,191 @@ void main() {
       ], requested: const []);
 
       expect(plan.steps, isEmpty);
+    });
+
+    group('unknown processors', () {
+      test('rejects a requested id that matches no processor', () {
+        expect(
+          () => resolveExecutionPlan(
+            [const _FakeProcessor('a')],
+            requested: ['ghost'],
+          ),
+          throwsA(
+            isA<UnknownProcessorException>()
+                .having((e) => e.id, 'id', 'ghost')
+                .having((e) => e.requiredBy, 'requiredBy', isNull),
+          ),
+        );
+      });
+
+      test('names the processor whose dependsOn points at an unknown id', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('a', dependsOn: {'b'}),
+              const _FakeProcessor('b', dependsOn: {'ghost'}),
+            ],
+            requested: ['a'],
+          ),
+          throwsA(
+            isA<UnknownProcessorException>()
+                .having((e) => e.id, 'id', 'ghost')
+                .having((e) => e.requiredBy, 'requiredBy', 'b')
+                .having(
+                  (e) => e.toString(),
+                  'message',
+                  allOf(contains('ghost'), contains('b')),
+                ),
+          ),
+        );
+      });
+
+      test('ignores a broken dependsOn of a processor outside the plan', () {
+        final plan = resolveExecutionPlan(
+          [
+            const _FakeProcessor('a'),
+            const _FakeProcessor('b', dependsOn: {'ghost'}),
+          ],
+          requested: ['a'],
+        );
+
+        expect(_ids(plan), ['a']);
+      });
+    });
+
+    group('duplicated ids', () {
+      test('rejects two processors with the same id', () {
+        expect(
+          () => resolveExecutionPlan(
+            [const _FakeProcessor('a'), const _FakeProcessor('a')],
+            requested: ['a'],
+          ),
+          throwsA(
+            isA<DuplicateProcessorException>().having((e) => e.id, 'id', 'a'),
+          ),
+        );
+      });
+    });
+
+    group('cycles', () {
+      Matcher cycleOf(List<String> cycle) => throwsA(
+        isA<DependencyCycleException>().having((e) => e.cycle, 'cycle', cycle),
+      );
+
+      test('rejects a processor that depends on itself', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('a', dependsOn: {'a'}),
+            ],
+            requested: ['a'],
+          ),
+          cycleOf(['a', 'a']),
+        );
+      });
+
+      test('shows the path of a cycle through dependsOn', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('a', dependsOn: {'b'}),
+              const _FakeProcessor('b', dependsOn: {'c'}),
+              const _FakeProcessor('c', dependsOn: {'a'}),
+            ],
+            requested: ['a'],
+          ),
+          cycleOf(['a', 'b', 'c', 'a']),
+        );
+      });
+
+      test('reports only the cycle, not the processors leading to it', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('entry', dependsOn: {'b'}),
+              const _FakeProcessor('b', dependsOn: {'c'}),
+              const _FakeProcessor('c', dependsOn: {'b'}),
+            ],
+            requested: ['entry'],
+          ),
+          cycleOf(['b', 'c', 'b']),
+        );
+      });
+
+      test('detects a cycle closed by an after between planned processors', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('a', dependsOn: {'b'}),
+              const _FakeProcessor('b', after: {'a'}),
+            ],
+            requested: ['a'],
+          ),
+          cycleOf(['a', 'b', 'a']),
+        );
+      });
+
+      test('ignores a cycle that only exists through an absent after', () {
+        // With `a` in the plan, `c -> d -> a -> c` would be a cycle; but
+        // nothing pulls `a` in, so its `after` edges do not count.
+        final plan = resolveExecutionPlan(
+          [
+            const _FakeProcessor('a', after: {'c'}),
+            const _FakeProcessor('c', dependsOn: {'d'}),
+            const _FakeProcessor('d', after: {'a'}),
+          ],
+          requested: ['c'],
+        );
+
+        expect(_ids(plan), ['d', 'c']);
+      });
+
+      test('ignores a cycle among processors that are not in the plan', () {
+        final plan = resolveExecutionPlan(
+          [
+            const _FakeProcessor('a'),
+            const _FakeProcessor('x', dependsOn: {'y'}),
+            const _FakeProcessor('y', dependsOn: {'x'}),
+          ],
+          requested: ['a'],
+        );
+
+        expect(_ids(plan), ['a']);
+      });
+
+      test('reports the same cycle whatever the order of the input', () {
+        final processors = [
+          const _FakeProcessor('a', dependsOn: {'b', 'c'}),
+          const _FakeProcessor('b', dependsOn: {'a'}),
+          const _FakeProcessor('c', dependsOn: {'a'}),
+        ];
+
+        for (final input in [processors, processors.reversed.toList()]) {
+          expect(
+            () => resolveExecutionPlan(input, requested: ['c', 'b', 'a']),
+            cycleOf(['a', 'b', 'a']),
+          );
+        }
+      });
+
+      test('names the cycle path in the message', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('a', dependsOn: {'b'}),
+              const _FakeProcessor('b', dependsOn: {'a'}),
+            ],
+            requested: ['a'],
+          ),
+          throwsA(
+            isA<DependencyCycleException>().having(
+              (e) => e.toString(),
+              'message',
+              contains('a -> b -> a'),
+            ),
+          ),
+        );
+      });
     });
   });
 }
