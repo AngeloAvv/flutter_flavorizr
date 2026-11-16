@@ -204,6 +204,48 @@ void main() {
       expect(fx.project.read('lib/a.dart'), 'a');
     });
 
+    group('when the temp parent is a whitelisted folder', () {
+      Future<ShadowWorkspace> createInside(String folder) async {
+        final shadow = await ShadowWorkspace.create(
+          projectRoot: fx.project.root,
+          paths: [folder],
+          tempParent: Directory(fx.project.abs(folder)),
+        );
+
+        return fx.track(shadow);
+      }
+
+      const limit = Timeout(Duration(seconds: 10));
+
+      test('an empty one is not copied into itself', () async {
+        Directory(fx.project.abs('lib')).createSync();
+
+        final shadow = await createInside('lib');
+
+        expect(shadow.baseline, isEmpty);
+        expect(Directory(p.join(shadow.root.path, 'lib')).listSync(), isEmpty);
+      }, timeout: limit);
+
+      test('a non-empty one is copied without the shadow itself', () async {
+        fx.project.write('lib/a.dart', 'a');
+        fx.project.write('lib/sub/b.dart', 'b');
+
+        final shadow = await createInside('lib');
+
+        expect(
+          shadow.baseline.keys,
+          unorderedEquals(['lib/a.dart', 'lib/sub/b.dart']),
+        );
+        expect(shadow.read('lib/a.dart'), 'a');
+        expect(
+          Directory(
+            p.join(shadow.root.path, 'lib'),
+          ).listSync().map((e) => p.basename(e.path)).toSet(),
+          {'a.dart', 'sub'},
+        );
+      }, timeout: limit);
+    });
+
     test('creates the shadow below the given temp parent', () async {
       final parent = Directory(p.join(fx.scratch.path, 'tmp'))..createSync();
 

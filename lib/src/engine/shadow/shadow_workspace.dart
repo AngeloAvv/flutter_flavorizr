@@ -408,6 +408,13 @@ class ShadowWorkspace {
 
           if (isIgnoredName(name)) continue;
 
+          // The shadow may live inside the folder being copied (a temp parent
+          // within the project): it must never be copied into itself.
+          if (entity is Directory &&
+              await FileSystemEntity.identical(entity.path, shadowRoot.path)) {
+            continue;
+          }
+
           if (entity is Link) {
             skippedLinks.add(child);
             continue;
