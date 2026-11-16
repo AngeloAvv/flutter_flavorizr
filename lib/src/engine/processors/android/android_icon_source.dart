@@ -66,12 +66,7 @@ final class AndroidIconSource {
       final decoder = img.findDecoderForData(bytes);
       final info = decoder?.startDecode(bytes);
 
-      if (decoder == null ||
-          info == null ||
-          info.width <= 0 ||
-          info.height <= 0 ||
-          info.width > maxSide ||
-          info.height > maxSide) {
+      if (decoder == null || info == null || !_fitsBounds(info, bytes)) {
         throw MalformedResourceException(name);
       }
 
@@ -90,6 +85,55 @@ final class AndroidIconSource {
       // The decoders signal damaged data with a variety of errors.
       throw MalformedResourceException(name);
     }
+  }
+
+  /// Whether the image that is going to be decoded is within [maxSide], judged
+  /// from what the header declares and before decoding it.
+  static bool _fitsBounds(img.DecodeInfo info, Uint8List bytes) {
+    if (info is img.IcoInfo) {
+      // The info of an ICO has no size: the sizes are those of its entries, and
+      // the first one is the one decoded. An entry is 256 x 256 at most, but a
+      // PNG embedded in it declares a size of its own.
+      if (info.images.isEmpty) {
+        return false;
+      }
+
+      return _embeddedPngFits(bytes, info.images.first.bytesOffset);
+    }
+
+    return info.width > 0 &&
+        info.height > 0 &&
+        info.width <= maxSide &&
+        info.height <= maxSide;
+  }
+
+  static const _pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+  /// Whether the PNG at [offset] (the signature, then the IHDR chunk, whose
+  /// size is at 16) declares a size within [maxSide]. Data that is not a PNG
+  /// (a BMP) is bounded by the 256 pixels of the ICO entry.
+  static bool _embeddedPngFits(Uint8List bytes, int offset) {
+    const headerEnd = 24;
+
+    if (offset < 0 || offset + _pngSignature.length > bytes.length) {
+      return false;
+    }
+
+    for (var i = 0; i < _pngSignature.length; i++) {
+      if (bytes[offset + i] != _pngSignature[i]) {
+        return true;
+      }
+    }
+
+    if (offset + headerEnd > bytes.length) {
+      return false;
+    }
+
+    final header = ByteData.sublistView(bytes, offset);
+    final width = header.getUint32(16);
+    final height = header.getUint32(20);
+
+    return width > 0 && height > 0 && width <= maxSide && height <= maxSide;
   }
 
   /// Renders the icon as a PNG of [width] x [height] pixels.

@@ -154,6 +154,71 @@ void main() {
       );
     });
 
+    group(
+      'ICO sources (the dimensions are in the entries, not in the info)',
+      () {
+        Uint8List ico(int size) {
+          final image = img.Image(width: size, height: size, numChannels: 4)
+            ..clear(img.ColorRgba8(10, 200, 30, 255));
+
+          return img.encodeIco(image);
+        }
+
+        test('accepts a small ICO and renders it like 2.x does', () {
+          final bytes = ico(32);
+
+          final source = AndroidIconSource.decode(bytes, name: 'icon.ico');
+
+          expect(
+            source.renderPng(48, 48),
+            img.encodePng(
+              img.copyResize(
+                img.decodeImage(bytes)!,
+                width: 48,
+                height: 48,
+                interpolation: img.Interpolation.average,
+              ),
+            ),
+          );
+        });
+
+        test('refuses an ICO whose embedded PNG declares a huge canvas', () {
+          // An ICO with one entry that points to a 1 x 1 PNG whose header is
+          // rewritten to claim 65535 x 65535 pixels.
+          final png = gradientPng(1, 1);
+          ByteData.sublistView(png)
+            ..setUint32(16, 65535)
+            ..setUint32(20, 65535);
+          final bytes = BytesBuilder()
+            ..add([0, 0, 1, 0, 1, 0]) // ICONDIR: icon, 1 image
+            ..add([32, 32, 0, 0, 1, 0, 32, 0]) // entry: 32 x 32, 32 bpp
+            ..add(
+              (ByteData(8)
+                    ..setUint32(0, png.length, Endian.little)
+                    ..setUint32(4, 22, Endian.little))
+                  .buffer
+                  .asUint8List(),
+            )
+            ..add(png);
+
+          expect(
+            () => AndroidIconSource.decode(bytes.toBytes(), name: 'bomb.ico'),
+            throwsA(isA<MalformedResourceException>()),
+          );
+        });
+
+        test('refuses an ICO without any image', () {
+          expect(
+            () => AndroidIconSource.decode(
+              Uint8List.fromList([0, 0, 1, 0, 0, 0]),
+              name: 'empty.ico',
+            ),
+            throwsA(isA<MalformedResourceException>()),
+          );
+        });
+      },
+    );
+
     test('refuses a source of a size that cannot be an icon', () {
       expect(
         () => AndroidIconSource.decode(
