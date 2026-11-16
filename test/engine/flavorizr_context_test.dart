@@ -129,10 +129,11 @@ flavors:
         ]);
       });
 
-      test('normalizes the path of the artifact', () {
-        final ctx = buildContext()..track(const Artifact('android/../lib/a'));
+      test('stores the very artifact it was given', () {
+        const artifact = Artifact('lib/a');
+        final ctx = buildContext()..track(artifact);
 
-        expect(ctx.tracked.single.path, p.join('lib', 'a'));
+        expect(ctx.tracked.single, same(artifact));
       });
 
       test('rejects an artifact outside the shadow root', () {

@@ -90,11 +90,12 @@ class FlavorizrContext {
   /// Declares that the processor owns [artifact].
   ///
   /// The path of [artifact] is relative to the project and must stay within
-  /// [root]: it is stored normalized. Throws an [ArgumentError] otherwise.
+  /// [root], otherwise an [ArgumentError] is thrown. [artifact] is stored as
+  /// it is, so that richer artifact types keep their information.
   void track(Artifact artifact) {
-    final path = p.relative(resolve(artifact.path), from: root.path);
+    resolve(artifact.path);
 
-    _tracked.add(Artifact(path));
+    _tracked.add(artifact);
   }
 
   /// Returns the value of the shared resource identified by [key].
@@ -116,6 +117,9 @@ class FlavorizrContext {
   ///
   /// The result is absolute and normalized. Throws an [ArgumentError] when
   /// [relativePath] leaves [root], e.g. through `..` or an absolute path.
+  ///
+  /// The check is lexical: symbolic links are not resolved, so the shadow
+  /// workspace must not contain links pointing outside of it.
   String resolve(String relativePath) => _resolveIn(root, relativePath);
 
   /// Resolves [relativePath], a path relative to the project, below

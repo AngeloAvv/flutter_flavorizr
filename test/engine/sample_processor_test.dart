@@ -97,7 +97,7 @@ void main() {
       expect(flavors.existsSync(), isTrue);
       expect(flavors.readAsStringSync(), contains('enum Flavor {'));
       expect(ctx.tracked.map((artifact) => artifact.path), [
-        p.join('lib', 'flavors.dart'),
+        'lib/flavors.dart',
       ]);
     });
 
@@ -117,8 +117,8 @@ void main() {
           [1, 2, 3],
         );
         expect(ctx.tracked.map((artifact) => artifact.path), [
-          p.join('lib', 'flavors.dart'),
-          p.join('assets', 'flavors', 'icon.png'),
+          'lib/flavors.dart',
+          'assets/flavors/icon.png',
         ]);
       },
     );

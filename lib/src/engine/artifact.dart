@@ -31,7 +31,7 @@
 /// and local) and everything the lock records about them are built on top of
 /// this type by the file ownership work, which is expected to turn it into a
 /// hierarchy without changing how processors call `track`.
-final class Artifact {
+class Artifact {
   /// The path of the artifact, relative to the project root.
   final String path;
 
