@@ -75,6 +75,29 @@ void main() {
     expect(actual, matcher);
   });
 
+  test(
+      'Test idempotent AndroidBuildLegacyProcessor with CRLF line endings',
+      () {
+    final expected = File(
+            'test_resources/android/build_legacy_processor_test/build_expected.gradle')
+        .readAsStringSync();
+    final content = expected.replaceAll('\r\n', '\n').replaceAll('\n', '\r\n');
+
+    AndroidBuildLegacyProcessor processor = AndroidBuildLegacyProcessor(
+      K.androidFlavorizrLegacyName,
+      config: flavorizr,
+      input: content,
+      logger: logger,
+    );
+    String actual = processor.execute();
+
+    expect('BEGIN flavorDimensions'.allMatches(actual).length, 1);
+    expect(
+      TestUtils.stripEndOfLines(actual),
+      TestUtils.stripEndOfLines(expected),
+    );
+  });
+
   test('Test idempotent AndroidBuildLegacyProcessor', () {
     String content = File(
             'test_resources/android/build_legacy_processor_test/build_idempotent_2.gradle')
