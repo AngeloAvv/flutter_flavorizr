@@ -47,6 +47,8 @@ const defaultIgnore = [
   'ios/Flutter/Generated.xcconfig',
   'ios/Flutter/flutter_export_environment.sh',
   'android/local.properties',
+  // Lists the SDK of the machine that generated the project.
+  '.idea/libraries/Dart_SDK.xml',
   'android/.gradle/**',
   'android/.kotlin/**',
 ];

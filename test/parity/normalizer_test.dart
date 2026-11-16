@@ -195,6 +195,22 @@ void main() {
       },
     );
 
+    test('the Apple team of the machine is not part of the output', () {
+      // `flutter create` copies it from the local Xcode, so it depends on who
+      // ran it: a Linux runner has none.
+      final without = pbxproj(_idsA);
+      final withTeam = without.replaceFirst(
+        'isa = PBXNativeTarget;\n',
+        'isa = PBXNativeTarget;\n\t\t\tDEVELOPMENT_TEAM = ABCDE12345;\n',
+      );
+      expect(withTeam, isNot(without), reason: 'precondition');
+
+      expect(
+        normalizer.normalize(path, withTeam),
+        normalizer.normalize(path, without),
+      );
+    });
+
     test('UUIDs are rewritten, not left untouched', () {
       final normalized = normalizer.normalize(path, pbxproj(_idsA));
 

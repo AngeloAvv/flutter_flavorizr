@@ -41,7 +41,7 @@ class Normalizer {
         .replaceAll(_timestamp, '<TIMESTAMP>');
 
     if (relativePath.endsWith('.pbxproj')) {
-      return normalizePbxproj(stripped);
+      return normalizePbxproj(stripped.replaceAll(_developmentTeam, ''));
     }
     if (relativePath == 'pubspec.yaml') {
       return stripped.replaceAll(_flavorizrDependency, '');
@@ -50,6 +50,13 @@ class Normalizer {
     return stripped;
   }
 }
+
+/// `flutter create` copies the Apple team from the local Xcode settings, so it
+/// is there or not depending on the machine, not on flavorizr.
+final _developmentTeam = RegExp(
+  r'^[ \t]*DEVELOPMENT_TEAM = [^;\n]*;\n',
+  multiLine: true,
+);
 
 /// The `flutter_flavorizr` dev dependency, with its `path:` lines if any:
 /// it records where the tested flavorizr comes from, not what it produced.
