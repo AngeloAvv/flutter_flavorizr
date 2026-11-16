@@ -70,6 +70,12 @@ class ShadowConflictContent implements ConflictContent {
       return null;
     }
 
-    return File(file).readAsBytes();
+    try {
+      return await File(file).readAsBytes();
+    } on FileSystemException {
+      // The file may have lost its read permission, or gone, since the type
+      // check: it is unavailable, and the user can still choose to keep it.
+      return null;
+    }
   }
 }
