@@ -107,7 +107,14 @@ class ParityRunner {
     for (final file in [fixture, ...extra]) {
       // The name goes in too, so that moving a file changes the hash.
       bytes
-        ..add(utf8.encode(p.relative(file.path, from: fixture.parent.path)))
+        ..add(
+          utf8.encode(
+            // POSIX separators, so the hash is the same on every host.
+            p.posix.joinAll(
+              p.split(p.relative(file.path, from: fixture.parent.path)),
+            ),
+          ),
+        )
         ..add(file.readAsBytesSync());
     }
     return sha256.convert(bytes.takeBytes()).toString();

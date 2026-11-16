@@ -158,7 +158,9 @@ class _PlistParser {
 
   Object? parse() {
     _skip();
-    return _value();
+    final value = _value();
+    _skip(); // reports a comment left open after the document
+    return value;
   }
 
   Object? _value() {
@@ -236,7 +238,11 @@ class _PlistParser {
       if (_text[_i].trim().isEmpty) {
         _i++;
       } else if (_text.startsWith('/*', _i)) {
-        _i = _text.indexOf('*/', _i) + 2;
+        final end = _text.indexOf('*/', _i);
+        if (end == -1) {
+          throw FormatException('Unterminated comment', _text, _i);
+        }
+        _i = end + 2;
       } else if (_text.startsWith('//', _i)) {
         final end = _text.indexOf('\n', _i);
         _i = end == -1 ? _text.length : end + 1;

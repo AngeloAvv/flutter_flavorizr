@@ -29,6 +29,10 @@ final _timestamp = RegExp(
   r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?',
 );
 
+/// The year `flutter create` stamps in a copyright notice, such as the one of
+/// the Windows resources: it is the year of the day the project was created.
+final _copyrightYear = RegExp(r'(Copyright \(C\) )\d{4}');
+
 /// Removes the non-deterministic parts of a generated file so that two runs of
 /// the same flavorizr version produce byte-identical output.
 class Normalizer {
@@ -38,7 +42,8 @@ class Normalizer {
   String normalize(String relativePath, String content) {
     final stripped = content
         .replaceAll('\r\n', '\n')
-        .replaceAll(_timestamp, '<TIMESTAMP>');
+        .replaceAll(_timestamp, '<TIMESTAMP>')
+        .replaceAllMapped(_copyrightYear, (m) => '${m[1]}<YEAR>');
 
     if (relativePath.endsWith('.pbxproj')) {
       return normalizePbxproj(stripped.replaceAll(_developmentTeam, ''));

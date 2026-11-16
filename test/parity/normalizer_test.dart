@@ -116,6 +116,31 @@ void main() {
     });
   });
 
+  group('copyright year', () {
+    test(
+      'the year flutter create stamps in the Windows resources is stripped',
+      () {
+        // Runner.rc is generated with the year of the day it is created.
+        const rc =
+            'VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved."\n';
+
+        expect(
+          normalizer.normalize('windows/runner/Runner.rc', rc),
+          normalizer.normalize(
+            'windows/runner/Runner.rc',
+            rc.replaceFirst('2026', '2031'),
+          ),
+        );
+      },
+    );
+
+    test('other years are left alone', () {
+      const content = 'version 2026 of the spec\n';
+
+      expect(normalizer.normalize('README.md', content), content);
+    });
+  });
+
   group('timestamps', () {
     test('ISO 8601 timestamps are stripped from any text file', () {
       const first = '# Generated on 2026-11-16T10:20:30.123Z by flavorizr\n';
@@ -208,6 +233,13 @@ void main() {
       expect(
         normalizer.normalize(path, withTeam),
         normalizer.normalize(path, without),
+      );
+    });
+
+    test('an unterminated comment is reported instead of looping forever', () {
+      expect(
+        () => normalizer.normalize(path, '{ objects = { }; } /* never closed'),
+        throwsFormatException,
       );
     });
 
