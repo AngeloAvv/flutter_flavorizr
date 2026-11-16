@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customized by hand: permissions, tools namespace, odd formatting. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          package="com.example.customized">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.CAMERA"/>
+
+    <!-- <application android:label="never this one"> -->
+    <application android:icon="@mipmap/ic_launcher"
+        tools:targetApi="31"  android:label='Customized'
+		android:name="${applicationName}"
+        android:allowBackup="false">
+        <activity android:name=".MainActivity" android:exported="true"
+                  android:label="Activity label">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <meta-data android:name="flutterEmbedding" android:value="2" />
+    </application>
+</manifest>

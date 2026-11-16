@@ -52,12 +52,15 @@ void main() {
     });
 
     test('the engine never touches the K paths directly', () {
+      final processors = p.join('lib', 'src', 'engine', 'processors');
       final offenders = sources(p.join('lib', 'src', 'engine'))
+          .where((file) => !p.isWithin(processors, file.path))
           .where((file) => file.readAsStringSync().contains('constants.dart'))
           .map(relative);
 
       // K is only a catalogue of project relative paths: processors pass them
-      // to the context, so the engine itself has no reason to import it.
+      // to the context, so the engine itself has no reason to import it. The
+      // ported processors (`engine/processors`) are those consumers.
       expect(offenders, isEmpty);
     });
   });
