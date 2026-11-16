@@ -31,9 +31,8 @@
 /// argument `T`, so `ResourceKey<int>('a')` and `ResourceKey<String>('a')`
 /// are different keys.
 ///
-/// This is the minimum the processor contract needs. The resource lifecycle
-/// (setup before the first consumer, teardown after the last one) is built on
-/// top of it by the engine.
+/// The resource lifecycle (setup before the first consumer, teardown after the
+/// last one) is built on top of it: see `Resource` and `ResourceLifecycle`.
 final class ResourceKey<T> {
   /// A unique, human readable name of the resource, e.g. `ios:xcodeproj`.
   final String name;
