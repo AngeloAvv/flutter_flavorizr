@@ -49,7 +49,7 @@ enum ArtifactAction {
 /// A hash identifies the content of the *owned* part of the file: the whole
 /// file for managed artifacts, the marked regions or owned keys for patched
 /// ones. Computing it is up to the caller; the rules only compare hashes.
-class ArtifactState {
+final class ArtifactState {
   /// Whether the file exists in the project.
   final bool exists;
 
@@ -94,20 +94,43 @@ ArtifactAction decideArtifactAction(
         return ArtifactAction.create;
       }
 
-      return overwriteScaffold ? ArtifactAction.overwrite : ArtifactAction.skip;
+      if (!overwriteScaffold || state.currentHash == state.desiredHash) {
+        return ArtifactAction.skip;
+      }
+
+      return ArtifactAction.overwrite;
     case Ownership.managed:
-      return _decideHashed(state, ArtifactAction.overwrite);
+      // Without a lock record there is no telling a stale file from a hand
+      // written one, and overwriting could lose it: that is a conflict.
+      return _decideHashed(
+        state,
+        write: ArtifactAction.overwrite,
+        unrecorded: ArtifactAction.conflict,
+      );
     case Ownership.patched:
-      return _decideHashed(state, ArtifactAction.patch);
+      // Patching preserves everything outside the owned parts, so adopting a
+      // file the lock does not know yet (e.g. an existing `build.gradle`
+      // without markers) is safe.
+      return _decideHashed(
+        state,
+        write: ArtifactAction.patch,
+        unrecorded: ArtifactAction.patch,
+      );
     case Ownership.local:
       // Hashes are ignored on purpose: a build may have changed the file, and
-      // that is neither drift nor a conflict.
+      // that is neither drift nor a conflict. The file is rewritten even when
+      // identical, so callers must not report it as a change.
       return state.exists ? ArtifactAction.overwrite : ArtifactAction.create;
   }
 }
 
-/// The rule of the hashed classes, which differ only in how they write.
-ArtifactAction _decideHashed(ArtifactState state, ArtifactAction write) {
+/// The rule of the hashed classes, which differ in how they write and in what
+/// they do with an existing file the lock does not know ([unrecorded]).
+ArtifactAction _decideHashed(
+  ArtifactState state, {
+  required ArtifactAction write,
+  required ArtifactAction unrecorded,
+}) {
   if (!state.exists) {
     return ArtifactAction.create;
   }
@@ -116,10 +139,11 @@ ArtifactAction _decideHashed(ArtifactState state, ArtifactAction write) {
     return ArtifactAction.skip;
   }
 
-  // The owned content is untouched since the last run only when the lock
-  // knows it: without a record there is no telling a stale file from an edit.
-  final untouched =
-      state.recordedHash != null && state.currentHash == state.recordedHash;
+  if (state.recordedHash == null) {
+    return unrecorded;
+  }
 
-  return untouched ? write : ArtifactAction.conflict;
+  return state.currentHash == state.recordedHash
+      ? write
+      : ArtifactAction.conflict;
 }

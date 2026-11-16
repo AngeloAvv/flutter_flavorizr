@@ -51,7 +51,8 @@ enum Ownership {
   /// Only the owned parts are hashed in the lock, so edits outside them are
   /// never drift. A run patches the owned parts when the configuration
   /// changed, and reports a conflict when the owned parts were edited by hand
-  /// since the last run.
+  /// since the last run. A file the lock does not know yet is adopted by
+  /// patching it, since everything outside the owned parts is preserved.
   patched(isHashed: true),
 
   /// Mutated by builds or usually ignored by git, such as `.idea/` run

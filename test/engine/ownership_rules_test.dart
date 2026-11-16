@@ -172,13 +172,29 @@ void main() {
       );
     });
 
-    test('conflicts when the owned parts differ and are not in the lock', () {
+    test('is patched when the file exists but is not in the lock yet', () {
+      // First adoption of a file the user already had, e.g. a build.gradle
+      // without markers: only the owned parts are written, the rest is kept.
       expect(
         decideArtifactAction(
           Ownership.patched,
           const ArtifactState.existing(
             currentHash: 'unknown',
             desiredHash: 'new',
+          ),
+        ),
+        ArtifactAction.patch,
+      );
+    });
+
+    test('conflicts when the config is unchanged but the file was edited', () {
+      expect(
+        decideArtifactAction(
+          Ownership.patched,
+          const ArtifactState.existing(
+            currentHash: 'edited',
+            recordedHash: 'same',
+            desiredHash: 'same',
           ),
         ),
         ArtifactAction.conflict,
@@ -297,6 +313,20 @@ void main() {
           overwriteScaffold: true,
         ),
         ArtifactAction.overwrite,
+      );
+    });
+
+    test('is left alone when forced but already identical', () {
+      expect(
+        decideArtifactAction(
+          Ownership.scaffold,
+          const ArtifactState.existing(
+            currentHash: 'same',
+            desiredHash: 'same',
+          ),
+          overwriteScaffold: true,
+        ),
+        ArtifactAction.skip,
       );
     });
 
