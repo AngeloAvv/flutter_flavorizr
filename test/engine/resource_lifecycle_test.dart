@@ -494,6 +494,39 @@ flavors:
         },
       );
 
+      test(
+        'closes what is still open in reverse setup order, not by schedule',
+        () async {
+          final error = StateError('teardown');
+          final assets = _FakeResource('assets', events);
+          final xcode = _FakeResource('xcode', events, teardownError: error);
+          final zeta = _FakeResource('zeta', events);
+          // After `a`, assets and xcode are due; zeta is still needed by `b`.
+          final plan = planOf([
+            _FakeProcessor('a', events, needs: [assets, xcode, zeta]),
+            _FakeProcessor('b', events, needs: [zeta]),
+          ]);
+
+          await expectLater(
+            run(plan, [assets, xcode, zeta]),
+            throwsA(same(error)),
+          );
+
+          expect(events, [
+            'setup assets',
+            'setup xcode',
+            'setup zeta',
+            'apply a value of assets,value of xcode,value of zeta',
+            // xcode is the first of the due resources to be torn down, and it
+            // fails: the rest is closed as the aborted run it is now, newest
+            // first, whether or not it was due.
+            'teardown xcode',
+            'teardown zeta',
+            'teardown assets',
+          ]);
+        },
+      );
+
       test('reports the first teardown error when several fail', () async {
         final first = StateError('first');
         final assets = _FakeResource(

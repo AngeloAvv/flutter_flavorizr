@@ -149,6 +149,9 @@ class ResourceLifecycle {
         } catch (error, stackTrace) {
           if (failure == null) {
             failure = (error, stackTrace);
+            // The run is aborted from here: what is left open is closed all
+            // together, newest first, rather than in the order it was due.
+            break;
           } else {
             ctx.logger.warn(
               'Teardown of the resource "${key.name}" failed: $error',
