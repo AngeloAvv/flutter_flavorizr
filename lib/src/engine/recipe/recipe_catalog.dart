@@ -165,6 +165,11 @@ final class RecipeCatalog {
 
     final ids = <String>{};
     final messages = <String>{};
+    // A recipe adds the same ids and messages however often it is reached, so
+    // only its first mention is expanded: that also decides the order of the
+    // ids, and keeps a recipe reached through many paths from costing a visit
+    // per path.
+    final expanded = <String>{};
 
     // Whether [name] belongs to [platform], which has no flavors. When it
     // does, it is left out and the reason is reported once.
@@ -185,7 +190,8 @@ final class RecipeCatalog {
         if (!leaveOut(name, name.split(':').first)) {
           ids.add(name);
         }
-      } else if (!platformRecipes.contains(name) || !leaveOut(name, name)) {
+      } else if (expanded.add(name) &&
+          (!platformRecipes.contains(name) || !leaveOut(name, name))) {
         members.forEach(expand);
       }
     }

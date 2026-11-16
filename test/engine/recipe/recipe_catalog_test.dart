@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:isolate';
+
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
@@ -382,6 +384,69 @@ void main() {
         InvalidRecipeNameException('init', 'it is a command').toString(),
         allOf(contains('"init"'), contains('it is a command')),
       );
+    });
+  });
+
+  group('recipes referenced many times', () {
+    // r0 holds the leaf, and each next recipe lists the previous one twice:
+    // expanding every reference would visit the leaf 2^29 times.
+    final doubling = {
+      'r0': ['android', 'ide:config'],
+      for (var i = 1; i < 30; i++) 'r$i': ['r${i - 1}', 'r${i - 1}'],
+    };
+
+    // The work runs in another isolate: a test timeout cannot interrupt
+    // synchronous code, but it can stop waiting for an isolate and fail.
+    test('a recipe is expanded once, however often it is referenced', () async {
+      final (ids, messages) = await Isolate.run(() {
+        final resolution = _catalog(
+          recipes: doubling,
+        ).resolve(['r29'], platformsWithoutFlavors: {'android'});
+
+        return (resolution.processorIds, resolution.messages);
+      }).timeout(const Duration(seconds: 10));
+
+      expect(ids, ['ide:config']);
+      expect(messages, [
+        'Skipping "android": no flavors are configured for android.',
+      ]);
+    });
+
+    test('listing stays fast on the same graph', () async {
+      final expansion = await Isolate.run(() {
+        final listing = _catalog(recipes: doubling).listing();
+
+        return listing.singleWhere((recipe) => recipe.name == 'r29').expansion;
+      }).timeout(const Duration(seconds: 10));
+
+      // The listing does not filter platforms: the leaf stands for the
+      // android recipe, then ide:config.
+      expect(expansion, [
+        'android:androidManifest',
+        'android:flavorizrGradle',
+        'android:buildGradle',
+        'android:dummyAssets',
+        'android:icons',
+        'ide:config',
+      ]);
+    });
+
+    test('the first mention still decides the order', () {
+      final catalog = _catalog(
+        recipes: {
+          'a': ['x', 'y'],
+          'b': ['y', 'z'],
+          'x': ['ios:plist'],
+          'y': ['ide:config'],
+          'z': ['ios:plist', 'linux:cmake'],
+        },
+      );
+
+      expect(catalog.resolve(['b', 'a']).processorIds, [
+        'ide:config',
+        'ios:plist',
+        'linux:cmake',
+      ]);
     });
   });
 
