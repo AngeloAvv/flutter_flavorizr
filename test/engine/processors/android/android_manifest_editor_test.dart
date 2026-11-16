@@ -109,6 +109,30 @@ void main() {
       );
     });
 
+    test('reads tags separated by any white space the XML parser accepts', () {
+      for (final space in [' ', '\u000b', '\u000c', ' ', '\u0085']) {
+        final source =
+            '<manifest xmlns:android="x"><application${space}android:label${space}=${space}"a"$space/></manifest>';
+
+        expect(
+          AndroidManifestEditor.withAppLabel(source),
+          source.replaceFirst('"a"', '"@string/app_name"'),
+          reason: 'U+${space.codeUnitAt(0).toRadixString(16)}',
+        );
+      }
+    });
+
+    test('rejects, and does not hang on, a tag it cannot read', () {
+      for (final space in [' ', '\u000b', ' ']) {
+        expect(
+          () => AndroidManifestEditor.withAppLabel(
+            '<manifest><application$space/></manifest>',
+          ),
+          throwsA(isA<MalformedResourceException>()),
+        );
+      }
+    });
+
     test('rejects a manifest without an application', () {
       expect(
         () => AndroidManifestEditor.withAppLabel(

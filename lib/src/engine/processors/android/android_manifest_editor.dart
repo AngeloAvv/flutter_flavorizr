@@ -34,8 +34,8 @@ import 'package:xml/xml_events.dart';
 /// `app_name` resource that every flavor defines. An edit replaces the value of
 /// that attribute in the source text and nothing else: indentation, line
 /// endings, comments, quotes, attribute order and every other attribute are
-/// left exactly as the user wrote them. Nothing is parsed into a tree and
-/// serialized again.
+/// left exactly as the user wrote them. The document is parsed to be validated
+/// and to find the attribute, never serialized again.
 abstract final class AndroidManifestEditor {
   /// The value `android:label` is set to.
   static const String appLabel = '@string/app_name';
@@ -56,7 +56,7 @@ abstract final class AndroidManifestEditor {
 
     if (label.value == appLabel) return source;
 
-    return source.replaceRange(label.valueStart, label.valueEnd, appLabel);
+    return source.replaceRange(label.start, label.end, appLabel);
   }
 
   /// Returns the content of [source] flavorizr owns, which is the value of the
@@ -76,77 +76,90 @@ abstract final class AndroidManifestEditor {
         continue;
       }
 
-      final tag = _scanTag(source, event);
       final attribute = event.attributes
           .where((attribute) => attribute.name == _labelAttribute)
           .firstOrNull;
-      final range = tag[_labelAttribute];
+      final span = attribute == null ? null : _labelSpan(source, event);
 
-      if (attribute == null || range == null) {
+      if (attribute == null || span == null) {
         throw MalformedResourceException(source);
       }
 
-      return _Label(attribute.value, range.$1, range.$2);
+      return _Label(attribute.value, span.$1, span.$2);
     }
 
     throw MalformedResourceException(source);
   }
 
-  /// Maps the name of each attribute of the start tag of [element] to the
-  /// range of its raw value, excluding the quotes, in [source]. When a name
-  /// repeats, the first one wins.
-  static Map<String, (int, int)> _scanTag(
-    String source,
-    XmlStartElementEvent element,
-  ) {
+  /// The range of the raw value, quotes excluded, of the first `android:label`
+  /// attribute of the start tag of [element] in [source], or `null` when the
+  /// tag cannot be read as a sequence of `name="value"` pairs.
+  ///
+  /// It reads the text of the tag and nothing else, so it always moves forward
+  /// and stops at the end of the tag.
+  static (int, int)? _labelSpan(String source, XmlStartElementEvent element) {
     final end = element.stop!;
     var position = element.start! + '<'.length + element.name.length;
-    final ranges = <String, (int, int)>{};
-
-    bool isSpace(int index) => ' \t\r\n'.contains(source[index]);
 
     void skipSpaces() {
-      while (position < end && isSpace(position)) {
+      while (position < end && _isSpace(source.codeUnitAt(position))) {
         position++;
       }
     }
 
-    while (position < end) {
+    while (true) {
       skipSpaces();
 
-      if (position >= end ||
-          source[position] == '>' ||
-          source[position] == '/') {
-        break;
-      }
+      if (position >= end || '>/'.contains(source[position])) return null;
 
       final nameStart = position;
-      while (position < end && !isSpace(position) && source[position] != '=') {
+      while (position < end &&
+          !_isSpace(source.codeUnitAt(position)) &&
+          source[position] != '=') {
         position++;
       }
       final name = source.substring(nameStart, position);
 
       skipSpaces();
-      // The document is well formed, so an attribute always has a value.
-      position++; // `=`
+      if (position >= end || source[position] != '=') return null;
+      position++;
       skipSpaces();
 
-      final quote = source[position];
-      final valueStart = position + 1;
-      final valueEnd = source.indexOf(quote, valueStart);
+      if (position >= end || !'"\''.contains(source[position])) return null;
 
-      ranges.putIfAbsent(name, () => (valueStart, valueEnd));
+      final valueStart = position + 1;
+      final valueEnd = source.indexOf(source[position], valueStart);
+
+      if (valueEnd < 0 || valueEnd >= end) return null;
+      if (name == _labelAttribute) return (valueStart, valueEnd);
+
       position = valueEnd + 1;
     }
-
-    return ranges;
   }
+
+  /// Whether [codeUnit] separates the parts of a tag, as far as the XML parser
+  /// is concerned: it accepts every Unicode white space.
+  static bool _isSpace(int codeUnit) =>
+      (codeUnit >= 0x09 && codeUnit <= 0x0d) ||
+      codeUnit == 0x20 ||
+      codeUnit == 0x85 ||
+      codeUnit == 0xa0 ||
+      codeUnit == 0x1680 ||
+      (codeUnit >= 0x2000 && codeUnit <= 0x200a) ||
+      codeUnit == 0x2028 ||
+      codeUnit == 0x2029 ||
+      codeUnit == 0x202f ||
+      codeUnit == 0x205f ||
+      codeUnit == 0x3000 ||
+      codeUnit == 0xfeff;
 }
 
-class _Label {
+/// The label of the application: its decoded [value] and where its raw value
+/// lies in the source, as the range [start] to [end] (exclusive).
+final class _Label {
   final String value;
-  final int valueStart;
-  final int valueEnd;
+  final int start;
+  final int end;
 
-  const _Label(this.value, this.valueStart, this.valueEnd);
+  const _Label(this.value, this.start, this.end);
 }
