@@ -350,6 +350,33 @@ void main() {
       );
     });
 
+    test('a processor cannot be named like a built-in recipe', () {
+      expect(
+        () => _catalog(processorIds: [..._ids, 'android']),
+        throwsA(
+          isA<InvalidRecipeNameException>().having(
+            (e) => e.name,
+            'name',
+            'android',
+          ),
+        ),
+      );
+    });
+
+    test('a recipe name cannot be empty or use the processor namespace', () {
+      for (final name in ['', '  ', 'android:mine', 'acme:ci']) {
+        expect(
+          () => _catalog(
+            recipes: {
+              name: ['ios'],
+            },
+          ),
+          throwsA(isA<InvalidRecipeNameException>()),
+          reason: '"$name"',
+        );
+      }
+    });
+
     test('the message says why the name is rejected', () {
       expect(
         InvalidRecipeNameException('init', 'it is a command').toString(),
@@ -505,6 +532,16 @@ void main() {
         'ide:config',
         'ios:plist',
       ]);
+    });
+
+    test('hands out lists that cannot change the catalog', () {
+      final catalog = _catalog();
+
+      for (final recipe in catalog.listing()) {
+        expect(() => recipe.members.add('x'), throwsUnsupportedError);
+        expect(() => recipe.expansion.add('x'), throwsUnsupportedError);
+      }
+      expect(catalog.resolve(['all']).processorIds, _ids);
     });
 
     test('marks the recipe that runs without a target', () {

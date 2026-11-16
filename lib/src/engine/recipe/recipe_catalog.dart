@@ -49,7 +49,7 @@ final class RecipeResolution {
 /// the name of a recipe or the id of a processor, and the two never share a
 /// name. Everything that can be wrong with the names is reported when the
 /// catalog is built or when targets are resolved, before anything runs.
-class RecipeCatalog {
+final class RecipeCatalog {
   final Set<String> _processorIds;
   final Map<String, List<String>> _recipes;
   final String _defaultTarget;
@@ -57,14 +57,17 @@ class RecipeCatalog {
   /// Creates the catalog of the recipes that can be run over [processorIds].
   ///
   /// [recipes] are the recipes of the user. [defaultRecipe] names the one run
-  /// when no target is given; without it the recipe called `default` is used
-  /// when the user defined it, and `all` otherwise.
+  /// when no target is given, and it wins over a recipe called `default`;
+  /// without it the recipe called `default` is used when the user defined it,
+  /// and `all` otherwise. Any recipe or processor id can be the default.
   ///
   /// Throws an [InvalidRecipeNameException] when a recipe is named like a
-  /// command, a built-in recipe or a processor, an [UnknownTargetException]
-  /// when a recipe contains, or [defaultRecipe] names, something that is
-  /// neither a recipe nor a processor, and a [RecipeCycleException] when
-  /// recipes contain each other in a cycle.
+  /// command, a built-in recipe or a processor, when a processor is named like
+  /// a built-in recipe, or when a recipe name is blank or contains `:`, which
+  /// is reserved for the namespace of processor ids. Throws an
+  /// [UnknownTargetException] when a recipe contains, or [defaultRecipe]
+  /// names, something that is neither a recipe nor a processor, and a
+  /// [RecipeCycleException] when recipes contain each other in a cycle.
   factory RecipeCatalog({
     required Iterable<String> processorIds,
     Map<String, List<String>> recipes = const {},
@@ -72,7 +75,25 @@ class RecipeCatalog {
   }) {
     final ids = processorIds.toSet();
 
+    for (final id in _sorted(ids)) {
+      if (builtInRecipes.containsKey(id)) {
+        throw InvalidRecipeNameException(
+          id,
+          'a processor has the same id as the built-in recipe',
+        );
+      }
+    }
+
     for (final name in _sorted(recipes.keys)) {
+      if (name.trim().isEmpty) {
+        throw InvalidRecipeNameException(name, 'it is blank');
+      }
+      if (name.contains(':')) {
+        throw InvalidRecipeNameException(
+          name,
+          'the ":" is reserved for the namespace of processor ids',
+        );
+      }
       if (reservedRecipeNames.contains(name)) {
         throw InvalidRecipeNameException(name, 'it is the name of a command');
       }
@@ -91,11 +112,11 @@ class RecipeCatalog {
       ids,
       {
         for (final entry in builtInRecipes.entries)
-          entry.key: [
+          entry.key: List.unmodifiable([
             for (final member in entry.value)
               if (ids.contains(member) || builtInRecipes.containsKey(member))
                 member,
-          ],
+          ]),
         for (final entry in recipes.entries)
           entry.key: List.unmodifiable(entry.value),
       },
@@ -145,7 +166,9 @@ class RecipeCatalog {
     final ids = <String>{};
     final messages = <String>{};
 
-    bool skipped(String name, String platform) {
+    // Whether [name] belongs to [platform], which has no flavors. When it
+    // does, it is left out and the reason is reported once.
+    bool leaveOut(String name, String platform) {
       if (!platformsWithoutFlavors.contains(platform)) {
         return false;
       }
@@ -159,10 +182,10 @@ class RecipeCatalog {
     void expand(String name) {
       final members = _recipes[name];
       if (members == null) {
-        if (!skipped(name, name.split(':').first)) {
+        if (!leaveOut(name, name.split(':').first)) {
           ids.add(name);
         }
-      } else if (!platformRecipes.contains(name) || !skipped(name, name)) {
+      } else if (!platformRecipes.contains(name) || !leaveOut(name, name)) {
         members.forEach(expand);
       }
     }
