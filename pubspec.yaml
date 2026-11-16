@@ -25,6 +25,7 @@ dependencies:
   args: ^2.4.2
   checked_yaml: ^2.0.3
   collection: ^1.18.0
+  crypto: ^3.0.8
   dart_xcodeproj: ^0.3.0
   image: ^4.9.1
   io: ^1.0.4
@@ -41,4 +42,3 @@ dev_dependencies:
   flutter_lints: 6.0.0
   build_runner: ^2.4.9
   json_serializable: ^6.7.1
-  crypto: ^3.0.8
