@@ -69,4 +69,25 @@ void main() {
       );
     });
   });
+
+  group('FlavorizrLock', () {
+    test('tells the names of the flavors it recorded', () {
+      final lock = FlavorizrLock(
+        flavorizrVersion: '3.0.0',
+        flavors: {'prod': 'h1', 'dev': 'h2'},
+      );
+
+      expect(lock.flavorNames, {'dev', 'prod'});
+    });
+
+    test('is not changed by the maps it was built from', () {
+      final flavors = {'dev': 'h1'};
+      final lock = FlavorizrLock(flavorizrVersion: '3.0.0', flavors: flavors);
+
+      flavors['prod'] = 'h2';
+
+      expect(lock.flavorNames, {'dev'});
+      expect(() => lock.flavors['prod'] = 'h2', throwsUnsupportedError);
+    });
+  });
 }
