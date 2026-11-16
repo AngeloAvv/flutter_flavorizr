@@ -7,38 +7,38 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		280976440C92F0752BD25577 /* Runner/appleLaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 66C1C32C68DB2F54F044B7BB /* Runner/appleLaunchScreen.storyboard */; };
-		296A0AF4BF35D361AE69600A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BFFEA1E59F48050B788ED079 /* Main.storyboard */; };
-		3B73C6BC6F7AEBD879DDE853 /* Flutter/bananaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B4AC9D54CCD9ACB640EA1ECE /* Flutter/bananaProfile.xcconfig */; };
-		5697843A4C0E90E4C59CAC45 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 988A9366D1016E3A03A40740 /* Assets.xcassets */; };
-		5DF2761BC529F37174AB2C4A /* Flutter/appleDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 888E54ED9FFDE20CAB550674 /* Flutter/appleDebug.xcconfig */; };
-		6C1014A413A5A1BE83BEDC2E /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17B6CD9D8BCAD78A3131650A /* SceneDelegate.swift */; };
-		7604967FEBBBBBD0E68A50DF /* Runner/bananaLaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2FE90E45CA1C9489B64D8093 /* Runner/bananaLaunchScreen.storyboard */; };
-		7FAA69A22A73E2D8259EC315 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 34E540FC4CDA06D174A799A1 /* LaunchScreen.storyboard */; };
-		9B701B3E5AFFF5D5094989EA /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2F5D7508AE5C266CB88BB28B /* AppFrameworkInfo.plist */; };
-		A20119BF30FA234B92628F17 /* Flutter/appleProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = CB18D2BD1E59D33359681CF3 /* Flutter/appleProfile.xcconfig */; };
-		A97382F0E18A4660217C4043 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 48A0A452880F3DDC3A405B44 /* GeneratedPluginRegistrant.m */; };
-		AEA8654BB860743274D9A129 /* Flutter/bananaRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 01C2C21E5C9FBB62D19B6FB7 /* Flutter/bananaRelease.xcconfig */; };
-		B38FFBE7BBEFA327F7212A3A /* Flutter/appleRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6C6E72160556907257F3026F /* Flutter/appleRelease.xcconfig */; };
-		BC04A58F7DBACEEBF2ACD7DE /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784D6BB7C8E829AC597D8B6B /* RunnerTests.swift */; };
-		D5ED30D17AA6C8F61BEA346F = {isa = PBXBuildFile; productRef = 357A51D7669069E01FCD5FF9; };
-		DB04CAA3A9677BB657FDBEA2 /* Runner/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B10B316059B2E7B17D052545 /* Runner/GoogleService-Info.plist */; };
-		E33A3FD506A1037A6017562F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6322C740A789B0B5BC3248F8 /* AppDelegate.swift */; };
-		FE41CF11E0617AB3B2A6AFB4 /* Flutter/bananaDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 992FF0BE4A22D70975893325 /* Flutter/bananaDebug.xcconfig */; };
+		2D53E16DD33B33B23BD30070 /* Runner/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 70F8E3D82C4C7829146DD42E /* Runner/GoogleService-Info.plist */; };
+		390253FAC2FB851F2AA5E1AC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C172B69139DC0F747766815C /* LaunchScreen.storyboard */; };
+		47CD36575F783590CC7529F8 = {isa = PBXBuildFile; productRef = 956916181CBCAF40F84A193D; };
+		4A95542F17C7C7557496F203 /* Runner/appleLaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 87745E70B0CC57A39A4C83B0 /* Runner/appleLaunchScreen.storyboard */; };
+		691275B975FE79582C27D6CE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2795FF33AB90C3F837EBC2 /* AppDelegate.swift */; };
+		6AE5BBE3929DBC154F553F8F /* Flutter/bananaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D3DD45E57CC148606D108D48 /* Flutter/bananaProfile.xcconfig */; };
+		6F4648B79701241DC7F0A8BB /* Flutter/appleDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F4F7ACF1261BC795B04C1BC0 /* Flutter/appleDebug.xcconfig */; };
+		7A71D0ACEBBBCF3ABAD7D088 /* Flutter/bananaDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 4236B5BF2134B0C4D4CF3498 /* Flutter/bananaDebug.xcconfig */; };
+		875F084B7AA350C72EC451B3 /* Flutter/appleRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = E353697F36810191A855E0D6 /* Flutter/appleRelease.xcconfig */; };
+		8F6ABF6A1D4C6A41AB4CD1CF /* Runner/bananaLaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3E3FBEC654751E88E8F8A8EB /* Runner/bananaLaunchScreen.storyboard */; };
+		90B0AFC408C1F0B215F8B1E0 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3DEE96ADCA4C3F0EF7DF58D3 /* Main.storyboard */; };
+		9233A96CF8C556B6C02BC86D /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = E7E84AC7F190FD8779C232A7 /* GeneratedPluginRegistrant.m */; };
+		95D7AD2EA6EB25E1447D22F3 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 88C09346220AFBA91BD97A33 /* AppFrameworkInfo.plist */; };
+		97853142FCFED486EE8168DE /* Flutter/bananaRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F3522B2059E64A5153402138 /* Flutter/bananaRelease.xcconfig */; };
+		AFDE4C508AB93C7819B65C39 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7490415CA91ED1A83E1D57C5 /* RunnerTests.swift */; };
+		B7E3A105E391CF5B6FE0DBD8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522FE609694B765731FFD2B1 /* SceneDelegate.swift */; };
+		F684C0E451D1F905B2E0B601 /* Flutter/appleProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = AFAE69601C379051565E11CD /* Flutter/appleProfile.xcconfig */; };
+		F8982BE7FBE39FE9585D3F84 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B32017610065D3919201A003 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		DB461E8ADB4C94917805A46A = {
+		C839EB1D8E2CA7C1F5289529 = {
 			isa = PBXContainerItemProxy;
 			containerPortal = DC76E9F0C0006E8F919E0C51 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 1CDB39D0F128BA267AD91633 /* Runner */;
+			remoteGlobalIDString = 93CB9B7F919251A9B8E605F1 /* Runner */;
 			remoteInfo = Runner;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		E1DD3BD0F500195F275B83A5 /* Embed Frameworks */ = {
+		072112137229FF883F128AF8 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
@@ -51,40 +51,40 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		01C2C21E5C9FBB62D19B6FB7 /* Flutter/bananaRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/bananaRelease.xcconfig; sourceTree = "<group>"; };
-		17B6CD9D8BCAD78A3131650A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		2F5D7508AE5C266CB88BB28B /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
-		2FE90E45CA1C9489B64D8093 /* Runner/bananaLaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/bananaLaunchScreen.storyboard; sourceTree = "<group>"; };
-		37648A3EC155888713686F9B /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
-		48A0A452880F3DDC3A405B44 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
-		4F390EBF325C0363396B5AF7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		606B63F2D4961E4AF141E9EF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		6322C740A789B0B5BC3248F8 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		66C1C32C68DB2F54F044B7BB /* Runner/appleLaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/appleLaunchScreen.storyboard; sourceTree = "<group>"; };
-		6C6E72160556907257F3026F /* Flutter/appleRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/appleRelease.xcconfig; sourceTree = "<group>"; };
+		261F0E3EECA5F31323DF32D1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		3C493A8C0499BABA85BF9872 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		3E3FBEC654751E88E8F8A8EB /* Runner/bananaLaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/bananaLaunchScreen.storyboard; sourceTree = "<group>"; };
+		4236B5BF2134B0C4D4CF3498 /* Flutter/bananaDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/bananaDebug.xcconfig; sourceTree = "<group>"; };
+		522FE609694B765731FFD2B1 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		61C91623BCDF64431B092D00 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D55B59F2C836135D03A05E5 /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
-		784D6BB7C8E829AC597D8B6B /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
+		70F8E3D82C4C7829146DD42E /* Runner/GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		748F5C3BF45645B91FBED500 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		7490415CA91ED1A83E1D57C5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
+		7A2795FF33AB90C3F837EBC2 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		810F05E2BCE356312D3C0B93 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		87D418AC5ADBD1D1D2814B39 /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		888E54ED9FFDE20CAB550674 /* Flutter/appleDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/appleDebug.xcconfig; sourceTree = "<group>"; };
-		905A4BF6B06758519B0EE316 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
-		988A9366D1016E3A03A40740 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		992FF0BE4A22D70975893325 /* Flutter/bananaDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/bananaDebug.xcconfig; sourceTree = "<group>"; };
+		87745E70B0CC57A39A4C83B0 /* Runner/appleLaunchScreen.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/appleLaunchScreen.storyboard; sourceTree = "<group>"; };
+		88C09346220AFBA91BD97A33 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		A94E1FFB66601BD9C312DBF0 /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		AE382B349CFA3B287D629521 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
-		B10B316059B2E7B17D052545 /* Runner/GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
-		B4AC9D54CCD9ACB640EA1ECE /* Flutter/bananaProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/bananaProfile.xcconfig; sourceTree = "<group>"; };
+		AFAE69601C379051565E11CD /* Flutter/appleProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/appleProfile.xcconfig; sourceTree = "<group>"; };
+		B32017610065D3919201A003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BDBB701DD60B81BE0823F22C /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
-		CB18D2BD1E59D33359681CF3 /* Flutter/appleProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/appleProfile.xcconfig; sourceTree = "<group>"; };
-		CF3AD4A667E3CA5C737FDB42 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFDC8AB112E627F8C69ABB82 /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2FE32DC14B5414BC1BB83FA /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
+		D3DD45E57CC148606D108D48 /* Flutter/bananaProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/bananaProfile.xcconfig; sourceTree = "<group>"; };
+		E353697F36810191A855E0D6 /* Flutter/appleRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/appleRelease.xcconfig; sourceTree = "<group>"; };
+		E7E84AC7F190FD8779C232A7 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		F3522B2059E64A5153402138 /* Flutter/bananaRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/bananaRelease.xcconfig; sourceTree = "<group>"; };
+		F4F7ACF1261BC795B04C1BC0 /* Flutter/appleDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Flutter/appleDebug.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		03ADBA05DB323133760A0507 /* Frameworks */ = {
+		091821C417FF8EEC83102D96 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D5ED30D17AA6C8F61BEA346F,
+				47CD36575F783590CC7529F8,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -94,8 +94,8 @@
 		15F9D6B41E089FF771F15D87 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				87D418AC5ADBD1D1D2814B39 /* Runner.app */,
-				CF3AD4A667E3CA5C737FDB42 /* RunnerTests.xctest */,
+				BFDC8AB112E627F8C69ABB82 /* Runner.app */,
+				61C91623BCDF64431B092D00 /* RunnerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -103,7 +103,7 @@
 		4E0D240EF901DF8F4BB2545F /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
-				784D6BB7C8E829AC597D8B6B /* RunnerTests.swift */,
+				7490415CA91ED1A83E1D57C5 /* RunnerTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -112,16 +112,16 @@
 			isa = PBXGroup;
 			children = (
 				A94E1FFB66601BD9C312DBF0 /* FlutterGeneratedPluginSwiftPackage */,
-				2F5D7508AE5C266CB88BB28B /* AppFrameworkInfo.plist */,
-				37648A3EC155888713686F9B /* Debug.xcconfig */,
-				905A4BF6B06758519B0EE316 /* Release.xcconfig */,
+				88C09346220AFBA91BD97A33 /* AppFrameworkInfo.plist */,
+				D2FE32DC14B5414BC1BB83FA /* Debug.xcconfig */,
+				748F5C3BF45645B91FBED500 /* Release.xcconfig */,
 				6D55B59F2C836135D03A05E5 /* Generated.xcconfig */,
-				888E54ED9FFDE20CAB550674 /* Flutter/appleDebug.xcconfig */,
-				CB18D2BD1E59D33359681CF3 /* Flutter/appleProfile.xcconfig */,
-				6C6E72160556907257F3026F /* Flutter/appleRelease.xcconfig */,
-				992FF0BE4A22D70975893325 /* Flutter/bananaDebug.xcconfig */,
-				B4AC9D54CCD9ACB640EA1ECE /* Flutter/bananaProfile.xcconfig */,
-				01C2C21E5C9FBB62D19B6FB7 /* Flutter/bananaRelease.xcconfig */,
+				F4F7ACF1261BC795B04C1BC0 /* Flutter/appleDebug.xcconfig */,
+				AFAE69601C379051565E11CD /* Flutter/appleProfile.xcconfig */,
+				E353697F36810191A855E0D6 /* Flutter/appleRelease.xcconfig */,
+				4236B5BF2134B0C4D4CF3498 /* Flutter/bananaDebug.xcconfig */,
+				D3DD45E57CC148606D108D48 /* Flutter/bananaProfile.xcconfig */,
+				F3522B2059E64A5153402138 /* Flutter/bananaRelease.xcconfig */,
 			);
 			name = Flutter;
 			sourceTree = "<group>";
@@ -133,23 +133,23 @@
 				F2B5119DDB8CA2C0A6C4D17A /* Runner */,
 				15F9D6B41E089FF771F15D87 /* Products */,
 				4E0D240EF901DF8F4BB2545F /* RunnerTests */,
-				66C1C32C68DB2F54F044B7BB /* Runner/appleLaunchScreen.storyboard */,
-				2FE90E45CA1C9489B64D8093 /* Runner/bananaLaunchScreen.storyboard */,
-				B10B316059B2E7B17D052545 /* Runner/GoogleService-Info.plist */,
+				87745E70B0CC57A39A4C83B0 /* Runner/appleLaunchScreen.storyboard */,
+				3E3FBEC654751E88E8F8A8EB /* Runner/bananaLaunchScreen.storyboard */,
+				70F8E3D82C4C7829146DD42E /* Runner/GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
 		F2B5119DDB8CA2C0A6C4D17A /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				BFFEA1E59F48050B788ED079 /* Main.storyboard */,
-				988A9366D1016E3A03A40740 /* Assets.xcassets */,
-				34E540FC4CDA06D174A799A1 /* LaunchScreen.storyboard */,
+				3DEE96ADCA4C3F0EF7DF58D3 /* Main.storyboard */,
+				B32017610065D3919201A003 /* Assets.xcassets */,
+				C172B69139DC0F747766815C /* LaunchScreen.storyboard */,
 				810F05E2BCE356312D3C0B93 /* Info.plist */,
 				AE382B349CFA3B287D629521 /* GeneratedPluginRegistrant.h */,
-				48A0A452880F3DDC3A405B44 /* GeneratedPluginRegistrant.m */,
-				6322C740A789B0B5BC3248F8 /* AppDelegate.swift */,
-				17B6CD9D8BCAD78A3131650A /* SceneDelegate.swift */,
+				E7E84AC7F190FD8779C232A7 /* GeneratedPluginRegistrant.m */,
+				7A2795FF33AB90C3F837EBC2 /* AppDelegate.swift */,
+				522FE609694B765731FFD2B1 /* SceneDelegate.swift */,
 				BDBB701DD60B81BE0823F22C /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -158,17 +158,17 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1CDB39D0F128BA267AD91633 /* Runner */ = {
+		93CB9B7F919251A9B8E605F1 /* Runner */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3922BB69A44E2B033C4057F1 /* Build configuration list for PBXNativeTarget "Runner" */;
+			buildConfigurationList = 04AE0346D4AAF45DD3F67D06 /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
-				234624C44A0B3EF5F1EEFBF6 /* Firebase Setup */,
-				904788E60B742D40ECF4A263 /* Run Script */,
-				245F5010F8D2DD51D187F988 /* Sources */,
-				03ADBA05DB323133760A0507 /* Frameworks */,
-				834475EFE08F233D0FB99A82 /* Resources */,
-				E1DD3BD0F500195F275B83A5 /* Embed Frameworks */,
-				2A672E63E8437B8FB3352EF5 /* Thin Binary */,
+				06C3190821CFD3BA4A34C77C /* Firebase Setup */,
+				D5F2244DE4A12C7F52071BCC /* Run Script */,
+				91206B0092D825F847B91EE4 /* Sources */,
+				091821C417FF8EEC83102D96 /* Frameworks */,
+				93B6E3E5AC0B589DB5E25F0E /* Resources */,
+				072112137229FF883F128AF8 /* Embed Frameworks */,
+				72B162657CECAF2AA4B3F6CF /* Thin Binary */,
 			);
 			buildRules = (
 			);
@@ -176,27 +176,27 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
-				357A51D7669069E01FCD5FF9,
+				956916181CBCAF40F84A193D,
 			);
 			productName = Runner;
-			productReference = 87D418AC5ADBD1D1D2814B39 /* Runner.app */;
+			productReference = BFDC8AB112E627F8C69ABB82 /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
-		2F7FA3A26EF3F07F0BBB3B5F /* RunnerTests */ = {
+		98FFFA8BDA0670D96C63E453 /* RunnerTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8135B81BDCEC522C766B3800 /* Build configuration list for PBXNativeTarget "RunnerTests" */;
+			buildConfigurationList = 2047C6B74C3BA9AF80D7A874 /* Build configuration list for PBXNativeTarget "RunnerTests" */;
 			buildPhases = (
-				05CCF58B295EA0BCF8B81C28 /* Sources */,
-				D6EE1F6AA7B448E8A9C7F094 /* Resources */,
+				4EBCEF05121F82EC761CF103 /* Sources */,
+				1E0F563CFCF2D0B69435408B /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0856E415AC172DB777B68B71,
+				4A073394D4CFB7B0878840C0,
 			);
 			name = RunnerTests;
 			productName = RunnerTests;
-			productReference = CF3AD4A667E3CA5C737FDB42 /* RunnerTests.xctest */;
+			productReference = 61C91623BCDF64431B092D00 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -209,13 +209,13 @@
 				LastUpgradeCheck = 1510;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
-					2F7FA3A26EF3F07F0BBB3B5F = {
-						CreatedOnToolsVersion = 14.0;
-						TestTargetID = 1CDB39D0F128BA267AD91633 /* Runner */;
-					};
-					1CDB39D0F128BA267AD91633 = {
+					93CB9B7F919251A9B8E605F1 = {
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
+					};
+					98FFFA8BDA0670D96C63E453 = {
+						CreatedOnToolsVersion = 14.0;
+						TestTargetID = 93CB9B7F919251A9B8E605F1 /* Runner */;
 					};
 				};
 			};
@@ -235,44 +235,44 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1CDB39D0F128BA267AD91633 /* Runner */,
-				2F7FA3A26EF3F07F0BBB3B5F /* RunnerTests */,
+				93CB9B7F919251A9B8E605F1 /* Runner */,
+				98FFFA8BDA0670D96C63E453 /* RunnerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		834475EFE08F233D0FB99A82 /* Resources */ = {
+		1E0F563CFCF2D0B69435408B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7FAA69A22A73E2D8259EC315 /* LaunchScreen.storyboard in Resources */,
-				9B701B3E5AFFF5D5094989EA /* AppFrameworkInfo.plist in Resources */,
-				5697843A4C0E90E4C59CAC45 /* Assets.xcassets in Resources */,
-				296A0AF4BF35D361AE69600A /* Main.storyboard in Resources */,
-				5DF2761BC529F37174AB2C4A /* Flutter/appleDebug.xcconfig in Resources */,
-				A20119BF30FA234B92628F17 /* Flutter/appleProfile.xcconfig in Resources */,
-				B38FFBE7BBEFA327F7212A3A /* Flutter/appleRelease.xcconfig in Resources */,
-				FE41CF11E0617AB3B2A6AFB4 /* Flutter/bananaDebug.xcconfig in Resources */,
-				3B73C6BC6F7AEBD879DDE853 /* Flutter/bananaProfile.xcconfig in Resources */,
-				AEA8654BB860743274D9A129 /* Flutter/bananaRelease.xcconfig in Resources */,
-				280976440C92F0752BD25577 /* Runner/appleLaunchScreen.storyboard in Resources */,
-				7604967FEBBBBBD0E68A50DF /* Runner/bananaLaunchScreen.storyboard in Resources */,
-				DB04CAA3A9677BB657FDBEA2 /* Runner/GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D6EE1F6AA7B448E8A9C7F094 /* Resources */ = {
+		93B6E3E5AC0B589DB5E25F0E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				390253FAC2FB851F2AA5E1AC /* LaunchScreen.storyboard in Resources */,
+				95D7AD2EA6EB25E1447D22F3 /* AppFrameworkInfo.plist in Resources */,
+				F8982BE7FBE39FE9585D3F84 /* Assets.xcassets in Resources */,
+				90B0AFC408C1F0B215F8B1E0 /* Main.storyboard in Resources */,
+				6F4648B79701241DC7F0A8BB /* Flutter/appleDebug.xcconfig in Resources */,
+				F684C0E451D1F905B2E0B601 /* Flutter/appleProfile.xcconfig in Resources */,
+				875F084B7AA350C72EC451B3 /* Flutter/appleRelease.xcconfig in Resources */,
+				7A71D0ACEBBBCF3ABAD7D088 /* Flutter/bananaDebug.xcconfig in Resources */,
+				6AE5BBE3929DBC154F553F8F /* Flutter/bananaProfile.xcconfig in Resources */,
+				97853142FCFED486EE8168DE /* Flutter/bananaRelease.xcconfig in Resources */,
+				4A95542F17C7C7557496F203 /* Runner/appleLaunchScreen.storyboard in Resources */,
+				8F6ABF6A1D4C6A41AB4CD1CF /* Runner/bananaLaunchScreen.storyboard in Resources */,
+				2D53E16DD33B33B23BD30070 /* Runner/GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		234624C44A0B3EF5F1EEFBF6 /* Firebase Setup */ = {
+		06C3190821CFD3BA4A34C77C /* Firebase Setup */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -291,7 +291,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [ \"$CONFIGURATION\" == \"Debug-apple\" ] || [ \"$CONFIGURATION\" == \"Release-apple\" ]; then\n  cp Runner/apple/GoogleService-Info.plist Runner/GoogleService-Info.plist\nelif [ \"$CONFIGURATION\" == \"Debug-banana\" ] || [ \"$CONFIGURATION\" == \"Release-banana\" ]; then\n  cp Runner/banana/GoogleService-Info.plist Runner/GoogleService-Info.plist\nfi\n\n";
 		};
-		2A672E63E8437B8FB3352EF5 /* Thin Binary */ = {
+		72B162657CECAF2AA4B3F6CF /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -307,7 +307,7 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
-		904788E60B742D40ECF4A263 /* Run Script */ = {
+		D5F2244DE4A12C7F52071BCC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -325,49 +325,49 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		05CCF58B295EA0BCF8B81C28 /* Sources */ = {
+		4EBCEF05121F82EC761CF103 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC04A58F7DBACEEBF2ACD7DE /* RunnerTests.swift in Sources */,
+				AFDE4C508AB93C7819B65C39 /* RunnerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		245F5010F8D2DD51D187F988 /* Sources */ = {
+		91206B0092D825F847B91EE4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E33A3FD506A1037A6017562F /* AppDelegate.swift in Sources */,
-				A97382F0E18A4660217C4043 /* GeneratedPluginRegistrant.m in Sources */,
-				6C1014A413A5A1BE83BEDC2E /* SceneDelegate.swift in Sources */,
+				691275B975FE79582C27D6CE /* AppDelegate.swift in Sources */,
+				9233A96CF8C556B6C02BC86D /* GeneratedPluginRegistrant.m in Sources */,
+				B7E3A105E391CF5B6FE0DBD8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		0856E415AC172DB777B68B71 = {
+		4A073394D4CFB7B0878840C0 = {
 			isa = PBXTargetDependency;
-			target = 1CDB39D0F128BA267AD91633 /* Runner */;
-			targetProxy = DB461E8ADB4C94917805A46A;
+			target = 93CB9B7F919251A9B8E605F1 /* Runner */;
+			targetProxy = C839EB1D8E2CA7C1F5289529;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		34E540FC4CDA06D174A799A1 /* LaunchScreen.storyboard */ = {
+		3DEE96ADCA4C3F0EF7DF58D3 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				606B63F2D4961E4AF141E9EF /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-		BFFEA1E59F48050B788ED079 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				4F390EBF325C0363396B5AF7 /* Base */,
+				3C493A8C0499BABA85BF9872 /* Base */,
 			);
 			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		C172B69139DC0F747766815C /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261F0E3EECA5F31323DF32D1 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -430,7 +430,7 @@
 		};
 		01F6ED00204F32CAB1CE55DD /* Release-apple */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 6C6E72160556907257F3026F /* Flutter/appleRelease.xcconfig */;
+			baseConfigurationReference = E353697F36810191A855E0D6 /* Flutter/appleRelease.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
@@ -612,17 +612,9 @@
 			};
 			name = Profile;
 		};
-		25DE41DE466B2382C46E5A81 /* Profile-banana */ = {
+		173463C2FF16AC85845B2AE2 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B4AC9D54CCD9ACB640EA1ECE /* Flutter/bananaProfile.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = "Profile-banana";
-		};
-		290862E89106A2064CF29D45 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 37648A3EC155888713686F9B /* Debug.xcconfig */;
+			baseConfigurationReference = 748F5C3BF45645B91FBED500 /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -636,13 +628,49 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
-			name = Debug;
+			name = Release;
 		};
-		531BC9861926D2BE921F46C5 /* Release */ = {
+		19FCC7F07C49FE821B1B1F76 /* Release-apple */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E353697F36810191A855E0D6 /* Flutter/appleRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-apple";
+		};
+		354BEF1428DC9FD4A76DF39B /* Debug-apple */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F4F7ACF1261BC795B04C1BC0 /* Flutter/appleDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-apple";
+		};
+		38FD6BF36C51C436D263948C /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 748F5C3BF45645B91FBED500 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Profile;
+		};
+		4508B69B306C968DA5A412C8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -652,14 +680,24 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
 			};
-			name = Release;
+			name = Debug;
+		};
+		4D19A338EED86C71824148ED /* Profile-banana */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D3DD45E57CC148606D108D48 /* Flutter/bananaProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-banana";
 		};
 		6DECECC82387CBA0058E4D0C /* Profile-apple */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CB18D2BD1E59D33359681CF3 /* Flutter/appleProfile.xcconfig */;
+			baseConfigurationReference = AFAE69601C379051565E11CD /* Flutter/appleProfile.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
@@ -728,38 +766,17 @@
 			};
 			name = "Profile-apple";
 		};
-		785685002B0A6CE369082AE0 /* Profile-apple */ = {
+		73C3A78096EB6DB5064AF157 /* Release-banana */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CB18D2BD1E59D33359681CF3 /* Flutter/appleProfile.xcconfig */;
+			baseConfigurationReference = F3522B2059E64A5153402138 /* Flutter/bananaRelease.xcconfig */;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
-			name = "Profile-apple";
-		};
-		78B3274BA468B9E06612474F /* Profile */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 905A4BF6B06758519B0EE316 /* Release.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = Runner/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-			};
-			name = Profile;
+			name = "Release-banana";
 		};
 		7EAED22670A7634525EA9E57 /* Debug-apple */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 888E54ED9FFDE20CAB550674 /* Flutter/appleDebug.xcconfig */;
+			baseConfigurationReference = F4F7ACF1261BC795B04C1BC0 /* Flutter/appleDebug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
@@ -833,30 +850,24 @@
 			};
 			name = "Debug-apple";
 		};
-		864640890924B760C7E3D7D4 /* Release */ = {
+		94E115B719B4A50CC9D0EEA6 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 905A4BF6B06758519B0EE316 /* Release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = Runner/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
 			};
 			name = Release;
 		};
 		A6B78D227FC4E5A4F30EC3F8 /* Debug-banana */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 992FF0BE4A22D70975893325 /* Flutter/bananaDebug.xcconfig */;
+			baseConfigurationReference = 4236B5BF2134B0C4D4CF3498 /* Flutter/bananaDebug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
@@ -932,7 +943,7 @@
 		};
 		A9CEE0DC1579663E32FC3E3B /* Profile-banana */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B4AC9D54CCD9ACB640EA1ECE /* Flutter/bananaProfile.xcconfig */;
+			baseConfigurationReference = D3DD45E57CC148606D108D48 /* Flutter/bananaProfile.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
@@ -1001,17 +1012,25 @@
 			};
 			name = "Profile-banana";
 		};
-		B7E67DCF3587A1B55E91178F /* Release-banana */ = {
+		B751AE3134AA53F5C96DBB25 /* Debug-banana */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01C2C21E5C9FBB62D19B6FB7 /* Flutter/bananaRelease.xcconfig */;
+			baseConfigurationReference = 4236B5BF2134B0C4D4CF3498 /* Flutter/bananaDebug.xcconfig */;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
-			name = "Release-banana";
+			name = "Debug-banana";
+		};
+		C34203AD774B5EB15C0690A1 /* Profile-apple */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AFAE69601C379051565E11CD /* Flutter/appleProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-apple";
 		};
 		CE76EF3C3DB4B8B565653A36 /* Release-banana */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01C2C21E5C9FBB62D19B6FB7 /* Flutter/bananaRelease.xcconfig */;
+			baseConfigurationReference = F3522B2059E64A5153402138 /* Flutter/bananaRelease.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
@@ -1082,32 +1101,29 @@
 			};
 			name = "Release-banana";
 		};
-		E0321FF018326E9BDAE71619 /* Debug */ = {
+		E0E2186ABECD515B2151879A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D2FE32DC14B5414BC1BB83FA /* Debug.xcconfig */;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp.RunnerTests;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.parityApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
 		};
-		E9FB1973E5D921C1AAF4D79F /* Debug-apple */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 888E54ED9FFDE20CAB550674 /* Flutter/appleDebug.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = "Debug-apple";
-		};
-		EF946F23A622C78933E66614 /* Profile */ = {
+		E12FFEC050117263C4CBA421 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -1122,37 +1138,31 @@
 			};
 			name = Profile;
 		};
-		F19C04B1345B74FCF2DDCF30 /* Release-apple */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 6C6E72160556907257F3026F /* Flutter/appleRelease.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = "Release-apple";
-		};
-		FE84E34FCE0160C2CCE55AA7 /* Debug-banana */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 992FF0BE4A22D70975893325 /* Flutter/bananaDebug.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = "Debug-banana";
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3922BB69A44E2B033C4057F1 /* Build configuration list for PBXNativeTarget "Runner" */ = {
+		04AE0346D4AAF45DD3F67D06 /* Build configuration list for PBXNativeTarget "Runner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				290862E89106A2064CF29D45 /* Debug */,
-				864640890924B760C7E3D7D4 /* Release */,
-				78B3274BA468B9E06612474F /* Profile */,
-				E9FB1973E5D921C1AAF4D79F /* Debug-apple */,
-				785685002B0A6CE369082AE0 /* Profile-apple */,
-				F19C04B1345B74FCF2DDCF30 /* Release-apple */,
-				FE84E34FCE0160C2CCE55AA7 /* Debug-banana */,
-				25DE41DE466B2382C46E5A81 /* Profile-banana */,
-				B7E67DCF3587A1B55E91178F /* Release-banana */,
+				E0E2186ABECD515B2151879A /* Debug */,
+				173463C2FF16AC85845B2AE2 /* Release */,
+				38FD6BF36C51C436D263948C /* Profile */,
+				354BEF1428DC9FD4A76DF39B /* Debug-apple */,
+				C34203AD774B5EB15C0690A1 /* Profile-apple */,
+				19FCC7F07C49FE821B1B1F76 /* Release-apple */,
+				B751AE3134AA53F5C96DBB25 /* Debug-banana */,
+				4D19A338EED86C71824148ED /* Profile-banana */,
+				73C3A78096EB6DB5064AF157 /* Release-banana */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2047C6B74C3BA9AF80D7A874 /* Build configuration list for PBXNativeTarget "RunnerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4508B69B306C968DA5A412C8 /* Debug */,
+				94E115B719B4A50CC9D0EEA6 /* Release */,
+				E12FFEC050117263C4CBA421 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1173,16 +1183,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8135B81BDCEC522C766B3800 /* Build configuration list for PBXNativeTarget "RunnerTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E0321FF018326E9BDAE71619 /* Debug */,
-				531BC9861926D2BE921F46C5 /* Release */,
-				EF946F23A622C78933E66614 /* Profile */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -1193,7 +1193,7 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		357A51D7669069E01FCD5FF9 = {
+		956916181CBCAF40F84A193D = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};

@@ -45,6 +45,10 @@ String normalizePbxproj(String content) {
   if (objects is! Map || root is! String) return content;
 
   final paths = <String, String>{};
+  // Dictionaries keyed by UUID (`TargetAttributes`) are listed in UUID order,
+  // which changes from run to run: their entries are named only after
+  // everything reachable through stable lists, such as `targets`.
+  final deferred = <({String key, Object? value, String path})>[];
   late void Function(Object?, String) walk;
 
   void visit(String uuid, String path) {
@@ -71,8 +75,11 @@ String normalizePbxproj(String content) {
       for (final entry in value.entries) {
         final key = entry.key as String;
         if (objects.containsKey(key)) {
-          follow(key, '$path/{key$index}');
-          walk(entry.value, '$path/{key$index}');
+          deferred.add((
+            key: key,
+            value: entry.value,
+            path: '$path/{key$index}',
+          ));
         } else {
           walk(entry.value, '$path/$key');
         }
@@ -82,6 +89,17 @@ String normalizePbxproj(String content) {
   };
 
   visit(root, 'root');
+  // Walking an entry may defer more of them, hence the index loop.
+  for (var i = 0; i < deferred.length; i++) {
+    final entry = deferred[i];
+    // An object named through a list keeps that name; the dictionary entry
+    // describing it hangs off it.
+    final path = paths[entry.key] == null
+        ? entry.path
+        : '${paths[entry.key]}/entry';
+    follow(entry.key, path);
+    walk(entry.value, path);
+  }
   _nameOrphans(objects, paths);
 
   final renamed = content.replaceAllMapped(_uuidPattern, (match) {
@@ -89,7 +107,43 @@ String normalizePbxproj(String content) {
     return path == null ? match.group(0)! : _identifierFor(path);
   });
 
-  return _sortSections(renamed);
+  return _sortTargetAttributes(_sortSections(renamed));
+}
+
+final _targetAttributesStart = RegExp(r'^(\t+)TargetAttributes = \{$');
+
+/// Xcode lists the `TargetAttributes` sorted by UUID, so once the UUIDs are
+/// rewritten the entries are put back in that order.
+String _sortTargetAttributes(String content) {
+  final lines = content.split('\n');
+  final output = <String>[];
+
+  for (var i = 0; i < lines.length; i++) {
+    output.add(lines[i]);
+
+    final start = _targetAttributesStart.firstMatch(lines[i]);
+    if (start == null) continue;
+
+    final indent = start.group(1)!;
+    final entryIndent = '$indent\t';
+    final entries = <List<String>>[];
+
+    for (i++; i < lines.length && lines[i] != '$indent};'; i++) {
+      if (lines[i].startsWith(entryIndent) &&
+          !lines[i].startsWith('$entryIndent\t') &&
+          lines[i] != '$entryIndent};') {
+        entries.add([lines[i]]);
+      } else if (entries.isNotEmpty) {
+        entries.last.add(lines[i]);
+      }
+    }
+
+    entries.sort((a, b) => a.first.trim().compareTo(b.first.trim()));
+    output.addAll(entries.expand((lines) => lines));
+    if (i < lines.length) output.add(lines[i]);
+  }
+
+  return output.join('\n');
 }
 
 void _nameOrphans(Map objects, Map<String, String> paths) {

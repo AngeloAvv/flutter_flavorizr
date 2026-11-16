@@ -83,6 +83,56 @@ String pbxproj(Map<String, String> id, {String file = 'apple.xcconfig'}) {
       '}\n';
 }
 
+/// A project with two targets whose `TargetAttributes` are keyed by UUID.
+///
+/// Xcode lists a dictionary sorted by key, so the order of the attributes
+/// follows the UUIDs, while the `targets` list keeps its own stable order.
+String pbxprojWithTargetAttributes({
+  required String runner,
+  required String tests,
+  required String project,
+}) {
+  final attributes = {
+    runner:
+        '\t\t\t\t\t$runner = {\n'
+        '\t\t\t\t\t\tLastSwiftMigration = 1100;\n'
+        '\t\t\t\t\t};\n',
+    tests:
+        '\t\t\t\t\t$tests = {\n'
+        '\t\t\t\t\t\tTestTargetID = $runner /* Runner */;\n'
+        '\t\t\t\t\t};\n',
+  };
+  final sorted = attributes.keys.toList()..sort();
+
+  return '// !\$*UTF8*\$!\n'
+      '{\n'
+      '\tarchiveVersion = 1;\n'
+      '\tobjects = {\n\n'
+      '/* Begin PBXNativeTarget section */\n'
+      '${([(runner, 'Runner'), (tests, 'RunnerTests')]..sort((a, b) => a.$1.compareTo(b.$1))).map((t) => '\t\t${t.$1} /* ${t.$2} */ = {\n'
+          '\t\t\tisa = PBXNativeTarget;\n'
+          '\t\t\tname = ${t.$2};\n'
+          '\t\t};\n').join()}'
+      '/* End PBXNativeTarget section */\n\n'
+      '/* Begin PBXProject section */\n'
+      '\t\t$project /* Project object */ = {\n'
+      '\t\t\tisa = PBXProject;\n'
+      '\t\t\tattributes = {\n'
+      '\t\t\t\tTargetAttributes = {\n'
+      '${sorted.map((id) => attributes[id]).join()}'
+      '\t\t\t\t};\n'
+      '\t\t\t};\n'
+      '\t\t\ttargets = (\n'
+      '\t\t\t\t$runner /* Runner */,\n'
+      '\t\t\t\t$tests /* RunnerTests */,\n'
+      '\t\t\t);\n'
+      '\t\t};\n'
+      '/* End PBXProject section */\n'
+      '\t};\n'
+      '\trootObject = $project /* Project object */;\n'
+      '}\n';
+}
+
 const _idsA = {
   'buildFile': '0868D4205153D197A65C2988',
   'file': 'BFCEED3170A6FC0D94A55841',
@@ -240,6 +290,27 @@ void main() {
       expect(
         () => normalizer.normalize(path, '{ objects = { }; } /* never closed'),
         throwsFormatException,
+      );
+    });
+
+    test('target identities do not depend on the UUID order of the '
+        'TargetAttributes', () {
+      // Runner sorts before RunnerTests in one run and after it in the other.
+      final first = pbxprojWithTargetAttributes(
+        runner: '1000000000000000000000AA',
+        tests: '2000000000000000000000BB',
+        project: '3000000000000000000000CC',
+      );
+      final second = pbxprojWithTargetAttributes(
+        runner: 'F000000000000000000000AA',
+        tests: 'E000000000000000000000BB',
+        project: 'D000000000000000000000CC',
+      );
+      expect(first, isNot(second), reason: 'precondition');
+
+      expect(
+        normalizer.normalize(path, first),
+        normalizer.normalize(path, second),
       );
     });
 
