@@ -129,26 +129,52 @@ class RecipeCatalog {
   ///
   /// Throws an [UnknownTargetException] when a target is neither a recipe nor
   /// a processor.
-  RecipeResolution resolve(List<String> targets) {
+  ///
+  /// [platformsWithoutFlavors] holds the platforms (see [platformRecipes]) the
+  /// project has no flavors for. Their recipes and processors are left out,
+  /// with a message, the same way the instructions of a platform without
+  /// flavors have always been dropped: a processor is dropped when the
+  /// namespace of its id, the part before the first `:`, is one of them.
+  RecipeResolution resolve(
+    List<String> targets, {
+    Set<String> platformsWithoutFlavors = const {},
+  }) {
     final requested = targets.isEmpty ? [_defaultTarget] : targets;
     for (final target in requested) {
       _requireKnown(target);
     }
 
     final ids = <String>{};
+    final messages = <String>{};
+
+    bool skipped(String name, String platform) {
+      if (!platformsWithoutFlavors.contains(platform)) {
+        return false;
+      }
+      messages.add(
+        'Skipping "$name": no flavors are configured for $platform.',
+      );
+
+      return true;
+    }
 
     void expand(String name) {
       final members = _recipes[name];
       if (members == null) {
-        ids.add(name);
-        return;
+        if (!skipped(name, name.split(':').first)) {
+          ids.add(name);
+        }
+      } else if (!platformRecipes.contains(name) || !skipped(name, name)) {
+        members.forEach(expand);
       }
-      members.forEach(expand);
     }
 
     requested.forEach(expand);
 
-    return RecipeResolution(ids.toList(growable: false));
+    return RecipeResolution(
+      ids.toList(growable: false),
+      messages: messages.toList(growable: false),
+    );
   }
 
   void _requireKnown(String name, {String? recipe}) {

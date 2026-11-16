@@ -355,6 +355,106 @@ void main() {
     });
   });
 
+  group('platforms without flavors', () {
+    test('a platform recipe is skipped with an info message', () {
+      final resolution = _catalog().resolve([
+        'android',
+      ], platformsWithoutFlavors: {'android'});
+
+      expect(resolution.processorIds, isEmpty);
+      expect(resolution.messages, [
+        'Skipping "android": no flavors are configured for android.',
+      ]);
+    });
+
+    test('all keeps exactly what the legacy instruction filter keeps', () {
+      for (final skipped in [
+        <String>{},
+        {'android'},
+        {'ios', 'macos'},
+        {'linux', 'windows'},
+        {'android', 'ios', 'macos', 'linux', 'windows'},
+      ]) {
+        final resolution = _catalog().resolve([
+          'all',
+        ], platformsWithoutFlavors: skipped);
+
+        expect(
+          resolution.processorIds,
+          [
+            for (final id in _ids)
+              if (!skipped.contains(id.split(':').first)) id,
+          ],
+          reason: '$skipped',
+        );
+      }
+    });
+
+    test('each skipped platform is reported once', () {
+      final resolution = _catalog().resolve([
+        'all',
+      ], platformsWithoutFlavors: {'ios', 'linux'});
+
+      expect(resolution.messages, [
+        'Skipping "ios": no flavors are configured for ios.',
+        'Skipping "linux": no flavors are configured for linux.',
+      ]);
+    });
+
+    test('a processor of a skipped platform is dropped from any recipe', () {
+      final resolution = _catalog().resolve([
+        'icons',
+      ], platformsWithoutFlavors: {'ios', 'macos'});
+
+      expect(resolution.processorIds, ['android:icons', 'windows:icons']);
+      expect(resolution.messages, [
+        'Skipping "ios:icons": no flavors are configured for ios.',
+        'Skipping "macos:icons": no flavors are configured for macos.',
+      ]);
+    });
+
+    test('a processor requested by id is skipped like the legacy filter', () {
+      final resolution = _catalog().resolve([
+        'ios:plist',
+        'ide:config',
+      ], platformsWithoutFlavors: {'ios'});
+
+      expect(resolution.processorIds, ['ide:config']);
+      expect(resolution.messages, [
+        'Skipping "ios:plist": no flavors are configured for ios.',
+      ]);
+    });
+
+    test('a user recipe skips the platforms it names', () {
+      final catalog = _catalog(
+        recipes: {
+          'ci': ['android', 'linux', 'acme:sentry'],
+        },
+        processorIds: [..._ids, 'acme:sentry'],
+      );
+
+      final resolution = catalog.resolve([
+        'ci',
+      ], platformsWithoutFlavors: {'android'});
+
+      expect(resolution.processorIds, [
+        'linux:cmake',
+        'linux:runnerCmake',
+        'linux:myApplication',
+        'acme:sentry',
+      ]);
+      expect(resolution.messages, [
+        'Skipping "android": no flavors are configured for android.',
+      ]);
+    });
+
+    test('nothing is skipped when every platform has flavors', () {
+      final resolution = _catalog().resolve(['all']);
+
+      expect(resolution.messages, isEmpty);
+    });
+  });
+
   group('targets', () {
     test('a processor id is a target of its own', () {
       final resolution = _catalog().resolve(['ios:plist']);
