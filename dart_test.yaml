@@ -1,5 +1,0 @@
-tags:
-  # End-to-end golden parity runs: they need Flutter and the network and take
-  # minutes, so they are skipped unless asked for.
-  parity:
-    skip: "Run with: flutter test --run-skipped -t parity"

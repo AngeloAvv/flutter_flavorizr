@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-reviews:
-  path_filters:
-    # Generated reference output of the parity harness (tool/parity/README.md):
-    # hundreds of files that nobody reviews line by line.
-    - "!tool/parity/golden/**"

@@ -1,6 +1,0 @@
-#include "../../Flutter/bananaRelease.xcconfig"
-#include "Warnings.xcconfig"
-
-ASSET_PREFIX=banana
-BUNDLE_NAME=Banana App
-BUNDLE_DISPLAY_NAME=Banana App

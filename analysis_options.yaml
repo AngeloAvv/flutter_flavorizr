@@ -9,6 +9,5 @@ analyzer:
     - "example/**"
     - "assets/**"
     - "test_resources/**"
-    - "tool/parity/golden/**"
     - "**/*.g.dart"
     - build/**
