@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/ownership_rules.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/copy_back.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
@@ -280,6 +281,26 @@ class ShadowWorkspace {
 
     return files;
   }
+
+  /// Writes the changes of [diff] to the real project, all or nothing as far as
+  /// the filesystem allows. See [copyBackChanges] for the guarantees.
+  ///
+  /// Only the changes that [diff] marks to apply are written, plus the
+  /// conflicts whose path is in [approvedConflicts]. Throws a
+  /// `ProjectChangedException` when a real file changed since it was copied,
+  /// and an `UnapprovedConflictsException` for a conflict nobody approved.
+  /// Both leave the project untouched.
+  Future<CopyBackResult> copyBack(
+    WorkspaceDiff diff, {
+    Set<String> approvedConflicts = const {},
+    CopyBackFiles files = const LocalCopyBackFiles(),
+  }) => copyBackChanges(
+    projectRoot: projectRoot,
+    shadowRoot: root,
+    diff: diff,
+    approvedConflicts: approvedConflicts,
+    files: files,
+  );
 
   /// Deletes the workspace. It is safe to call it more than once.
   Future<void> dispose() async {
