@@ -292,6 +292,18 @@ void main() {
         );
       });
 
+      test('rejects a processor that must run after itself', () {
+        expect(
+          () => resolveExecutionPlan(
+            [
+              const _FakeProcessor('a', after: {'a'}),
+            ],
+            requested: ['a'],
+          ),
+          cycleOf(['a', 'a']),
+        );
+      });
+
       test('shows the path of a cycle through dependsOn', () {
         expect(
           () => resolveExecutionPlan(

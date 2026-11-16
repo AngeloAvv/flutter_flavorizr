@@ -133,7 +133,8 @@ ExecutionPlan resolveExecutionPlan(
   return ExecutionPlan(steps);
 }
 
-/// The ids of [ids] in ascending order: the stable key of the whole module.
+/// A sorted copy of [ids], so that no iteration depends on the order of the
+/// input. The id is the stable key that breaks every tie of the plan.
 List<String> _sorted(Iterable<String> ids) => ids.toList()..sort();
 
 /// Finds a cycle in the graph that maps each id to the ids that must run
