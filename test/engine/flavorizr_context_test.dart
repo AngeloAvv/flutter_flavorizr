@@ -25,7 +25,9 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
+import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -107,6 +109,74 @@ flavors:
         expect(
           ctx.resolveProject('assets/icon.png'),
           p.join(projectRoot.absolute.path, 'assets', 'icon.png'),
+        );
+      });
+    });
+
+    group('track', () {
+      test('starts without tracked artifacts', () {
+        expect(buildContext().tracked, isEmpty);
+      });
+
+      test('records the artifacts a processor owns, in order', () {
+        final ctx = buildContext()
+          ..track(const Artifact('android/app/build.gradle'))
+          ..track(const Artifact('lib/flavors.dart'));
+
+        expect(ctx.tracked.map((artifact) => artifact.path), [
+          'android/app/build.gradle',
+          'lib/flavors.dart',
+        ]);
+      });
+
+      test('normalizes the path of the artifact', () {
+        final ctx = buildContext()..track(const Artifact('android/../lib/a'));
+
+        expect(ctx.tracked.single.path, p.join('lib', 'a'));
+      });
+
+      test('rejects an artifact outside the shadow root', () {
+        expect(
+          () => buildContext().track(const Artifact('../outside.txt')),
+          throwsArgumentError,
+        );
+      });
+
+      test('does not let callers alter the tracked artifacts', () {
+        final ctx = buildContext();
+
+        expect(
+          () => ctx.tracked.add(const Artifact('lib/a')),
+          throwsUnsupportedError,
+        );
+      });
+    });
+
+    group('resource', () {
+      const key = ResourceKey<int>('answer');
+
+      test('returns the value of a provided resource', () {
+        final ctx = FlavorizrContext(
+          config: config,
+          root: root,
+          projectRoot: projectRoot,
+          logger: TestUtils.quietLogger(),
+          resources: {key: 42},
+        );
+
+        expect(ctx.resource(key), 42);
+      });
+
+      test('fails clearly when the resource was not provided', () {
+        expect(
+          () => buildContext().resource(key),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              contains('answer'),
+            ),
+          ),
         );
       });
     });

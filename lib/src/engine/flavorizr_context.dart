@@ -25,6 +25,8 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/artifact.dart';
+import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -60,19 +62,55 @@ class FlavorizrContext {
   /// removed from the configuration. It is empty on the first run.
   final Set<String> previousFlavors;
 
+  final Map<ResourceKey<Object?>, Object?> _resources;
+  final List<Artifact> _tracked = [];
+
   /// Creates a context.
+  ///
+  /// [resources] holds the values of the shared resources the engine already
+  /// set up for the processor, by key.
   FlavorizrContext({
     required this.config,
     required Directory root,
     required Directory projectRoot,
     required this.logger,
     Set<String> previousFlavors = const {},
-  }) : root = Directory(p.normalize(root.absolute.path)),
+    Map<ResourceKey<Object?>, Object?> resources = const {},
+  }) : _resources = Map.of(resources),
+       root = Directory(p.normalize(root.absolute.path)),
        projectRoot = Directory(p.normalize(projectRoot.absolute.path)),
        previousFlavors = Set.unmodifiable(previousFlavors);
 
   /// The flavors the configuration asks for, by name.
   Map<String, Flavor> get desiredFlavors => config.flavors;
+
+  /// The artifacts declared so far through [track], in declaration order.
+  List<Artifact> get tracked => List.unmodifiable(_tracked);
+
+  /// Declares that the processor owns [artifact].
+  ///
+  /// The path of [artifact] is relative to the project and must stay within
+  /// [root]: it is stored normalized. Throws an [ArgumentError] otherwise.
+  void track(Artifact artifact) {
+    final path = p.relative(resolve(artifact.path), from: root.path);
+
+    _tracked.add(Artifact(path));
+  }
+
+  /// Returns the value of the shared resource identified by [key].
+  ///
+  /// The processor must list [key] in `FlavorizrProcessor.requires`. Throws a
+  /// [StateError] when the resource is not available.
+  T resource<T>(ResourceKey<T> key) {
+    if (!_resources.containsKey(key)) {
+      throw StateError(
+        'The resource `${key.name}` is not available: '
+        'the processor must declare it in `requires`',
+      );
+    }
+
+    return _resources[key] as T;
+  }
 
   /// Resolves [relativePath], a path relative to the project, below [root].
   ///
