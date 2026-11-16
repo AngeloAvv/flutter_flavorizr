@@ -199,7 +199,7 @@ class Processor extends AbstractProcessor<void> {
           }
 
           await create().execute();
-        } catch (_) {
+        } on Object {
           // The first failure aborts the run: nothing is executed after it.
           progress.fail('[$instruction] An error has occurred');
           rethrow;

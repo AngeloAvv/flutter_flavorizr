@@ -157,7 +157,7 @@ void main() {
   Future<ExecutionReport> execute(
     List<_FakeProcessor> processors, {
     List<_FakeResource> resources = const [],
-    Future<void> Function(ShadowWorkspace shadow, FlavorizrContext ctx)? commit,
+    CommitRun? commit,
     Directory? tempParent,
   }) => PlanExecutor(logger: logger).execute(
     planOf(processors),
@@ -334,18 +334,33 @@ void main() {
         ]);
       });
 
-      test('is printed before the commit, when the run went well', () async {
-        late List<String> printedBeforeCommit;
+      test(
+        'is printed once the commit returned, when the run went well',
+        () async {
+          late List<String> printedDuringCommit;
 
-        await execute(
-          [_FakeProcessor('a', events), _FakeProcessor('b', events)],
-          commit: (shadow, ctx) async {
-            printedBeforeCommit = [...logger.lines];
-          },
+          await execute(
+            [_FakeProcessor('a', events), _FakeProcessor('b', events)],
+            commit: (shadow, ctx) async {
+              printedDuringCommit = [...logger.lines];
+            },
+          );
+
+          expect(printedDuringCommit, isEmpty);
+          expect(logger.lines, ['Completed: a, b']);
+          expect(logger.errors, isEmpty);
+        },
+      );
+
+      test('does not announce a success when the commit throws', () async {
+        await expectLater(
+          execute([
+            _FakeProcessor('a', events),
+          ], commit: (shadow, ctx) async => throw StateError('refused')),
+          throwsStateError,
         );
 
-        expect(printedBeforeCommit, ['Completed: a, b']);
-        expect(logger.errors, isEmpty);
+        expect(logger.lines, isEmpty);
       });
     });
 

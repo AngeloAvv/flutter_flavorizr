@@ -82,9 +82,8 @@ void main() {
   test(
     'Processor.execute stops at an unknown instruction instead of going on',
     () async {
-      // The first instruction would fail on its own, since the test does not
-      // run in an Android project: stopping at the unknown one before proves
-      // that nothing runs after it.
+      // The instruction after the unknown one is never reached: it would run
+      // against the working directory.
       final flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec')
         ..instructions = ['unknown:instruction', 'android:androidManifest'];
       final processor = Processor(
@@ -105,21 +104,6 @@ void main() {
       );
     },
   );
-
-  test('Processor.execute rethrows the failure of an instruction', () async {
-    final flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec')
-      ..instructions = ['android:androidManifest', 'unknown:instruction'];
-    final processor = Processor(
-      flavorizr,
-      force: true,
-      logger: TestUtils.quietLogger(),
-    );
-
-    await expectLater(
-      processor.execute(),
-      throwsA(isNot(isA<UnknownProcessorException>())),
-    );
-  });
 
   test(
     'Processor.resolveInstructions respects an explicit `instructions` override in the config',

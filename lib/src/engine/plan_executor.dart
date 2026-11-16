@@ -72,7 +72,8 @@ class PlanExecutor {
   ///
   /// [commit] runs only when every processor completed, and the errors it
   /// throws are not caught, since the report would no longer tell what
-  /// happened: the shadow workspace is deleted all the same.
+  /// happened: the shadow workspace is deleted all the same. The summary of a
+  /// run that went well is printed once [commit] returned.
   Future<ExecutionReport> execute(
     ExecutionPlan plan, {
     required Flavorizr config,
@@ -98,43 +99,47 @@ class PlanExecutor {
           previousFlavors: previousFlavors,
         );
         final completed = <String>[];
-        String? running;
+        String? currentId;
         Object? error;
         StackTrace? stackTrace;
 
         try {
           await lifecycle.run(ctx, (step, stepCtx) async {
-            running = step.processor.id;
+            currentId = step.processor.id;
             await step.processor.apply(stepCtx);
             completed.add(step.processor.id);
-            running = null;
+            currentId = null;
           });
         } on Object catch (caught, trace) {
           error = caught;
           stackTrace = trace;
         }
 
-        // A processor that threw is still `running`. When nothing is, the
+        // A processor that threw is still the current one. When none is, the
         // failure is not a processor's: a resource failed to set up or down.
+        final started = {...completed, ?currentId};
         final report = ExecutionReport(
           completed: completed,
-          failed: running,
+          failed: currentId,
           skipped: [
             for (final step in plan.steps)
-              if (!completed.contains(step.processor.id) &&
-                  step.processor.id != running)
-                step.processor.id,
+              if (!started.contains(step.processor.id)) step.processor.id,
           ],
           error: error,
           stackTrace: stackTrace,
         );
 
-        if (report.succeeded) {
-          logger.info(report.render());
-          await commit(shadow, ctx);
-        } else {
+        if (!report.succeeded) {
           logger.err(report.render());
+          logger.detail('${report.stackTrace}');
+
+          return report;
         }
+
+        // The summary comes after the commit: a run whose changes could not be
+        // written must not be announced as a success.
+        await commit(shadow, ctx);
+        logger.info(report.render());
 
         return report;
       },
