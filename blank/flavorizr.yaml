@@ -40,7 +40,6 @@ instructions:
   - 'android:buildGradle'
   - 'android:dummyAssets'
   - 'android:icons'
-  - 'android:adaptiveIcons'
   - 'flutter:flavors'
   - 'flutter:app'
   - 'flutter:pages'

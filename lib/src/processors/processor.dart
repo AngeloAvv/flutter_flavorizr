@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_manifest_processor.dart';
@@ -157,8 +158,7 @@ class Processor extends AbstractProcessor<void> {
         )
         ..removeWhere(
           (instruction) =>
-              !config.macosFlavorsAvailable &&
-              instruction.startsWith('macos'),
+              !config.macosFlavorsAvailable && instruction.startsWith('macos'),
         )
         ..removeWhere(
           (instruction) =>
@@ -192,13 +192,19 @@ class Processor extends AbstractProcessor<void> {
 
         progress.update('[$instruction] Executing');
 
-        AbstractProcessor? processor = _availableProcessors[instruction]
-            ?.call();
-        if (processor == null) {
+        try {
+          final create = _availableProcessors[instruction];
+          if (create == null) {
+            throw UnknownProcessorException(instruction);
+          }
+
+          await create().execute();
+        } on Object {
+          // The first failure aborts the run: nothing is executed after it.
           progress.fail('[$instruction] An error has occurred');
+          rethrow;
         }
 
-        await processor?.execute();
         progress.complete('[$instruction] Completed');
       }
 

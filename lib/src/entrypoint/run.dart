@@ -33,8 +33,8 @@ import 'package:mason_logger/mason_logger.dart';
 
 /// A common entry point to parse command line arguments and execute the process
 ///
-/// Returns the exit code that should be set when the calling process exits. `0`
-/// implies success.
+/// Ends the process with a non-zero exit code when the configuration cannot be
+/// parsed or when an instruction fails: the run stops at the first failure.
 Future<void> execute(List<String> args) async {
   final argParser = ArgParser()
     ..addFlag('force', abbr: 'f')
@@ -53,10 +53,7 @@ Future<void> execute(List<String> args) async {
 
   final logger = Logger(level: level);
 
-  const parser = Parser(
-    pubspecPath: 'pubspec',
-    flavorizrPath: 'flavorizr',
-  );
+  const parser = Parser(pubspecPath: 'pubspec', flavorizrPath: 'flavorizr');
 
   late Flavorizr flavorizr;
   try {
@@ -70,10 +67,12 @@ Future<void> execute(List<String> args) async {
     flavorizr.instructions = argProcessors;
   }
 
-  final processor = Processor(
-    flavorizr,
-    force: force,
-    logger: logger,
-  );
-  await processor.execute();
+  final processor = Processor(flavorizr, force: force, logger: logger);
+
+  try {
+    await processor.execute();
+  } catch (error) {
+    logger.err(error.toString());
+    exit(ExitCode.software.code);
+  }
 }

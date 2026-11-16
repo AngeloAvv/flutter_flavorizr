@@ -66,12 +66,16 @@ void main() {
           logger: logger,
         );
 
-        // The constructor kicks off `execute()` without awaiting it, so give
-        // the event loop a chance to flush the pending write before asserting.
+        // Building the processor writes nothing: the work is the future of
+        // `execute()`, so that its failures reach whoever awaits it.
         await Future<void>.delayed(Duration.zero);
-
         expect(processor.path, kotlinTargetPath);
+        expect(File(kotlinTargetPath).existsSync(), isFalse);
+
+        await processor.execute();
+
         expect(File(kotlinTargetPath).existsSync(), isTrue);
+        expect(File(kotlinTargetPath).readAsStringSync(), isNotEmpty);
       });
     },
   );

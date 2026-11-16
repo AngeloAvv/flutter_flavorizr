@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -47,7 +48,9 @@ void main() {
   test(
     'Processor.resolveInstructions keeps linux:* instructions when a flavor configures `linux`',
     () {
-      final flavorizr = TestUtils.parseFlavorizr('test_resources/linux/pubspec');
+      final flavorizr = TestUtils.parseFlavorizr(
+        'test_resources/linux/pubspec',
+      );
       final processor = Processor(flavorizr, logger: TestUtils.quietLogger());
 
       final instructions = processor.resolveInstructions();
@@ -61,7 +64,9 @@ void main() {
   test(
     'Processor.resolveInstructions keeps windows:* instructions when a flavor configures `windows`',
     () {
-      final flavorizr = TestUtils.parseFlavorizr('test_resources/windows/pubspec');
+      final flavorizr = TestUtils.parseFlavorizr(
+        'test_resources/windows/pubspec',
+      );
       final processor = Processor(flavorizr, logger: TestUtils.quietLogger());
 
       final instructions = processor.resolveInstructions();
@@ -75,10 +80,37 @@ void main() {
   );
 
   test(
+    'Processor.execute stops at an unknown instruction instead of going on',
+    () async {
+      // The instruction after the unknown one is never reached: it would run
+      // against the working directory.
+      final flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec')
+        ..instructions = ['unknown:instruction', 'android:androidManifest'];
+      final processor = Processor(
+        flavorizr,
+        force: true,
+        logger: TestUtils.quietLogger(),
+      );
+
+      await expectLater(
+        processor.execute(),
+        throwsA(
+          isA<UnknownProcessorException>().having(
+            (e) => e.id,
+            'id',
+            'unknown:instruction',
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
     'Processor.resolveInstructions respects an explicit `instructions` override in the config',
     () {
-      final flavorizr = TestUtils.parseFlavorizr('test_resources/windows/pubspec')
-        ..instructions = ['windows:cmake'];
+      final flavorizr = TestUtils.parseFlavorizr(
+        'test_resources/windows/pubspec',
+      )..instructions = ['windows:cmake'];
       final processor = Processor(flavorizr, logger: TestUtils.quietLogger());
 
       expect(processor.resolveInstructions(), ['windows:cmake']);

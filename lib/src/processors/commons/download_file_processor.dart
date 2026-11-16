@@ -37,23 +37,27 @@ class DownloadFileProcessor extends AbstractFileProcessor {
   })  : _url = config.assetsUrl;
 
   @override
-  void execute() async {
+  Future<void> execute() async {
     logger.detail(
       '[$DownloadFileProcessor] Initializing HttpClient',
     );
     HttpClient client = HttpClient();
 
-    logger.detail(
-      '[$DownloadFileProcessor] Downloading file from $_url',
-    );
-    HttpClientRequest request = await client.getUrl(Uri.parse(_url));
-    HttpClientResponse response = await request.close();
+    try {
+      logger.detail(
+        '[$DownloadFileProcessor] Downloading file from $_url',
+      );
+      HttpClientRequest request = await client.getUrl(Uri.parse(_url));
+      HttpClientResponse response = await request.close();
 
-    logger.detail(
-      '[$DownloadFileProcessor] Downloading file to $path',
-    );
+      logger.detail(
+        '[$DownloadFileProcessor] Downloading file to $path',
+      );
 
-    await response.pipe(file.openWrite());
+      await response.pipe(file.openWrite());
+    } finally {
+      client.close();
+    }
 
     logger.detail(
       '[$DownloadFileProcessor] File downloaded to $path',
