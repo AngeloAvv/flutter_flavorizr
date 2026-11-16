@@ -164,7 +164,8 @@ flavors:
         ]);
         expect(
           ctx.trackedByProcessor.map(
-            (id, artifacts) => MapEntry(id, [for (final a in artifacts) a.path]),
+            (id, artifacts) =>
+                MapEntry(id, [for (final a in artifacts) a.path]),
           ),
           {
             'android': ['lib/a'],
