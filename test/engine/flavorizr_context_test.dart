@@ -94,10 +94,9 @@ flavors:
       test('never resolves against the working directory', () {
         final ctx = buildContext();
 
-        expect(
-          p.isWithin(Directory.current.absolute.path, ctx.resolve('lib')),
-          isFalse,
-        );
+        // The root is where the context resolves, wherever the temporary
+        // directory is: it may well live inside the working directory.
+        expect(ctx.resolve('lib'), p.join(root.absolute.path, 'lib'));
         expect(p.isAbsolute(ctx.resolve('lib')), isTrue);
       });
     });
