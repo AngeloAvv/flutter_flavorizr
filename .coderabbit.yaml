@@ -1,5 +1,11 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 reviews:
+  auto_review:
+    # By default only the default branch is reviewed. The 3.0 work is developed
+    # on releases/3.0.0 and merged into master at the end, so its pull
+    # requests need a review too.
+    base_branches:
+      - "releases/.*"
   path_filters:
     # Generated reference output of the parity harness (tool/parity/README.md):
     # hundreds of files that nobody reviews line by line.
