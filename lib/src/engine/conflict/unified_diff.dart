@@ -44,6 +44,10 @@ const _cyan = '\x1B[36m';
 /// the output carries ANSI codes: bold headers, cyan hunk markers, red removals
 /// and green additions.
 ///
+/// [display] turns each line into what is printed, e.g. to make control
+/// characters visible. Lines are compared as they are, before it is applied, so
+/// that two lines that only look the same once displayed still differ.
+///
 /// A line is compared together with its line terminator, so a file that only
 /// differs in its final newline is not reported as identical.
 String unifiedDiff({
@@ -53,6 +57,7 @@ String unifiedDiff({
   required String newLabel,
   int context = 3,
   bool color = false,
+  String Function(String line)? display,
 }) {
   final oldLines = _split(oldText);
   final newLines = _split(newText);
@@ -71,9 +76,10 @@ String unifiedDiff({
 
     for (final edit in hunk.edits) {
       final line = edit.line;
-      final text = line.endsWith('\n')
+      final raw = line.endsWith('\n')
           ? line.substring(0, line.length - 1)
           : line;
+      final text = display == null ? raw : display(raw);
       final (marker, code) = switch (edit.kind) {
         _Kind.same => (' ', null),
         _Kind.removed => ('-', _red),

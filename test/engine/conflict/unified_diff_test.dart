@@ -172,6 +172,18 @@ void main() {
     expect(diff('a\n', 'b\n'), isNot(contains('\x1B')));
   });
 
+  test('display changes what is shown, not what is compared', () {
+    final result = unifiedDiff(
+      oldText: 'a\x1B\n',
+      newText: 'a?\n',
+      oldLabel: 'old',
+      newLabel: 'new',
+      display: (text) => text.replaceAll('\x1B', '?'),
+    );
+
+    expect(result, contains('-a?\n+a?\n'));
+  });
+
   test('with color additions are green, removals red, headers marked', () {
     final result = diff('a\n', 'b\n', color: true);
 
