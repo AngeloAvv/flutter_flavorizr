@@ -24,6 +24,10 @@
  */
 
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
+import 'package:flutter_flavorizr/src/engine/recipe/closest_match.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
+import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
+import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
 
 /// What a list of targets resolves to.
 final class RecipeResolution {
@@ -39,7 +43,13 @@ final class RecipeResolution {
 }
 
 /// The recipes of a run: the built-in ones plus the ones of the user.
+///
+/// A recipe is a named list of processor ids and other recipes. A target is
+/// the name of a recipe or the id of a processor, and the two never share a
+/// name. Everything that can be wrong with the names is reported when the
+/// catalog is built or when targets are resolved, before anything runs.
 class RecipeCatalog {
+  final Set<String> _processorIds;
   final Map<String, List<String>> _recipes;
   final String _defaultTarget;
 
@@ -48,38 +58,83 @@ class RecipeCatalog {
   /// [recipes] are the recipes of the user. [defaultRecipe] names the one run
   /// when no target is given; without it the recipe called `default` is used
   /// when the user defined it, and `all` otherwise.
-  RecipeCatalog({
+  ///
+  /// Throws an [InvalidRecipeNameException] when a recipe is named like a
+  /// command, a built-in recipe or a processor, an [UnknownTargetException]
+  /// when a recipe contains, or [defaultRecipe] names, something that is
+  /// neither a recipe nor a processor, and a [RecipeCycleException] when
+  /// recipes contain each other in a cycle.
+  factory RecipeCatalog({
     required Iterable<String> processorIds,
     Map<String, List<String>> recipes = const {},
     String? defaultRecipe,
-  }) : this._(
-         processorIds.toSet(),
-         recipes,
-         defaultRecipe ??
-             (recipes.containsKey(defaultRecipeName)
-                 ? defaultRecipeName
-                 : allRecipeName),
-       );
+  }) {
+    final ids = processorIds.toSet();
 
-  RecipeCatalog._(
-    Set<String> processorIds,
-    Map<String, List<String>> recipes,
-    this._defaultTarget,
-  ) : _recipes = {
+    for (final name in _sorted(recipes.keys)) {
+      if (reservedRecipeNames.contains(name)) {
+        throw InvalidRecipeNameException(name, 'it is the name of a command');
+      }
+      if (builtInRecipes.containsKey(name)) {
+        throw InvalidRecipeNameException(
+          name,
+          'it is the name of a built-in recipe',
+        );
+      }
+      if (ids.contains(name)) {
+        throw InvalidRecipeNameException(
+          name,
+          'it is the id of a processor',
+        );
+      }
+    }
+
+    final catalog = RecipeCatalog._(
+      ids,
+      {
         for (final entry in builtInRecipes.entries)
           entry.key: [
             for (final member in entry.value)
-              if (processorIds.contains(member) ||
-                  builtInRecipes.containsKey(member))
+              if (ids.contains(member) || builtInRecipes.containsKey(member))
                 member,
           ],
-        ...recipes,
-      };
+        for (final entry in recipes.entries)
+          entry.key: List.unmodifiable(entry.value),
+      },
+      defaultRecipe ??
+          (recipes.containsKey(defaultRecipeName)
+              ? defaultRecipeName
+              : allRecipeName),
+    );
+
+    for (final name in _sorted(recipes.keys)) {
+      for (final member in recipes[name]!) {
+        catalog._requireKnown(member, recipe: name);
+      }
+    }
+    if (defaultRecipe != null) {
+      catalog._requireKnown(defaultRecipe);
+    }
+    catalog._requireNoCycle(recipes.keys);
+
+    return catalog;
+  }
+
+  const RecipeCatalog._(this._processorIds, this._recipes, this._defaultTarget);
 
   /// Resolves [targets] to the processor ids they stand for.
   ///
-  /// Without targets, the default recipe is resolved.
+  /// Without targets, the default recipe is resolved. Every target is checked
+  /// before any is expanded.
+  ///
+  /// Throws an [UnknownTargetException] when a target is neither a recipe nor
+  /// a processor.
   RecipeResolution resolve(List<String> targets) {
+    final requested = targets.isEmpty ? [_defaultTarget] : targets;
+    for (final target in requested) {
+      _requireKnown(target);
+    }
+
     final ids = <String>{};
 
     void expand(String name) {
@@ -91,8 +146,55 @@ class RecipeCatalog {
       members.forEach(expand);
     }
 
-    (targets.isEmpty ? [_defaultTarget] : targets).forEach(expand);
+    requested.forEach(expand);
 
     return RecipeResolution(ids.toList(growable: false));
   }
+
+  void _requireKnown(String name, {String? recipe}) {
+    if (_recipes.containsKey(name) || _processorIds.contains(name)) {
+      return;
+    }
+
+    throw UnknownTargetException(
+      name,
+      recipe: recipe,
+      suggestion: closestMatch(name, [..._recipes.keys, ..._processorIds]),
+    );
+  }
+
+  /// Throws a [RecipeCycleException] when the [names] recipes, or the ones
+  /// they contain, contain each other in a cycle.
+  ///
+  /// The search starts from the names in sorted order and follows members in
+  /// declaration order, so the same recipes always report the same cycle.
+  void _requireNoCycle(Iterable<String> names) {
+    final visiting = <String>[];
+    final finished = <String>{};
+
+    void visit(String name) {
+      visiting.add(name);
+      for (final member in _recipes[name]!.where(_recipes.containsKey)) {
+        final start = visiting.indexOf(member);
+        if (start != -1) {
+          throw RecipeCycleException([...visiting.sublist(start), member]);
+        }
+        if (!finished.contains(member)) {
+          visit(member);
+        }
+      }
+      visiting.removeLast();
+      finished.add(name);
+    }
+
+    for (final name in _sorted(names)) {
+      if (!finished.contains(name)) {
+        visit(name);
+      }
+    }
+  }
 }
+
+/// A sorted copy of [names], so that no iteration depends on the order of the
+/// input.
+List<String> _sorted(Iterable<String> names) => names.toList()..sort();

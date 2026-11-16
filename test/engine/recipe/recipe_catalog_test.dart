@@ -25,6 +25,9 @@
 
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
+import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
+import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -94,6 +97,261 @@ void main() {
       final catalog = _catalog(processorIds: ['linux:cmake']);
 
       expect(catalog.resolve(['linux']).processorIds, ['linux:cmake']);
+    });
+  });
+
+  group('user recipes', () {
+    test('may contain processor ids and built-in recipes', () {
+      final catalog = _catalog(
+        recipes: {
+          'ci': ['linux', 'ios:plist'],
+        },
+      );
+
+      expect(catalog.resolve(['ci']).processorIds, [
+        'linux:cmake',
+        'linux:runnerCmake',
+        'linux:myApplication',
+        'ios:plist',
+      ]);
+    });
+
+    test('may contain other user recipes, however deeply nested', () {
+      final catalog = _catalog(
+        recipes: {
+          'outer': ['middle', 'ide:config'],
+          'middle': ['inner', 'ios:plist'],
+          'inner': ['firebase'],
+        },
+      );
+
+      expect(catalog.resolve(['outer']).processorIds, [
+        'google:firebase',
+        'ios:plist',
+        'ide:config',
+      ]);
+    });
+
+    test('a recipe used twice contributes its processors once', () {
+      final catalog = _catalog(
+        recipes: {
+          'a': ['shared'],
+          'b': ['shared', 'ide:config'],
+          'shared': ['ios:plist'],
+        },
+      );
+
+      expect(catalog.resolve(['a', 'b']).processorIds, [
+        'ios:plist',
+        'ide:config',
+      ]);
+    });
+
+    test('a recipe that reaches itself is a cycle that names the path', () {
+      expect(
+        () => _catalog(
+          recipes: {
+            'a': ['b'],
+            'b': ['c'],
+            'c': ['a'],
+          },
+        ),
+        throwsA(
+          isA<RecipeCycleException>().having((e) => e.cycle, 'cycle', [
+            'a',
+            'b',
+            'c',
+            'a',
+          ]),
+        ),
+      );
+    });
+
+    test('a recipe that contains itself is a cycle', () {
+      expect(
+        () => _catalog(
+          recipes: {
+            'a': ['a'],
+          },
+        ),
+        throwsA(
+          isA<RecipeCycleException>().having((e) => e.cycle, 'cycle', [
+            'a',
+            'a',
+          ]),
+        ),
+      );
+    });
+
+    test('a cycle message lists the recipes along the path', () {
+      expect(
+        RecipeCycleException(['a', 'b', 'a']).toString(),
+        contains('a -> b -> a'),
+      );
+    });
+
+    test('a diamond is not a cycle', () {
+      final catalog = _catalog(
+        recipes: {
+          'top': ['left', 'right'],
+          'left': ['bottom'],
+          'right': ['bottom'],
+          'bottom': ['ide:config'],
+        },
+      );
+
+      expect(catalog.resolve(['top']).processorIds, ['ide:config']);
+    });
+  });
+
+  group('names', () {
+    test('an unknown target fails with a did-you-mean suggestion', () {
+      expect(
+        () => _catalog().resolve(['androd']),
+        throwsA(
+          isA<UnknownTargetException>()
+              .having((e) => e.name, 'name', 'androd')
+              .having((e) => e.suggestion, 'suggestion', 'android'),
+        ),
+      );
+    });
+
+    test('a processor id typo suggests the processor', () {
+      expect(
+        () => _catalog().resolve(['android:buildGradel']),
+        throwsA(
+          isA<UnknownTargetException>().having(
+            (e) => e.suggestion,
+            'suggestion',
+            'android:buildGradle',
+          ),
+        ),
+      );
+    });
+
+    test('a user recipe is suggested too', () {
+      final catalog = _catalog(
+        recipes: {
+          'staging': ['ios'],
+        },
+      );
+
+      expect(
+        () => catalog.resolve(['stagin']),
+        throwsA(
+          isA<UnknownTargetException>().having(
+            (e) => e.suggestion,
+            'suggestion',
+            'staging',
+          ),
+        ),
+      );
+    });
+
+    test('a name that resembles nothing has no suggestion', () {
+      expect(
+        () => _catalog().resolve(['completely-different']),
+        throwsA(
+          isA<UnknownTargetException>().having(
+            (e) => e.suggestion,
+            'suggestion',
+            isNull,
+          ),
+        ),
+      );
+    });
+
+    test('the message offers the suggestion', () {
+      expect(
+        UnknownTargetException('androd', suggestion: 'android').toString(),
+        allOf(contains('"androd"'), contains('Did you mean "android"?')),
+      );
+    });
+
+    test('nothing is resolved when any target is unknown', () {
+      expect(
+        () => _catalog().resolve(['ios', 'nope']),
+        throwsA(isA<UnknownTargetException>()),
+      );
+    });
+
+    test('an unknown member of a user recipe fails when building', () {
+      expect(
+        () => _catalog(
+          recipes: {
+            'ci': ['androd'],
+          },
+        ),
+        throwsA(
+          isA<UnknownTargetException>()
+              .having((e) => e.recipe, 'recipe', 'ci')
+              .having((e) => e.suggestion, 'suggestion', 'android'),
+        ),
+      );
+    });
+
+    test('an unknown default recipe fails when building', () {
+      expect(
+        () => _catalog(defaultRecipe: 'cii'),
+        throwsA(isA<UnknownTargetException>()),
+      );
+    });
+
+    test('a recipe cannot be named like a command', () {
+      for (final name in [
+        'init',
+        'plan',
+        'apply',
+        'status',
+        'list',
+        'doctor',
+        'adopt',
+      ]) {
+        expect(
+          () => _catalog(
+            recipes: {
+              name: ['ios'],
+            },
+          ),
+          throwsA(
+            isA<InvalidRecipeNameException>().having(
+              (e) => e.name,
+              'name',
+              name,
+            ),
+          ),
+          reason: name,
+        );
+      }
+    });
+
+    test('a recipe cannot be named like a processor', () {
+      expect(
+        () => _catalog(
+          recipes: {
+            'ios:plist': ['ios'],
+          },
+        ),
+        throwsA(isA<InvalidRecipeNameException>()),
+      );
+    });
+
+    test('a recipe cannot be named like a built-in recipe', () {
+      expect(
+        () => _catalog(
+          recipes: {
+            'android': ['ios'],
+          },
+        ),
+        throwsA(isA<InvalidRecipeNameException>()),
+      );
+    });
+
+    test('the message says why the name is rejected', () {
+      expect(
+        InvalidRecipeNameException('init', 'it is a command').toString(),
+        allOf(contains('"init"'), contains('it is a command')),
+      );
     });
   });
 
