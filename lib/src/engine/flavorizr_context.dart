@@ -64,6 +64,7 @@ class FlavorizrContext {
 
   final Map<ResourceKey<Object?>, Object?> _resources;
   final List<Artifact> _tracked = [];
+  final Map<String, List<Artifact>> _trackedBy = {};
 
   /// Creates a context.
   ///
@@ -87,6 +88,17 @@ class FlavorizrContext {
   /// The artifacts declared so far through [track], in declaration order.
   List<Artifact> get tracked => List.unmodifiable(_tracked);
 
+  /// The artifacts of [tracked] that were attributed to a processor through
+  /// [trackFor], by processor id.
+  ///
+  /// The keys are the processors that ran: a processor that tracked nothing
+  /// maps to an empty list. This is what tells which processor produced what,
+  /// and which processors the run covers.
+  Map<String, List<Artifact>> get trackedByProcessor => Map.unmodifiable({
+    for (final entry in _trackedBy.entries)
+      entry.key: List<Artifact>.unmodifiable(entry.value),
+  });
+
   /// Declares that the processor owns [artifact].
   ///
   /// The path of [artifact] is relative to the project and must stay within
@@ -96,6 +108,22 @@ class FlavorizrContext {
     resolve(artifact.path);
 
     _tracked.add(artifact);
+  }
+
+  /// Tracks [artifacts] and attributes them to the processor [processorId].
+  ///
+  /// It is how the engine hands the artifacts of a step back to the context of
+  /// the run, keeping the processor they came from. Nothing is tracked when one
+  /// of the paths leaves [root] (see [track]).
+  void trackFor(String processorId, Iterable<Artifact> artifacts) {
+    final list = artifacts.toList();
+
+    for (final artifact in list) {
+      resolve(artifact.path);
+    }
+
+    list.forEach(track);
+    _trackedBy.putIfAbsent(processorId, () => []).addAll(list);
   }
 
   /// Returns the value of the shared resource identified by [key].

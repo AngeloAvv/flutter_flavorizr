@@ -180,7 +180,7 @@ class ResourceLifecycle {
         await runStep(step, stepContext);
 
         // What the step declared is handed back to the context of the run.
-        stepContext.tracked.forEach(ctx.track);
+        ctx.trackFor(step.processor.id, stepContext.tracked);
 
         await tearDownAll([
           for (final key in open.keys)

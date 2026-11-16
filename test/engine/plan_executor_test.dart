@@ -195,6 +195,25 @@ void main() {
       expect(report.exitCode, 0);
     });
 
+    test('tells the commit which processor tracked what', () async {
+      final byProcessor = <String, List<String>>{};
+
+      await execute(
+        [_FakeProcessor('b', events), _FakeProcessor('a', events)],
+        commit: (shadow, ctx) async {
+          ctx.trackedByProcessor.forEach(
+            (id, artifacts) =>
+                byProcessor[id] = artifacts.map((a) => a.path).toList(),
+          );
+        },
+      );
+
+      expect(byProcessor, {
+        'a': ['lib/a.dart'],
+        'b': ['lib/b.dart'],
+      });
+    });
+
     group('when a processor throws', () {
       late Directory tempParent;
       late ExecutionReport report;
