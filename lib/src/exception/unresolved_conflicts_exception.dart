@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/engine/conflict/terminal_text.dart';
+
 /// Thrown when files were edited by hand and nobody can say what to do with
 /// them: no one is there to answer (not a terminal, or `--yes`), no
 /// `--on-conflict` policy was given, or the answers ended before the last
@@ -40,7 +42,7 @@ class UnresolvedConflictsException implements Exception {
   String toString() =>
       'Aborted: these files were edited by hand and the run would change '
       'them, so nothing was written:\n'
-      '${paths.map((path) => '  - $path').join('\n')}\n'
+      '${paths.map((path) => '  - ${printable(path)}').join('\n')}\n'
       'Run again on a terminal to choose for each file, or pass '
       '--on-conflict=keep|overwrite to decide for all of them.';
 }

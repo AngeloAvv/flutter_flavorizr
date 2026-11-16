@@ -104,32 +104,59 @@ void main() {
     });
 
     test(
-      'overwrite all approves this file and the ones left, unasked',
+      'overwrite all approves this file and the ones left, once confirmed',
       () async {
-        final terminal = FakeTerminal(answers: ['k', 'a']);
+        final terminal = FakeTerminal(answers: ['k', 'a', 'y']);
         final resolution = await resolveWith(terminal);
 
         expect(resolution.kept, {'lib/a.dart'});
         expect(resolution.approved, {'lib/b.dart', 'lib/c.dart'});
-        expect(terminal.prompts, hasLength(2));
+        expect(terminal.prompts, hasLength(3));
+        expect(terminal.prompts.last, contains('2 file(s)'));
       },
     );
 
     test('overwrite all lists what it covers, deletions marked', () async {
-      final terminal = FakeTerminal(answers: ['a']);
+      final terminal = FakeTerminal(answers: ['a', 'yes']);
 
       await resolveWith(terminal);
 
       expect(
         terminal.output.toString(),
         stringContainsInOrder([
-          'Overwriting all remaining files:',
+          'This overwrites all remaining files:',
           '  - lib/a.dart',
           '  - lib/b.dart (delete)',
           '  - lib/c.dart',
         ]),
       );
     });
+
+    for (final refusal in ['', 'n', 'no', 'yep', ' ']) {
+      test(
+        'overwrite all not confirmed ("$refusal") asks again for the file',
+        () async {
+          final terminal = FakeTerminal(answers: ['a', refusal, 'k', 'k', 'k']);
+          final resolution = await resolveWith(terminal);
+
+          expect(resolution.approved, isEmpty);
+          expect(resolution.kept, hasLength(3));
+          expect(terminal.output.toString(), contains('Not confirmed.'));
+        },
+      );
+    }
+
+    test(
+      'the input ending while confirming fails, approving nothing',
+      () async {
+        final terminal = FakeTerminal(answers: ['a', null]);
+
+        await expectLater(
+          resolveWith(terminal),
+          throwsA(isA<UnresolvedConflictsException>()),
+        );
+      },
+    );
 
     test(
       'answers are case insensitive, trimmed and may be spelled out',
@@ -240,6 +267,40 @@ void main() {
         );
 
         expect(terminal.output.toString(), contains('Binary files differ'));
+      });
+
+      test('says so when a file cannot be read as a regular file', () async {
+        final terminal = FakeTerminal(answers: ['d', 'k']);
+
+        await resolveWith(
+          terminal,
+          content: FakeContent(desired: {'lib/a.dart': 'new\n'}),
+          of: WorkspaceDiff([conflict('lib/a.dart')]),
+        );
+
+        expect(terminal.output.toString(), contains('Cannot show the diff'));
+        expect(terminal.output.toString(), isNot(contains('+new')));
+      });
+
+      test('never sends control sequences from a path or a file', () async {
+        final terminal = FakeTerminal(
+          supportsColor: false,
+          answers: ['d', 'a', 'n', 'k'],
+        );
+
+        await resolveWith(
+          terminal,
+          content: FakeContent(
+            current: {'lib/\x1B[2Ja.dart': 'a\x1B[31m\rb\n'},
+            desired: {'lib/\x1B[2Ja.dart': 'c\u009B\n'},
+          ),
+          of: WorkspaceDiff([conflict('lib/\x1B[2Ja.dart')]),
+        );
+
+        expect(terminal.output.toString(), isNot(contains('\x1B')));
+        expect(terminal.output.toString(), isNot(contains('\r')));
+        expect(terminal.output.toString(), isNot(contains('\u009B')));
+        expect(terminal.output.toString(), contains('lib/␛[2Ja.dart'));
       });
 
       test('says so when there is nothing to show', () async {

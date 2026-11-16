@@ -89,7 +89,14 @@ void main() {
       expect(terminal.prompts, isEmpty);
     });
 
-    test('the failure tells how to resolve and what is deleted', () {
+    test('the failure cannot carry control sequences from a path', () {
+      expect(
+        UnresolvedConflictsException(['lib/\x1B[2Ja.dart']).toString(),
+        isNot(contains('\x1B')),
+      );
+    });
+
+    test('the failure tells how to resolve', () {
       final message = UnresolvedConflictsException(
         diff.conflicts.map((change) => change.path),
       ).toString();

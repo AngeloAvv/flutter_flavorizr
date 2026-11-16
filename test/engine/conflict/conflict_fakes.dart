@@ -24,6 +24,7 @@
  */
 
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
@@ -83,7 +84,7 @@ class FakeContent implements ConflictContent {
   @override
   Future<List<int>?> readDesired(String path) async => _bytes(desired[path]);
 
-  List<int>? _bytes(String? text) => text?.codeUnits;
+  List<int>? _bytes(String? text) => text == null ? null : utf8.encode(text);
 }
 
 /// A change judged as a conflict.

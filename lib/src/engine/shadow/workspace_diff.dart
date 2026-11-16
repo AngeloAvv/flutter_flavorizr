@@ -100,6 +100,16 @@ final class FileChange {
     required this.after,
   });
 
+  /// The same change with another [disposition].
+  FileChange withDisposition(ChangeDisposition disposition) => FileChange(
+    path: path,
+    kind: kind,
+    ownership: ownership,
+    disposition: disposition,
+    before: before,
+    after: after,
+  );
+
   String get _symbol => switch (kind) {
     ChangeKind.added => '+',
     ChangeKind.modified => '~',

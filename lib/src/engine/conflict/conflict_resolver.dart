@@ -28,6 +28,7 @@ import 'dart:convert';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_policy.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
+import 'package:flutter_flavorizr/src/engine/conflict/terminal_text.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/unified_diff.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/exception/unresolved_conflicts_exception.dart';
@@ -62,14 +63,7 @@ final class ConflictResolution {
       (change) =>
           change.disposition == ChangeDisposition.conflict &&
               kept.contains(change.path)
-          ? FileChange(
-              path: change.path,
-              kind: change.kind,
-              ownership: change.ownership,
-              disposition: ChangeDisposition.keep,
-              before: change.before,
-              after: change.after,
-            )
+          ? change.withDisposition(ChangeDisposition.keep)
           : change,
     ),
   );
@@ -136,7 +130,8 @@ class ConflictResolver {
 
     for (var index = 0; index < conflicts.length; index++) {
       final change = conflicts[index];
-      final choice = await _choose(change);
+      final remaining = conflicts.skip(index).toList();
+      final choice = await _choose(change, remaining);
 
       switch (choice) {
         case _Choice.overwrite:
@@ -144,14 +139,6 @@ class ConflictResolver {
         case _Choice.keep:
           kept.add(change.path);
         case _Choice.overwriteAll:
-          final remaining = conflicts.skip(index).toList();
-
-          // Say what "all" covers: it includes files nobody has looked at, and
-          // deletions.
-          terminal.write(
-            'Overwriting all remaining files:\n'
-            '${remaining.map((c) => '  - ${c.path}${c.kind == ChangeKind.deleted ? ' (delete)' : ''}\n').join()}',
-          );
           approved.addAll(remaining.map((change) => change.path));
 
           return ConflictResolution(approved: approved, kept: kept);
@@ -167,13 +154,16 @@ class ConflictResolver {
     return ConflictResolution(approved: approved, kept: kept);
   }
 
-  /// Asks what to do with [change] until the answer is understood. Returns
-  /// `null` when the input ended.
-  Future<_Choice?> _choose(FileChange change) async {
-    final verb = change.kind == ChangeKind.deleted ? 'delete' : 'overwrite';
-
+  /// Asks what to do with [change] until the answer is understood. [remaining]
+  /// are the conflicts still to resolve, [change] first: what "all" covers.
+  /// Returns `null` when the input ended.
+  Future<_Choice?> _choose(
+    FileChange change,
+    List<FileChange> remaining,
+  ) async {
     terminal.write(
-      '\n${change.path} was edited by hand and flavorizr wants to $verb it.\n',
+      '\n${printable(change.path)} was edited by hand and flavorizr wants to '
+      '${_verb(change)} it.\n',
     );
 
     while (true) {
@@ -187,7 +177,14 @@ class ConflictResolver {
         case 'k' || 'keep':
           return _Choice.keep;
         case 'a' || 'all':
-          return _Choice.overwriteAll;
+          switch (await _confirmAll(remaining)) {
+            case true:
+              return _Choice.overwriteAll;
+            case null:
+              return null;
+            case false:
+              break;
+          }
         case 'd' || 'diff':
           terminal.write(await _renderDiff(change));
         default:
@@ -196,24 +193,58 @@ class ConflictResolver {
     }
   }
 
+  /// Lists what "overwrite all" covers and asks for a confirmation: it reaches
+  /// files nobody looked at, and deletions, on a single keystroke. Returns
+  /// `null` when the input ended.
+  Future<bool?> _confirmAll(List<FileChange> remaining) async {
+    terminal.write(
+      'This overwrites all remaining files:\n'
+      '${remaining.map((c) => '  - ${printable(c.path)}'
+          '${c.kind == ChangeKind.deleted ? ' (delete)' : ''}\n').join()}',
+    );
+
+    final answer = await terminal.readAnswer(
+      'Overwrite these ${remaining.length} file(s)? [y/N]: ',
+    );
+
+    if (answer == null) return null;
+
+    final confirmed = const {'y', 'yes'}.contains(answer.trim().toLowerCase());
+
+    if (!confirmed) terminal.write('Not confirmed.\n');
+
+    return confirmed;
+  }
+
+  String _verb(FileChange change) =>
+      change.kind == ChangeKind.deleted ? 'delete' : 'overwrite';
+
   /// The diff from the file in the project to what the run would write, or a
   /// line saying why there is none to show.
   Future<String> _renderDiff(FileChange change) async {
-    final current = await content.readCurrent(change.path) ?? const <int>[];
-    final desired = await content.readDesired(change.path) ?? const <int>[];
+    final current = await content.readCurrent(change.path);
+    final desired = await content.readDesired(change.path);
 
-    final currentText = _decode(current);
-    final desiredText = _decode(desired);
+    // A file that should exist but cannot be read as a regular file (a link,
+    // for one) must not be shown as an empty one.
+    if ((change.before != null && current == null) ||
+        (change.kind != ChangeKind.deleted && desired == null)) {
+      return 'Cannot show the diff: a file is missing or not a regular file.\n';
+    }
+
+    final currentText = _decode(current ?? const []);
+    final desiredText = _decode(desired ?? const []);
 
     if (currentText == null || desiredText == null) {
       return 'Binary files differ.\n';
     }
 
+    final path = printable(change.path);
     final diff = unifiedDiff(
       oldText: currentText,
       newText: desiredText,
-      oldLabel: 'a/${change.path}',
-      newLabel: 'b/${change.path}',
+      oldLabel: 'a/$path',
+      newLabel: 'b/$path',
       color: terminal.supportsColor,
     );
 
@@ -223,14 +254,11 @@ class ConflictResolver {
   }
 
   /// The text of [bytes] ready to be printed, or `null` when they are not text.
-  ///
-  /// The escape character is made visible: a file must not be able to send
-  /// control sequences to the terminal of whoever reviews it.
   String? _decode(List<int> bytes) {
     try {
       final text = utf8.decode(bytes);
 
-      return text.contains('\u0000') ? null : text.replaceAll('\x1B', '␛');
+      return text.contains('\u0000') ? null : printable(text);
     } on FormatException {
       return null;
     }
