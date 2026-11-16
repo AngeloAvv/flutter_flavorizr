@@ -1,5 +1,31 @@
+/*
+ * Copyright (c) 2026 Angelo Cassano
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
@@ -52,18 +78,40 @@ class GoldenMetadata {
 class ParityRunner {
   const ParityRunner({
     required this.fixture,
+    this.fixtureFiles,
     this.flutter = 'flutter',
-    this.flavorizrArgs = const ['-f'],
   });
 
   /// The `flavorizr.yaml` copied in the generated project.
   final File fixture;
 
+  /// Files copied as they are in the root of the generated project, such as
+  /// the Firebase configurations the fixture points to.
+  final Directory? fixtureFiles;
+
   /// The Flutter executable.
   final String flutter;
 
   /// The arguments of `flutter pub run flutter_flavorizr`.
-  final List<String> flavorizrArgs;
+  static const flavorizrArgs = ['-f'];
+
+  /// Identifies the fixture (the yaml and its files), so a golden is never
+  /// compared with a run made from another one.
+  String get fixtureSha256 {
+    final extra = fixtureFiles == null
+        ? <File>[]
+        : (fixtureFiles!.listSync(recursive: true).whereType<File>().toList()
+            ..sort((a, b) => a.path.compareTo(b.path)));
+
+    final bytes = BytesBuilder();
+    for (final file in [fixture, ...extra]) {
+      // The name goes in too, so that moving a file changes the hash.
+      bytes
+        ..add(utf8.encode(p.relative(file.path, from: fixture.parent.path)))
+        ..add(file.readAsBytesSync());
+    }
+    return sha256.convert(bytes.takeBytes()).toString();
+  }
 
   static const platforms = 'android,ios,macos,linux,windows';
 
@@ -83,6 +131,7 @@ class ParityRunner {
         '.',
       ]);
       fixture.copySync(p.join(project.path, 'flavorizr.yaml'));
+      if (fixtureFiles != null) _copy(fixtureFiles!, project);
       await _flutter(project, source.pubAddArgs);
       await _copyAssets(project);
       await _flutter(project, [
@@ -98,7 +147,7 @@ class ParityRunner {
       return GoldenMetadata(
         flutterVersion: await flutterVersion(),
         flavorizr: source.label,
-        fixtureSha256: sha256.convert(fixture.readAsBytesSync()).toString(),
+        fixtureSha256: fixtureSha256,
       );
     } finally {
       workspace.deleteSync(recursive: true);
@@ -111,7 +160,11 @@ class ParityRunner {
     if (result.exitCode != 0) {
       throw ProcessException(flutter, ['--version'], '${result.stderr}');
     }
-    final json = jsonDecode(result.stdout as String) as Map<String, Object?>;
+    // Flutter may print first-run noise before the JSON document.
+    final stdout = result.stdout as String;
+    final json =
+        jsonDecode(stdout.substring(stdout.indexOf('{')))
+            as Map<String, Object?>;
     return json['frameworkVersion'] as String;
   }
 

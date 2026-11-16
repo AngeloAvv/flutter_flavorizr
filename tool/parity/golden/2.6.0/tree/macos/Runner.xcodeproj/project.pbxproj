@@ -21,19 +21,20 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		2F2FE1ABCF2386B3791D7ADD /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2128EB39D220239F6F9FE0A0 /* GeneratedPluginRegistrant.swift */; };
-		4CCDF21D61EE41F34E6376BA = {isa = PBXBuildFile; productRef = B9F11FFED575786E5DEE57D8; };
-		6C1014A413A5A1BE83BEDC2E /* Runner/Configs/appleDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 888E54ED9FFDE20CAB550674 /* Runner/Configs/appleDebug.xcconfig */; };
-		8B0FA4545D99B5DEB9916336 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D927510FE9E6ABB8C7B04784 /* AppDelegate.swift */; };
-		A97382F0E18A4660217C4043 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 48A0A452880F3DDC3A405B44 /* MainMenu.xib */; };
-		AFADA7C1C245AAA43DB6DD07 /* Runner/Configs/bananaRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 01C2C21E5C9FBB62D19B6FB7 /* Runner/Configs/bananaRelease.xcconfig */; };
+		03F823ED0CA3EC5431A2F8D9 /* Runner/Configs/appleRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6C6E72160556907257F3026F /* Runner/Configs/appleRelease.xcconfig */; };
+		1DA69B2DDF5FD3FEB31F9DB4 /* Runner/Configs/bananaDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 992FF0BE4A22D70975893325 /* Runner/Configs/bananaDebug.xcconfig */; };
+		2AA3D872BBF7C22437772C57 /* Runner/Configs/appleProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = CB18D2BD1E59D33359681CF3 /* Runner/Configs/appleProfile.xcconfig */; };
+		2AB823AA4C947F65125DDB87 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = CB6086FFCCD13A3E5801F06A /* MainMenu.xib */; };
+		2CE2D49ED776EE2A3D282B4F /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA539A966C016F9D705CD3FC /* GeneratedPluginRegistrant.swift */; };
+		3A3C64B221E593280307C838 /* Runner/Configs/bananaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B4AC9D54CCD9ACB640EA1ECE /* Runner/Configs/bananaProfile.xcconfig */; };
+		3D0117CAE49CF735BF632FB0 /* Runner/Configs/bananaRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 01C2C21E5C9FBB62D19B6FB7 /* Runner/Configs/bananaRelease.xcconfig */; };
+		4CCDF21D61EE41F34E6376BA /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D9228810BEF85B8B7B13DA /* MainFlutterWindow.swift */; };
+		60264E49B521A4EA4C627104 /* Runner/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5267D5773F159CA6CC87A853 /* Runner/GoogleService-Info.plist */; };
+		8AA793697703773F2D6F83E6 /* Runner/Configs/appleDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 888E54ED9FFDE20CAB550674 /* Runner/Configs/appleDebug.xcconfig */; };
 		BC04A58F7DBACEEBF2ACD7DE /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784D6BB7C8E829AC597D8B6B /* RunnerTests.swift */; };
-		BEABE7506BBE3045338E94CC /* Runner/Configs/appleRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6C6E72160556907257F3026F /* Runner/Configs/appleRelease.xcconfig */; };
-		C1F5FAB2159B4F4B41091A00 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A480B06E718A891464D895 /* MainFlutterWindow.swift */; };
-		CED8D5A61CB7F9603755D476 /* Runner/Configs/bananaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B4AC9D54CCD9ACB640EA1ECE /* Runner/Configs/bananaProfile.xcconfig */; };
-		D86ACCC65E82F70F1AE5BAD6 /* Runner/Configs/bananaDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 992FF0BE4A22D70975893325 /* Runner/Configs/bananaDebug.xcconfig */; };
-		E33A3FD506A1037A6017562F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6322C740A789B0B5BC3248F8 /* Assets.xcassets */; };
-		F57A6B27F9652AD8C3ABA83B /* Runner/Configs/appleProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = CB18D2BD1E59D33359681CF3 /* Runner/Configs/appleProfile.xcconfig */; };
+		D5ED30D17AA6C8F61BEA346F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0087730B7AA58C1CCE9FA1C7 /* Assets.xcassets */; };
+		D93FD1D809D53CF2A9121EFA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B9DA71D001A028EB828249 /* AppDelegate.swift */; };
+		E33A3FD506A1037A6017562F = {isa = PBXBuildFile; productRef = 46578E90AD404A5777D11B20; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,7 +55,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		03ADBA05DB323133760A0507 /* Bundle Framework */ = {
+		834475EFE08F233D0FB99A82 /* Bundle Framework */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
@@ -67,13 +68,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0087730B7AA58C1CCE9FA1C7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Runner/Assets.xcassets; sourceTree = "<group>"; };
 		01C2C21E5C9FBB62D19B6FB7 /* Runner/Configs/bananaRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/Configs/bananaRelease.xcconfig; sourceTree = "<group>"; };
-		1AA132A536054F56BD64208F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		2128EB39D220239F6F9FE0A0 /* GeneratedPluginRegistrant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedPluginRegistrant.swift; sourceTree = "<group>"; };
+		28D9228810BEF85B8B7B13DA /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
 		37648A3EC155888713686F9B /* AppInfo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppInfo.xcconfig; sourceTree = "<group>"; };
 		3DEE96ADCA4C3F0EF7DF58D3 /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
+		5267D5773F159CA6CC87A853 /* Runner/GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		535CAAE86A09C2E3242DBB40 /* Warnings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Warnings.xcconfig; sourceTree = "<group>"; };
-		6322C740A789B0B5BC3248F8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Runner/Assets.xcassets; sourceTree = "<group>"; };
 		68AC266312F73B896DE3710D /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		6C6E72160556907257F3026F /* Runner/Configs/appleRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/Configs/appleRelease.xcconfig; sourceTree = "<group>"; };
 		748F5C3BF45645B91FBED500 /* Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Release.entitlements; sourceTree = "<group>"; };
@@ -83,23 +84,24 @@
 		888E54ED9FFDE20CAB550674 /* Runner/Configs/appleDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/Configs/appleDebug.xcconfig; sourceTree = "<group>"; };
 		934D49B993FB0E23F0EBE721 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		992FF0BE4A22D70975893325 /* Runner/Configs/bananaDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/Configs/bananaDebug.xcconfig; sourceTree = "<group>"; };
+		AA539A966C016F9D705CD3FC /* GeneratedPluginRegistrant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedPluginRegistrant.swift; sourceTree = "<group>"; };
 		AE1C24F22615D0C8E100C59E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
 		AE382B349CFA3B287D629521 /* Flutter-Generated.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Flutter-Generated.xcconfig"; path = "ephemeral/Flutter-Generated.xcconfig"; sourceTree = "<group>"; };
 		B4AC9D54CCD9ACB640EA1ECE /* Runner/Configs/bananaProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/Configs/bananaProfile.xcconfig; sourceTree = "<group>"; };
 		C172B69139DC0F747766815C /* Flutter-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Debug.xcconfig"; sourceTree = "<group>"; };
 		CB18D2BD1E59D33359681CF3 /* Runner/Configs/appleProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; path = Runner/Configs/appleProfile.xcconfig; sourceTree = "<group>"; };
+		CC8349EED23B0BFC2DB38426 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		CF3AD4A667E3CA5C737FDB42 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2FE32DC14B5414BC1BB83FA /* DebugProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DebugProfile.entitlements; sourceTree = "<group>"; };
-		D3A480B06E718A891464D895 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
-		D927510FE9E6ABB8C7B04784 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E7B9DA71D001A028EB828249 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		904788E60B742D40ECF4A263 /* Frameworks */ = {
+		245F5010F8D2DD51D187F988 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CCDF21D61EE41F34E6376BA,
+				E33A3FD506A1037A6017562F,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,8 +135,8 @@
 		6D55B59F2C836135D03A05E5 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				6322C740A789B0B5BC3248F8 /* Assets.xcassets */,
-				48A0A452880F3DDC3A405B44 /* MainMenu.xib */,
+				0087730B7AA58C1CCE9FA1C7 /* Assets.xcassets */,
+				CB6086FFCCD13A3E5801F06A /* MainMenu.xib */,
 				AE1C24F22615D0C8E100C59E /* Info.plist */,
 			);
 			name = Resources;
@@ -144,8 +146,8 @@
 		7AF2DB5E560EAB1E0C98DEDD /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				D927510FE9E6ABB8C7B04784 /* AppDelegate.swift */,
-				D3A480B06E718A891464D895 /* MainFlutterWindow.swift */,
+				E7B9DA71D001A028EB828249 /* AppDelegate.swift */,
+				28D9228810BEF85B8B7B13DA /* MainFlutterWindow.swift */,
 				D2FE32DC14B5414BC1BB83FA /* DebugProfile.entitlements */,
 				748F5C3BF45645B91FBED500 /* Release.entitlements */,
 				6D55B59F2C836135D03A05E5 /* Resources */,
@@ -175,6 +177,7 @@
 				992FF0BE4A22D70975893325 /* Runner/Configs/bananaDebug.xcconfig */,
 				B4AC9D54CCD9ACB640EA1ECE /* Runner/Configs/bananaProfile.xcconfig */,
 				01C2C21E5C9FBB62D19B6FB7 /* Runner/Configs/bananaRelease.xcconfig */,
+				5267D5773F159CA6CC87A853 /* Runner/GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -193,7 +196,7 @@
 			isa = PBXGroup;
 			children = (
 				3DEE96ADCA4C3F0EF7DF58D3 /* FlutterGeneratedPluginSwiftPackage */,
-				2128EB39D220239F6F9FE0A0 /* GeneratedPluginRegistrant.swift */,
+				AA539A966C016F9D705CD3FC /* GeneratedPluginRegistrant.swift */,
 				C172B69139DC0F747766815C /* Flutter-Debug.xcconfig */,
 				810F05E2BCE356312D3C0B93 /* Flutter-Release.xcconfig */,
 				AE382B349CFA3B287D629521 /* Flutter-Generated.xcconfig */,
@@ -208,11 +211,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3922BB69A44E2B033C4057F1 /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
-				234624C44A0B3EF5F1EEFBF6 /* Sources */,
-				904788E60B742D40ECF4A263 /* Frameworks */,
-				245F5010F8D2DD51D187F988 /* Resources */,
-				03ADBA05DB323133760A0507 /* Bundle Framework */,
-				834475EFE08F233D0FB99A82,
+				234624C44A0B3EF5F1EEFBF6 /* Firebase Setup */,
+				904788E60B742D40ECF4A263 /* Sources */,
+				245F5010F8D2DD51D187F988 /* Frameworks */,
+				03ADBA05DB323133760A0507 /* Resources */,
+				834475EFE08F233D0FB99A82 /* Bundle Framework */,
+				E1DD3BD0F500195F275B83A5,
 			);
 			buildRules = (
 			);
@@ -221,7 +225,7 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
-				B9F11FFED575786E5DEE57D8,
+				46578E90AD404A5777D11B20,
 			);
 			productName = Runner;
 			productReference = 87D418AC5ADBD1D1D2814B39 /* parity_app.app */;
@@ -300,6 +304,22 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		03ADBA05DB323133760A0507 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5ED30D17AA6C8F61BEA346F /* Assets.xcassets in Resources */,
+				2AB823AA4C947F65125DDB87 /* MainMenu.xib in Resources */,
+				8AA793697703773F2D6F83E6 /* Runner/Configs/appleDebug.xcconfig in Resources */,
+				2AA3D872BBF7C22437772C57 /* Runner/Configs/appleProfile.xcconfig in Resources */,
+				03F823ED0CA3EC5431A2F8D9 /* Runner/Configs/appleRelease.xcconfig in Resources */,
+				1DA69B2DDF5FD3FEB31F9DB4 /* Runner/Configs/bananaDebug.xcconfig in Resources */,
+				3A3C64B221E593280307C838 /* Runner/Configs/bananaProfile.xcconfig in Resources */,
+				3D0117CAE49CF735BF632FB0 /* Runner/Configs/bananaRelease.xcconfig in Resources */,
+				60264E49B521A4EA4C627104 /* Runner/GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0E7965CBE11D6964BBA945E7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -307,25 +327,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		245F5010F8D2DD51D187F988 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E33A3FD506A1037A6017562F /* Assets.xcassets in Resources */,
-				A97382F0E18A4660217C4043 /* MainMenu.xib in Resources */,
-				6C1014A413A5A1BE83BEDC2E /* Runner/Configs/appleDebug.xcconfig in Resources */,
-				F57A6B27F9652AD8C3ABA83B /* Runner/Configs/appleProfile.xcconfig in Resources */,
-				BEABE7506BBE3045338E94CC /* Runner/Configs/appleRelease.xcconfig in Resources */,
-				D86ACCC65E82F70F1AE5BAD6 /* Runner/Configs/bananaDebug.xcconfig in Resources */,
-				CED8D5A61CB7F9603755D476 /* Runner/Configs/bananaProfile.xcconfig in Resources */,
-				AFADA7C1C245AAA43DB6DD07 /* Runner/Configs/bananaRelease.xcconfig in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		834475EFE08F233D0FB99A82 = {
+		234624C44A0B3EF5F1EEFBF6 /* Firebase Setup */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Firebase Setup";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Runner/GoogleService-Info.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$CONFIGURATION\" == \"Debug-apple\" ] || [ \"$CONFIGURATION\" == \"Release-apple\" ]; then\n  cp Runner/apple/GoogleService-Info.plist Runner/GoogleService-Info.plist\nelif [ \"$CONFIGURATION\" == \"Debug-banana\" ] || [ \"$CONFIGURATION\" == \"Release-banana\" ]; then\n  cp Runner/banana/GoogleService-Info.plist Runner/GoogleService-Info.plist\nfi\n\n";
+		};
+		E1DD3BD0F500195F275B83A5 = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -374,13 +398,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		234624C44A0B3EF5F1EEFBF6 /* Sources */ = {
+		904788E60B742D40ECF4A263 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C1F5FAB2159B4F4B41091A00 /* MainFlutterWindow.swift in Sources */,
-				8B0FA4545D99B5DEB9916336 /* AppDelegate.swift in Sources */,
-				2F2FE1ABCF2386B3791D7ADD /* GeneratedPluginRegistrant.swift in Sources */,
+				4CCDF21D61EE41F34E6376BA /* MainFlutterWindow.swift in Sources */,
+				D93FD1D809D53CF2A9121EFA /* AppDelegate.swift in Sources */,
+				2CE2D49ED776EE2A3D282B4F /* GeneratedPluginRegistrant.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -400,10 +424,10 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		48A0A452880F3DDC3A405B44 /* MainMenu.xib */ = {
+		CB6086FFCCD13A3E5801F06A /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
-				1AA132A536054F56BD64208F /* Base */,
+				CC8349EED23B0BFC2DB38426 /* Base */,
 			);
 			name = MainMenu.xib;
 			path = Runner;
@@ -1207,7 +1231,7 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		B9F11FFED575786E5DEE57D8 = {
+		46578E90AD404A5777D11B20 = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};

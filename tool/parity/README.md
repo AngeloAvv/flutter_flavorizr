@@ -8,7 +8,9 @@ be compared against it.
 
 1. `flutter create` makes a project for android, ios, macos, linux and windows
    in a temp dir and copies `fixtures/flavorizr.yaml` (two flavors, `apple` and
-   `banana`).
+   `banana`, each with a Firebase configuration so that the build phase that
+   gets a new random UUID on every run is exercised) plus `fixtures/files/`,
+   which holds those placeholder Firebase configs.
 2. The chosen flavorizr runs on it, `2.6.0` from pub.dev or a local checkout.
 3. The result is normalized, so that two runs are identical:
    - every UUID of a `project.pbxproj` is rewritten from the object's
@@ -19,8 +21,9 @@ be compared against it.
      tells where flavorizr comes from and not what it did;
    - binary files become `<file>.sha256`;
    - machine-dependent files are skipped (`ephemeral/`, `Generated.xcconfig`,
-     `local.properties`, `pubspec.lock`, ...). See `defaultIgnore` in
-     `src/tree.dart`.
+     `local.properties`, `pubspec.lock`, ...), and so are `.gitignore` files,
+     which would otherwise hide part of the golden from git. See
+     `defaultIgnore` in `src/tree.dart`.
 4. `record` stores the result in `golden/<version>/tree`, `check` diffs a new
    run against it. pbxproj files are only compared, never built.
 

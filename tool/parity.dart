@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2026 Angelo Cassano
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 // Golden parity harness: records the output of a flavorizr version on a fresh
 // Flutter project and checks later versions against it.
 //
@@ -38,9 +63,11 @@ Future<void> main(List<String> arguments) async {
       defaultsTo: 'flutter',
     )
     ..addOption(
-      'fixture',
-      help: 'The flavorizr.yaml used to flavorize the project.',
-      defaultsTo: p.join('tool', 'parity', 'fixtures', 'flavorizr.yaml'),
+      'fixtures',
+      help:
+          'Folder with the flavorizr.yaml used to flavorize the project and '
+          'a files/ folder copied in its root.',
+      defaultsTo: p.join('tool', 'parity', 'fixtures'),
     );
 
   final ArgResults results;
@@ -57,37 +84,62 @@ Future<void> main(List<String> arguments) async {
     exit(64);
   }
 
+  final fixtures = Directory(results['fixtures'] as String);
   final runner = ParityRunner(
-    fixture: File(results['fixture'] as String),
+    fixture: File(p.join(fixtures.path, 'flavorizr.yaml')),
+    fixtureFiles: Directory(p.join(fixtures.path, 'files')),
     flutter: results['flutter'] as String,
   );
   final golden = Golden(Directory(results['golden'] as String));
   final source = FlavorizrSource(results['flavorizr'] as String);
 
-  if (command == 'record') {
-    await golden.record(runner, source);
-    stdout.writeln('Golden recorded in ${golden.directory.path}');
-    return;
-  }
+  try {
+    if (command == 'record') {
+      await golden.record(runner, source);
+      stdout.writeln('Golden recorded in ${golden.directory.path}');
+      return;
+    }
 
-  final whitelistFile = File(results['whitelist'] as String);
-  final report = await golden.check(
-    runner,
-    source,
-    whitelist: whitelistFile.existsSync()
-        ? Whitelist.parse(whitelistFile.readAsStringSync())
-        : const Whitelist.empty(),
-  );
-
-  stdout.write(report.describe());
-  if (report.isClean) {
-    stdout.writeln(
-      'Parity OK: ${report.differences.length} whitelisted difference(s).',
+    final report = await golden.check(
+      runner,
+      source,
+      whitelist: _whitelist(results),
     );
-  } else {
-    stderr.writeln('Parity broken: see the differences above.');
-    exit(1);
+
+    stdout.write(report.describe());
+    if (report.isClean) {
+      stdout.writeln(
+        'Parity OK: ${report.differences.length} whitelisted difference(s).',
+      );
+    } else {
+      stderr.writeln('Parity broken: see the differences above.');
+      exit(1);
+    }
+  } on StateError catch (e) {
+    stderr.writeln(e.message);
+    exit(2);
+  } on FormatException catch (e) {
+    stderr.writeln(e.message);
+    exit(2);
+  } on ProcessException catch (e) {
+    stderr.writeln(
+      '`${e.executable} ${e.arguments.join(' ')}` failed:\n'
+      '${e.message}',
+    );
+    exit(2);
   }
+}
+
+/// The default whitelist is optional, one asked for by name must exist.
+Whitelist _whitelist(ArgResults results) {
+  final file = File(results['whitelist'] as String);
+  if (!file.existsSync()) {
+    if (results.wasParsed('whitelist')) {
+      throw FormatException('Whitelist not found: ${file.path}');
+    }
+    return const Whitelist.empty();
+  }
+  return Whitelist.parse(file.readAsStringSync());
 }
 
 String _usage(ArgParser parser) =>

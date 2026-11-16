@@ -9,10 +9,16 @@ flavors:
 
     android:
       applicationId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/google-services.json"
     ios:
       bundleId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/GoogleService-Info.plist"
     macos:
       bundleId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/GoogleService-Info.plist"
     linux:
       applicationId: "com.example.apple"
     windows: {}
@@ -23,10 +29,16 @@ flavors:
 
     android:
       applicationId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/google-services.json"
     ios:
       bundleId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/GoogleService-Info.plist"
     macos:
       bundleId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/GoogleService-Info.plist"
     linux:
       applicationId: "com.example.banana"
     windows: {}
