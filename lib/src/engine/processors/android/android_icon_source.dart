@@ -42,9 +42,10 @@ final class AndroidIconSource {
   /// The largest source file accepted, in bytes.
   static const maxBytes = 32 * 1024 * 1024;
 
-  /// The largest canvas accepted, in pixels (4096 x 4096). Android icons are
-  /// rendered at 432 x 432 at most.
-  static const maxPixels = 4096 * 4096;
+  /// The largest side accepted, in pixels. Android icons are rendered at
+  /// 432 x 432 at most. Both sides are bounded, not only their product: a
+  /// 16 million x 1 canvas has few pixels yet takes minutes to resize.
+  static const maxSide = 4096;
 
   final img.Image _image;
 
@@ -55,7 +56,7 @@ final class AndroidIconSource {
   ///
   /// [name] only identifies the source in the error. Throws a
   /// [MalformedResourceException] when [bytes] are not an image, are damaged,
-  /// or are bigger than [maxBytes] or [maxPixels].
+  /// or are bigger than [maxBytes] or have a side longer than [maxSide].
   factory AndroidIconSource.decode(Uint8List bytes, {required String name}) {
     if (bytes.length > maxBytes) {
       throw MalformedResourceException(name);
@@ -69,7 +70,8 @@ final class AndroidIconSource {
           info == null ||
           info.width <= 0 ||
           info.height <= 0 ||
-          info.width * info.height > maxPixels) {
+          info.width > maxSide ||
+          info.height > maxSide) {
         throw MalformedResourceException(name);
       }
 
@@ -81,6 +83,8 @@ final class AndroidIconSource {
 
       return AndroidIconSource._(image);
     } on MalformedResourceException {
+      rethrow;
+    } on OutOfMemoryError {
       rethrow;
     } catch (_) {
       // The decoders signal damaged data with a variety of errors.

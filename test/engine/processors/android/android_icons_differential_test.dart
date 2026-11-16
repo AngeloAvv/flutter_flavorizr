@@ -61,7 +61,7 @@ import 'android_icon_source_test.dart' show gradientPng;
 ///    flavors it had already processed).
 /// 3. The source must stay inside the project, links included (2.x reads any
 ///    path, `..` and absolute paths too), and is refused when it is larger
-///    than 32 MiB or declares more than 4096 x 4096 pixels.
+///    than 32 MiB or has a side longer than 4096 pixels.
 /// 4. A flavor name that is not a single directory name is refused.
 /// 5. Of an animated source only the first frame is used.
 ///

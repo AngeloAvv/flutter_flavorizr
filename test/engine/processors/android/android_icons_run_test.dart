@@ -37,7 +37,7 @@ import 'package:path/path.dart' as p;
 import '../../../test_utils.dart';
 import 'android_icon_source_test.dart' show gradientPng;
 
-const _config = '''
+const _defaultConfig = '''
 flavors:
   apple:
     app:
@@ -52,6 +52,7 @@ flavors:
 void main() {
   late Directory project;
   late Map<String, String> recorded;
+  late String config;
 
   File file(String path) => File(p.join(project.path, path));
 
@@ -61,7 +62,7 @@ void main() {
 
     final report = await PlanExecutor(logger: TestUtils.quietLogger()).execute(
       resolveExecutionPlan(processors, requested: ['android:icons']),
-      config: Flavorizr.parse(_config),
+      config: Flavorizr.parse(config),
       projectRoot: project,
       // The icons are written below `src`: the caller whitelists it.
       paths: ['android/app/src'],
@@ -92,6 +93,7 @@ void main() {
 
     project = Directory(p.join(temp.path, 'project'))..createSync();
     recorded = {};
+    config = _defaultConfig;
     file('assets/apple.png')
       ..createSync(recursive: true)
       ..writeAsBytesSync(gradientPng(256, 256));
@@ -128,6 +130,39 @@ void main() {
 
     expect(diff.isEmpty, isTrue, reason: diff.render());
   });
+
+  test(
+    'an idempotent re-run with adaptive icons produces an empty diff',
+    () async {
+      file('assets/fg.png').writeAsBytesSync(gradientPng(120, 120));
+      file('assets/mono.png').writeAsBytesSync(gradientPng(60, 60));
+      config = '''
+flavors:
+  apple:
+    app:
+      name: "Apple"
+      icon: "assets/apple.png"
+    android:
+      applicationId: "com.example.apple"
+      adaptiveIcon:
+        foreground: "assets/fg.png"
+        background: "assets/apple.png"
+        monochrome: "assets/mono.png"
+  banana:
+    app:
+      name: "Banana"
+      icon: "assets/apple.png"
+    android:
+      applicationId: "com.example.banana"
+''';
+
+      final first = await run();
+      final second = await run();
+
+      expect(first.changes, hasLength(5 + 16 + 5));
+      expect(second.isEmpty, isTrue, reason: second.render());
+    },
+  );
 
   test('a new source icon rewrites the icons, and only them', () async {
     await run();

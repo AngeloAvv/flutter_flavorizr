@@ -131,6 +131,29 @@ void main() {
       );
     });
 
+    test('refuses a canvas that is far too long even if it has few pixels', () {
+      // 16777216 x 1 is only 16 megapixels, yet resizing it takes minutes.
+      final bytes = gradientPng(1, 1);
+      final header = ByteData.sublistView(bytes);
+      header.setUint32(16, 16777216);
+      header.setUint32(20, 1);
+
+      expect(
+        () => AndroidIconSource.decode(bytes, name: 'strip.png'),
+        throwsA(isA<MalformedResourceException>()),
+      );
+    });
+
+    test('accepts the largest side allowed', () {
+      expect(
+        () => AndroidIconSource.decode(
+          gradientPng(AndroidIconSource.maxSide, 1),
+          name: 'wide.png',
+        ),
+        returnsNormally,
+      );
+    });
+
     test('refuses a source of a size that cannot be an icon', () {
       expect(
         () => AndroidIconSource.decode(

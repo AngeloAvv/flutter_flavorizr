@@ -94,69 +94,52 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
-    final sources = <String, AndroidIconSource>{};
+    // The PNGs rendered so far by source path and size. A decoded source is
+    // dropped as soon as its sizes are rendered, so only small PNGs are kept
+    // while many flavors, or many sources, are processed.
+    final rendered = <String, Map<int, Uint8List>>{};
     final outputs = <String, Uint8List>{};
 
-    Future<AndroidIconSource> source(String path) async =>
-        sources[p.normalize(path)] ??= await _load(ctx, path);
-
-    void addPngs(
+    Future<void> addPngs(
       String flavor,
       String pathTemplate,
       Map<String, int> sizes,
-      AndroidIconSource icon,
-    ) {
+      String sourcePath,
+    ) async {
+      final pngs = await _render(ctx, rendered, sourcePath, sizes.values);
+
       for (final MapEntry(key: folder, value: size) in sizes.entries) {
-        outputs[sprintf(pathTemplate, [flavor, folder])] = icon.renderPng(
-          size,
-          size,
-        );
+        outputs[sprintf(pathTemplate, [flavor, folder])] = pngs[size]!;
       }
     }
 
     for (final MapEntry(key: flavor, value: definition)
         in ctx.config.androidFlavors.entries) {
       final android = definition.android!;
-      final icon = android.icon ?? definition.app.icon;
+      final iconPath = android.icon ?? definition.app.icon;
       final adaptiveIcon = android.adaptiveIcon;
 
-      if (icon == null && adaptiveIcon == null) {
+      if (iconPath == null && adaptiveIcon == null) {
         continue;
       }
 
       _checkFlavorName(flavor);
 
-      if (icon != null) {
-        addPngs(flavor, K.androidIconPath, _iconSizes, await source(icon));
+      if (iconPath != null) {
+        await addPngs(flavor, K.androidIconPath, _iconSizes, iconPath);
       }
 
       if (adaptiveIcon != null) {
-        final foreground = await source(adaptiveIcon.foreground);
-        final background = await source(adaptiveIcon.background);
-        final monochromeSource = adaptiveIcon.monochrome;
-        final monochrome = monochromeSource == null
-            ? null
-            : await source(monochromeSource);
+        final layers = {
+          K.androidAdaptiveIconForegroundPath: adaptiveIcon.foreground,
+          K.androidAdaptiveIconBackgroundPath: adaptiveIcon.background,
+          if (adaptiveIcon.monochrome != null)
+            K.androidAdaptiveIconMonochromePath: adaptiveIcon.monochrome!,
+        };
 
-        addPngs(
-          flavor,
-          K.androidAdaptiveIconForegroundPath,
-          _adaptiveIconSizes,
-          foreground,
-        );
-        addPngs(
-          flavor,
-          K.androidAdaptiveIconBackgroundPath,
-          _adaptiveIconSizes,
-          background,
-        );
-        if (monochrome != null) {
-          addPngs(
-            flavor,
-            K.androidAdaptiveIconMonochromePath,
-            _adaptiveIconSizes,
-            monochrome,
-          );
+        for (final MapEntry(key: template, value: layerPath)
+            in layers.entries) {
+          await addPngs(flavor, template, _adaptiveIconSizes, layerPath);
         }
 
         outputs[sprintf(K.androidAdaptiveIconXmlPath, [
@@ -174,6 +157,28 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
       await target.writeAsBytes(bytes);
       ctx.track(Artifact.managed(path));
     }
+  }
+
+  /// The PNGs of [sizes] (squares) of the source at [path], from [rendered] or,
+  /// for the sizes it does not hold yet, rendered and stored there.
+  static Future<Map<int, Uint8List>> _render(
+    FlavorizrContext ctx,
+    Map<String, Map<int, Uint8List>> rendered,
+    String path,
+    Iterable<int> sizes,
+  ) async {
+    final pngs = rendered.putIfAbsent(p.normalize(path), () => {});
+    final missing = sizes.where((size) => !pngs.containsKey(size)).toList();
+
+    if (missing.isNotEmpty) {
+      final source = await _load(ctx, path);
+
+      for (final size in missing) {
+        pngs[size] = source.renderPng(size, size);
+      }
+    }
+
+    return pngs;
   }
 
   static String _adaptiveIconXml(FlavorizrContext ctx, AdaptiveIcon icon) =>
@@ -199,7 +204,10 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
   }
 
   /// Reads and decodes the source icon at [path], relative to the project.
-  Future<AndroidIconSource> _load(FlavorizrContext ctx, String path) async {
+  static Future<AndroidIconSource> _load(
+    FlavorizrContext ctx,
+    String path,
+  ) async {
     final resolved = ctx.resolveProject(path);
 
     switch (FileSystemEntity.typeSync(resolved)) {
@@ -225,6 +233,8 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
 
     final file = File(real);
 
+    // Checked before reading, so that a huge file is never loaded; `decode`
+    // checks again for the callers that already hold the bytes.
     if (await file.length() > AndroidIconSource.maxBytes) {
       throw MalformedResourceException(path);
     }
