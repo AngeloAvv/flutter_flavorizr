@@ -152,6 +152,65 @@ flavors:
       });
     });
 
+    group('trackFor', () {
+      test('tracks the artifacts and remembers whose they are', () {
+        final ctx = buildContext()
+          ..trackFor('android', [const Artifact.managed('lib/a')])
+          ..trackFor('ios', [const Artifact.managed('lib/b')]);
+
+        expect(ctx.tracked.map((artifact) => artifact.path), [
+          'lib/a',
+          'lib/b',
+        ]);
+        expect(
+          ctx.trackedByProcessor.map(
+            (id, artifacts) =>
+                MapEntry(id, [for (final a in artifacts) a.path]),
+          ),
+          {
+            'android': ['lib/a'],
+            'ios': ['lib/b'],
+          },
+        );
+      });
+
+      test('remembers a processor that tracked nothing', () {
+        final ctx = buildContext()..trackFor('android', const []);
+
+        expect(ctx.trackedByProcessor, {'android': isEmpty});
+      });
+
+      test('does not attribute what is tracked directly', () {
+        final ctx = buildContext()..track(const Artifact.managed('lib/a'));
+
+        expect(ctx.trackedByProcessor, isEmpty);
+      });
+
+      test('rejects an artifact outside the shadow root', () {
+        expect(
+          () => buildContext().trackFor('android', [
+            const Artifact.managed('../outside.txt'),
+          ]),
+          throwsArgumentError,
+        );
+      });
+
+      test('does not let callers alter what was attributed', () {
+        final ctx = buildContext()..trackFor('android', const []);
+
+        expect(
+          () => ctx.trackedByProcessor['ios'] = [],
+          throwsUnsupportedError,
+        );
+        expect(
+          () => ctx.trackedByProcessor['android']!.add(
+            const Artifact.managed('lib/a'),
+          ),
+          throwsUnsupportedError,
+        );
+      });
+    });
+
     group('resource', () {
       const key = ResourceKey<int>('answer');
 
