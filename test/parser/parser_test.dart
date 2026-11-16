@@ -100,4 +100,34 @@ void main() {
       }
     },
   );
+
+  test(
+    'Test unknown IDE value throws a FormatException naming the allowed values',
+    () {
+      const parser = Parser(
+        pubspecPath: 'test_resources/non_existent',
+        flavorizrPath:
+            'test_resources/parser/parser_test/unknown_ide/flavorizr',
+      );
+
+      try {
+        parser.parse();
+        fail('Should have thrown FormatException');
+      } on FormatException catch (e) {
+        expect(e.message, contains('vs_code'));
+        expect(e.message, contains('idea'));
+        expect(e.message, contains('vscode'));
+      }
+    },
+  );
+
+  test('Test IDE list with an unsupported shape throws a FormatException', () {
+    const parser = Parser(
+      pubspecPath: 'test_resources/non_existent',
+      flavorizrPath:
+          'test_resources/parser/parser_test/malformed_ide/flavorizr',
+    );
+
+    expect(() => parser.parse(), throwsA(isA<FormatException>()));
+  });
 }
