@@ -116,7 +116,7 @@ StaleScan findStaleArtifacts({
 
   final producedPaths = <String>{
     for (final artifacts in produced.values)
-      for (final artifact in artifacts) canonicalPath(artifact.path),
+      for (final artifact in artifacts) _key(canonicalPath(artifact.path)),
   };
   final keptByOthers = <String>{
     for (final MapEntry(key: id, value: lock) in previous.processors.entries)
@@ -142,8 +142,8 @@ StaleScan findStaleArtifacts({
         continue;
       }
 
-      if (producedPaths.contains(canonical) ||
-          keptByOthers.contains(canonical)) {
+      if (producedPaths.contains(_key(canonical)) ||
+          keptByOthers.contains(_key(canonical))) {
         continue;
       }
 
@@ -160,9 +160,8 @@ StaleScan findStaleArtifacts({
 
   return StaleScan(
     stale: stale..sort(_byProcessorThenPath),
-    invalid: invalid..sort(
-      (a, b) => _compare(a.processorId, a.path, b.processorId, b.path),
-    ),
+    invalid: invalid
+      ..sort((a, b) => _compare(a.processorId, a.path, b.processorId, b.path)),
   );
 }
 
@@ -186,9 +185,15 @@ Iterable<String> _pathsOf(ProcessorLock lock) sync* {
     ...lock.inputs.keys,
   ]) {
     try {
-      yield canonicalPath(path);
+      yield _key(canonicalPath(path));
     } on ArgumentError {
       continue;
     }
   }
 }
+
+/// How paths are compared: ignoring case. On a case-insensitive filesystem
+/// (macOS, Windows) `Lib/A.dart` and `lib/a.dart` are one file, and deleting the
+/// old spelling would delete what the run just wrote. On a case-sensitive one
+/// the cost is a stale file that stays until it is removed by hand.
+String _key(String canonicalPath) => canonicalPath.toLowerCase();

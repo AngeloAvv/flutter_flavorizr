@@ -67,9 +67,8 @@ FlavorizrLock updateLock({
 }) {
   final previousProcessors = previous?.processors ?? const {};
   final isFullRun = availableProcessors.every(produced.containsKey);
-  final processors = {...previousProcessors}..removeWhere(
-    (id, _) => produced.containsKey(id),
-  );
+  final processors = {...previousProcessors}
+    ..removeWhere((id, _) => produced.containsKey(id));
 
   for (final MapEntry(key: id, value: artifacts) in produced.entries) {
     final before = previousProcessors[id]?.files ?? const {};

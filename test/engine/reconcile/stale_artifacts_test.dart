@@ -137,6 +137,33 @@ void main() {
       expect(scan.stale, isEmpty);
     });
 
+    test('a path that only differs by case is not stale', () {
+      // On a case-insensitive filesystem these are the same file, and deleting
+      // the old spelling would delete what the run just wrote.
+      final scan = findStaleArtifacts(
+        previous: lockOf({
+          'android': filesOf({'Lib/A.dart': managed('h1')}),
+        }),
+        produced: {
+          'android': [const Artifact.managed('lib/a.dart')],
+        },
+      );
+
+      expect(scan.stale, isEmpty);
+    });
+
+    test('a path two processors of the run both owned is stale twice', () {
+      final scan = findStaleArtifacts(
+        previous: lockOf({
+          'a': filesOf({'shared.txt': managed('h1')}),
+          'b': filesOf({'shared.txt': managed('h1')}),
+        }),
+        produced: {'a': const [], 'b': const []},
+      );
+
+      expect(scan.stale.map((s) => s.processorId), ['a', 'b']);
+    });
+
     test('a path of the lock that leaves the project is never stale', () {
       final scan = findStaleArtifacts(
         previous: lockOf({

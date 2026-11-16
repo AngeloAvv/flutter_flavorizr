@@ -132,27 +132,35 @@ void main() {
     );
   }
 
-  test('removing a flavor removes its artifacts and its lock entries', () async {
-    final result = await commit();
+  test(
+    'removing a flavor removes its artifacts and its lock entries',
+    () async {
+      final result = await commit();
 
-    expect(fixture.project.exists('android/prod.xml'), isFalse);
-    expect(fixture.project.exists('ios/prod.xcconfig'), isFalse);
-    expect(fixture.project.exists('android/dev.xml'), isTrue);
-    expect(fixture.project.exists('ios/dev.xcconfig'), isTrue);
-    expect(result.lock.flavors, {'dev': 'f-dev'});
-    expect(result.lock.processors['android']!.files.keys, ['android/dev.xml']);
-    expect(result.lock.processors['ios']!.files.keys, ['ios/dev.xcconfig']);
-  });
+      expect(fixture.project.exists('android/prod.xml'), isFalse);
+      expect(fixture.project.exists('ios/prod.xcconfig'), isFalse);
+      expect(fixture.project.exists('android/dev.xml'), isTrue);
+      expect(fixture.project.exists('ios/dev.xcconfig'), isTrue);
+      expect(result.lock.flavors, {'dev': 'f-dev'});
+      expect(result.lock.processors['android']!.files.keys, [
+        'android/dev.xml',
+      ]);
+      expect(result.lock.processors['ios']!.files.keys, ['ios/dev.xcconfig']);
+    },
+  );
 
-  test('a scaffold the lock cannot vouch for goes through the conflict flow', () async {
-    final result = await commit();
+  test(
+    'a scaffold the lock cannot vouch for goes through the conflict flow',
+    () async {
+      final result = await commit();
 
-    final change = result.reconciliation.deletions.changes.firstWhere(
-      (c) => c.path == 'lib/main_prod.dart',
-    );
-    expect(change.disposition, ChangeDisposition.conflict);
-    expect(fixture.project.exists('lib/main_prod.dart'), isFalse);
-  });
+      final change = result.reconciliation.deletions.changes.firstWhere(
+        (c) => c.path == 'lib/main_prod.dart',
+      );
+      expect(change.disposition, ChangeDisposition.conflict);
+      expect(fixture.project.exists('lib/main_prod.dart'), isFalse);
+    },
+  );
 
   test('keeping a conflict leaves the file and its record', () async {
     final result = await commit(policy: ConflictPolicy.keep);
@@ -201,85 +209,91 @@ void main() {
     );
   });
 
-  test('a rename is applied as a removal plus an addition, and says so', () async {
-    fixture.project.write('android/stage.xml', 'android stage');
-    final renamed = FlavorizrLock(
-      flavorizrVersion: '3.0.0',
-      flavors: {'stage': 'f-1'},
-      processors: {
-        'android': ProcessorLock(
-          files: {'android/stage.xml': managed('android stage')},
-        ),
-      },
-    );
-    final shadow = await fixture.create(['android']);
-
-    final reconciliation = await reconcile(
-      projectRoot: fixture.project.root,
-      paths: shadow.paths,
-      previous: renamed,
-      produced: {
-        'android': [const Artifact.managed('android/staging.xml')],
-      },
-      ownedHashes: {'android/staging.xml': 'h'},
-      desiredFlavors: {'staging': 'f-1'},
-      availableProcessors: {'android'},
-      flavorizrVersion: '3.0.0',
-    );
-
-    expect(
-      reconciliation.render(),
-      '- stage (removed)\n'
-      '+ staging (added)\n'
-      'stage -> staging is a rename: it is applied as the removal of `stage` '
-      'plus the addition of `staging`.\n'
-      '\n'
-      'Files to delete:\n'
-      '- android/stage.xml (managed)',
-    );
-  });
-
-  test('a patched file the processor stopped producing is left in place', () async {
-    final shadow = await fixture.create(['android']);
-    final reconciliation = await reconcile(
-      projectRoot: fixture.project.root,
-      paths: shadow.paths,
-      previous: FlavorizrLock(
+  test(
+    'a rename is applied as a removal plus an addition, and says so',
+    () async {
+      fixture.project.write('android/stage.xml', 'android stage');
+      final renamed = FlavorizrLock(
         flavorizrVersion: '3.0.0',
+        flavors: {'stage': 'f-1'},
         processors: {
           'android': ProcessorLock(
-            files: {
-              'android/dev.xml': LockedFile(
-                ownership: Ownership.patched,
-                hash: 'h',
-              ),
-            },
+            files: {'android/stage.xml': managed('android stage')},
           ),
         },
-      ),
-      produced: {'android': const []},
-      ownedHashes: const {},
-      desiredFlavors: const {},
-      availableProcessors: {'android'},
-      flavorizrVersion: '3.0.0',
-    );
+      );
+      final shadow = await fixture.create(['android']);
 
-    expect(reconciliation.deletions.changes, isEmpty);
-    expect(
-      reconciliation.render(),
-      endsWith(
-        'Left in place (shared with you, no longer owned by flavorizr):\n'
-        '- android/dev.xml',
-      ),
-    );
-    expect(
-      reconciliation
-          .lockAfter(
-            diff: reconciliation.applyTo(await shadow.diff()),
-            resolution: ConflictResolution(approved: [], kept: []),
-          )
-          .processors,
-      isEmpty,
-    );
-  });
+      final reconciliation = await reconcile(
+        projectRoot: fixture.project.root,
+        paths: shadow.paths,
+        previous: renamed,
+        produced: {
+          'android': [const Artifact.managed('android/staging.xml')],
+        },
+        ownedHashes: {'android/staging.xml': 'h'},
+        desiredFlavors: {'staging': 'f-1'},
+        availableProcessors: {'android'},
+        flavorizrVersion: '3.0.0',
+      );
+
+      expect(
+        reconciliation.render(),
+        '- stage (removed)\n'
+        '+ staging (added)\n'
+        'stage -> staging is a rename: it is applied as the removal of `stage` '
+        'plus the addition of `staging`.\n'
+        '\n'
+        'Files to delete:\n'
+        '- android/stage.xml (managed)',
+      );
+    },
+  );
+
+  test(
+    'a patched file the processor stopped producing is left in place',
+    () async {
+      final shadow = await fixture.create(['android']);
+      final reconciliation = await reconcile(
+        projectRoot: fixture.project.root,
+        paths: shadow.paths,
+        previous: FlavorizrLock(
+          flavorizrVersion: '3.0.0',
+          processors: {
+            'android': ProcessorLock(
+              files: {
+                'android/dev.xml': LockedFile(
+                  ownership: Ownership.patched,
+                  hash: 'h',
+                ),
+              },
+            ),
+          },
+        ),
+        produced: {'android': const []},
+        ownedHashes: const {},
+        desiredFlavors: const {},
+        availableProcessors: {'android'},
+        flavorizrVersion: '3.0.0',
+      );
+
+      expect(reconciliation.deletions.changes, isEmpty);
+      expect(
+        reconciliation.render(),
+        endsWith(
+          'Left in place (shared with you, no longer owned by flavorizr):\n'
+          '- android/dev.xml',
+        ),
+      );
+      expect(
+        reconciliation
+            .lockAfter(
+              diff: reconciliation.applyTo(await shadow.diff()),
+              resolution: ConflictResolution(approved: [], kept: []),
+            )
+            .processors,
+        isEmpty,
+      );
+    },
+  );
 }

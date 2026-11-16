@@ -142,18 +142,21 @@ void main() {
     );
   }
 
-  test('removing a flavor and running everything removes its artifacts', () async {
-    await run(_ids, flavors: ['dev', 'prod']);
-    expect(fixture.project.exists('android/prod.txt'), isTrue);
-    expect(fixture.project.exists('ios/prod.txt'), isTrue);
+  test(
+    'removing a flavor and running everything removes its artifacts',
+    () async {
+      await run(_ids, flavors: ['dev', 'prod']);
+      expect(fixture.project.exists('android/prod.txt'), isTrue);
+      expect(fixture.project.exists('ios/prod.txt'), isTrue);
 
-    await run(_ids, flavors: ['dev']);
+      await run(_ids, flavors: ['dev']);
 
-    expect(fixture.project.exists('android/prod.txt'), isFalse);
-    expect(fixture.project.exists('ios/prod.txt'), isFalse);
-    expect(fixture.project.read('android/dev.txt'), 'android dev');
-    expect((await store.read())!.flavorNames, {'dev'});
-  });
+      expect(fixture.project.exists('android/prod.txt'), isFalse);
+      expect(fixture.project.exists('ios/prod.txt'), isFalse);
+      expect(fixture.project.read('android/dev.txt'), 'android dev');
+      expect((await store.read())!.flavorNames, {'dev'});
+    },
+  );
 
   test('a partial run never touches the other platform', () async {
     await run(_ids, flavors: ['dev', 'prod']);
@@ -172,10 +175,9 @@ void main() {
 
     expect(fixture.project.exists('ios/prod.txt'), isFalse);
     expect(fixture.project.read('ios/dev.txt'), 'ios dev');
-    expect(
-      (await store.read())!.processors['android']!.files.keys,
-      ['android/dev.txt'],
-    );
+    expect((await store.read())!.processors['android']!.files.keys, [
+      'android/dev.txt',
+    ]);
   });
 
   test('a user edit survives, and its record with it', () async {
@@ -194,7 +196,9 @@ void main() {
 
   test('a second identical run changes nothing, not even the lock', () async {
     await run(_ids, flavors: ['dev', 'prod']);
-    final first = File(fixture.project.abs('flavorizr.lock')).readAsStringSync();
+    final first = File(
+      fixture.project.abs('flavorizr.lock'),
+    ).readAsStringSync();
 
     await run(_ids, flavors: ['dev', 'prod']);
 

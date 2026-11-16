@@ -29,7 +29,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('diffFlavors', () {
     test('everything is added on the first run', () {
-      final diff = diffFlavors(desired: {'dev': 'h1', 'prod': 'h2'}, applied: {});
+      final diff = diffFlavors(
+        desired: {'dev': 'h1', 'prod': 'h2'},
+        applied: {},
+      );
 
       expect(diff.added, ['dev', 'prod']);
       expect(diff.removed, isEmpty);

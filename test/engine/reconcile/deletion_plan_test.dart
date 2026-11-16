@@ -135,15 +135,18 @@ void main() {
       expect(result.changes.single.disposition, ChangeDisposition.conflict);
     });
 
-    test('a scaffold the lock cannot vouch for is never deleted silently', () async {
-      fixture.project.write('lib/main_dev.dart', 'template');
+    test(
+      'a scaffold the lock cannot vouch for is never deleted silently',
+      () async {
+        fixture.project.write('lib/main_dev.dart', 'template');
 
-      final result = await plan([
-        staleOf('lib/main_dev.dart', Ownership.scaffold),
-      ]);
+        final result = await plan([
+          staleOf('lib/main_dev.dart', Ownership.scaffold),
+        ]);
 
-      expect(result.changes.single.disposition, ChangeDisposition.conflict);
-    });
+        expect(result.changes.single.disposition, ChangeDisposition.conflict);
+      },
+    );
 
     test('a patched file is released, never deleted', () async {
       fixture.project.write('android/build.gradle', 'user + regions');
@@ -224,16 +227,12 @@ void main() {
     });
 
     test('a folder is blocked', () async {
-      Directory(fixture.project.abs('android/folder')).createSync(
-        recursive: true,
-      );
+      Directory(
+        fixture.project.abs('android/folder'),
+      ).createSync(recursive: true);
 
       final result = await plan([
-        staleOf(
-          'android/folder',
-          Ownership.managed,
-          recordedHash: hashOf('x'),
-        ),
+        staleOf('android/folder', Ownership.managed, recordedHash: hashOf('x')),
       ]);
 
       expect(result.changes.single.disposition, ChangeDisposition.blocked);
@@ -244,6 +243,23 @@ void main() {
         plan([staleOf('../outside.txt', Ownership.managed, recordedHash: 'h')]),
         throwsArgumentError,
       );
+    });
+
+    test('a file two processors owned is deleted once', () async {
+      fixture.project.write('android/a.xml', 'generated');
+      final stale = [
+        for (final id in ['android', 'other'])
+          StaleArtifact(
+            processorId: id,
+            path: 'android/a.xml',
+            ownership: Ownership.managed,
+            recordedHash: hashOf('generated'),
+          ),
+      ];
+
+      final result = await plan(stale);
+
+      expect(result.changes, hasLength(1));
     });
 
     test('the changes are sorted by path', () async {

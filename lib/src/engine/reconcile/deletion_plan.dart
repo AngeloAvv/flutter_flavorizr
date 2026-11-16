@@ -113,6 +113,7 @@ Future<DeletionPlan> planDeletions({
   final changes = <FileChange>[];
   final released = <StaleArtifact>[];
   final gone = <StaleArtifact>[];
+  final deleting = <String>{};
 
   for (final artifact in stale) {
     final path = canonicalPath(artifact.path);
@@ -122,6 +123,9 @@ Future<DeletionPlan> planDeletions({
       released.add(artifact);
       continue;
     }
+
+    // Two processors may have owned the same file: it is deleted once.
+    if (!deleting.add(path.toLowerCase())) continue;
 
     FileChange change(ChangeDisposition disposition, {String? before}) =>
         FileChange(
@@ -156,7 +160,11 @@ Future<DeletionPlan> planDeletions({
             before: digestOf(bytes),
           ),
         );
-      case _:
+      case FileSystemEntityType.directory:
+      case FileSystemEntityType.link:
+      case FileSystemEntityType.pipe:
+      case FileSystemEntityType.unixDomainSock:
+        // Never a regular file: nothing a run produced, so nothing to delete.
         changes.add(change(ChangeDisposition.blocked));
     }
   }
