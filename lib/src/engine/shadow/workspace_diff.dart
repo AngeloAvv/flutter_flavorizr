@@ -111,6 +111,9 @@ final class FileChange {
     final owner = ownership?.name ?? 'untracked';
     final note = switch (disposition) {
       ChangeDisposition.apply || ChangeDisposition.untracked => '',
+      // A scaffold file is the user's once it exists: it is never a conflict.
+      ChangeDisposition.keep when ownership == Ownership.scaffold =>
+        ' [skipped (user-owned)]',
       ChangeDisposition.keep => ' [kept]',
       ChangeDisposition.conflict => ' [conflict]',
       ChangeDisposition.blocked => ' [blocked]',

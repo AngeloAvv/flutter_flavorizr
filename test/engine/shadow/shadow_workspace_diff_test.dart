@@ -462,6 +462,47 @@ void main() {
       },
     );
 
+    test(
+      'an existing scaffold file is skipped as user-owned, not a conflict',
+      () async {
+        fx.project.write('lib/main.dart', 'edited by hand');
+        fx.project.write('lib/other.dart', 'v1');
+        final shadow = await fx.create(['lib']);
+        shadow.write('lib/main.dart', 'scaffold template');
+        shadow.write('lib/other.dart', 'v2');
+
+        final diff = await shadow.diff(
+          tracked: [
+            const Artifact.scaffold('lib/main.dart'),
+            const Artifact.scaffold('lib/other.dart'),
+          ],
+          recordedHashes: {'lib/main.dart': digestOf('template'.codeUnits)},
+        );
+
+        expect(diff.hasConflicts, isFalse);
+        expect(
+          diff.render(),
+          [
+            '~ lib/main.dart (scaffold) [skipped (user-owned)]',
+            '~ lib/other.dart (scaffold) [skipped (user-owned)]',
+          ].join('\n'),
+        );
+      },
+    );
+
+    test('an overwritten scaffold file is a plain change', () async {
+      fx.project.write('lib/main.dart', 'edited by hand');
+      final shadow = await fx.create(['lib']);
+      shadow.write('lib/main.dart', 'scaffold template');
+
+      final diff = await shadow.diff(
+        tracked: [const Artifact.scaffold('lib/main.dart')],
+        overwriteScaffold: true,
+      );
+
+      expect(diff.render(), '~ lib/main.dart (scaffold)');
+    });
+
     test('says so when there is nothing to change', () async {
       final shadow = await fx.create(['lib']);
 
