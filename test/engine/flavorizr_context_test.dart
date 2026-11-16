@@ -119,8 +119,8 @@ flavors:
 
       test('records the artifacts a processor owns, in order', () {
         final ctx = buildContext()
-          ..track(const Artifact('android/app/build.gradle'))
-          ..track(const Artifact('lib/flavors.dart'));
+          ..track(const Artifact.patched('android/app/build.gradle'))
+          ..track(const Artifact.managed('lib/flavors.dart'));
 
         expect(ctx.tracked.map((artifact) => artifact.path), [
           'android/app/build.gradle',
@@ -129,7 +129,7 @@ flavors:
       });
 
       test('stores the very artifact it was given', () {
-        const artifact = Artifact('lib/a');
+        const artifact = Artifact.managed('lib/a');
         final ctx = buildContext()..track(artifact);
 
         expect(ctx.tracked.single, same(artifact));
@@ -137,7 +137,7 @@ flavors:
 
       test('rejects an artifact outside the shadow root', () {
         expect(
-          () => buildContext().track(const Artifact('../outside.txt')),
+          () => buildContext().track(const Artifact.managed('../outside.txt')),
           throwsArgumentError,
         );
       });
@@ -146,7 +146,7 @@ flavors:
         final ctx = buildContext();
 
         expect(
-          () => ctx.tracked.add(const Artifact('lib/a')),
+          () => ctx.tracked.add(const Artifact.managed('lib/a')),
           throwsUnsupportedError,
         );
       });
