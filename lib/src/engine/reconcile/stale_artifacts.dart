@@ -88,12 +88,20 @@ final class StaleScan {
   /// deleted.
   final List<InvalidLockedPath> invalid;
 
+  /// The files the lock attributes to a processor that ran, which the run
+  /// tracked without attributing them to any processor (e.g. from the teardown
+  /// of a resource). They are not stale, since the run still owns them, and the
+  /// lock keeps what it had for them, as nobody can say whose they are now.
+  final List<StaleArtifact> unattributed;
+
   /// Creates a scan.
   StaleScan({
     required Iterable<StaleArtifact> stale,
     required Iterable<InvalidLockedPath> invalid,
+    Iterable<StaleArtifact> unattributed = const [],
   }) : stale = List.unmodifiable(stale),
-       invalid = List.unmodifiable(invalid);
+       invalid = List.unmodifiable(invalid),
+       unattributed = List.unmodifiable(unattributed);
 }
 
 /// Finds the files that the [previous] lock attributes to a processor that ran
@@ -104,15 +112,22 @@ final class StaleScan {
 /// nothing maps to an empty list. The lock entries of any other processor are
 /// never looked at, so a partial run cannot reach what it did not run.
 ///
-/// A file is stale only when nobody owns it anymore: a path some processor of
-/// this run produces, or that a processor that did not run still owns in the
-/// lock (a file, a region, a key or an object), is not.
+/// [tracked] is every artifact the run tracked, whoever it is attributed to
+/// (`FlavorizrContext.tracked`): it is the ownership view of the context, and a
+/// tracked path is never stale, even when no processor produced it (see
+/// [StaleScan.unattributed]).
+///
+/// A file is stale only when nobody owns it anymore: a path the run tracks, or
+/// that a processor that did not run still owns in the lock (a file, a region,
+/// a key or an object), is not.
 StaleScan findStaleArtifacts({
   required FlavorizrLock? previous,
   required Map<String, Iterable<Artifact>> produced,
+  required Iterable<Artifact> tracked,
 }) {
   final stale = <StaleArtifact>[];
   final invalid = <InvalidLockedPath>[];
+  final unattributed = <StaleArtifact>[];
 
   if (previous == null) return StaleScan(stale: stale, invalid: invalid);
 
@@ -120,6 +135,9 @@ StaleScan findStaleArtifacts({
     for (final artifacts in produced.values)
       for (final artifact in artifacts)
         pathIdentity(canonicalPath(artifact.path)),
+  };
+  final trackedPaths = <String>{
+    for (final artifact in tracked) pathIdentity(canonicalPath(artifact.path)),
   };
   final keptByOthers = <String>{
     for (final MapEntry(key: id, value: lock) in previous.processors.entries)
@@ -150,19 +168,21 @@ StaleScan findStaleArtifacts({
         continue;
       }
 
-      stale.add(
-        StaleArtifact(
-          processorId: id,
-          path: canonical,
-          ownership: file.ownership,
-          recordedHash: file.hash,
-        ),
+      final record = StaleArtifact(
+        processorId: id,
+        path: canonical,
+        ownership: file.ownership,
+        recordedHash: file.hash,
       );
+
+      (trackedPaths.contains(pathIdentity(canonical)) ? unattributed : stale)
+          .add(record);
     }
   }
 
   return StaleScan(
     stale: stale..sort(_byProcessorThenPath),
+    unattributed: unattributed..sort(_byProcessorThenPath),
     invalid: invalid
       ..sort((a, b) => _compare(a.processorId, a.path, b.processorId, b.path)),
   );

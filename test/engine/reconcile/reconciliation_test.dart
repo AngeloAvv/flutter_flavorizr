@@ -108,6 +108,7 @@ void main() {
       paths: shadow.paths,
       previous: previous,
       produced: outputs,
+      tracked: outputs.values.expand((artifacts) => artifacts),
       ownedHashes:
           hashes ??
           {
@@ -264,6 +265,7 @@ void main() {
         produced: {
           'android': [const Artifact.managed('android/staging.xml')],
         },
+        tracked: [const Artifact.managed('android/staging.xml')],
         ownedHashes: {'android/staging.xml': 'h'},
         desiredFlavors: {'staging': 'f-1'},
         availableProcessors: {'android'},
@@ -304,6 +306,7 @@ void main() {
           },
         ),
         produced: {'android': const []},
+        tracked: const [],
         ownedHashes: const {},
         desiredFlavors: const {},
         availableProcessors: {'android'},

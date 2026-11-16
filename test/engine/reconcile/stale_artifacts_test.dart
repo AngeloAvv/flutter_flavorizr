@@ -38,10 +38,35 @@ ProcessorLock filesOf(Map<String, LockedFile> files) =>
 LockedFile managed(String hash) =>
     LockedFile(ownership: Ownership.managed, hash: hash);
 
+StaleScan scanOf({
+  required FlavorizrLock? previous,
+  required Map<String, Iterable<Artifact>> produced,
+  Iterable<Artifact>? tracked,
+}) => findStaleArtifacts(
+  previous: previous,
+  produced: produced,
+  // What the run tracked is at least what the processors produced.
+  tracked: tracked ?? produced.values.expand((artifacts) => artifacts),
+);
+
 void main() {
   group('findStaleArtifacts', () {
+    test('a file only the run tracked is not stale, and is reported', () {
+      final scan = scanOf(
+        previous: lockOf({
+          'android': filesOf({'extra.txt': managed('h1')}),
+        }),
+        produced: {'android': const []},
+        tracked: [const Artifact.managed('Extra.txt')],
+      );
+
+      expect(scan.stale, isEmpty);
+      expect(scan.unattributed.map((s) => s.path), ['extra.txt']);
+      expect(scan.unattributed.single.recordedHash, 'h1');
+    });
+
     test('nothing is stale without a lock', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: null,
         produced: {
           'android': [const Artifact.managed('a.txt')],
@@ -52,7 +77,7 @@ void main() {
     });
 
     test('a file the processor did not produce again is stale', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({
             'keep.txt': managed('h1'),
@@ -71,7 +96,7 @@ void main() {
     });
 
     test('a processor that ran and produced nothing loses everything', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({'a.txt': managed('h1')}),
         }),
@@ -82,7 +107,7 @@ void main() {
     });
 
     test('the processors that did not run are never touched', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({'android/a.txt': managed('h1')}),
           'ios': filesOf({'ios/b.txt': managed('h2')}),
@@ -94,7 +119,7 @@ void main() {
     });
 
     test('a path another ran processor produces now is not stale', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'old': filesOf({'shared.txt': managed('h1')}),
           'new': filesOf({}),
@@ -109,7 +134,7 @@ void main() {
     });
 
     test('a path a processor that did not run still owns is not stale', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({'shared.txt': managed('h1')}),
           'ios': ProcessorLock(
@@ -125,7 +150,7 @@ void main() {
     });
 
     test('paths are compared in canonical form', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({'a/b.txt': managed('h1')}),
         }),
@@ -140,7 +165,7 @@ void main() {
     test('a path that only differs by case is not stale', () {
       // On a case-insensitive filesystem these are the same file, and deleting
       // the old spelling would delete what the run just wrote.
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({'Lib/A.dart': managed('h1')}),
         }),
@@ -153,7 +178,7 @@ void main() {
     });
 
     test('a path two processors of the run both owned is stale twice', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'a': filesOf({'shared.txt': managed('h1')}),
           'b': filesOf({'shared.txt': managed('h1')}),
@@ -165,7 +190,7 @@ void main() {
     });
 
     test('a path of the lock that leaves the project is never stale', () {
-      final scan = findStaleArtifacts(
+      final scan = scanOf(
         previous: lockOf({
           'android': filesOf({
             '../outside.txt': managed('h1'),

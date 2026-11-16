@@ -34,8 +34,11 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
+import 'package:flutter_flavorizr/src/engine/resource.dart';
+import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -52,8 +55,17 @@ class _PerFlavorProcessor extends FlavorizrProcessor {
 
   final String folder;
   final Iterable<String> flavors;
+  final Set<ResourceKey<Object?>> needs;
 
-  _PerFlavorProcessor(this.id, this.folder, this.flavors);
+  _PerFlavorProcessor(
+    this.id,
+    this.folder,
+    this.flavors, {
+    this.needs = const {},
+  });
+
+  @override
+  Set<ResourceKey<Object?>> get requires => needs;
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
@@ -65,6 +77,31 @@ class _PerFlavorProcessor extends FlavorizrProcessor {
         ..writeAsStringSync('$id $flavor');
       ctx.track(Artifact.managed(path));
     }
+  }
+}
+
+/// A resource that tracks [path] from its teardown, on the context of the run:
+/// no processor is attributed the artifact.
+class _TeardownTracker extends Resource<String> {
+  static const _key = ResourceKey<String>('teardown-tracker');
+
+  final String path;
+
+  const _TeardownTracker(this.path);
+
+  @override
+  ResourceKey<String> get key => _key;
+
+  @override
+  Future<String> setup(FlavorizrContext ctx) async => 'value';
+
+  @override
+  Future<void> teardown(
+    FlavorizrContext ctx,
+    String value, {
+    required bool success,
+  }) async {
+    ctx.track(Artifact.managed(path));
   }
 }
 
@@ -85,9 +122,15 @@ void main() {
   Future<void> run(
     Iterable<String> requested, {
     required List<String> flavors,
+    List<Resource<Object?>> resources = const [],
   }) async {
     final processors = [
-      _PerFlavorProcessor('android', 'android', flavors),
+      _PerFlavorProcessor(
+        'android',
+        'android',
+        flavors,
+        needs: {for (final resource in resources) resource.key},
+      ),
       _PerFlavorProcessor('ios', 'ios', flavors),
     ];
 
@@ -96,6 +139,7 @@ void main() {
       config: TestUtils.parseFlavorizr('test_resources/pubspec'),
       projectRoot: fixture.project.root,
       paths: ['android', 'ios'],
+      resources: resources,
       previousFlavors: (await store.read())?.flavorNames ?? const {},
       commit: (shadow, ctx) async {
         final previous = await store.read();
@@ -104,6 +148,7 @@ void main() {
           paths: shadow.paths,
           previous: previous,
           produced: ctx.trackedByProcessor,
+          tracked: ctx.tracked,
           ownedHashes: {
             for (final artifact in ctx.tracked)
               artifact.path: digestOf(
@@ -196,6 +241,39 @@ void main() {
     expect(
       (await store.read())!.processors['android']!.files.keys,
       containsAll(['android/dev.txt', 'android/prod.txt']),
+    );
+  });
+
+  test('a file tracked while a resource is torn down is not deleted', () async {
+    // The lock attributes the file to `android`, which runs, but only the
+    // resource tracks it, on the context of the run.
+    fixture.project.write('android/extra.txt', 'extra');
+    await store.write(
+      FlavorizrLock(
+        flavorizrVersion: '3.0.0',
+        processors: {
+          'android': ProcessorLock(
+            files: {
+              'android/extra.txt': LockedFile(
+                ownership: Ownership.managed,
+                hash: digestOf('extra'.codeUnits),
+              ),
+            },
+          ),
+        },
+      ),
+    );
+
+    await run(
+      ['android'],
+      flavors: ['dev'],
+      resources: [const _TeardownTracker('android/extra.txt')],
+    );
+
+    expect(fixture.project.read('android/extra.txt'), 'extra');
+    expect(
+      (await store.read())!.processors['android']!.files.keys,
+      contains('android/extra.txt'),
     );
   });
 
