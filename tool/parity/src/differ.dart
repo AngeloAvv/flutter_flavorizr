@@ -84,7 +84,9 @@ class Whitelist {
 
   const Whitelist.empty() : _entries = const [];
 
-  /// Parses a YAML list of `{path: <glob>, reason: <text>}` entries.
+  /// Parses a YAML list of `{path: <glob>, reason: <text>}` entries. An entry
+  /// with `only-comments: true` covers a changed file only if it differs from
+  /// the golden in its `/* ... */` annotations and in nothing else.
   factory Whitelist.parse(String yaml) {
     final document = loadYaml(yaml);
     if (document == null) return const Whitelist.empty();
@@ -106,18 +108,64 @@ class Whitelist {
               'say why the difference is intended',
             );
           }
-          return (pattern: globToRegExp(path), reason: reason.trim());
+          return (
+            pattern: globToRegExp(path),
+            reason: reason.trim(),
+            onlyComments: entry['only-comments'] == true,
+          );
         }(),
     ]);
   }
 
-  final List<({RegExp pattern, String reason})> _entries;
+  final List<({RegExp pattern, String reason, bool onlyComments})> _entries;
 
-  String? reasonFor(String path) {
+  /// The reason a difference of [path] is intended, or null. [before] and
+  /// [after] are the golden and the actual content of a changed file, null for
+  /// a file that was added or removed.
+  String? reasonFor(String path, {String? before, String? after}) {
     for (final entry in _entries) {
-      if (entry.pattern.hasMatch(path)) return entry.reason;
+      if (!entry.pattern.hasMatch(path)) continue;
+      if (entry.onlyComments &&
+          (before == null ||
+              after == null ||
+              _withoutComments(before) != _withoutComments(after))) {
+        continue;
+      }
+      return entry.reason;
     }
     return null;
+  }
+
+  /// [content] without its `/* ... */` annotations, and the space before each.
+  /// A quoted value is copied as it is, escapes included, as the ASCII plist
+  /// grammar reads it, so that a `/* ... */` inside a shell script is content.
+  static String _withoutComments(String content) {
+    final result = StringBuffer();
+    var i = 0;
+    while (i < content.length) {
+      final char = content[i];
+      if (char == '"') {
+        final start = i++;
+        while (i < content.length && content[i] != '"') {
+          i += content[i] == '\\' ? 2 : 1;
+        }
+        i = i < content.length ? i + 1 : content.length;
+        result.write(content.substring(start, i));
+      } else if (char == ' ' && content.startsWith('/*', i + 1)) {
+        i++;
+      } else if (content.startsWith('/*', i)) {
+        final end = content.indexOf('*/', i + 2);
+        if (end == -1) {
+          result.write(content.substring(i));
+          break;
+        }
+        i = end + 2;
+      } else {
+        result.write(char);
+        i++;
+      }
+    }
+    return result.toString();
   }
 }
 
@@ -153,7 +201,7 @@ ParityReport compareTrees(
     };
     if (difference == null) continue;
 
-    final reason = whitelist.reasonFor(path);
+    final reason = whitelist.reasonFor(path, before: before, after: after);
     differences.add(
       reason == null ? difference : difference._whitelisted(reason),
     );
