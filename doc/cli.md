@@ -168,10 +168,13 @@ markers, which are the ones 2.x writes: everything else in `linux/CMakeLists.txt
 A flavor you drop from `flavorizr.yaml` is regenerated out of the regions on the
 next run, as long as another flavor still has a `linux` section: dropping the
 last one is refused (see *Removing flavors, and what flavorizr refuses*), so the
-regions never keep a flavor that is gone. A call that sets the title must not be
-the unbraced statement of an `if`, `else`, `for` or `while`: the run fails and
-asks you to add braces, since the region after it would not be governed by the
-condition. When `my_application.cc` sets the window title with two string
+regions never keep a flavor that is gone. A call that sets the title has to be a statement of its own, on a line of its
+own, with nothing but a comment that ends on that line after it, and nothing
+governing it without braces (no `if`, `else`, `for`, `while`, `do`, `case` or
+label right before it): the region goes right after the call, and otherwise it
+would not do what the call does. When it is not like that the run fails, before
+anything is written, and says what to change. Comments, strings and
+preprocessor directives are not looked at. When `my_application.cc` sets the window title with two string
 literals, as `flutter create` writes it, 2.x rewrote those two calls to use a
 variable; 3.0 leaves them alone and sets the title again from regions right after
 them.

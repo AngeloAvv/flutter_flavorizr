@@ -23,19 +23,22 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/// Thrown when a call that sets the title of the Linux window is a statement
-/// that a control flow statement governs without braces, such as
+/// Thrown when a call that sets the title of the Linux window cannot be given
+/// a region right after it, because the region would not do what the call does.
+///
+/// Whatever governs the call without being a block, such as
 ///
 /// ```c
 /// if (enabled)
 ///   gtk_window_set_title(window, "title");
 /// ```
 ///
-/// The region flavorizr writes after the call would be a separate statement, so
-/// it would run whatever the condition says. flavorizr does not guess: nothing
-/// is written.
+/// is not a block the region would be in, and neither is a call that shares its
+/// line with other code, or that is followed by a comment that goes on past
+/// its line, which the region would end up in. flavorizr does not guess:
+/// nothing is written.
 class UnsafeTitleSetterException implements Exception {
-  /// The call, as the file has it.
+  /// The statement, as the file has it.
   final String statement;
 
   /// Creates the exception for [statement].
@@ -43,9 +46,12 @@ class UnsafeTitleSetterException implements Exception {
 
   @override
   String toString() =>
-      'Cannot flavor `${statement.trim()}` in linux/runner/my_application.cc: '
-      'the statement is controlled by an `if`, `else`, `for` or `while` with '
-      'no braces, so the code flavorizr adds after it would run whatever the '
-      'condition says.\n'
-      'Put the statement between braces ({ ... }) and run flavorizr again.';
+      'Cannot flavor `${statement.replaceAll(RegExp(r'\s+'), ' ')}` in '
+      'linux/runner/my_application.cc: flavorizr adds its code on the line '
+      'after the statement, and here that would not be the same as being '
+      'the statement.\n'
+      'Make the statement one of its own: put it between braces ({ ... }) if '
+      'an `if`, `else`, `for`, `while`, `do`, `case` or label comes before it, '
+      'give it a line of its own, and close any comment after it on that line. '
+      'Then run flavorizr again.';
 }

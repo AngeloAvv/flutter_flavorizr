@@ -99,33 +99,39 @@ abstract final class LinuxMyApplicationEditor {
     windowMarker,
   ];
 
-  // A C string literal: any character, `\"` and `\\` included, but a bare quote.
-  static const String _literal = r'"(?:[^"\\\n]|\\.)*"';
-
-  // What may follow a statement on its line: a comment of the user.
-  static const String _trailing = r'\s*(?://.*|/\*.*?\*/\s*)?$';
-
-  static final RegExp _windowTitleVariable = RegExp(
-    '^\\s*const gchar\\* window_title = $_literal;$_trailing',
-  );
-  static final RegExp _headerBarTitleLiteral = RegExp(
-    '^\\s*gtk_header_bar_set_title\\(header_bar, $_literal\\);$_trailing',
-  );
-  static final RegExp _windowTitleLiteral = RegExp(
-    '^\\s*gtk_window_set_title\\(window, $_literal\\);$_trailing',
-  );
-
-  // What is not code: a comment, or a string or character literal, an
+  // What is not code: a comment (a line comment goes on past a backslash at
+  // the end of a line), a raw string, or a string or character literal, an
   // unterminated one included.
   static final RegExp _nonCode = RegExp(
-    r'//[^\n]*|/\*[\s\S]*?(?:\*/|$)|"(?:[^"\\\n]|\\.)*"?|'
+    r'//(?:\\\r?\n|[^\n])*|/\*[\s\S]*?(?:\*/|$)|R"([^()\\\s"]{0,16})\([\s\S]*?\)\1"|'
+    r'"(?:[^"\\\n]|\\.)*"?|'
     r"'(?:[^'\\\n]|\\.)*'?",
   );
 
-  // The end of a control flow statement that has no braces yet: a condition, an
-  // `else`. A preprocessor line is not one.
-  static final RegExp _unbraced = RegExp(r'^(?!#).*(?:\)|\belse)$');
+  // A preprocessor directive, which goes on past a backslash at the end of a
+  // line. It is not a statement, and nothing in it is a title setter.
+  static final RegExp _directive = RegExp(
+    r'^[ \t]*#(?:\\\r?\n|[^\n])*',
+    multiLine: true,
+  );
 
+  // The statements, looked for in the code, where a literal is quotes around
+  // spaces: a literal is one or more of them, and the layout between the tokens
+  // is free.
+  static const String _literal = r'(?:"[^"\n]*"\s*)+';
+  static final RegExp _variable = RegExp(
+    r'(?<!\bstatic\s+)\bconst\s+gchar\s*\*\s*window_title\s*=\s*' +
+        _literal +
+        r';',
+  );
+  static final RegExp _headerBarSetter = RegExp(
+    r'\bgtk_header_bar_set_title\s*\(\s*header_bar\s*,\s*' +
+        _literal +
+        r'\)\s*;',
+  );
+  static final RegExp _windowSetter = RegExp(
+    r'\bgtk_window_set_title\s*\(\s*window\s*,\s*' + _literal + r'\)\s*;',
+  );
   static final RegExp _windowTitleWord = RegExp(r'\bwindow_title\b');
 
   /// Returns [source] with the regions up to date for [titles], the title of
@@ -134,85 +140,102 @@ abstract final class LinuxMyApplicationEditor {
   /// What is overridden follows the setters of the title, which are the calls
   /// that give the window its title: a setter that is a string literal gets a
   /// region of its own, and a declared variable that something reads gets the
-  /// region of the variable. A
-  /// region whose setter the user changed, so that nothing is left to override
-  /// there, is dropped.
+  /// region of the variable. A region whose setter the user changed, so that
+  /// nothing is left to override there, is dropped.
   ///
-  /// Throws an [UnsafeTitleSetterException] when a literal setter is the
-  /// statement of an `if`, `else`, `for` or `while` that has no braces, and a
-  /// [MalformedResourceException] when [source], leaving the regions
-  /// out, has nothing to override, which is also the case of a declared
-  /// `window_title` that no setter reads, and when the markers do not form
-  /// regions.
+  /// A region is a statement that goes right after its setter, so a layout in
+  /// which that is not the same thing is refused: the setter has to be a
+  /// statement of its own, on a line of its own, that nothing governs without
+  /// braces (no `if`, `else`, `for`, `while`, `do` or label right before it),
+  /// with at most a comment after it that ends on that line. The code is read
+  /// without its comments, strings and preprocessor directives. Throws an
+  /// [UnsafeTitleSetterException] when a setter is not like that, and a
+  /// [MalformedResourceException] when [source], leaving the regions out, has
+  /// nothing to override, which is also the case of a declared `window_title`
+  /// that no setter reads, and when the markers do not form regions.
   static String withWindowTitles(String source, Map<String, String> titles) {
     final text = MarkedText(source, _markers);
-    // What is looked for is looked for in the code: a statement in a comment or
-    // in a string is not one. The blanked text has the lines of the source, and
-    // still matches the patterns, whose literals are quotes around anything.
-    final code = _codeOnly(source).split('\n');
-    bool matches(RegExp pattern, TextLine line) =>
-        pattern.hasMatch(code[line.index]);
-    bool any(RegExp pattern) =>
-        text.outside.any((line) => matches(pattern, line));
+    final code = _codeOnly(source);
+    final variable = _statements(text, code, _variable);
+    final headerBar = _statements(text, code, _headerBarSetter);
+    final window = _statements(text, code, _windowSetter);
 
-    final headerBarLiteral = any(_headerBarTitleLiteral);
-    final windowLiteral = any(_windowTitleLiteral);
+    for (final (statement, setter) in [
+      ...variable.map((match) => (match, false)),
+      ...headerBar.map((match) => (match, true)),
+      ...window.map((match) => (match, true)),
+    ]) {
+      _check(source, code, statement, setter: setter);
+    }
+
     // The variable gets a region when something reads it: a declaration that
     // nothing uses would take assignments no setter reads, and the flavor would
     // silently have no effect.
-    final variable =
-        any(_windowTitleVariable) &&
+    final declared = {
+      for (final match in variable)
+        for (
+          var i = _lineOf(text.lines, match.start);
+          i <= _lineOf(text.lines, match.end - 1);
+          i++
+        )
+          i,
+    };
+    final read =
+        variable.isNotEmpty &&
         text.outside.any(
           (line) =>
-              _windowTitleWord.hasMatch(code[line.index]) &&
-              !matches(_windowTitleVariable, line),
+              !declared.contains(line.index) &&
+              _windowTitleWord.hasMatch(
+                code.substring(line.start, line.contentEnd),
+              ),
         );
 
-    // A region goes after its setter as a statement of its own: under an
-    // unbraced `if` it would not be governed by it.
-    for (final pattern in [_headerBarTitleLiteral, _windowTitleLiteral]) {
-      for (final line in text.outside.where((line) => matches(pattern, line))) {
-        final before = code
-            .take(line.index)
-            .map((text) => text.trim())
-            .where((text) => text.isNotEmpty)
-            .lastOrNull;
-
-        if (before != null && _unbraced.hasMatch(before)) {
-          throw UnsafeTitleSetterException(line.text);
-        }
-      }
-    }
-
-    if (!variable && !headerBarLiteral && !windowLiteral) {
+    if (!read && headerBar.isEmpty && window.isEmpty) {
       throw MalformedResourceException(source);
     }
 
     var patched = source;
 
-    for (final (marker, wanted, anchor, statement) in [
+    for (final (marker, pattern, wanted, statement) in [
       (
         variableMarker,
-        variable,
-        _windowTitleVariable,
+        _variable,
+        read,
         (String title) => 'window_title = "$title";',
       ),
       (
         headerBarMarker,
-        headerBarLiteral,
-        _headerBarTitleLiteral,
+        _headerBarSetter,
+        headerBar.isNotEmpty,
         (String title) => 'gtk_header_bar_set_title(header_bar, "$title");',
       ),
       (
         windowMarker,
-        windowLiteral,
-        _windowTitleLiteral,
+        _windowSetter,
+        window.isNotEmpty,
         (String title) => 'gtk_window_set_title(window, "$title");',
       ),
     ]) {
-      patched = wanted
-          ? _upsert(patched, marker, _body(titles, statement), anchor)
-          : MarkedText(patched, _markers).remove(marker);
+      // An edit moves what follows it, so the anchor is found again.
+      final current = MarkedText(patched, _markers);
+      final first = _statements(
+        current,
+        _codeOnly(patched),
+        pattern,
+      ).firstOrNull;
+
+      patched = !wanted
+          ? current.remove(marker)
+          : current.upsert(
+              marker,
+              _body(titles, statement),
+              anchor: (outside) => outside
+                  .where(
+                    (line) =>
+                        line.index == _lineOf(current.lines, first!.end - 1),
+                  )
+                  .firstOrNull,
+            );
     }
 
     return patched;
@@ -254,23 +277,75 @@ abstract final class LinuxMyApplicationEditor {
       i += text.length;
     }
 
-    return code.toString();
+    // A directive is not code either: it goes after the comments and the
+    // strings, which it may have, are blanked.
+    return code.toString().replaceAllMapped(
+      _directive,
+      (match) => match[0]!.replaceAll(RegExp(r'[^\r\n]'), ' '),
+    );
   }
 
-  static String _upsert(
-    String source,
-    RegionMarker marker,
-    List<String> body,
-    RegExp anchor,
-  ) {
-    final code = _codeOnly(source).split('\n');
+  /// The matches of [pattern] in [code] that are outside the regions.
+  static List<Match> _statements(MarkedText text, String code, RegExp pattern) {
+    final outside = {for (final line in text.outside) line.index};
 
-    return MarkedText(source, _markers).upsert(
-      marker,
-      body,
-      anchor: (lines) =>
-          lines.where((line) => anchor.hasMatch(code[line.index])).firstOrNull,
-    );
+    return [
+      for (final match in pattern.allMatches(code))
+        if (outside.contains(_lineOf(text.lines, match.start))) match,
+    ];
+  }
+
+  /// The position of the line that has [offset].
+  static int _lineOf(List<TextLine> lines, int offset) =>
+      lines.lastWhere((line) => line.start <= offset).index;
+
+  /// Fails with an [UnsafeTitleSetterException] unless a region can go right
+  /// after [statement], a match in [code], and be a statement of its own.
+  ///
+  /// A setter is only ever preceded by the end of another statement or block
+  /// (`;`, `{`, `}`) or by nothing: anything else, such as the `)` of an `if`,
+  /// an `else`, a `do` or a label, means that something governs it, with or
+  /// without braces to say so. Nothing but a comment that ends on its line may
+  /// follow it, so that what is inserted after the line is after the
+  /// statement, and outside of the comment.
+  static void _check(
+    String source,
+    String code,
+    Match statement, {
+    required bool setter,
+  }) {
+    final text = source.substring(statement.start, statement.end);
+    final before = code.substring(0, statement.start).trimRight();
+
+    if (setter &&
+        before.isNotEmpty &&
+        !';{}'.contains(before[before.length - 1])) {
+      throw UnsafeTitleSetterException(text);
+    }
+
+    var i = statement.end;
+
+    while (i < source.length && ' \t'.contains(source[i])) {
+      i++;
+    }
+
+    // What follows on the line: comments that end on it, and then its end.
+    while (i < source.length) {
+      final comment = _nonCode.matchAsPrefix(source, i)?[0];
+
+      if (comment == null || !comment.startsWith('/')) break;
+      if (comment.contains('\n')) throw UnsafeTitleSetterException(text);
+
+      i += comment.length;
+
+      while (i < source.length && ' \t'.contains(source[i])) {
+        i++;
+      }
+    }
+
+    if (i < source.length && !'\r\n'.contains(source[i])) {
+      throw UnsafeTitleSetterException(text);
+    }
   }
 
   static List<String> _body(
