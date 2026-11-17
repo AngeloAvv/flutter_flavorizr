@@ -45,6 +45,10 @@ import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_applicati
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_main_cpp_template_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_rc_template_processor.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
@@ -130,8 +134,8 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android, Linux, Flutter, xcconfig and
-  /// Podfile processors that were ported run on the engine, every other 2.x
+  /// The registry of this version: Android, Linux, Windows, Flutter, xcconfig
+  /// and Podfile processors run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
@@ -186,6 +190,25 @@ class ProcessorRegistry {
         paths: {K.linuxMyApplicationPath},
         ownedContent: {
           K.linuxMyApplicationPath: LinuxMyApplicationEditor.ownedContent,
+        },
+      ),
+      // The templates are what these two write. The files they are made from,
+      // `main.cpp` and `Runner.rc`, are the user's: they are read from the
+      // project and never copied, diffed or written back.
+      EngineProcessor(
+        const WindowsMainCppTemplateProcessor(),
+        paths: {K.windowsMainCppTemplatePath},
+      ),
+      EngineProcessor(
+        const WindowsRunnerRcTemplateProcessor(),
+        paths: {K.windowsRunnerRcTemplatePath},
+      ),
+      EngineProcessor(
+        const WindowsRunnerCMakeListsPatchProcessor(),
+        paths: {K.windowsRunnerCMakeListsPath},
+        ownedContent: {
+          K.windowsRunnerCMakeListsPath:
+              WindowsRunnerCMakeListsEditor.ownedContent,
         },
       ),
       EngineProcessor(

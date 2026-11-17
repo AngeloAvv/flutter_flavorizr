@@ -205,7 +205,8 @@ are ported, so they lose their base configuration when its reference goes.
 The engine runs the processors that were ported to it, which today are the
 Android ones (`android:androidManifest`, `android:flavorizrGradle`,
 `android:buildGradle` and `android:icons`), the Linux ones (`linux:cmake`,
-`linux:runnerCmake` and `linux:myApplication`), the Flutter ones
+`linux:runnerCmake` and `linux:myApplication`), the Windows ones
+(`windows:mainCppTemplate`, `windows:runnerRcTemplate` and `windows:cmake`), the Flutter ones
 (`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`), the
 xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
 `macos:configs`) and the Podfile ones (`ios:podfile` and `macos:podfile`). For
@@ -337,8 +338,92 @@ A marker in a heredoc, a `=begin` block, after `__END__` or on a continued line
 is refused too. A character it cannot read may make an unusual Podfile be
 refused, and that is on purpose: the message names the line.
 
+The Windows processors no longer write into the source tree when you build.
+`windows:mainCppTemplate` and `windows:runnerRcTemplate` make
+`windows/runner/main.cpp.in` and `windows/runner/Runner.rc.in` from
+`main.cpp` and `Runner.rc`, which they only read: the two templates are files
+flavorizr owns (hashed in the lock, so a hand edit of them is a conflict), and
+the two files they come from stay yours. `windows:cmake` only touches the region
+of `windows/runner/CMakeLists.txt` between the same `BEGIN`/`END FLUTTER_APP_FLAVOR`
+markers 2.x writes. The region sets the icon and the window title of the flavor
+that is built (the defaults for a flavor that is not in `flavorizr.yaml`), makes
+`Runner.rc` and `main.cpp` from the templates with `configure_file` **in the
+build directory** (`${CMAKE_CURRENT_BINARY_DIR}`, not the source one, where 2.x
+wrote them over your files and changed them at every flavored build) and points
+the target at those copies. A flavor you drop from `flavorizr.yaml` is
+regenerated out of the region on the next run, as long as another flavor still
+has a `windows` section (dropping the last one is refused, as for Linux). A
+project that 2.x flavorized is adopted: the templates are the ones 2.x wrote,
+and 2.x put the region **before** `add_executable`, where the target does not
+exist yet, so the one change to such a file that is not inside the region is
+that the region moves after the call. A `Runner.rc` or `main.cpp` that a 2.x
+build already rewrote (with the icon and the title of a flavor in it) is
+templated all the same. The templates are regenerated at every `apply`, so run
+it again after you change `main.cpp` or `Runner.rc`; `status` does not see a
+change of the files they are made from. The icon of a flavor is still
+`windows/runner/resources/<flavor>.ico`, which `windows:icons` and
+`windows:dummyAssets` make.
+
+The editors do not parse C++, CMake or resource scripts, and do not try to know
+what is a comment, a string or a directive. They recognise a few **supported
+shapes**, lines written the way `flutter create` writes them, and they count:
+every mention of a token they act on, found by a plain search of the raw text
+(comments, strings and raw strings included), has to be one of the supported
+shapes. If there is any other, or none, the run fails, before anything is
+written, with `found N mentions of X but only M in a position flavorizr
+understands`. The price is that a file that mentions a token in a comment is
+rejected too: remove the mention, or the comment.
+
+*`windows/runner/CMakeLists.txt`* is read line by line, outside of the region.
+Supported shapes: `add_executable(${BINARY_NAME} WIN32` alone on a line, the
+sources on the lines after it with no parenthesis in them, a line with only `)`;
+`main.cpp` and `Runner.rc` among the sources, each on a line of its own, as a
+name (quoted or not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`. Anything else that
+mentions `add_executable` (also in a comment, or for another target), `main.cpp`
+or `Runner.rc` (`./main.cpp`, `MAIN.CPP`, a later `target_sources`,
+`set_property` or `set_target_properties`, a comment, a string; whole words, any
+case, so `domain.cpp` is another file) is rejected, since a source that stays in
+the target next to the copy of the binary directory defines `wWinMain` twice. So
+are `[[` anywhere (bracket arguments and comments) and a line that ends with `\`.
+A name that is in a variable is not seen. An old 2.x region before the call is
+moved after it.
+
+*`main.cpp`* supported shape: a line that starts with `window.Create(L"...", origin,
+size)`, optionally after `if (!`, with a title without a quote or a backslash,
+as many as you like, in any branch of an `#if`. Every mention of
+`window . Create` (`.` or `->`) must be one of those. *`Runner.rc`* supported
+shapes: `IDI_APP_ICON ICON "resources\\<name>"`, `VALUE "FileDescription", "..."
+"\0"` and `VALUE "ProductName", "..." "\0"` lines, and every mention of
+`IDI_APP_ICON`, `FileDescription` and `ProductName` must be one of those. In
+both files: an `#include` that is not of a header (`.h`, `.hpp`, `.hh`, `.hxx`)
+by a literal on a line of its own (`resource.h`, `winres.h` and the `TEXTINCLUDE`
+string of the script are fine) is rejected, since the file it includes may hold
+the tokens; so is a `\` at the end of a line, anywhere (it joins lines), and in
+`main.cpp` the digraph `%:`. In all three files NUL, a form feed, a vertical tab
+and a lone carriage return are rejected, and so is a file that is not UTF-8 (a
+UTF-16 one that Visual Studio saved, for one). LF, CRLF or both are fine.
+Trigraphs (`??/`) are not supported, because MSVC does not read them unless
+`/Zc:trigraphs` is set, which Flutter does not do. A call that is written in
+another way, such as `if (alt) window.Create(...); else window.Create(...);` on
+one line, `bool ok = window.Create(...)`, or one with a macro for its title, is
+rejected, and so are comments and strings that mention a token.
+
+*Titles and flavor names.* The `app.name` of a flavor is encoded for each file
+it ends up in, so `"`, `\` and non-ASCII characters are fine in it (in
+`main.cpp` as `\"`, `\\` and universal character names; in `Runner.rc` as `""`
+and `\\`, which needs `#pragma code_page(65001)` in `Runner.rc` when the title is
+not ASCII, as `flutter create` writes it: the file must have exactly one mention
+of `code_page`, which is that directive, or it is rejected; and then
+for CMake, which also protects a `$`). A control character in it, such as a line
+break, is rejected. A flavor name is the name of an icon file and goes into
+CMake and `Runner.rc`, so it has to be made of letters, digits, `_`, `-` and
+`.`, not end with a dot, and not be a name Windows reserves for a device
+(`CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`, in any case and
+with any extension).
+
+
 Every other instruction (the other `ios:*` and `macos:*`,
-`windows:*`, `google:firebase`, `huawei:agconnect`, `ide:config`,
+`windows:dummyAssets`, `windows:icons`, `google:firebase`, `huawei:agconnect`, `ide:config`,
 `android:dummyAssets` and the `assets:*` ones) still is a 2.x processor. They
 are not dropped: `apply` runs them with the 2.x pipeline, **after** the engine,
 straight on the project. That means they have no preview in `plan`, no conflict
