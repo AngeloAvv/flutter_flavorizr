@@ -130,7 +130,9 @@ abstract final class LinuxMyApplicationEditor {
         r'\)\s*;',
   );
   static final RegExp _windowSetter = RegExp(
-    r'\bgtk_window_set_title\s*\(\s*window\s*,\s*' + _literal + r'\)\s*;',
+    r'\bgtk_window_set_title\s*\(\s*(?:window|GTK_WINDOW\s*\(\s*window\s*\))\s*,\s*' +
+        _literal +
+        r'\)\s*;',
   );
   static final RegExp _windowTitleWord = RegExp(r'\bwindow_title\b');
 

@@ -221,6 +221,16 @@ final _layouts = <_Layout>[
   ),
   // The call itself.
   (
+    'the window cast with GTK_WINDOW',
+    '    gtk_window_set_title(GTK_WINDOW(window), "example");\n',
+    _Outcome.flavored,
+  ),
+  (
+    'the cast with spaces',
+    '    gtk_window_set_title( GTK_WINDOW (window) , "example");\n',
+    _Outcome.flavored,
+  ),
+  (
     'arguments over several lines',
     '    gtk_window_set_title(\n        window,\n        "example");\n',
     _Outcome.flavored,
@@ -362,6 +372,16 @@ final _sources = <_Source>[
     _pristine.replaceFirst(
       '    gtk_header_bar_set_title(header_bar, "example");\n',
       '    gtk_header_bar_set_title(header_bar, "example");\n    gtk_header_bar_set_title(header_bar, "again");\n',
+    ),
+    _Outcome.unsafe,
+    '',
+  ),
+  (
+    'a second window setter that casts the window',
+    _pristine.replaceFirst(
+      '  if (use_header_bar) {\n',
+      '  if (use_header_bar) {\n'
+          '    gtk_window_set_title(GTK_WINDOW(window), "again");\n',
     ),
     _Outcome.unsafe,
     '',
