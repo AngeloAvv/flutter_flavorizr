@@ -158,6 +158,12 @@ Future<EngineRun> runEngine(
     paths: plan.paths,
     resources: registry.resources,
     previousFlavors: previous?.flavorNames ?? const {},
+    previousObjects: {
+      for (final MapEntry(key: id, value: lock)
+          in previous?.processors.entries ??
+              const <MapEntry<String, ProcessorLock>>[])
+        if (lock.objects.isNotEmpty) id: lock.objects,
+    },
     commit: (shadow, ctx) async {
       final reconciliation = await reconcile(
         projectRoot: shadow.projectRoot,
@@ -174,6 +180,7 @@ Future<EngineRun> runEngine(
                 File(ctx.resolve(artifact.path)).readAsBytesSync(),
               ),
         },
+        ownedObjects: ctx.ownedObjects,
         desiredFlavors: config.flavorFingerprints,
         availableProcessors: engineIdsFor(registry, config),
         flavorizrVersion: context.version,

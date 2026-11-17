@@ -26,12 +26,15 @@
 import 'dart:io';
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/engine/darwin/pbxproj_seed.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../entrypoint/cli_fixture.dart';
+import '../../darwin/pbxproj_integrity.dart';
 
 const _iosProject = 'ios/Runner.xcodeproj';
 const _macosProject = 'macos/Runner.xcodeproj';
@@ -100,6 +103,38 @@ void main() {
     }
   });
   tearDown(() => project.dispose());
+
+  /// What the lock records for [processor] in [path]: the UUIDs of the objects
+  /// it owns.
+  Future<Set<String>> locked(
+    String processor,
+    String path, [
+    CliFixture? of,
+  ]) async {
+    final lock = (await LockStore(
+      (of ?? project).root,
+      runningVersion: '3.0.0',
+    ).read())!;
+
+    return lock.processors[processor]?.objects[path] ?? {};
+  }
+
+  /// The UUID of the reference to the xcconfig at [path].
+  String referenceUuid(String path, String platform) => PbxprojSeed.uuid(
+    platform: platform,
+    kind: ['xcconfigFileReference', ...path.split('/')],
+  );
+
+  /// The references the processors make for [flavors].
+  Set<String> references(
+    Iterable<String> flavors,
+    String platform,
+    String folder,
+  ) => {
+    for (final flavor in flavors)
+      for (final mode in ['Debug', 'Profile', 'Release'])
+        referenceUuid('$folder/$flavor$mode.xcconfig', platform),
+  };
 
   group('apply', () {
     test('writes the flavor xcconfigs of iOS as text, with the Pods one '
@@ -245,6 +280,72 @@ void main() {
       expect(lock.flavorNames, {'citrus', 'dates'});
     });
 
+    test(
+      'records the references they made, by the UUID of their path',
+      () async {
+        await apply();
+
+        expect(
+          await locked('ios:xcconfig', _iosPbxproj),
+          references(['citrus', 'dates'], 'ios', 'Flutter'),
+        );
+        expect(
+          await locked('macos:configs', _macosPbxproj),
+          references(['citrus', 'dates'], 'macos', 'Runner/Configs'),
+        );
+        expect(await locked('macos:xcconfig', _macosPbxproj), isEmpty);
+        for (final uuid in await locked('ios:xcconfig', _iosPbxproj)) {
+          expect(objectUuids(project.read(_iosPbxproj)), contains(uuid));
+        }
+      },
+    );
+
+    test(
+      'hash every object they record, so that an edit of one is drift',
+      () async {
+        await apply();
+
+        for (final (pbxproj, processor) in [
+          (_iosPbxproj, 'ios:xcconfig'),
+          (_macosPbxproj, 'macos:configs'),
+        ]) {
+          final owned = xcconfigReferencesOwnedContent(project.read(pbxproj));
+          final uuids = await locked(processor, pbxproj);
+
+          expect(uuids, isNotEmpty);
+          for (final uuid in uuids) {
+            expect(owned, contains('\t\t$uuid '), reason: '$processor $uuid');
+          }
+        }
+      },
+    );
+
+    test(
+      'make two applies from scratch write the very same projects and lock',
+      () async {
+        final other = CliFixture(android: false);
+        addTearDown(other.dispose);
+        other.write('flavorizr.yaml', _config(['citrus', 'dates']));
+        for (final platform in ['ios', 'macos']) {
+          other.write(
+            '$platform/Runner.xcodeproj/project.pbxproj',
+            project.read('$platform/Runner.xcodeproj/project.pbxproj'),
+          );
+        }
+
+        expect(await apply(), ExitCodes.ok, reason: project.logger.output);
+        expect(
+          await other.run(['apply', '--yes', ..._targets]),
+          ExitCodes.ok,
+          reason: other.logger.output,
+        );
+
+        for (final path in [_iosPbxproj, _macosPbxproj, 'flavorizr.lock']) {
+          expect(other.read(path), project.read(path), reason: path);
+        }
+      },
+    );
+
     test('leaves the rest to the 2.x pipeline: nothing of this slice is '
         'handed to it', () async {
       await apply();
@@ -342,6 +443,42 @@ void main() {
       );
     });
 
+    test('removes the references of a flavor that was dropped, by UUID, and '
+        'leaves what a run from scratch of the flavors that remain would '
+        'write', () async {
+      final fresh = CliFixture(android: false);
+      addTearDown(fresh.dispose);
+      fresh.write('flavorizr.yaml', _config(['citrus']));
+      for (final platform in ['ios', 'macos']) {
+        fresh.write(
+          '$platform/Runner.xcodeproj/project.pbxproj',
+          project.read('$platform/Runner.xcodeproj/project.pbxproj'),
+        );
+      }
+      await apply();
+
+      project.write('flavorizr.yaml', _config(['citrus']));
+      final code = await apply();
+      await fresh.run(['apply', '--yes', ..._targets]);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      for (final pbxproj in [_iosPbxproj, _macosPbxproj]) {
+        final text = project.read(pbxproj);
+
+        expect(text, isNot(contains('dates')), reason: pbxproj);
+        expect(danglingUuids(text), isEmpty, reason: pbxproj);
+        expect(text, fresh.read(pbxproj), reason: pbxproj);
+      }
+      expect(
+        await locked('ios:xcconfig', _iosPbxproj),
+        references(['citrus'], 'ios', 'Flutter'),
+      );
+      expect(
+        await locked('macos:configs', _macosPbxproj),
+        references(['citrus'], 'macos', 'Runner/Configs'),
+      );
+    });
+
     test('keeps what an xcconfig of the user has in the same folder', () async {
       project.write('ios/Flutter/Mine.xcconfig', '// mine\n');
 
@@ -429,6 +566,51 @@ void main() {
       expect(code, ExitCodes.ok, reason: project.logger.output);
       for (final path in [_iosProject, _macosProject]) {
         expect(_xcconfigResources(await open(path)), ['Shared/mine.xcconfig']);
+      }
+    });
+
+    test('uses the references 2.x made, with no duplicate, and owns none of '
+        'them: only the lock can tell whose they are', () async {
+      final iosBefore = objectUuids(project.read(_iosPbxproj));
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      for (final (bundle, path) in [
+        (_iosProject, 'Flutter/appleDebug.xcconfig'),
+        (_macosProject, 'Runner/Configs/bananaRelease.xcconfig'),
+      ]) {
+        final opened = await open(bundle);
+
+        expect(
+          opened.files.where((file) => file.path == path),
+          hasLength(1),
+          reason: path,
+        );
+      }
+      // Nothing was created: what went is the 6 entries in Resources.
+      final iosAfter = objectUuids(project.read(_iosPbxproj));
+      expect(iosAfter.difference(iosBefore), isEmpty);
+      expect(iosBefore.difference(iosAfter), hasLength(6));
+      expect(await locked('ios:xcconfig', _iosPbxproj), isEmpty);
+      expect(await locked('macos:configs', _macosPbxproj), isEmpty);
+    });
+
+    test('keeps the references 2.x made when a flavor is dropped, with no '
+        'dangling reference, though the files go', () async {
+      await apply();
+
+      project.write('flavorizr.yaml', _config(['apple']));
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('ios/Flutter/bananaDebug.xcconfig'), isFalse);
+      for (final pbxproj in [_iosPbxproj, _macosPbxproj]) {
+        final text = project.read(pbxproj);
+
+        expect(text, contains('banana'), reason: pbxproj);
+        expect(danglingUuids(text), isEmpty, reason: pbxproj);
+        expect(text, isNot(contains('xcconfig in Resources')), reason: pbxproj);
       }
     });
 

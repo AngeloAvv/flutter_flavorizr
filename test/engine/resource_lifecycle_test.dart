@@ -560,6 +560,50 @@ flavors:
       },
     );
 
+    test('gives a step the objects the lock recorded for it, and hands what '
+        'it owns back to the run context', () async {
+      const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+      final plan = planOf([
+        _FakeProcessor('a', events),
+        _FakeProcessor('b', events),
+      ]);
+      final runCtx = FlavorizrContext(
+        config: ctx.config,
+        root: ctx.root,
+        projectRoot: ctx.projectRoot,
+        logger: ctx.logger,
+        previousObjects: {
+          'a': {
+            pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+          'b': {
+            pbxproj: {'BBBBBBBBBBBBBBBBBBBBBBBB'},
+          },
+        },
+      );
+      final seen = <String, Set<String>>{};
+
+      await ResourceLifecycle(plan, []).run(runCtx, (step, stepCtx) async {
+        seen[step.processor.id] = stepCtx.previousObjectsOf(pbxproj);
+        stepCtx.ownObjects(pbxproj, [
+          'CCCCCCCCCCCCCCCCCCCCCCC${step.processor.id}',
+        ]);
+      });
+
+      expect(seen, {
+        'a': {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+        'b': {'BBBBBBBBBBBBBBBBBBBBBBBB'},
+      });
+      expect(runCtx.ownedObjects, {
+        'a': {
+          pbxproj: {'CCCCCCCCCCCCCCCCCCCCCCCa'},
+        },
+        'b': {
+          pbxproj: {'CCCCCCCCCCCCCCCCCCCCCCCb'},
+        },
+      });
+    });
+
     test(
       'tears down and rethrows when a step throws a non-Exception',
       () async {

@@ -60,6 +60,7 @@ final class Reconciliation {
   final String _flavorizrVersion;
   final Map<String, Iterable<Artifact>> _produced;
   final Map<String, String> _ownedHashes;
+  final Map<String, Map<String, Set<String>>> _ownedObjects;
   final Map<String, String> _desiredFlavors;
   final Set<String> _availableProcessors;
   final List<StaleArtifact> _stale;
@@ -73,6 +74,7 @@ final class Reconciliation {
     required String flavorizrVersion,
     required Map<String, Iterable<Artifact>> produced,
     required Map<String, String> ownedHashes,
+    required Map<String, Map<String, Set<String>>> ownedObjects,
     required Map<String, String> desiredFlavors,
     required Set<String> availableProcessors,
     required List<StaleArtifact> stale,
@@ -81,6 +83,7 @@ final class Reconciliation {
        _flavorizrVersion = flavorizrVersion,
        _produced = produced,
        _ownedHashes = ownedHashes,
+       _ownedObjects = ownedObjects,
        _desiredFlavors = desiredFlavors,
        _availableProcessors = availableProcessors,
        _stale = stale,
@@ -131,6 +134,7 @@ final class Reconciliation {
       flavorizrVersion: _flavorizrVersion,
       produced: _produced,
       ownedHashes: _ownedHashes,
+      ownedObjects: _ownedObjects,
       desiredFlavors: _desiredFlavors,
       availableProcessors: _availableProcessors,
       stale: [..._stale, ..._unattributed],
@@ -190,7 +194,9 @@ final class _DeletionAwareContent implements ConflictContent {
 /// [produced] holds the artifacts each processor of the run tracked, by
 /// processor id: its keys are the processors that ran, the only ones garbage
 /// collection and the lock update ever look at. [ownedHashes] are the hashes of
-/// the owned content of the hashed ones, by canonical path. [tracked] is every
+/// the owned content of the hashed ones, by canonical path. [ownedObjects] are
+/// the UUIDs of the pbxproj objects each processor owns
+/// (`FlavorizrContext.ownedObjects`), which the lock records. [tracked] is every
 /// artifact the run tracked, whoever it is attributed to
 /// (`FlavorizrContext.tracked`): a resource may track one from its teardown, on
 /// the context of the run, and nothing the run tracks is garbage collected.
@@ -211,6 +217,7 @@ Future<Reconciliation> reconcile({
   required Map<String, Iterable<Artifact>> produced,
   required Iterable<Artifact> tracked,
   required Map<String, String> ownedHashes,
+  Map<String, Map<String, Set<String>>> ownedObjects = const {},
   required Map<String, String> desiredFlavors,
   required Set<String> availableProcessors,
   required String flavorizrVersion,
@@ -239,6 +246,7 @@ Future<Reconciliation> reconcile({
     flavorizrVersion: flavorizrVersion,
     produced: produced,
     ownedHashes: ownedHashes,
+    ownedObjects: ownedObjects,
     desiredFlavors: desiredFlavors,
     availableProcessors: availableProcessors,
     stale: scan.stale,

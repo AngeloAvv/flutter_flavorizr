@@ -24,13 +24,23 @@
  */
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 
 /// The type Xcode gives a `.xcconfig` file, in `lastKnownFileType`.
 const _xcconfigFileType = 'text.xcconfig';
 
-/// Makes sure [project] references the file at [path] and returns the
-/// reference. [path] is relative to the group the reference is in, as the
+/// Makes sure the project of [owned] references the file at [path], and returns
+/// the reference. [path] is relative to the group the reference is in, as the
 /// project spells it (`Flutter/appleDebug.xcconfig`).
+///
+/// The reference is made through [OwnedObjects.ensure]: its UUID comes from the
+/// **path** (the seed `flavorizr/ios/@project/@all/xcconfigFileReference/Flutter/
+/// appleDebug.xcconfig`, for instance), so two runs from scratch write the same project, the
+/// next run finds it again, and [OwnedObjects.settle] removes it by UUID, with
+/// everything that refers to it, when the flavor is dropped. The seed is not
+/// the one of `DarwinBuildConfigurations`' reference to the same file, so the
+/// processor that makes the build configurations finds this one by its path and
+/// uses it as it is, instead of owning it too.
 ///
 /// The reference goes in the group named [groupName], or in the main group, and
 /// **only there**: a flavor xcconfig is a base configuration of the build
@@ -39,31 +49,31 @@ const _xcconfigFileType = 'text.xcconfig';
 /// does for any file), which copied the xcconfigs into the app bundle: see
 /// [removeXcconfigsFromResources], which cleans that.
 ///
-/// It is idempotent. A reference that is in the group already is the one used,
-/// and it is given the type 2.x did not write (`lastKnownFileType` is
-/// `text.xcconfig`, as Xcode has it) when it has none. The project is not
-/// opened or saved here: it is the shared one of the run.
+/// A file that is referenced already, wherever, is used and not duplicated. It is
+/// **foreign** (it is not owned, so it is never removed) unless the lock
+/// recorded it for the processor: it is what 2.x made, or the user, and only a
+/// lock tells which. It is given the type 2.x did not write
+/// (`lastKnownFileType` is `text.xcconfig`, as Xcode has it) when it has none.
 ///
-/// Throws a [StateError] when there is no group named [groupName].
-PBXFileReference addXcconfigReference(
-  XcodeProject project,
+/// The project is not opened or saved here: it is the shared one of the run.
+/// Throws a [StateError] when a new reference is needed and there is no group
+/// named [groupName].
+PBXFileReference ensureXcconfigReference(
+  OwnedObjects owned,
   String path, {
   String? groupName,
 }) {
-  final group = _group(project, groupName);
+  final project = owned.project;
 
-  return group.children.whereType<PBXFileReference>().firstWhere(
-    (file) => file.path == path,
-    orElse: () {
-      final created = project.newObject<PBXFileReference>(
-        (g, u) => PBXFileReference(g, u),
-      );
-
-      created.path = path;
-      created.sourceTree = '<group>';
-      group.children.add(created);
-
-      return created;
+  return owned.ensure<PBXFileReference>(
+    (g, u) => PBXFileReference(g, u),
+    kind: ['xcconfigFileReference', ...path.split('/')],
+    existing: () =>
+        project.files.where((file) => file.path == path).firstOrNull,
+    create: (file) {
+      file.path = path;
+      file.sourceTree = '<group>';
+      _group(project, groupName).children.add(file);
     },
   )..lastKnownFileType ??= _xcconfigFileType;
 }

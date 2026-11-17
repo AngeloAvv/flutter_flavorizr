@@ -23,9 +23,18 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
+import 'package:flutter_flavorizr/src/engine/darwin/pbxproj_seed.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../entrypoint/cli_fixture.dart';
 
 const _ios = 'example/ios/Runner.xcodeproj';
 const _macos = 'example/macos/Runner.xcodeproj';
@@ -45,21 +54,71 @@ List<String> _xcconfigResources(XcodeProject project) => [
           file.path!,
 ];
 
+/// The context of `ios:xcconfig`, which owned [previous] in the last run, over
+/// [project].
+FlavorizrContext _context(
+  XcodeProject project, {
+  Set<String> previous = const {},
+  bool macos = false,
+}) {
+  final artifact = macos
+      ? XcodeprojResource.macosArtifact
+      : XcodeprojResource.iosArtifact;
+
+  return FlavorizrContext(
+    config: Flavorizr.parse(
+      'flavors:\n  dev:\n    app:\n      name: dev\n'
+      '    ios:\n      bundleId: com.example.dev\n',
+    ),
+    root: Directory.systemTemp,
+    projectRoot: Directory.systemTemp,
+    logger: RecordingLogger(),
+    processorId: 'test:xcconfig',
+    previousObjects: {
+      'test:xcconfig': {artifact.path: previous},
+    },
+    resources: {
+      macos ? XcodeprojResource.macosKey : XcodeprojResource.iosKey: project,
+    },
+  );
+}
+
+OwnedObjects _owned(
+  XcodeProject project, {
+  Set<String> previous = const {},
+  bool macos = false,
+}) {
+  final ctx = _context(project, previous: previous, macos: macos);
+
+  return macos ? OwnedObjects.macos(ctx) : OwnedObjects.ios(ctx);
+}
+
+String _uuidOf(String path, {String platform = 'ios'}) => PbxprojSeed.uuid(
+  platform: platform,
+  kind: ['xcconfigFileReference', ...path.split('/')],
+);
+
 void main() {
   group('the reference to a flavor xcconfig', () {
     late XcodeProject project;
 
     setUp(() async => project = await XcodeProject.open(_ios));
 
+    PBXFileReference ensure(
+      String path, {
+      String? groupName = 'Flutter',
+      OwnedObjects? owned,
+    }) => ensureXcconfigReference(
+      owned ?? _owned(project),
+      path,
+      groupName: groupName,
+    );
+
     PBXGroup flutterGroup() =>
         project.groups.firstWhere((group) => group.name == 'Flutter');
 
     test('is a text xcconfig in the group it is asked for', () {
-      final reference = addXcconfigReference(
-        project,
-        'Flutter/citrusDebug.xcconfig',
-        groupName: 'Flutter',
-      );
+      final reference = ensure('Flutter/citrusDebug.xcconfig');
 
       expect(reference.path, 'Flutter/citrusDebug.xcconfig');
       expect(reference.sourceTree, '<group>');
@@ -68,22 +127,27 @@ void main() {
     });
 
     test('goes in the main group when no group is asked for', () {
-      final reference = addXcconfigReference(
-        project,
+      final reference = ensure(
         'Runner/Configs/citrusDebug.xcconfig',
+        groupName: null,
       );
 
       expect(project.mainGroup.children, contains(reference));
     });
 
+    test('has the UUID of its path, and is owned', () {
+      final owned = _owned(project);
+
+      final reference = ensure('Flutter/citrusDebug.xcconfig', owned: owned);
+
+      expect(reference.uuid, _uuidOf('Flutter/citrusDebug.xcconfig'));
+      expect(owned.owned, {reference.uuid});
+    });
+
     test('is not in any build phase, Resources included', () {
       final before = _buildFiles(project).length;
 
-      final reference = addXcconfigReference(
-        project,
-        'Flutter/citrusDebug.xcconfig',
-        groupName: 'Flutter',
-      );
+      final reference = ensure('Flutter/citrusDebug.xcconfig');
 
       expect(_buildFiles(project).length, before);
       expect(
@@ -93,61 +157,103 @@ void main() {
     });
 
     test('is found again, not added twice', () {
-      final first = addXcconfigReference(
-        project,
-        'Flutter/citrusDebug.xcconfig',
-        groupName: 'Flutter',
-      );
+      final first = ensure('Flutter/citrusDebug.xcconfig');
       final model = project.toHash();
 
-      final second = addXcconfigReference(
-        project,
-        'Flutter/citrusDebug.xcconfig',
-        groupName: 'Flutter',
-      );
+      final second = ensure('Flutter/citrusDebug.xcconfig');
 
       expect(second, same(first));
       expect(project.toHash(), model);
     });
 
+    test('is found again in the next run, by its UUID, with no lock', () async {
+      final first = ensure('Flutter/citrusDebug.xcconfig');
+      final model = project.toHash();
+      final again = _owned(project);
+
+      expect(ensure('Flutter/citrusDebug.xcconfig', owned: again), same(first));
+      expect(again.owned, {first.uuid});
+      expect(project.toHash(), model);
+    });
+
+    test('is not owned when the project had it, and is not duplicated: the '
+        'lock tells whose it is', () {
+      // `apple` was flavorized by 2.x.
+      final owned = _owned(project);
+      final existing = project.files.firstWhere(
+        (file) => file.path == 'Flutter/appleDebug.xcconfig',
+      );
+      final model = project.toHash();
+
+      final reference = ensure('Flutter/appleDebug.xcconfig', owned: owned);
+
+      expect(reference, same(existing));
+      expect(owned.owned, isEmpty);
+      expect(owned.settle(), isEmpty);
+      expect(project.toHash(), model);
+    });
+
+    test('is owned when the lock says the processor made it', () {
+      final existing = project.files.firstWhere(
+        (file) => file.path == 'Flutter/appleDebug.xcconfig',
+      );
+      final owned = _owned(project, previous: {existing.uuid});
+
+      ensure('Flutter/appleDebug.xcconfig', owned: owned);
+
+      expect(owned.owned, {existing.uuid});
+    });
+
     test('gets the type a 2.x reference lacked', () {
-      final existing = flutterGroup().children
-          .whereType<PBXFileReference>()
-          .firstWhere((file) => file.path == 'Flutter/appleDebug.xcconfig');
+      final existing = project.files.firstWhere(
+        (file) => file.path == 'Flutter/appleDebug.xcconfig',
+      );
       existing.lastKnownFileType = null;
 
-      final again = addXcconfigReference(
-        project,
-        'Flutter/appleDebug.xcconfig',
-        groupName: 'Flutter',
-      );
+      final again = ensure('Flutter/appleDebug.xcconfig');
 
       expect(again, same(existing));
       expect(again.lastKnownFileType, 'text.xcconfig');
     });
 
+    test('is removed, with what points at it, when the next run does not want '
+        'it', () async {
+      final reference = ensure('Flutter/citrusDebug.xcconfig');
+      final dates = ensure('Flutter/datesDebug.xcconfig');
+      final next = _owned(project, previous: {reference.uuid, dates.uuid});
+
+      ensure('Flutter/citrusDebug.xcconfig', owned: next);
+      final removed = next.settle();
+
+      expect(removed, [dates.uuid]);
+      expect(project.objectsByUuid[dates.uuid], isNull);
+      expect(flutterGroup().children, isNot(contains(dates)));
+      expect(project.objectsByUuid[reference.uuid], same(reference));
+    });
+
     test('is in the project of macOS as well', () async {
       final macos = await XcodeProject.open(_macos);
 
-      final reference = addXcconfigReference(
-        macos,
+      final reference = ensureXcconfigReference(
+        _owned(macos, macos: true),
         'Runner/Configs/citrusDebug.xcconfig',
       );
 
       expect(macos.mainGroup.children, contains(reference));
+      expect(
+        reference.uuid,
+        _uuidOf('Runner/Configs/citrusDebug.xcconfig', platform: 'macos'),
+      );
       expect(
         _xcconfigResources(macos),
         isNot(contains('Runner/Configs/citrusDebug.xcconfig')),
       );
     });
 
-    test('fails with a message when the group does not exist', () {
+    test('fails with a message when a new one needs a group that does not '
+        'exist', () {
       expect(
-        () => addXcconfigReference(
-          project,
-          'Flutter/citrusDebug.xcconfig',
-          groupName: 'Nope',
-        ),
+        () => ensure('Flutter/citrusDebug.xcconfig', groupName: 'Nope'),
         throwsA(
           isA<StateError>().having(
             (error) => error.message,

@@ -26,6 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
+import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
@@ -121,8 +122,14 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
 /// xcconfigs are the base configuration of the build configurations (which
 /// `ios:buildTargets` points at them), not resources, and 2.x copying them
 /// into the app bundle was a bug. Whatever a 2.x run left in the Resources
-/// phase is taken out, whatever the flavor. See [addXcconfigReference] and
+/// phase is taken out, whatever the flavor. See [ensureXcconfigReference] and
 /// [removeXcconfigsFromResources].
+///
+/// The references it makes are **owned** (`OwnedObjects`): they have a UUID of
+/// their own, derived from the path, which the lock records, and the references
+/// of a flavor that was dropped are removed by UUID, with what points at them.
+/// A reference that was there before (2.x, or the user) is used as it is and
+/// never removed.
 ///
 /// The project is the shared `xcodeproj:ios`: it is not opened or saved here,
 /// and the processor tracks it, as a patched artifact.
@@ -153,16 +160,17 @@ class IosXcconfigProcessor extends _XcconfigProcessor {
   @override
   Future<void> apply(FlavorizrContext ctx) async {
     final paths = await writeXcconfigs(ctx);
-    final project = ctx.resource(XcodeprojResource.iosKey);
+    final owned = OwnedObjects.ios(ctx);
 
     for (final path in paths) {
-      addXcconfigReference(
-        project,
+      ensureXcconfigReference(
+        owned,
         p.posix.relative(path, from: K.iOSPath),
         groupName: 'Flutter',
       );
     }
-    removeXcconfigsFromResources(project);
+    removeXcconfigsFromResources(owned.project);
+    owned.settle();
 
     ctx.track(XcodeprojResource.iosArtifact);
   }
@@ -236,12 +244,13 @@ class MacosConfigsProcessor extends _XcconfigProcessor {
   @override
   Future<void> apply(FlavorizrContext ctx) async {
     final paths = await writeXcconfigs(ctx);
-    final project = ctx.resource(XcodeprojResource.macosKey);
+    final owned = OwnedObjects.macos(ctx);
 
     for (final path in paths) {
-      addXcconfigReference(project, p.posix.relative(path, from: K.macOSPath));
+      ensureXcconfigReference(owned, p.posix.relative(path, from: K.macOSPath));
     }
-    removeXcconfigsFromResources(project);
+    removeXcconfigsFromResources(owned.project);
+    owned.settle();
 
     ctx.track(XcodeprojResource.macosArtifact);
   }

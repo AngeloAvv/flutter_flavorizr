@@ -185,9 +185,16 @@ rule is the name, not the configuration, so it also cleans the flavors that
 (macOS), or the same with `Profile` or `Release`, whatever the `<flavor>`. The
 other xcconfigs (`Flutter/Debug.xcconfig`, the ones of Pods, your own, anything
 named otherwise, `debug` in lower case included) and the entries of the phases
-that are not Resources are left alone. The references of a flavor you remove
-stay in the project, as the build configurations of the flavor do, until the 2.x
-processors that own those are ported.
+that are not Resources are left alone.
+
+The references have a UUID derived from their path, so two runs from scratch
+write the same `project.pbxproj`, and the lock records them (`objects`). When
+you remove a flavor, the references that flavorizr made for it are removed from
+the project too, by UUID, with everything that pointed at them. A reference that
+was there before flavorizr 3 (2.x made it, or you did) is used as it is and never
+removed, because only the lock can tell it is not yours; neither are the build
+configurations of the flavor until `ios:buildTargets` and `macos:buildTargets`
+are ported, so they lose their base configuration when its reference goes.
 
 ## Processors that are not on the engine yet
 

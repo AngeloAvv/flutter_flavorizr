@@ -37,7 +37,8 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// record of a processor of the run is rebuilt from what it tracked: the files
 /// it stopped producing leave it, and a processor that owns nothing has no
 /// record. Its regions, keys, objects and inputs are not rebuilt, since
-/// `Artifact` cannot express them yet.
+/// `Artifact` cannot express them yet. The exception are the objects: see
+/// [ownedObjects].
 ///
 /// * [produced] are the artifacts each processor tracked, and [ownedHashes] the
 ///   hash of the owned content of each of them, by canonical path: it must have
@@ -50,6 +51,15 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 ///   deletions that were blocked. Recording the hash of what was *not* written
 ///   would hide the edit from the next run, so the record the lock had is
 ///   carried over instead, and a file the lock did not know is not recorded.
+///
+/// [ownedObjects] are the UUIDs of the pbxproj objects each processor of the run
+/// says it owns (`FlavorizrContext.ownedObjects`), by processor id and then by
+/// project file. What is recorded for a processor is exactly what it says, so an
+/// object it no longer owns leaves the lock. Two cases keep what the lock had
+/// instead, so that nothing a processor owns is ever forgotten: a file it
+/// tracks and said nothing about, and a file in [retained], which the run did
+/// not write: the objects it created there are not in the project. A file the
+/// processor stopped tracking takes its objects with it.
 ///
 /// [desiredFlavors] maps each flavor to the hash of its resolved configuration.
 /// It is recorded only when the run covers every one of [availableProcessors]:
@@ -64,6 +74,7 @@ FlavorizrLock updateLock({
   required Set<String> availableProcessors,
   Iterable<StaleArtifact> stale = const [],
   Set<String> retained = const {},
+  Map<String, Map<String, Set<String>>> ownedObjects = const {},
 }) {
   final previousProcessors = previous?.processors ?? const {};
   final isFullRun =
@@ -105,7 +116,16 @@ FlavorizrLock updateLock({
       }
     }
 
-    if (files.isNotEmpty) processors[id] = ProcessorLock(files: files);
+    final objects = _objectsOf(
+      before: previousProcessors[id]?.objects ?? const {},
+      reported: ownedObjects[id] ?? const {},
+      files: files.keys.toSet(),
+      retained: retained,
+    );
+
+    if (files.isNotEmpty || objects.isNotEmpty) {
+      processors[id] = ProcessorLock(files: files, objects: objects);
+    }
   }
 
   return FlavorizrLock(
@@ -113,6 +133,44 @@ FlavorizrLock updateLock({
     flavors: isFullRun ? desiredFlavors : (previous?.flavors ?? const {}),
     processors: processors,
   );
+}
+
+/// The objects to record for a processor: see `updateLock`.
+Map<String, Set<String>> _objectsOf({
+  required Map<String, Set<String>> before,
+  required Map<String, Set<String>> reported,
+  required Set<String> files,
+  required Set<String> retained,
+}) {
+  final recorded = <String, Set<String>>{};
+
+  for (final MapEntry(key: path, value: uuids) in before.entries) {
+    final canonical = tryCanonicalPath(path);
+
+    if (canonical != null &&
+        (files.contains(canonical) || retained.contains(canonical))) {
+      recorded[canonical] = uuids;
+    }
+  }
+
+  for (final MapEntry(key: path, value: uuids) in reported.entries) {
+    final canonical = tryCanonicalPath(path);
+
+    // What a processor says about a file the lock does not record for it is
+    // not kept: the file is not owned (not tracked, or kept as the user has it).
+    if (canonical == null ||
+        retained.contains(canonical) ||
+        !files.contains(canonical)) {
+      continue;
+    }
+
+    recorded[canonical] = uuids;
+  }
+
+  return {
+    for (final entry in recorded.entries)
+      if (entry.value.isNotEmpty) entry.key: entry.value,
+  };
 }
 
 LockedFile? _sameClass(LockedFile? recorded, Ownership ownership) =>
