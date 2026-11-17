@@ -446,13 +446,9 @@ flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
 Example
 
 ```terminal
-flutter pub run flutter_flavorizr -p assets:download
-flutter pub run flutter_flavorizr -p assets:download,assets:extract
+flutter pub run flutter_flavorizr apply android:buildGradle
+flutter pub run flutter_flavorizr apply android:buildGradle android:icons
 ```
-
-Keep in mind that the order of the processors is important. For example, if you want to run the assets:extract processor, you must run it after the assets:download processor.
-Also, some processors need assets to be downloaded before running. For example, the android:dummyAssets processor needs the assets:download processor to be run before.
-As a rule of thumb, you should always run both assets:download and assets:extract before running any other processor.
 
 If you want to run flutter_flavorizr in verbose mode, you can append the -v (or --verbose) param:
 
