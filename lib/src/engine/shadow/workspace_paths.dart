@@ -80,6 +80,16 @@ String canonicalPath(String path) {
   return normalized;
 }
 
+/// Returns [canonicalPath] of [path], or `null` when it is not a valid path of
+/// the project.
+String? tryCanonicalPath(String path) {
+  try {
+    return canonicalPath(path);
+  } on ArgumentError {
+    return null;
+  }
+}
+
 /// Resolves the canonical [path] below the directory [root], using the
 /// separators of the current platform.
 String resolveIn(Directory root, String path) =>

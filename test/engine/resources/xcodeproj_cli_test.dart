@@ -169,7 +169,7 @@ void main() {
     );
 
     // KNOWN LIMITATION: until a processor says which part of the project it
-    // owns (#515, #516), the lock hashes `project.pbxproj` whole.
+    // owns (#515), the lock hashes `project.pbxproj` whole.
     test('reports a conflict on an edit elsewhere in the file, as the lock '
         'hashes the whole project by default', () async {
       await run(['apply', '--yes', 'test:ios']);

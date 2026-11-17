@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -62,14 +63,24 @@ class FlavorizrContext {
   /// removed from the configuration. It is empty on the first run.
   final Set<String> previousFlavors;
 
+  /// The id of the processor this context was created for, or `null` for the
+  /// context of the whole run.
+  ///
+  /// It is what [previousObjectsOf] and [ownObjects] speak for.
+  final String? processorId;
+
   final Map<ResourceKey<Object?>, Object?> _resources;
   final List<Artifact> _tracked = [];
   final Map<String, List<Artifact>> _trackedBy = {};
+  final Map<String, Map<String, Set<String>>> _previousObjects;
+  final Map<String, Map<String, Set<String>>> _ownedObjects = {};
 
   /// Creates a context.
   ///
   /// [resources] holds the values of the shared resources the engine already
-  /// set up for the processor, by key.
+  /// set up for the processor, by key. [previousObjects] holds the UUIDs of the
+  /// pbxproj objects the lock recorded, by processor id and then by path of the
+  /// project file, and [processorId] the processor the context is for.
   FlavorizrContext({
     required this.config,
     required Directory root,
@@ -77,7 +88,10 @@ class FlavorizrContext {
     required this.logger,
     Set<String> previousFlavors = const {},
     Map<ResourceKey<Object?>, Object?> resources = const {},
+    this.processorId,
+    Map<String, Map<String, Set<String>>> previousObjects = const {},
   }) : _resources = Map.of(resources),
+       _previousObjects = _canonicalObjects(previousObjects),
        root = Directory(p.normalize(root.absolute.path)),
        projectRoot = Directory(p.normalize(projectRoot.absolute.path)),
        previousFlavors = Set.unmodifiable(previousFlavors);
@@ -125,6 +139,110 @@ class FlavorizrContext {
     list.forEach(track);
     _trackedBy.putIfAbsent(processorId, () => []).addAll(list);
   }
+
+  /// The UUIDs of the pbxproj objects the lock recorded for each processor, by
+  /// processor id and then by canonical path of the project file.
+  ///
+  /// A path of the lock that is not a path of the project is ignored here, as
+  /// the reconciliation reports it.
+  Map<String, Map<String, Set<String>>> get previousObjects => _previousObjects;
+
+  /// The UUIDs of the objects that the processor of this context owned the
+  /// last time, in the project file at [path] (relative to the project).
+  ///
+  /// They are what the lock recorded, so the objects a processor created in an
+  /// earlier run. A processor that no longer wants one removes it by UUID: see
+  /// `OwnedObjects`. It is empty on the first run, and for a file the
+  /// processor owned no object of.
+  ///
+  /// Throws a [StateError] on a context that is not for a processor.
+  Set<String> previousObjectsOf(String path) {
+    final id = _requireProcessor();
+    final canonical = tryCanonicalPath(path);
+
+    return Set.unmodifiable(
+      canonical == null
+          ? const <String>{}
+          : _previousObjects[id]?[canonical] ?? const <String>{},
+    );
+  }
+
+  /// The UUIDs of the objects the processors declared through [ownObjects] so
+  /// far, by processor id and then by canonical path of the project file.
+  ///
+  /// A processor that never called [ownObjects] has no entry: the lock keeps
+  /// what it recorded for it. One that called it with nothing has an empty set,
+  /// which is how the lock learns it owns nothing anymore.
+  Map<String, Map<String, Set<String>>> get ownedObjects =>
+      _frozen(_ownedObjects);
+
+  /// Declares that the processor owns the pbxproj objects with these [uuids] in
+  /// the project file at [path], relative to the project: the lock records them,
+  /// and the next run finds them through [previousObjectsOf].
+  ///
+  /// The UUIDs are added to the ones declared before for [path], and replace
+  /// what the lock held for it: declare **every** object that is still owned,
+  /// not only the new ones. A file the processor stops declaring keeps what the
+  /// lock had.
+  ///
+  /// The path must stay within [root], otherwise an [ArgumentError] is thrown.
+  /// Throws a [StateError] on a context that is not for a processor.
+  void ownObjects(String path, Iterable<String> uuids) =>
+      ownObjectsFor(_requireProcessor(), {path: Set.of(uuids)});
+
+  /// Declares the objects [owned], by canonical path of the project file, as
+  /// the ones the processor [processorId] owns.
+  ///
+  /// It is how the engine hands the objects of a step back to the context of
+  /// the run, as [trackFor] does for artifacts.
+  void ownObjectsFor(String processorId, Map<String, Set<String>> owned) {
+    for (final MapEntry(key: path, value: uuids) in owned.entries) {
+      resolve(path);
+
+      _ownedObjects
+          .putIfAbsent(processorId, () => {})
+          .putIfAbsent(canonicalPath(path), () => {})
+          .addAll(uuids);
+    }
+  }
+
+  String _requireProcessor() =>
+      processorId ??
+      (throw StateError(
+        'Objects are owned by a processor: use the context the engine '
+        'created for it.',
+      ));
+
+  static Map<String, Map<String, Set<String>>> _canonicalObjects(
+    Map<String, Map<String, Set<String>>> objects,
+  ) {
+    final result = <String, Map<String, Set<String>>>{};
+
+    for (final MapEntry(key: id, value: byPath) in objects.entries) {
+      for (final MapEntry(key: path, value: uuids) in byPath.entries) {
+        final canonical = tryCanonicalPath(path);
+
+        if (canonical == null) continue;
+
+        result
+            .putIfAbsent(id, () => {})
+            .putIfAbsent(canonical, () => {})
+            .addAll(uuids);
+      }
+    }
+
+    return _frozen(result);
+  }
+
+  static Map<String, Map<String, Set<String>>> _frozen(
+    Map<String, Map<String, Set<String>>> objects,
+  ) => Map.unmodifiable({
+    for (final MapEntry(key: id, value: byPath) in objects.entries)
+      id: Map<String, Set<String>>.unmodifiable({
+        for (final MapEntry(key: path, value: uuids) in byPath.entries)
+          path: Set<String>.unmodifiable(uuids),
+      }),
+  });
 
   /// Returns the value of the shared resource identified by [key].
   ///

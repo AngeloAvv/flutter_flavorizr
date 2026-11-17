@@ -51,6 +51,7 @@ FlavorizrLock update({
   Set<String> available = const {'android', 'ios'},
   Iterable<StaleArtifact> stale = const [],
   Set<String> retained = const {},
+  Map<String, Map<String, Set<String>>> objects = const {},
 }) => updateLock(
   previous: previous,
   flavorizrVersion: '3.0.0',
@@ -60,7 +61,11 @@ FlavorizrLock update({
   availableProcessors: available,
   stale: stale,
   retained: retained,
+  ownedObjects: objects,
 );
+
+const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+const patchedPbxproj = Artifact.patched(pbxproj);
 
 void main() {
   group('updateLock', () {
@@ -259,6 +264,259 @@ void main() {
       );
 
       expect(LockCodec.encode(second), LockCodec.encode(first));
+    });
+  });
+
+  group('updateLock, owned objects', () {
+    Map<String, Iterable<Artifact>> producedBy(String id) => {
+      id: [patchedPbxproj],
+    };
+
+    test('records the UUIDs a processor says it owns, by file', () {
+      final lock = update(
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h'},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'BBBBBBBBBBBBBBBBBBBBBBBB', 'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+        },
+      );
+
+      expect(lock.processors['ios:buildTargets']!.objects, {
+        pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA', 'BBBBBBBBBBBBBBBBBBBBBBBB'},
+      });
+    });
+
+    test('are rebuilt: an object no longer owned leaves the record', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:buildTargets': ProcessorLock(
+              files: {
+                pbxproj: LockedFile(ownership: Ownership.patched, hash: 'h'),
+              },
+              objects: {
+                pbxproj: {
+                  'AAAAAAAAAAAAAAAAAAAAAAAA',
+                  'BBBBBBBBBBBBBBBBBBBBBBBB',
+                },
+              },
+            ),
+          },
+        ),
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h2'},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+        },
+      );
+
+      expect(lock.processors['ios:buildTargets']!.objects, {
+        pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+      });
+    });
+
+    test('a processor that owns nothing anymore has none recorded', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:buildTargets': ProcessorLock(
+              files: {
+                pbxproj: LockedFile(ownership: Ownership.patched, hash: 'h'),
+              },
+              objects: {
+                pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+              },
+            ),
+          },
+        ),
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h'},
+        objects: {
+          'ios:buildTargets': {pbxproj: <String>{}},
+        },
+      );
+
+      expect(lock.processors['ios:buildTargets']!.objects, isEmpty);
+    });
+
+    test('a processor that did not say keeps what the lock had, so that '
+        'nothing it owns is forgotten', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:buildTargets': ProcessorLock(
+              files: {
+                pbxproj: LockedFile(ownership: Ownership.patched, hash: 'h'),
+              },
+              objects: {
+                pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+              },
+            ),
+          },
+        ),
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h'},
+      );
+
+      expect(lock.processors['ios:buildTargets']!.objects, {
+        pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+      });
+    });
+
+    test('are dropped with the file when the processor stops tracking it', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:buildTargets': ProcessorLock(
+              files: {
+                pbxproj: LockedFile(ownership: Ownership.patched, hash: 'h'),
+              },
+              objects: {
+                pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+              },
+            ),
+          },
+        ),
+        produced: {'ios:buildTargets': const []},
+      );
+
+      expect(lock.processors.containsKey('ios:buildTargets'), isFalse);
+    });
+
+    test('the record of a file that was not written is carried over, and what '
+        'the run created in it is not recorded', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:buildTargets': ProcessorLock(
+              files: {
+                pbxproj: LockedFile(ownership: Ownership.patched, hash: 'h'),
+              },
+              objects: {
+                pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+              },
+            ),
+          },
+        ),
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h2'},
+        retained: {pbxproj},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'BBBBBBBBBBBBBBBBBBBBBBBB'},
+          },
+        },
+      );
+
+      expect(lock.processors['ios:buildTargets']!.objects, {
+        pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+      });
+    });
+
+    test('the objects of a retained file are kept even when its record is '
+        'not, as the class of the file changed', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:buildTargets': ProcessorLock(
+              files: {pbxproj: managed('h')},
+              objects: {
+                pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+              },
+            ),
+          },
+        ),
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h2'},
+        retained: {pbxproj},
+      );
+
+      expect(lock.processors['ios:buildTargets']!.objects, {
+        pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+      });
+    });
+
+    test('objects reported in a file the processor does not track are not '
+        'recorded', () {
+      final lock = update(
+        produced: {'ios:buildTargets': const []},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+        },
+      );
+
+      expect(lock.processors.containsKey('ios:buildTargets'), isFalse);
+    });
+
+    test('a retained file the lock did not know has no objects', () {
+      final lock = update(
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h2'},
+        retained: {pbxproj},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'BBBBBBBBBBBBBBBBBBBBBBBB'},
+          },
+        },
+      );
+
+      expect(lock.processors.containsKey('ios:buildTargets'), isFalse);
+    });
+
+    test('the other processors keep their objects in a partial run', () {
+      final previous = lockOf(
+        processors: {
+          'ios:xcconfig': ProcessorLock(
+            files: {
+              pbxproj: LockedFile(ownership: Ownership.patched, hash: 'h'),
+            },
+            objects: {
+              pbxproj: {'CCCCCCCCCCCCCCCCCCCCCCCC'},
+            },
+          ),
+        },
+      );
+
+      final lock = update(
+        previous: previous,
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h'},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+        },
+      );
+
+      expect(
+        lock.processors['ios:xcconfig'],
+        previous.processors['ios:xcconfig'],
+      );
+    });
+
+    test('are written sorted and survive a trip through the codec', () {
+      final lock = update(
+        produced: producedBy('ios:buildTargets'),
+        hashes: {pbxproj: 'h'},
+        objects: {
+          'ios:buildTargets': {
+            pbxproj: {'BBBBBBBBBBBBBBBBBBBBBBBB', 'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+        },
+      );
+      final text = LockCodec.encode(lock);
+
+      expect(
+        text.indexOf('AAAAAAAAAAAAAAAAAAAAAAAA'),
+        lessThan(text.indexOf('BBBBBBBBBBBBBBBBBBBBBBBB')),
+      );
+      expect(LockCodec.decode(text, runningVersion: '3.0.0'), lock);
     });
   });
 }
