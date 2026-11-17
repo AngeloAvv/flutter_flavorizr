@@ -66,9 +66,9 @@ cannot hide a real change in a `project.pbxproj`:
 ```
 
 Two more options say what else a `project.pbxproj` may differ in. Both are
-regular expressions, and the file is covered only if it is identical to the
-golden once they are applied (and, with `only-comments`, once the annotations
-are stripped):
+regular expressions, matched against **one line** of the file, and the file is
+covered only if it is identical to the golden once they are applied (and, with
+`only-comments`, once the annotations are stripped):
 
 * `drop-from-golden` removes the lines of the golden that match, and names its
   UUIDs again, since the normalizer names a build file after its place in the
@@ -77,12 +77,18 @@ are stripped):
 * `ignore` removes what matches from both files. It is what the new output has
   more of, in the lines it shares with the golden.
 
+What they match is allowed to differ, so a pattern has to name exactly the thing
+it vouches for: anchor it on the whole line, and say what the object is (a file
+reference to a generated flavor xcconfig, not any xcconfig, and not any file that
+happens to have the same attribute). `differ_test.dart` runs the entries of
+`whitelist.yaml` as they ship, so a pattern that is too broad fails there.
+
 ```yaml
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '\.xcconfig in Resources'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; '
-  reason: the xcconfigs are not resources, and have a type (#518)
+  drop-from-golden: '^\s*\w{24} /\* Flutter/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig"?; )'
+  reason: the generated xcconfigs are not resources, and have a type (#518)
 ```
 
 ## Tests

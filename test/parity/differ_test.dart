@@ -229,18 +229,18 @@ void main() {
     });
   });
 
-  group('a whitelist entry that drops lines of the golden', () {
-    const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
-    final whitelist = Whitelist.parse('''
-- path: ios/Runner.xcodeproj/project.pbxproj
-  only-comments: true
-  drop-from-golden: '\\.xcconfig in Resources'
-  ignore: 'lastKnownFileType = text\\.xcconfig; '
-  reason: the xcconfigs are not resources
-''');
+  group('the whitelist of the pbxproj files, as it ships', () {
+    // The entries of the real whitelist, not a copy: what they let through is
+    // what the parity check lets through.
+    final whitelist = Whitelist.parse(
+      File('tool/parity/whitelist.yaml').readAsStringSync(),
+    );
 
     /// A project with a reference to each of [files], in a group, and a build
-    /// file in the Resources phase for each of [resources].
+    /// file in the Resources phase for each of [resources]. A file is spelled
+    /// as the project spells its path, and the references are the ones
+    /// dart_xcodeproj writes: `includeInIndex = 1`, then [type] if it is an
+    /// xcconfig, then [extra], then the path.
     ///
     /// The UUIDs are the ones of the normalizer, which names a build file after
     /// its place in the phase: taking one out renames the ones after it.
@@ -248,6 +248,8 @@ void main() {
       List<String> files, {
       required List<String> resources,
       String type = '',
+      String extra = '',
+      Map<String, String> typeOf = const {},
     }) {
       String id(String name) =>
           'F${files.indexOf(name).toString().padLeft(23, '0')}';
@@ -267,7 +269,8 @@ void main() {
         '/* Begin PBXFileReference section */\n'
         '${files.map((name) => '\t\t${id(name)} /* $name */ = '
             '{isa = PBXFileReference; includeInIndex = 1; '
-            '${name.endsWith('.xcconfig') ? type : ''}'
+            '${typeOf[name] ?? (name.endsWith('.xcconfig') ? type : '')}'
+            '${extra.isEmpty ? '' : '$extra '}'
             'path = $name; sourceTree = "<group>"; };\n').join()}'
         '/* End PBXFileReference section */\n'
         '\n'
@@ -313,74 +316,195 @@ void main() {
       );
     }
 
-    const files = ['a.xcconfig', 'b.xcconfig', 'Info.storyboard'];
+    const typed = 'lastKnownFileType = text.xcconfig; ';
 
-    test('tolerates the entries it dropped, though the ones after them are '
-        'named again', () {
-      write(golden, pbxproj, project(files, resources: files));
-      write(actual, pbxproj, project(files, resources: ['Info.storyboard']));
+    for (final (platform, folder) in [
+      ('ios', 'Flutter'),
+      ('macos', 'Runner/Configs'),
+    ]) {
+      group(platform, () {
+        final pbxproj = '$platform/Runner.xcodeproj/project.pbxproj';
+        final apple = '$folder/appleDebug.xcconfig';
+        final banana = '$folder/bananaRelease.xcconfig';
+        final overrides = '$folder/UserOverrides.xcconfig';
+        const storyboard = 'Runner/Info.storyboard';
+        final files = [apple, banana, overrides, storyboard];
 
-      final report = compareTrees(golden, actual, whitelist: whitelist);
+        bool clean(String before, String after) {
+          write(golden, pbxproj, before);
+          write(actual, pbxproj, after);
 
-      expect(report.isClean, isTrue, reason: report.describe());
-      expect(report.differences.single.reason, isNotNull);
-    });
+          return compareTrees(golden, actual, whitelist: whitelist).isClean;
+        }
 
-    test('tolerates the type that the references gained', () {
-      write(golden, pbxproj, project(files, resources: files));
-      write(
-        actual,
-        pbxproj,
-        project(
-          files,
-          resources: ['Info.storyboard'],
-          type: 'lastKnownFileType = text.xcconfig; ',
-        ),
-      );
+        test('tolerates the flavor xcconfigs that are no resources anymore, '
+            'though the entries after them are named again', () {
+          expect(
+            clean(
+              project(files, resources: files),
+              project(
+                files,
+                resources: [overrides, storyboard],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isTrue,
+          );
+        });
 
-      final report = compareTrees(golden, actual, whitelist: whitelist);
+        test('keeps the xcconfig of the user in Resources', () {
+          final golden = project(files, resources: files);
 
-      expect(report.isClean, isTrue, reason: report.describe());
-    });
+          // Dropping it is a regression, whatever the rest does.
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [storyboard],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isFalse,
+          );
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isFalse,
+          );
+        });
 
-    test('does not hide a resource that is not an xcconfig', () {
-      write(golden, pbxproj, project(files, resources: files));
-      write(actual, pbxproj, project(files, resources: []));
+        test('fails when a flavor xcconfig is still a resource', () {
+          final golden = project(files, resources: files);
 
-      final report = compareTrees(golden, actual, whitelist: whitelist);
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [apple, overrides, storyboard],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isFalse,
+          );
+        });
 
-      expect(report.isClean, isFalse);
-      expect(report.differences.single.reason, isNull);
-    });
+        test('fails when what is dropped is not a flavor xcconfig', () {
+          final golden = project(files, resources: files);
 
-    test('does not hide an xcconfig that is still a resource', () {
-      write(golden, pbxproj, project(files, resources: files));
-      write(
-        actual,
-        pbxproj,
-        project(files, resources: ['a.xcconfig', 'Info.storyboard']),
-      );
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [apple, banana],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isFalse,
+          );
+        });
 
-      final report = compareTrees(golden, actual, whitelist: whitelist);
+        test('fails when the xcconfig of a flavor is in another folder', () {
+          const other = 'Other/appleDebug.xcconfig';
+          final all = [...files, other];
 
-      expect(report.isClean, isFalse);
-    });
+          expect(
+            clean(
+              project(all, resources: all),
+              project(
+                all,
+                resources: [overrides, storyboard],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isFalse,
+          );
+        });
 
-    test('does not hide any other change', () {
-      write(golden, pbxproj, project(files, resources: files));
-      write(
-        actual,
-        pbxproj,
-        project(
-          files,
-          resources: ['Info.storyboard'],
-        ).replaceFirst('path = Info.storyboard;', 'path = Other.storyboard;'),
-      );
+        test('tolerates the type on the references of the flavors only', () {
+          final golden = project(files, resources: [overrides, storyboard]);
 
-      final report = compareTrees(golden, actual, whitelist: whitelist);
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [overrides, storyboard],
+                typeOf: {apple: typed, banana: typed},
+              ),
+            ),
+            isTrue,
+          );
+        });
 
-      expect(report.isClean, isFalse);
-    });
+        test('fails when something else gains the type of an xcconfig', () {
+          final golden = project(files, resources: [overrides, storyboard]);
+
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [overrides, storyboard],
+                typeOf: {apple: typed, banana: typed, storyboard: typed},
+              ),
+            ),
+            isFalse,
+          );
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [overrides, storyboard],
+                typeOf: {apple: typed, banana: typed, overrides: typed},
+              ),
+            ),
+            isFalse,
+          );
+        });
+
+        test('fails when a flavor reference gains something else', () {
+          final golden = project(files, resources: [overrides, storyboard]);
+
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [overrides, storyboard],
+                typeOf: {apple: '${typed}fileEncoding = 4; ', banana: typed},
+              ),
+            ),
+            isFalse,
+          );
+        });
+
+        test('fails on any other change', () {
+          final golden = project(files, resources: files);
+
+          expect(
+            clean(
+              golden,
+              project(
+                files,
+                resources: [overrides, storyboard],
+                typeOf: {apple: typed, banana: typed},
+              ).replaceFirst('path = $storyboard;', 'path = Other.storyboard;'),
+            ),
+            isFalse,
+          );
+        });
+      });
+    }
   });
 
   group('Whitelist.parse', () {
