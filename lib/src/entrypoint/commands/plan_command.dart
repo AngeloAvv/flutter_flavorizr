@@ -53,6 +53,8 @@ class PlanCommand extends TargetCommand {
     final config = loadConfig();
     final plan = resolve(config);
 
+    await checkNothingIsDropped(config);
+
     logger.info(renderRunPlan(plan));
 
     final preview = await dryRun(plan, config);
