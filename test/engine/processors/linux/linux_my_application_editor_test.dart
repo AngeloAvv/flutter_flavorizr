@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
+import 'package:flutter_flavorizr/src/exception/unsafe_title_setter_exception.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -636,6 +637,144 @@ void main() {
       expect(
         LinuxMyApplicationEditor.withWindowTitles(source, _titles),
         contains(_begin('window_title')),
+      );
+    });
+  });
+
+  group('LinuxMyApplicationEditor with a setter that is not under a brace', () {
+    const header = '    gtk_header_bar_set_title(header_bar, "example");\n';
+    const window = '    gtk_window_set_title(window, "example");\n';
+
+    void expectUnsafe(String source) => expect(
+      () => LinuxMyApplicationEditor.withWindowTitles(source, _titles),
+      throwsA(isA<UnsafeTitleSetterException>()),
+    );
+
+    test('rejects a setter that an unbraced `if` controls, since the region '
+        'would run whatever the condition says', () {
+      expectUnsafe(
+        _pristine.replaceFirst(header, '    if (enabled)\n  $header'),
+      );
+    });
+
+    test('rejects an unbraced `else`, `for` and `while`', () {
+      for (final control in ['else', 'for (;;)', 'while (x)', '} else']) {
+        expectUnsafe(_pristine.replaceFirst(window, '    $control\n  $window'));
+      }
+    });
+
+    test('rejects a condition over several lines, past a comment', () {
+      expectUnsafe(
+        _pristine.replaceFirst(
+          header,
+          '    if (a &&\n        b)\n    // the title\n  $header',
+        ),
+      );
+    });
+
+    test('tells the user to add braces, and where', () {
+      expect(
+        () => LinuxMyApplicationEditor.withWindowTitles(
+          _pristine.replaceFirst(header, '    if (enabled)\n  $header'),
+          _titles,
+        ),
+        throwsA(
+          isA<UnsafeTitleSetterException>().having(
+            (error) => error.toString(),
+            'message',
+            allOf(contains('braces'), contains('gtk_header_bar_set_title')),
+          ),
+        ),
+      );
+    });
+
+    test('keeps a braced `if`, a preprocessor condition and comments about '
+        'control flow', () {
+      for (final before in [
+        '    if (enabled) {\n',
+        '    #if defined(X)\n',
+        '    // if (enabled)\n',
+        '    /* else */\n',
+      ]) {
+        final source = _pristine.replaceFirst(header, '$before$header');
+
+        expect(
+          LinuxMyApplicationEditor.withWindowTitles(source, _titles),
+          contains(_begin('header_bar_title')),
+          reason: before,
+        );
+      }
+    });
+  });
+
+  group('LinuxMyApplicationEditor with a setter that is commented out', () {
+    const window = '    gtk_window_set_title(window, "example");\n';
+
+    test('anchors on the active setter, not on one in a block comment before '
+        'it', () {
+      final source = _pristine.replaceFirst(
+        window,
+        '    /* gtk_window_set_title(window, "old"); */\n$window',
+      );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        source,
+        _titles,
+      );
+
+      expect(patched, contains('$window    ${_begin('plain_window_title')}\n'));
+      expect(_outsideTheRegions(patched), _outsideTheRegions(source));
+    });
+
+    test('anchors on the active setter, not on one in a line comment or in a '
+        'multi-line block comment before it', () {
+      for (final comment in [
+        '    // gtk_window_set_title(window, "old");\n',
+        '    /*\n    gtk_window_set_title(window, "old");\n    */\n',
+      ]) {
+        final source = _pristine.replaceFirst(window, '$comment$window');
+
+        final patched = LinuxMyApplicationEditor.withWindowTitles(
+          source,
+          _titles,
+        );
+
+        expect(
+          patched,
+          contains('$window    ${_begin('plain_window_title')}\n'),
+          reason: comment,
+        );
+        expect(
+          LinuxMyApplicationEditor.withWindowTitles(patched, _titles),
+          patched,
+        );
+      }
+    });
+
+    test('a setter that only exists in a comment gets no region', () {
+      final source = _pristine.replaceFirst(
+        window,
+        '    /* gtk_window_set_title(window, "old"); */\n',
+      );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        source,
+        _titles,
+      );
+
+      expect(patched, contains(_begin('header_bar_title')));
+      expect(patched, isNot(contains(_begin('plain_window_title'))));
+    });
+
+    test('a setter after a comment on its own line is still found', () {
+      final source = _pristine.replaceFirst(
+        window,
+        '    /* base */ gtk_window_set_title(window, "example");\n',
+      );
+
+      expect(
+        LinuxMyApplicationEditor.withWindowTitles(source, _titles),
+        contains(_begin('plain_window_title')),
       );
     });
   });

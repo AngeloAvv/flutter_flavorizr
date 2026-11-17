@@ -179,6 +179,24 @@ void main() {
       expect(project.read(_cmake), contains('com.example.apple'));
     });
 
+    test('removing the last linux flavor is refused, so no flavor is left in '
+        'the regions, and nothing is written', () async {
+      await project.run(['apply', '--yes', ..._fullRun]);
+      project.write(
+        'flavorizr.yaml',
+        'flavors:\n  apple:\n    app:\n      name: "Apple App"\n'
+            '    android:\n      applicationId: "com.example.apple"\n',
+      );
+      final before = project.snapshot();
+
+      final code = await project.run(['apply', '--yes', ..._fullRun]);
+
+      expect(code, ExitCodes.data, reason: project.logger.output);
+      expect(project.snapshot(), before);
+      expect(project.logger.output, contains('linux'));
+      expect(project.logger.output, contains(_cmake));
+    });
+
     test('adding a flavor adds it to the regions', () async {
       await project.run(['apply', '--yes', ..._fullRun]);
       project.write('flavorizr.yaml', _config(['apple', 'banana', 'cherry']));

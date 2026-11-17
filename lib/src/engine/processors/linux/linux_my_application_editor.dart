@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/engine/processors/linux/marked_text.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
+import 'package:flutter_flavorizr/src/exception/unsafe_title_setter_exception.dart';
 import 'package:flutter_flavorizr/src/utils/desktop_utils.dart';
 
 /// The edits flavorizr makes to `linux/runner/my_application.cc`.
@@ -121,6 +122,10 @@ abstract final class LinuxMyApplicationEditor {
     r"'(?:[^'\\\n]|\\.)*'?",
   );
 
+  // The end of a control flow statement that has no braces yet: a condition, an
+  // `else`. A preprocessor line is not one.
+  static final RegExp _unbraced = RegExp(r'^(?!#).*(?:\)|\belse)$');
+
   static final RegExp _windowTitleWord = RegExp(r'\bwindow_title\b');
 
   /// Returns [source] with the regions up to date for [titles], the title of
@@ -133,29 +138,51 @@ abstract final class LinuxMyApplicationEditor {
   /// region whose setter the user changed, so that nothing is left to override
   /// there, is dropped.
   ///
-  /// Throws a [MalformedResourceException] when [source], leaving the regions
+  /// Throws an [UnsafeTitleSetterException] when a literal setter is the
+  /// statement of an `if`, `else`, `for` or `while` that has no braces, and a
+  /// [MalformedResourceException] when [source], leaving the regions
   /// out, has nothing to override, which is also the case of a declared
   /// `window_title` that no setter reads, and when the markers do not form
   /// regions.
   static String withWindowTitles(String source, Map<String, String> titles) {
     final text = MarkedText(source, _markers);
-    final outside = text.outside.map((line) => line.text).toList();
-    bool any(RegExp pattern) => outside.any(pattern.hasMatch);
+    // What is looked for is looked for in the code: a statement in a comment or
+    // in a string is not one. The blanked text has the lines of the source, and
+    // still matches the patterns, whose literals are quotes around anything.
+    final code = _codeOnly(source).split('\n');
+    bool matches(RegExp pattern, TextLine line) =>
+        pattern.hasMatch(code[line.index]);
+    bool any(RegExp pattern) =>
+        text.outside.any((line) => matches(pattern, line));
 
     final headerBarLiteral = any(_headerBarTitleLiteral);
     final windowLiteral = any(_windowTitleLiteral);
     // The variable gets a region when something reads it: a declaration that
     // nothing uses would take assignments no setter reads, and the flavor would
-    // silently have no effect. Only code counts, so what the comments and the
-    // strings say about it is left out.
-    final code = _codeOnly(source).split('\n');
+    // silently have no effect.
     final variable =
         any(_windowTitleVariable) &&
         text.outside.any(
           (line) =>
               _windowTitleWord.hasMatch(code[line.index]) &&
-              !_windowTitleVariable.hasMatch(line.text),
+              !matches(_windowTitleVariable, line),
         );
+
+    // A region goes after its setter as a statement of its own: under an
+    // unbraced `if` it would not be governed by it.
+    for (final pattern in [_headerBarTitleLiteral, _windowTitleLiteral]) {
+      for (final line in text.outside.where((line) => matches(pattern, line))) {
+        final before = code
+            .take(line.index)
+            .map((text) => text.trim())
+            .where((text) => text.isNotEmpty)
+            .lastOrNull;
+
+        if (before != null && _unbraced.hasMatch(before)) {
+          throw UnsafeTitleSetterException(line.text);
+        }
+      }
+    }
 
     if (!variable && !headerBarLiteral && !windowLiteral) {
       throw MalformedResourceException(source);
@@ -235,12 +262,16 @@ abstract final class LinuxMyApplicationEditor {
     RegionMarker marker,
     List<String> body,
     RegExp anchor,
-  ) => MarkedText(source, _markers).upsert(
-    marker,
-    body,
-    anchor: (lines) =>
-        lines.where((line) => anchor.hasMatch(line.text)).firstOrNull,
-  );
+  ) {
+    final code = _codeOnly(source).split('\n');
+
+    return MarkedText(source, _markers).upsert(
+      marker,
+      body,
+      anchor: (lines) =>
+          lines.where((line) => anchor.hasMatch(code[line.index])).firstOrNull,
+    );
+  }
 
   static List<String> _body(
     Map<String, String> titles,
