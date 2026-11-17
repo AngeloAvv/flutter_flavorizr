@@ -117,20 +117,30 @@ Map<String, Object?> previewFields(EnginePreview? preview) => {
 
 /// What happened to the processors of a run: the ones that ran, in order, with
 /// how long each took and whether it completed or failed, then the ones that
-/// were skipped because an earlier one failed.
+/// did not run because an earlier one failed, or the run stopped: the ones the
+/// [report] skipped, and the [planned] ones nothing recorded, such as the
+/// processors that are not on the engine after one of them failed.
 List<Map<String, Object?>> stepFields(
   ExecutionReport? report,
-  List<StepRecord> records,
-) => [
-  for (final record in records)
-    {
-      'id': record.id,
-      'status': record.status.name,
-      'durationMs': record.elapsed.inMilliseconds,
-    },
-  for (final id in report?.skipped ?? const <String>[])
-    {'id': id, 'status': 'skipped', 'durationMs': null},
-];
+  List<StepRecord> records, {
+  Iterable<String> planned = const [],
+}) {
+  final skipped = {
+    ...?report?.skipped,
+    ...planned.where((id) => !records.any((record) => record.id == id)),
+  };
+
+  return [
+    for (final record in records)
+      {
+        'id': record.id,
+        'status': record.status.name,
+        'durationMs': record.elapsed.inMilliseconds,
+      },
+    for (final id in skipped)
+      {'id': id, 'status': 'skipped', 'durationMs': null},
+  ];
+}
 
 /// The recipes of `list`, as they are shown.
 List<Map<String, Object?>> recipeFields(Iterable<RecipeListing> recipes) => [

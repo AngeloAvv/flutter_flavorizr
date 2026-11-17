@@ -90,6 +90,27 @@ class _RecordingObserver implements StepObserver {
   }
 }
 
+/// An observer that throws when told about [on], as an output whose stdout was
+/// closed would.
+class _ThrowingObserver implements StepObserver {
+  final String on;
+
+  _ThrowingObserver(this.on);
+
+  void _maybe(String what) {
+    if (on == what) throw StateError('stdout is closed ($what)');
+  }
+
+  @override
+  void started(String id) => _maybe('started');
+
+  @override
+  void finished(String id, Duration elapsed) => _maybe('finished');
+
+  @override
+  void failed(String id, Duration elapsed, Object error) => _maybe('failed');
+}
+
 /// A resource that records what happens to it in [events].
 class _FakeResource extends Resource<String> {
   @override
@@ -459,6 +480,48 @@ void main() {
         ], observer: _RecordingObserver());
 
         expect(logger.errors, ['Failed: a (Bad state: boom)']);
+      });
+    });
+
+    group('an observer that throws', () {
+      test('does not skip the processor it was told about', () async {
+        final committed = <String>[];
+
+        final report = await execute(
+          [_FakeProcessor('a', events), _FakeProcessor('b', events)],
+          observer: _ThrowingObserver('started'),
+          commit: (shadow, ctx) async => committed.add('commit'),
+        );
+
+        expect(events, ['apply a', 'apply b']);
+        expect(report.succeeded, isTrue);
+        expect(report.completed, ['a', 'b']);
+        expect(committed, ['commit']);
+      });
+
+      test('does not skip the commit of a run that went well', () async {
+        final committed = <String>[];
+
+        final report = await execute(
+          [_FakeProcessor('a', events)],
+          observer: _ThrowingObserver('finished'),
+          commit: (shadow, ctx) async => committed.add('commit'),
+        );
+
+        expect(report.succeeded, isTrue);
+        expect(report.completed, ['a']);
+        expect(committed, ['commit']);
+      });
+
+      test('does not replace the error of the processor that failed', () async {
+        final error = StateError('malformed project');
+
+        final report = await execute([
+          _FakeProcessor('a', events, error: error),
+        ], observer: _ThrowingObserver('failed'));
+
+        expect(report.failed, 'a');
+        expect(report.error, same(error));
       });
     });
 

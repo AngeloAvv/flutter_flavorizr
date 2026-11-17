@@ -97,6 +97,9 @@ class FakeLegacy implements LegacyPipeline {
   /// What [check] throws, if anything.
   Object? checkFailure;
 
+  /// The id of the step that fails when it runs, after the ones before it.
+  String? failAt;
+
   /// The steps [check] was asked about.
   final List<LegacyStep> checked = [];
 
@@ -123,6 +126,15 @@ class FakeLegacy implements LegacyPipeline {
 
     for (final step in steps) {
       observer?.started(step.id);
+
+      if (step.id == failAt) {
+        final error = StateError('${step.id} failed');
+
+        observer?.failed(step.id, const Duration(milliseconds: 1), error);
+
+        throw error;
+      }
+
       ran.add(step);
       observer?.finished(step.id, const Duration(milliseconds: 1));
     }

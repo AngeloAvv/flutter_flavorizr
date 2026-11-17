@@ -30,6 +30,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'json_schema_validator.dart';
 
+/// The ```json fences of [markdown], whatever its line endings: a checkout on
+/// Windows may turn them into CRLF.
+List<String> jsonExamples(String markdown) => [
+  for (final match in RegExp(
+    r'```json\r?\n(.*?)\r?\n```',
+    dotAll: true,
+  ).allMatches(markdown))
+    match.group(1)!,
+];
+
 /// The schema and the document that describes it are what a consumer of
 /// `--json` reads: they must agree with each other, and with the output.
 void main() {
@@ -39,13 +49,7 @@ void main() {
           )
           as Map<String, Object?>;
   final doc = File('doc/json-output.md').readAsStringSync();
-  final examples = [
-    for (final match in RegExp(
-      r'```json\n(.*?)\n```',
-      dotAll: true,
-    ).allMatches(doc))
-      match.group(1)!,
-  ];
+  final examples = jsonExamples(doc);
 
   test('the document shows an example of every command and of a failure', () {
     final commands = {
@@ -65,6 +69,15 @@ void main() {
       expect(validateJson(jsonDecode(example), schema), isEmpty);
     });
   }
+
+  test('the examples are found in a document with CRLF line endings', () {
+    final crlf = doc.replaceAll('\r\n', '\n').replaceAll('\n', '\r\n');
+
+    expect(jsonExamples(crlf), hasLength(examples.length));
+    for (final example in jsonExamples(crlf)) {
+      expect(validateJson(jsonDecode(example), schema), isEmpty);
+    }
+  });
 
   group('the schema', () {
     Map<String, Object?> plan() =>

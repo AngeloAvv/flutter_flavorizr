@@ -71,6 +71,17 @@ class PlanExecutor {
   /// Creates an executor.
   const PlanExecutor({required this.logger, this.observer});
 
+  /// Tells the observer something. What it throws, such as a write to a stdout
+  /// that was closed, is no business of the run: the processors decide how it
+  /// ends, so it is noted and dropped.
+  void _notify(void Function() notification) {
+    try {
+      notification();
+    } on Object catch (error) {
+      logger.detail('A step observer failed: $error');
+    }
+  }
+
   /// Applies [plan] to the project in [projectRoot], whose [paths] are copied
   /// to the shadow workspace the processors write to.
   ///
@@ -118,18 +129,18 @@ class PlanExecutor {
             final stopwatch = Stopwatch()..start();
 
             currentId = id;
-            observer?.started(id);
+            _notify(() => observer?.started(id));
 
             try {
               await step.processor.apply(stepCtx);
             } on Object catch (caught) {
-              observer?.failed(id, stopwatch.elapsed, caught);
+              _notify(() => observer?.failed(id, stopwatch.elapsed, caught));
               rethrow;
             }
 
             completed.add(id);
             currentId = null;
-            observer?.finished(id, stopwatch.elapsed);
+            _notify(() => observer?.finished(id, stopwatch.elapsed));
           });
         } on Object catch (caught, trace) {
           error = caught;

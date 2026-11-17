@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 
 import '../test_utils.dart';
@@ -91,6 +92,7 @@ void main() {
       );
       final previous = Directory.current;
       final observer = _RecordingObserver();
+      final logger = _ProgressCountingLogger();
 
       addTearDown(() {
         Directory.current = previous;
@@ -103,7 +105,7 @@ void main() {
 
       await StandardLegacyPipeline(project).run(
         [LegacyStep('android:dummyAssets', config)],
-        logger: TestUtils.quietLogger(),
+        logger: logger,
         observer: observer,
       );
 
@@ -111,6 +113,7 @@ void main() {
         'started android:dummyAssets',
         'finished android:dummyAssets',
       ]);
+      expect(logger.progresses, 0, reason: 'the observer shows the step');
     });
   });
 
@@ -235,4 +238,18 @@ class _RecordingObserver implements StepObserver {
   @override
   void failed(String id, Duration elapsed, Object error) =>
       events.add('failed $id');
+}
+
+/// A logger that counts the progress bars it is asked for.
+class _ProgressCountingLogger extends Logger {
+  int progresses = 0;
+
+  _ProgressCountingLogger() : super(level: Level.quiet);
+
+  @override
+  Progress progress(String message, {ProgressOptions? options}) {
+    progresses++;
+
+    return super.progress(message, options: options);
+  }
 }

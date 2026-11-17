@@ -25,8 +25,12 @@ does when it enabled them.
   of a spinner: with it, steps are printed as lines, with no animation.
 * A question is asked only when stdin **and** stdout are a terminal (a CI that
   hands out a pseudo terminal can still be answered: that is a choice of whoever
-  runs it). With no one to ask, `apply` goes on, as it always did. Pass `--yes`
-  to say so explicitly.
+  runs it). With no terminal nothing is asked and `apply` goes on. **That is a
+  change from 2.x**, where an answer piped to stdin was read: `echo n | flutter
+  pub run flutter_flavorizr` could cancel, and now it applies. A script must
+  say what it wants with a flag: `--yes` to apply, `--on-conflict=keep|overwrite`
+  for the files edited by hand (nobody can be asked about them either), and
+  `plan` or `status` when it must write nothing.
 * Warnings and errors always go to **stderr**. Exit codes are the ones of
   [the command line](cli.md#exit-codes), whatever the output.
 
@@ -115,7 +119,7 @@ On top of the fields above:
 | --- | --- | --- |
 | `applied` | boolean | Whether the changes of the engine were written, with the lock. |
 | `cancelled` | boolean | Whether the run was stopped by an answer. It cannot be with `--json`, where nobody is asked. |
-| `steps` | `{id, status, durationMs}[]` | What ran, in order, ending with the ones that were skipped. `status` is `completed`, `failed` or `skipped`. `durationMs` is `null` for a step that was skipped. |
+| `steps` | `{id, status, durationMs}[]` | What ran, in order, ending with the processors of `processors` that did not run because an earlier one failed, `legacy` ones included. `status` is `completed`, `failed` or `skipped`. `durationMs` is `null` for a step that was skipped. |
 
 `apply` always has these three, even when it failed: `steps` tells where.
 

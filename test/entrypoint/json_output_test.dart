@@ -297,6 +297,8 @@ void main() {
         expect(code, ExitCodes.attention);
         expect(doc['applied'], isFalse);
         expect(project.read('android/app/flavorizr.gradle'), '// mine\n');
+        // Nothing was written: the summary is the preview's.
+        expect(doc['summary'], containsPair('conflicts', 1));
         expect((doc['errors'] as List), isNotEmpty);
       });
 
@@ -355,6 +357,70 @@ void main() {
           expect(doc['summary'], containsPair('conflicts', 1));
           expect((doc['summary'] as Map)['modified'], modified.length - 1);
         });
+      });
+
+      test('lists what a failed legacy step kept from running', () async {
+        project.legacy.failAt = 'flutter:flavors';
+
+        final code = await project.run([
+          'apply',
+          '--json',
+          'flutter:flavors',
+          'ide:config',
+        ]);
+        final steps = (document()['steps'] as List)
+            .cast<Map<String, Object?>>();
+
+        expect(code, ExitCodes.software);
+        expect(steps.map((s) => '${s['id']} ${s['status']}'), [
+          'flutter:flavors failed',
+          'ide:config skipped',
+        ]);
+        expect(steps.last['durationMs'], isNull);
+      });
+
+      test(
+        'lists the legacy steps an engine failure kept from running',
+        () async {
+          File(
+            project.abs('android/app/src/main/AndroidManifest.xml'),
+          ).deleteSync();
+
+          await project.run([
+            'apply',
+            '--json',
+            'android:androidManifest',
+            'flutter:flavors',
+          ]);
+
+          expect(
+            (document()['steps'] as List).cast<Map<String, Object?>>().last,
+            {'id': 'flutter:flavors', 'status': 'skipped', 'durationMs': null},
+          );
+        },
+      );
+
+      test('keeps what was written when a legacy step then fails', () async {
+        await project.run(['apply', '-y', ...engineTargets]);
+        project.write('android/app/flavorizr.gradle', '// mine\n');
+        project.write('flavorizr.yaml', CliFixture.config(['apple', 'pear']));
+        project.stdout.clear();
+        project.legacy.failAt = 'flutter:flavors';
+
+        final code = await project.run([
+          'apply',
+          '--json',
+          '--on-conflict=overwrite',
+          ...engineTargets,
+          'flutter:flavors',
+        ]);
+        final doc = document();
+        final modified = changes(doc).where((c) => c['change'] == 'modified');
+
+        expect(code, ExitCodes.software);
+        expect(doc['applied'], isTrue);
+        expect(doc['summary'], containsPair('conflicts', 0));
+        expect((doc['summary'] as Map)['modified'], modified.length);
       });
 
       test(

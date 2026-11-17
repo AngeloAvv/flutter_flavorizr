@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/entrypoint/deprecated_options.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
 import 'package:flutter_flavorizr/src/entrypoint/plan_report.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 import 'package:flutter_flavorizr/src/engine/execution_report.dart';
@@ -88,6 +89,7 @@ class ApplyCommand extends TargetCommand {
   bool get _yes => argResults!['yes'] == true || argResults!['force'] == true;
 
   ExecutionReport? _report;
+  var _planned = const <String>[];
   var _applied = false;
   var _wasCancelled = false;
 
@@ -100,7 +102,7 @@ class ApplyCommand extends TargetCommand {
       output.data({
         'applied': _applied,
         'cancelled': _wasCancelled,
-        'steps': stepFields(_report, output.steps),
+        'steps': stepFields(_report, output.steps, planned: _planned),
       });
     }
   }
@@ -108,6 +110,11 @@ class ApplyCommand extends TargetCommand {
   Future<int> _apply() async {
     final config = loadConfig();
     final plan = resolve(config);
+
+    _planned = [
+      for (final step in plan.engine.steps) step.processor.id,
+      for (final step in plan.legacy) step.id,
+    ];
 
     await checkNothingIsDropped(config);
 
@@ -126,6 +133,7 @@ class ApplyCommand extends TargetCommand {
     var generated = const <String>{};
     EnginePreview? preview;
     ConflictResolution? resolution;
+    var written = const ChangeCounts();
 
     if (plan.engine.steps.isNotEmpty) {
       final run = await runEngine(
@@ -152,6 +160,12 @@ class ApplyCommand extends TargetCommand {
       if (run.cancelled) return _cancel();
 
       generated = run.generated;
+      written = countChanges(preview, resolution: resolution);
+
+      // What the run wrote, which is not what the preview said once the
+      // conflicts were decided. It is told now: a processor that is not on the
+      // engine may still fail, and the files are written all the same.
+      output.data({'summary': written.toJson()});
     } else {
       output.data(previewFields(null));
 
@@ -177,11 +191,6 @@ class ApplyCommand extends TargetCommand {
       rethrow;
     }
 
-    final written = countChanges(preview, resolution: resolution);
-
-    // What the run wrote, which is not what the preview said once the
-    // conflicts were decided.
-    output.data({'summary': written.toJson()});
     output.summary('Applied', written);
     output.success('Flavorization process finished');
 

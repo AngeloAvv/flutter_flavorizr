@@ -166,6 +166,9 @@ Known limits of the mix, which go away as processors are ported:
 * `status` can only vouch for the processors of the engine. When some are not,
   it says `In sync, as far as the engine can tell` and lists the ones it did not
   check.
-* `apply` asks `Do you want to proceed?` when there is a terminal, and, like in
-  2.x, goes on when there is nobody to answer. Pass `--yes` in a CI to say so
-  explicitly.
+* `apply` asks `Do you want to proceed?` when stdin and stdout are a terminal,
+  and goes on when there is not: nobody is asked, **even when an answer is piped
+  to stdin**. In 2.x `echo n | flutter pub run flutter_flavorizr` could cancel;
+  it now applies. Pass `--yes` in a CI and in any script to say so explicitly,
+  `--on-conflict=keep|overwrite` for the files edited by hand, and use `plan` or
+  `status` when nothing must be written.
