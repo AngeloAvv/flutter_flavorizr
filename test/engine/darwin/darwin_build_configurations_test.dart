@@ -171,24 +171,15 @@ void main() {
     platform: 'ios',
     target: target,
     flavor: flavor,
-    kind: [
-      if (kind == 'buildFile') ...['buildFile', 'resources'] else kind,
-      mode,
-    ],
+    kind: [kind, mode],
   );
 
-  /// The UUID of the reference to the xcconfig file at [path], and of the build
-  /// file that puts it in the resources: they stand for the file, not for a
-  /// flavor.
+  /// The UUID of the reference to the xcconfig file at [path]: it stands for the
+  /// file, not for a flavor. There is no build file: an xcconfig is the base
+  /// configuration of configurations, never a resource.
   String referenceUuid(String path) => PbxprojSeed.uuid(
     platform: 'ios',
     kind: ['fileReference', ...path.split('/')],
-  );
-
-  String buildFileUuid(String path) => PbxprojSeed.uuid(
-    platform: 'ios',
-    target: 'Runner',
-    kind: ['buildFile', 'resources', ...path.split('/')],
   );
 
   setUpAll(() async {
@@ -224,15 +215,14 @@ void main() {
         final code = await apply(project);
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
-        // 3 modes, each with 2 configurations, a file reference and a build file.
-        expect(lockedObjects(project), hasLength(2 * 3 * 4));
+        // 3 modes, each with 2 configurations and a file reference.
+        expect(lockedObjects(project), hasLength(2 * 3 * 3));
         expect(
           lockedObjects(project),
           containsAll([
             uuidOf('apple', 'Debug'),
             uuidOf('apple', 'Debug', target: 'Runner'),
             referenceUuid('Flutter/bananaRelease.xcconfig'),
-            buildFileUuid('Flutter/bananaProfile.xcconfig'),
           ]),
         );
         expect(
@@ -453,22 +443,16 @@ void main() {
       expect(text, contains('path = Flutter/flavors/appleDebug.xcconfig;'));
       expect(text, isNot(contains('path = Flutter/appleDebug.xcconfig;')));
       // The file is another one, so it has another identity: the old reference
-      // and build file are gone, and nothing else changed hands.
+      // is gone, and nothing else changed hands.
       expect(lockedObjects(project), hasLength(recorded.length));
       for (final mode in DarwinBuildConfigurations.modes) {
         expect(
           recorded,
-          containsAll([
-            referenceUuid('Flutter/apple$mode.xcconfig'),
-            buildFileUuid('Flutter/apple$mode.xcconfig'),
-          ]),
+          contains(referenceUuid('Flutter/apple$mode.xcconfig')),
         );
         expect(
           lockedObjects(project),
-          containsAll([
-            referenceUuid('Flutter/flavors/apple$mode.xcconfig'),
-            buildFileUuid('Flutter/flavors/apple$mode.xcconfig'),
-          ]),
+          contains(referenceUuid('Flutter/flavors/apple$mode.xcconfig')),
         );
         expect(
           lockedObjects(project),
@@ -488,19 +472,22 @@ void main() {
       expect(await apply(project), ExitCodes.ok, reason: project.logger.output);
 
       final text = project.read(_pbxprojPath);
-      // 2.x made 3 configurations in the project, 3 file references and 3 build
-      // files for each flavor, flavorizr 3 in the target: all of them are owned.
-      expect(lockedObjects(project), hasLength(2 * 3 * 4));
+      // 2.x made 3 configurations in the project and 3 file references for each
+      // flavor, flavorizr 3 in the target: all of them are owned. The build
+      // files 2.x made to put the xcconfigs in the resources are not: they are
+      // not wanted, and go with the references.
+      expect(lockedObjects(project), hasLength(2 * 3 * 3));
       expect(
         objectUuids(text),
         objectUuids(source).union(lockedObjects(project)),
       );
-      for (final foreign in [
-        '4CB6B4B04B741184823C1765',
-        'F2FCBFD0B17331A657473E5C',
-      ]) {
-        expect(lockedObjects(project), contains(foreign));
-      }
+      // The reference 2.x made keeps its UUID, and is owned; the build file
+      // that put it in the resources is not, and goes with the reference.
+      expect(lockedObjects(project), contains('F2FCBFD0B17331A657473E5C'));
+      expect(
+        lockedObjects(project),
+        isNot(contains('4CB6B4B04B741184823C1765')),
+      );
 
       wanted = {};
       expect(await apply(project), ExitCodes.ok, reason: project.logger.output);
@@ -532,8 +519,8 @@ void main() {
       await source.save();
     }
 
-    test('keep their build file and configurations on the xcconfig file '
-        'when it moves to another reference', () async {
+    test('keep their configurations on the xcconfig file when it moves to '
+        'another reference', () async {
       wanted = {'apple': wanted['apple']!};
       final project = newProject();
       for (final mode in DarwinBuildConfigurations.modes) {
@@ -559,7 +546,7 @@ void main() {
           (file) => file.path == 'Flutter/flavors/apple$mode.xcconfig',
         );
 
-        expect(resources.buildFile(reference), isNotNull, reason: mode);
+        expect(resources.buildFile(reference), isNull, reason: mode);
         expect(
           opened
               .buildConfigurationList['$mode-apple']!
@@ -612,10 +599,8 @@ void main() {
         );
       }
       expect(before.difference(objectUuids(text)), {
-        for (final mode in DarwinBuildConfigurations.modes) ...[
+        for (final mode in DarwinBuildConfigurations.modes)
           referenceUuid('Flutter/apple$mode.xcconfig'),
-          buildFileUuid('Flutter/apple$mode.xcconfig'),
-        ],
       });
     });
 
@@ -681,7 +666,7 @@ void main() {
             'ref ${file.uuid} ${file.path}',
         for (final file in target.resourcesBuildPhase.files)
           if (file.fileRef case final PBXFileReference reference
-              when reference.path?.startsWith('Flutter/') ?? false)
+              when reference.path?.endsWith('.xcconfig') ?? false)
             'resource ${file.uuid} ${reference.path}',
         'objects ${(objectUuids(project.read(_pbxprojPath)).toList()..sort()).join(',')}',
         'locked ${(lockedObjects(project).toList()..sort()).join(',')}',
