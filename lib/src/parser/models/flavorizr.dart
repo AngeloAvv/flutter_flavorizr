@@ -25,6 +25,7 @@
 
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
+import 'package:flutter_flavorizr/src/parser/flavor_fingerprint.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'config/app.dart';
@@ -51,6 +52,22 @@ class Flavorizr {
 
   @JsonKey(fromJson: _ideListFromJson)
   final List<IDE>? ide;
+
+  /// The recipes of the user: names, each with the processor ids and recipes
+  /// it contains. A `default` that is a plain name is not a recipe, see
+  /// [defaultRecipe].
+  @JsonKey(name: 'recipes', fromJson: _recipesFromJson)
+  final Map<String, List<String>>? recipes;
+
+  /// The recipe to run when no target is given: the value of `default` in
+  /// `recipes` when it is a name.
+  @JsonKey(includeFromJson: false)
+  String? defaultRecipe;
+
+  /// The fingerprint of the resolved configuration of each flavor, by name. It
+  /// is only known to a configuration that was parsed.
+  @JsonKey(includeFromJson: false)
+  Map<String, String> flavorFingerprints = const {};
 
   @JsonKey(includeFromJson: false)
   late Map<String, Flavor> androidFlavors;
@@ -85,6 +102,7 @@ class Flavorizr {
     this.instructions,
     required this.assetsUrl,
     this.ide,
+    this.recipes,
   }) : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
        iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
        macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
@@ -103,7 +121,9 @@ class Flavorizr {
          (_, flavor) => flavor.macos?.firebase != null,
        );
 
-  factory Flavorizr.fromJson(Map json) => _$FlavorizrFromJson(json);
+  factory Flavorizr.fromJson(Map json) => _$FlavorizrFromJson(json)
+    ..flavorFingerprints = fingerprintFlavors(json)
+    ..defaultRecipe = _defaultRecipeFromJson(json['recipes']);
 
   factory Flavorizr.parse(String yaml) =>
       checkedYamlDecode(yaml, (o) => Flavorizr.fromJson(o ?? {}));
@@ -156,3 +176,28 @@ List<IDE>? _ideListFromJson(dynamic json) {
 
   throw FormatException('Invalid format for IDE list');
 }
+
+Map<String, List<String>>? _recipesFromJson(dynamic json) {
+  if (json == null) {
+    return null;
+  }
+
+  if (json is! Map) {
+    throw FormatException('`recipes` must map recipe names to lists');
+  }
+
+  return {
+    for (final MapEntry(:key, :value) in json.entries)
+      // A `default` that is a name picks a recipe, it is not one.
+      if (!(key == 'default' && value is String))
+        '$key': switch (value) {
+          final List list => [for (final member in list) '$member'],
+          _ => throw FormatException(
+            'The recipe `$key` must be a list of processors and recipes',
+          ),
+        },
+  };
+}
+
+String? _defaultRecipeFromJson(dynamic json) =>
+    json is Map && json['default'] is String ? json['default'] as String : null;

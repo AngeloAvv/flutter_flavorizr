@@ -37,6 +37,8 @@ import 'package:path/path.dart' as p;
 /// the engine, which must write the lock after a fully successful apply and
 /// never before.
 class LockStore {
+  static int _staged = 0;
+
   /// The name of the lock file, in the root of the project.
   static const fileName = 'flavorizr.lock';
 
@@ -77,21 +79,58 @@ class LockStore {
     );
   }
 
-  /// Writes [lock], replacing the previous one.
+  /// Writes [lock] to a sibling file, ready to replace the lock.
   ///
-  /// The content is written to a sibling file first and then moved over the
-  /// lock, so an interrupted write never leaves a truncated lock behind.
-  Future<void> write(FlavorizrLock lock) async {
-    final file = _file;
-    final temporary = File('${file.path}.tmp');
+  /// It is the first half of [write]: a caller that has to do something else
+  /// between the two, such as copy files that the lock records, stages the lock
+  /// first, so that a file system that cannot hold it is found out before
+  /// anything is changed, and commits it last.
+  Future<StagedLock> stage(FlavorizrLock lock) async {
+    // Its own file: staged locks that overlap must not publish or delete each
+    // other's.
+    final temporary = File(
+      '${_file.path}.${pid}_${_staged++}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+    );
 
     try {
       await temporary.writeAsBytes(utf8.encode(LockCodec.encode(lock)));
-      await temporary.rename(file.path);
     } on Object {
       if (await temporary.exists()) await temporary.delete();
 
       rethrow;
     }
+
+    return StagedLock._(temporary, _file);
+  }
+
+  /// Writes [lock], replacing the previous one.
+  ///
+  /// The content is written to a sibling file first and then moved over the
+  /// lock, so an interrupted write never leaves a truncated lock behind.
+  Future<void> write(FlavorizrLock lock) async => (await stage(lock)).commit();
+}
+
+/// A lock written next to `flavorizr.lock`, that replaces it when committed.
+class StagedLock {
+  final File _staged;
+  final File _target;
+
+  StagedLock._(this._staged, this._target);
+
+  /// Moves the staged lock over `flavorizr.lock`. If it cannot, the staged file
+  /// is removed and the error is thrown.
+  Future<void> commit() async {
+    try {
+      await _staged.rename(_target.path);
+    } on Object {
+      await discard();
+
+      rethrow;
+    }
+  }
+
+  /// Removes the staged lock and leaves `flavorizr.lock` as it was.
+  Future<void> discard() async {
+    if (await _staged.exists()) await _staged.delete();
   }
 }

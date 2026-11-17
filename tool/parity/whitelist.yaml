@@ -6,4 +6,15 @@
 #
 # `*` matches within a path segment, `**` across segments. Paths are relative
 # to the generated project, binaries are listed as `<file>.sha256`.
-[]
+
+- path: flavorizr.lock
+  reason: >-
+    The 3.0 CLI records what a run applied (#501, #506), so that a later run can
+    tell its own files from the ones of the user and remove what a dropped flavor
+    generated. 2.6.0 has no lock.
+- path: android/app/src/main/AndroidManifest.xml
+  reason: >-
+    android:androidManifest runs on the engine (#509), which changes only the
+    label of the application and writes the rest of the file back byte for byte,
+    where 2.6.0 serialized the whole document again. The two documents are
+    equivalent, which android_differential_test checks.
