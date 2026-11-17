@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
-import 'package:flutter_flavorizr/src/processors/flutter/flutter_flavors_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_sources.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -49,10 +49,7 @@ class _SampleFlavorsProcessor extends FlavorizrProcessor {
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
-    final content = FlutterFlavorsProcessor(
-      config: ctx.config,
-      logger: ctx.logger,
-    ).execute();
+    final content = flavorsGeneratedSource(ctx.config);
 
     final flavors = File(ctx.resolve(K.flutterFlavorPath));
     await flavors.create(recursive: true);

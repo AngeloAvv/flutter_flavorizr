@@ -67,8 +67,9 @@ Set<String> platformsWithoutFlavors(Flavorizr config) => {
   if (!config.windowsFlavorsAvailable) 'windows',
 };
 
-/// The ids of the processors on the engine that apply to [config]: every one of
-/// them, but the ones of a platform it has no flavors for.
+/// The ids of the processors on the engine that a full run of [config] covers:
+/// the ones of `ProcessorRegistry.fullRunIds`, but the ones of a platform
+/// [config] has no flavors for.
 ///
 /// A run that covers all of them is a *full* run, the only one that records the
 /// flavors in the lock (see `updateLock`). A project that has no Linux flavors
@@ -78,7 +79,7 @@ Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
   final skipped = platformsWithoutFlavors(config);
 
   return {
-    for (final id in registry.engineIds)
+    for (final id in registry.fullRunIds)
       if (!skipped.contains(id.split(':').first)) id,
   };
 }

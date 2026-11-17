@@ -111,7 +111,9 @@ final class EngineRun {
 /// With no [approve], that is all: it is a dry run, and nothing is written. With
 /// [approve], it is asked once the changes are known, and if it says yes the
 /// conflicts are resolved (see [ConflictResolver]: [policy] and [yes] are the
-/// `--on-conflict` and `--yes` flags), the changes are written back atomically
+/// `--on-conflict` and `--yes` flags; [overwriteScaffold] is
+/// `--overwrite-scaffold`: a scaffold file is the user's once it exists, and
+/// only this replaces it), the changes are written back atomically
 /// and the lock is written last.
 ///
 /// A processor that fails ends the run with nothing written, and its error is in
@@ -125,6 +127,7 @@ Future<EngineRun> runEngine(
   Future<bool> Function(EnginePreview preview)? approve,
   ConflictPolicy? policy,
   bool yes = false,
+  bool overwriteScaffold = false,
 }) async {
   final registry = context.registry;
   final store = LockStore(context.projectRoot, runningVersion: context.version);
@@ -164,6 +167,7 @@ Future<EngineRun> runEngine(
       final diff = reconciliation.applyTo(
         await shadow.diff(
           tracked: ctx.tracked,
+          overwriteScaffold: overwriteScaffold,
           recordedHashes: {
             for (final processor
                 in previous?.processors.values ?? const <ProcessorLock>[])

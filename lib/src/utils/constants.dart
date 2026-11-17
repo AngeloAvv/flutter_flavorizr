@@ -63,6 +63,8 @@ class K {
 
   static String flutterFlavorPath = '$flutterPath/flavors.dart';
 
+  static String flutterFlavorsGeneratedPath = '$flutterPath/flavors.g.dart';
+
   static String flutterAppPath = '$flutterPath/app.dart';
 
   static String flutterMainPath = '$flutterPath/main.dart';
@@ -142,14 +144,6 @@ class K {
   static String tempAndroidPath = '$tempPath/android';
 
   static String tempAndroidResPath = '$tempAndroidPath/res';
-
-  static String tempFlutterPath = '$tempPath/flutter';
-
-  static String tempFlutterAppPath = '$tempFlutterPath/app.dart';
-
-  static String tempFlutterMainPath = '$tempFlutterPath/main.dart';
-
-  static String tempFlutterPagesPath = '$tempFlutterPath/pages';
 
   static String tempiOSPath = '$tempPath/ios';
 

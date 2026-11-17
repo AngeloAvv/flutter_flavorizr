@@ -35,6 +35,10 @@ const _runner = 'linux/runner/CMakeLists.txt';
 const _myApplication = 'linux/runner/my_application.cc';
 const _paths = [_cmake, _runner, _myApplication];
 
+/// What a full run of a project with only Linux flavors covers: the Linux
+/// recipe and the `flutter:flavors` of the `all` recipe.
+const _fullRun = ['flutter:flavors', 'linux'];
+
 String _resource(String path) =>
     File('test_resources/linux/$path').readAsStringSync();
 
@@ -98,7 +102,7 @@ void main() {
     });
 
     test('apply on a pristine runner changes only marked regions', () async {
-      final code = await project.run(['apply', '--yes', 'linux']);
+      final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.legacy.ran, isEmpty);
@@ -119,7 +123,7 @@ void main() {
     });
 
     test('apply records the three files as patched in the lock', () async {
-      await project.run(['apply', '--yes', 'linux']);
+      await project.run(['apply', '--yes', ..._fullRun]);
 
       final lock = project.read('flavorizr.lock');
 
@@ -131,11 +135,11 @@ void main() {
     });
 
     test('an idempotent re-run produces an empty diff', () async {
-      await project.run(['apply', '--yes', 'linux']);
+      await project.run(['apply', '--yes', ..._fullRun]);
       final before = project.snapshot();
       project.questions.clear();
 
-      final code = await project.run(['apply', 'linux']);
+      final code = await project.run(['apply', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.questions, isEmpty);
@@ -144,9 +148,9 @@ void main() {
     });
 
     test('status is in sync once applied', () async {
-      await project.run(['apply', '--yes', 'linux']);
+      await project.run(['apply', '--yes', ..._fullRun]);
 
-      final code = await project.run(['status', 'linux']);
+      final code = await project.run(['status', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.logger.output, contains('In sync'));
@@ -154,11 +158,11 @@ void main() {
 
     test('removing a flavor regenerates the regions without it, and nothing '
         'else changes', () async {
-      await project.run(['apply', '--yes', 'linux']);
+      await project.run(['apply', '--yes', ..._fullRun]);
       final applied = {for (final path in _paths) path: project.read(path)};
       project.write('flavorizr.yaml', _config(['apple']));
 
-      final code = await project.run(['apply', '--yes', 'linux']);
+      final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
 
@@ -176,10 +180,10 @@ void main() {
     });
 
     test('adding a flavor adds it to the regions', () async {
-      await project.run(['apply', '--yes', 'linux']);
+      await project.run(['apply', '--yes', ..._fullRun]);
       project.write('flavorizr.yaml', _config(['apple', 'banana', 'cherry']));
 
-      final code = await project.run(['apply', '--yes', 'linux']);
+      final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_cmake), contains('com.example.cherry'));
@@ -188,21 +192,21 @@ void main() {
 
     test('what the user writes outside the regions is no drift and survives '
         'the next run', () async {
-      await project.run(['apply', '--yes', 'linux']);
+      await project.run(['apply', '--yes', ..._fullRun]);
       for (final path in _paths) {
         project.write(path, '// mine\n${project.read(path)}');
       }
       final edited = project.snapshot();
 
-      expect(await project.run(['status', 'linux']), ExitCodes.ok);
-      expect(await project.run(['apply', '--yes', 'linux']), ExitCodes.ok);
+      expect(await project.run(['status', ..._fullRun]), ExitCodes.ok);
+      expect(await project.run(['apply', '--yes', ..._fullRun]), ExitCodes.ok);
       expect(project.snapshot(), edited);
     });
 
     test(
       'a hand edit of a region is a conflict, and nothing is written',
       () async {
-        await project.run(['apply', '--yes', 'linux']);
+        await project.run(['apply', '--yes', ..._fullRun]);
         project.write(
           _cmake,
           project.read(_cmake).replaceFirst('com.example.apple', 'com.mine'),
@@ -210,7 +214,7 @@ void main() {
         project.write('flavorizr.yaml', _config(['apple', 'cherry']));
         final before = project.snapshot();
 
-        final code = await project.run(['apply', '--yes', 'linux']);
+        final code = await project.run(['apply', '--yes', ..._fullRun]);
 
         expect(code, ExitCodes.attention);
         expect(project.snapshot(), before);
@@ -235,7 +239,7 @@ void main() {
       );
       final before = project.snapshot();
 
-      final code = await project.run(['apply', '--yes', 'linux']);
+      final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(
@@ -249,7 +253,7 @@ void main() {
       File(project.abs(_runner)).deleteSync();
       final before = project.snapshot();
 
-      final code = await project.run(['apply', '--yes', 'linux']);
+      final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.software);
       expect(project.snapshot(), before);
@@ -281,7 +285,7 @@ void main() {
       expect(project.read('flavorizr.lock'), isNot(contains('apple: sha256')));
 
       expect(
-        await project.run(['apply', '--yes', ...android, 'linux']),
+        await project.run(['apply', '--yes', ...android, ..._fullRun]),
         ExitCodes.ok,
         reason: project.logger.output,
       );
