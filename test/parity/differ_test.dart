@@ -130,6 +130,51 @@ void main() {
     });
   });
 
+  group('an only-comments whitelist entry', () {
+    final whitelist = Whitelist.parse('''
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  reason: Ruby annotates it so
+''');
+    const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+
+    test('tolerates a file that differs only in its annotations', () {
+      write(golden, pbxproj, 'a = B /* Flutter/x.xcconfig */;\nc = D;\n');
+      write(actual, pbxproj, 'a = B /* x.xcconfig */;\nc = D /* Runner */;\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isTrue);
+      expect(report.differences.single.reason, 'Ruby annotates it so');
+    });
+
+    test('does not hide a change beside the annotations', () {
+      write(golden, pbxproj, 'a = B /* x */;\nc = D;\n');
+      write(actual, pbxproj, 'a = B /* y */;\nc = E;\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+      expect(report.differences.single.reason, isNull);
+    });
+
+    test('does not hide an added file', () {
+      write(actual, pbxproj, 'a = B;\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+
+    test('does not hide a removed file', () {
+      write(golden, pbxproj, 'a = B;\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+  });
+
   group('Whitelist.parse', () {
     test('rejects an entry without a reason', () {
       expect(
