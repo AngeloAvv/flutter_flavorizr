@@ -34,6 +34,8 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
@@ -126,10 +128,9 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android, Linux and Flutter processors
-  /// that were ported run on the engine, every other 2.x instruction on the
-  /// legacy
-  /// pipeline.
+  /// The registry of this version: the Android, Linux, Podfile and Flutter
+  /// processors that were ported run on the engine, every other 2.x instruction
+  /// on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
       EngineProcessor(
@@ -175,6 +176,16 @@ class ProcessorRegistry {
         ownedContent: {
           K.linuxMyApplicationPath: LinuxMyApplicationEditor.ownedContent,
         },
+      ),
+      EngineProcessor(
+        const IosPodfilePatchProcessor(),
+        paths: {K.iOSPodfilePath},
+        ownedContent: {K.iOSPodfilePath: PodfileEditor.ownedContent},
+      ),
+      EngineProcessor(
+        const MacosPodfilePatchProcessor(),
+        paths: {K.macOSPodfilePath},
+        ownedContent: {K.macOSPodfilePath: PodfileEditor.ownedContent},
       ),
       EngineProcessor(
         const FlutterFlavorsProcessor(),

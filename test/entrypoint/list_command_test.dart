@@ -76,7 +76,8 @@ recipes:
       expect(project.logger.output, contains('android:icons [engine]'));
       expect(project.logger.output, contains('android:dummyAssets [legacy]'));
       expect(project.logger.output, contains('google:firebase [legacy]'));
-      expect(project.logger.output, contains('ios:podfile [legacy]'));
+      expect(project.logger.output, contains('ios:podfile [engine]'));
+      expect(project.logger.output, contains('ios:xcconfig [legacy]'));
     });
 
     test('draws what a processor needs and what it runs after', () async {
