@@ -437,7 +437,7 @@ When you finished defining the flavorizr configuration, you can proceed by runni
 flutter pub run flutter_flavorizr
 ```
 
-You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma:
+You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma. `-p` is deprecated and will be removed in 4.0: name the targets after the command instead (see [the command line](doc/cli.md)).
 
 ```terminal
 flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
@@ -462,7 +462,7 @@ flutter pub run flutter_flavorizr -v
 
 This will print all the logs to the console, including the ones from the processors.
 
-If you want to skip the confirmation step, you can append the -y (or --yes) param. The 2.x -f (or --force) still works and does the same:
+If you want to skip the confirmation step, you can append the -y (or --yes) param. The 2.x -f (or --force) still works and does the same, with a warning, until 4.0:
 
 ```terminal
 flutter pub run flutter_flavorizr --yes

@@ -40,7 +40,7 @@ jobs:
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
         shell: bash
-        run: flutter pub run flutter_flavorizr -f
+        run: flutter pub run flutter_flavorizr --yes
       - name: Set up JDK 17
         if: ${{ inputs.platform == 'android' }}
         uses: actions/setup-java@v6
