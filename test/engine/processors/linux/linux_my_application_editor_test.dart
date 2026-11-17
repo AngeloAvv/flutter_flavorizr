@@ -400,6 +400,138 @@ void main() {
     });
   });
 
+  group('LinuxMyApplicationEditor with comments of the user', () {
+    String commented(String source) => source
+        .replaceFirst(
+          'gtk_header_bar_set_title(header_bar, "example");',
+          'gtk_header_bar_set_title(header_bar, "example"); // Base title',
+        )
+        .replaceFirst(
+          'gtk_window_set_title(window, "example");',
+          'gtk_window_set_title(window, "example"); /* base */',
+        );
+
+    test('a comment after an already flavorized setter keeps its region, and '
+        'a second run changes nothing', () {
+      final flavorized = LinuxMyApplicationEditor.withWindowTitles(
+        _pristine,
+        _titles,
+      );
+      final edited = commented(flavorized);
+
+      final once = LinuxMyApplicationEditor.withWindowTitles(edited, _titles);
+      final twice = LinuxMyApplicationEditor.withWindowTitles(once, _titles);
+
+      expect(once, edited);
+      expect(twice, edited);
+      expect(edited, contains(_begin('header_bar_title')));
+      expect(edited, contains(_begin('plain_window_title')));
+    });
+
+    test('a comment after a setter does not stop a flavor from being '
+        'removed from its region', () {
+      final edited = commented(
+        LinuxMyApplicationEditor.withWindowTitles(_pristine, _titles),
+      );
+
+      final removed = LinuxMyApplicationEditor.withWindowTitles(edited, {
+        'apple': 'Apple App',
+      });
+
+      expect(removed, contains(_begin('header_bar_title')));
+      expect(removed, isNot(contains('Banana')));
+      expect(_outsideTheRegions(removed), _outsideTheRegions(edited));
+    });
+
+    test('a comment after a setter that was never flavorized gets its region '
+        'right after it, and the line is left as it was', () {
+      final edited = commented(_pristine);
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        edited,
+        _titles,
+      );
+
+      expect(_outsideTheRegions(patched), _outsideTheRegions(edited));
+      expect(patched, contains(_begin('header_bar_title')));
+      expect(patched, contains(_begin('plain_window_title')));
+    });
+
+    test(
+      'a comment after the declaration keeps the region of the variable',
+      () {
+        final edited = _readingTheVariable.replaceFirst(
+          'const gchar* window_title = "example";',
+          'const gchar* window_title = "example"; // Base title',
+        );
+        final flavorized = LinuxMyApplicationEditor.withWindowTitles(
+          edited,
+          _titles,
+        );
+
+        expect(flavorized, contains(_begin('window_title')));
+        expect(
+          LinuxMyApplicationEditor.withWindowTitles(flavorized, _titles),
+          flavorized,
+        );
+      },
+    );
+  });
+
+  group('LinuxMyApplicationEditor with a declared title nothing reads', () {
+    test('fails instead of writing assignments nobody reads', () {
+      final unread = _readingTheVariable
+          .replaceFirst(
+            'gtk_header_bar_set_title(header_bar, window_title);',
+            'gtk_header_bar_set_title(header_bar, custom_title);',
+          )
+          .replaceFirst(
+            'gtk_window_set_title(window, window_title);',
+            'gtk_window_set_title(window, custom_title);',
+          );
+
+      expect(
+        () => LinuxMyApplicationEditor.withWindowTitles(unread, _titles),
+        throwsA(isA<MalformedResourceException>()),
+      );
+    });
+
+    test('still finds a reader that is not written like 2.x wrote it', () {
+      final spread = _readingTheVariable
+          .replaceFirst(
+            'gtk_header_bar_set_title(header_bar, window_title);',
+            'gtk_header_bar_set_title(\n        header_bar, window_title);',
+          )
+          .replaceFirst(
+            'gtk_window_set_title(window, window_title);',
+            'gtk_window_set_title(window,  window_title );',
+          );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        spread,
+        _titles,
+      );
+
+      expect(patched, contains(_begin('window_title')));
+      expect(_outsideTheRegions(patched), _outsideTheRegions(spread));
+    });
+
+    test('a mention that is only a comment is no reader', () {
+      final unread = _plain.replaceFirst(
+        '  if (use_header_bar) {\n',
+        '  // window_title is not used yet\n  if (use_header_bar) {\n',
+      );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        unread,
+        _titles,
+      );
+
+      expect(patched, isNot(contains(_begin('window_title'))));
+      expect(patched, contains(_begin('header_bar_title')));
+    });
+  });
+
   group(
     'LinuxMyApplicationEditor with a title that has escaped characters',
     () {

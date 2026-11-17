@@ -67,8 +67,8 @@ import 'package:flutter_flavorizr/src/utils/desktop_utils.dart';
 /// The two kinds mix: what is overridden follows the setters, the calls that
 /// give the window its title. A setter that is a string literal, escaped
 /// characters included, gets a region of its own, and the region of the
-/// variable is there when a setter reads it, or when it is declared and no
-/// setter is a literal. A region whose setter the user changed, so that there
+/// variable is there when it is declared and something reads it. A statement may
+/// have a comment of the user after it. A region whose setter the user changed, so that there
 /// is nothing left to override, is dropped. The markers of the variable are the
 /// ones 2.x writes. A region that is already there is regenerated where it is,
 /// so that a flavor that was dropped from the configuration is not in it
@@ -101,34 +101,37 @@ abstract final class LinuxMyApplicationEditor {
   // A C string literal: any character, `\"` and `\\` included, but a bare quote.
   static const String _literal = r'"(?:[^"\\\n]|\\.)*"';
 
+  // What may follow a statement on its line: a comment of the user.
+  static const String _trailing = r'\s*(?://.*|/\*.*?\*/\s*)?$';
+
   static final RegExp _windowTitleVariable = RegExp(
-    '^\\s*const gchar\\* window_title = $_literal;\\s*\$',
+    '^\\s*const gchar\\* window_title = $_literal;$_trailing',
   );
   static final RegExp _headerBarTitleLiteral = RegExp(
-    '^\\s*gtk_header_bar_set_title\\(header_bar, $_literal\\);\\s*\$',
+    '^\\s*gtk_header_bar_set_title\\(header_bar, $_literal\\);$_trailing',
   );
   static final RegExp _windowTitleLiteral = RegExp(
-    '^\\s*gtk_window_set_title\\(window, $_literal\\);\\s*\$',
+    '^\\s*gtk_window_set_title\\(window, $_literal\\);$_trailing',
   );
-  static final RegExp _headerBarTitleRead = RegExp(
-    r'^\s*gtk_header_bar_set_title\(header_bar, window_title\);\s*$',
-  );
-  static final RegExp _windowTitleRead = RegExp(
-    r'^\s*gtk_window_set_title\(window, window_title\);\s*$',
-  );
+
+  // Anything that uses the variable, whatever the layout of the call: a line
+  // that only has it in a comment does not count.
+  static final RegExp _windowTitleUse = RegExp(r'^(?!\s*//).*\bwindow_title\b');
 
   /// Returns [source] with the regions up to date for [titles], the title of
   /// the window of each flavor by name.
   ///
   /// What is overridden follows the setters of the title, which are the calls
   /// that give the window its title: a setter that is a string literal gets a
-  /// region of its own, and a variable that the setters read, or that is
-  /// declared and has no literal setter, gets the region of the variable. A
+  /// region of its own, and a declared variable that something reads gets the
+  /// region of the variable. A
   /// region whose setter the user changed, so that nothing is left to override
   /// there, is dropped.
   ///
   /// Throws a [MalformedResourceException] when [source], leaving the regions
-  /// out, has nothing to override, and when the markers do not form regions.
+  /// out, has nothing to override, which is also the case of a declared
+  /// `window_title` that no setter reads, and when the markers do not form
+  /// regions.
   static String withWindowTitles(String source, Map<String, String> titles) {
     final outside = MarkedText(
       source,
@@ -138,11 +141,16 @@ abstract final class LinuxMyApplicationEditor {
 
     final headerBarLiteral = any(_headerBarTitleLiteral);
     final windowLiteral = any(_windowTitleLiteral);
+    // The variable gets a region when something reads it: a declaration that
+    // nothing uses would take assignments no setter reads, and the flavor would
+    // silently have no effect.
     final variable =
         any(_windowTitleVariable) &&
-        (any(_headerBarTitleRead) ||
-            any(_windowTitleRead) ||
-            !(headerBarLiteral || windowLiteral));
+        outside.any(
+          (line) =>
+              _windowTitleUse.hasMatch(line) &&
+              !_windowTitleVariable.hasMatch(line),
+        );
 
     if (!variable && !headerBarLiteral && !windowLiteral) {
       throw MalformedResourceException(source);
