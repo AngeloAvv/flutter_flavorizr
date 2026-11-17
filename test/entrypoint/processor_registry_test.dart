@@ -62,8 +62,8 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   group('ProcessorRegistry', () {
-    test('runs the ported Android, Linux, Windows and Flutter processors on '
-        'the engine', () {
+    test('runs the ported Android, Linux, Windows, Flutter and xcconfig '
+        'processors on the engine', () {
       expect(registry.engineIds, {
         'android:androidManifest',
         'android:flavorizrGradle',
@@ -75,6 +75,9 @@ void main() {
         'windows:mainCppTemplate',
         'windows:runnerRcTemplate',
         'windows:cmake',
+        'ios:xcconfig',
+        'macos:xcconfig',
+        'macos:configs',
         'flutter:flavors',
         'flutter:pages',
         'flutter:app',
@@ -131,6 +134,9 @@ void main() {
           'windows:mainCppTemplate',
           'windows:runnerRcTemplate',
           'windows:cmake',
+          'ios:xcconfig',
+          'macos:xcconfig',
+          'macos:configs',
           'flutter:flavors',
         });
       },
@@ -161,12 +167,41 @@ void main() {
         custom.hash(XcodeprojResource.iosArtifact, _bytes('mine\nx')),
         isNot(custom.hash(XcodeprojResource.iosArtifact, _bytes('yours\nx'))),
       );
-      // Whole, when nothing owns a part of it.
-      expect(
-        registry.hash(XcodeprojResource.iosArtifact, _bytes('a\nb')),
-        isNot(registry.hash(XcodeprojResource.iosArtifact, _bytes('a\nc'))),
-        reason: path,
-      );
+      expect(path, 'ios/Runner.xcodeproj/project.pbxproj');
+    });
+
+    group('hashes of an Xcode project only', () {
+      String reference(String path) =>
+          '\t\t${'A' * 24} /* x */ = {isa = PBXFileReference; path = $path; };';
+
+      for (final (artifact, path) in [
+        (XcodeprojResource.iosArtifact, 'Flutter/appleDebug.xcconfig'),
+        (XcodeprojResource.macosArtifact, 'Runner/Configs/appleDebug.xcconfig'),
+      ]) {
+        test(
+          'the references to the xcconfigs of the flavors of ${artifact.path}',
+          () {
+            final project = 'LastUpgradeCheck = 1510;\n${reference(path)}';
+
+            expect(
+              registry.hash(artifact, _bytes(project)),
+              registry.hash(
+                artifact,
+                _bytes(project.replaceAll('1510', '1600')),
+              ),
+            );
+            expect(
+              registry.hash(artifact, _bytes(project)),
+              isNot(
+                registry.hash(
+                  artifact,
+                  _bytes(project.replaceAll('appleDebug', 'bananaDebug')),
+                ),
+              ),
+            );
+          },
+        );
+      }
     });
 
     test('keeps every other 2.x instruction on the legacy pipeline', () {

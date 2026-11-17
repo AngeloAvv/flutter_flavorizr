@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'pbxproj_normalizer.dart';
 import 'tree.dart';
 
 enum DifferenceKind { added, removed, changed }
@@ -78,6 +79,14 @@ class ParityReport {
   }
 }
 
+typedef _Entry = ({
+  RegExp pattern,
+  String reason,
+  bool onlyComments,
+  RegExp? dropFromGolden,
+  RegExp? ignore,
+});
+
 /// Per-file permission to differ from the golden, each with the reason why.
 class Whitelist {
   const Whitelist._(this._entries);
@@ -87,6 +96,17 @@ class Whitelist {
   /// Parses a YAML list of `{path: <glob>, reason: <text>}` entries. An entry
   /// with `only-comments: true` covers a changed file only if it differs from
   /// the golden in its `/* ... */` annotations and in nothing else.
+  ///
+  /// Two more options say what else a `project.pbxproj` may differ in, and
+  /// both are regular expressions:
+  ///
+  /// * `drop-from-golden` removes the lines of the golden that match, then
+  ///   names the UUIDs of the golden again (see [normalizePbxproj]). It is what
+  ///   the new output no longer has: the objects that went away, and the ones
+  ///   that are named after their place in a list after them.
+  /// * `ignore` removes what matches from both files before comparing them. It
+  ///   is what the new output has more of, in the lines it shares with the
+  ///   golden.
   factory Whitelist.parse(String yaml) {
     final document = loadYaml(yaml);
     if (document == null) return const Whitelist.empty();
@@ -112,12 +132,25 @@ class Whitelist {
             pattern: globToRegExp(path),
             reason: reason.trim(),
             onlyComments: entry['only-comments'] == true,
+            dropFromGolden: _optionalPattern(entry, 'drop-from-golden', path),
+            ignore: _optionalPattern(entry, 'ignore', path),
           );
         }(),
     ]);
   }
 
-  final List<({RegExp pattern, String reason, bool onlyComments})> _entries;
+  static RegExp? _optionalPattern(YamlMap entry, String key, String path) {
+    final value = entry[key];
+    if (value == null) return null;
+    if (value is! String || value.isEmpty) {
+      throw FormatException(
+        'Whitelist entry "$path": `$key` must be a non-empty regular expression',
+      );
+    }
+    return RegExp(value, multiLine: true);
+  }
+
+  final List<_Entry> _entries;
 
   /// The reason a difference of [path] is intended, or null. [before] and
   /// [after] are the golden and the actual content of a changed file, null for
@@ -125,15 +158,40 @@ class Whitelist {
   String? reasonFor(String path, {String? before, String? after}) {
     for (final entry in _entries) {
       if (!entry.pattern.hasMatch(path)) continue;
-      if (entry.onlyComments &&
-          (before == null ||
-              after == null ||
-              _withoutComments(before) != _withoutComments(after))) {
+      final restricted =
+          entry.onlyComments ||
+          entry.dropFromGolden != null ||
+          entry.ignore != null;
+      if (restricted &&
+          (before == null || after == null || !_covers(entry, before, after))) {
         continue;
       }
       return entry.reason;
     }
     return null;
+  }
+
+  /// Whether [entry] vouches for a file that was [before] and is [after].
+  static bool _covers(_Entry entry, String before, String after) {
+    var left = before;
+    var right = after;
+
+    final drop = entry.dropFromGolden;
+    if (drop != null) {
+      left = normalizePbxproj(
+        left.split('\n').where((line) => !drop.hasMatch(line)).join('\n'),
+      );
+    }
+
+    final ignore = entry.ignore;
+    if (ignore != null) {
+      left = left.replaceAll(ignore, '');
+      right = right.replaceAll(ignore, '');
+    }
+
+    return entry.onlyComments
+        ? _withoutComments(left) == _withoutComments(right)
+        : left == right;
   }
 
   /// [content] without its `/* ... */` annotations, and the space before each.

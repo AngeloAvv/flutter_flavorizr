@@ -74,18 +74,24 @@ Notes:
 * `flavors` and `processors` are required on read, the sections of a processor
   are optional. Unknown keys at the same `schemaVersion` are ignored on read.
 * A UTF-8 byte order mark at the start of the file is tolerated on read.
-* **Known limitation, `project.pbxproj`.** The Xcode project of a platform is
-  shared by every Darwin processor (`xcodeproj:ios`, `xcodeproj:macos`) and is
-  a `patched` file. The lock records the UUIDs of the objects flavorizr created
-  in it (see [Owned objects](#owned-objects)), which is enough to find and
-  remove them, but not to *hash* what flavorizr owns: a reader of the owned
-  content gets the file alone, and the file does not say which of its objects
-  are flavorizr's. Until the processors that own parts of it register a reader
-  (the owned build settings, #515), the whole file is hashed. An edit anywhere
-  in it, by Xcode, CocoaPods or Flutter, then reads as an edit of what
-  flavorizr owns, and the next run that changes the project asks about it as a
-  conflict. The reader is registered with
-  `EngineResource(..., ownedContent: {path: reader})`.
+* **`project.pbxproj`.** The Xcode project of a platform is shared by every
+  Darwin processor (`xcodeproj:ios`, `xcodeproj:macos`) and is a `patched`
+  file. The lock records the UUIDs of the objects flavorizr created in it (see
+  [Owned objects](#owned-objects)), which is enough to find and remove them, but
+  not to *hash* what flavorizr owns: a reader of the owned content gets the file
+  alone, and the file does not say which of its objects are flavorizr's. So the
+  reader is registered with `EngineResource(..., ownedContent: {path: reader})`
+  and says it by what the processors write. For now that is what `ios:xcconfig`
+  and `macos:configs` own: the file references to the flavor xcconfigs
+  (`Flutter/<flavor>Debug.xcconfig` and `Runner/Configs/...`, and the `Profile`
+  and `Release` ones, for any flavor) and their entries in a Resources phase,
+  which a run removes. An edit of the rest, by Xcode, CocoaPods, Flutter or a 2.x
+  processor, is not drift. **Known limitation:** an object another processor
+  owns (the build configurations of `DarwinBuildConfigurations`, a build phase)
+  is recorded in `objects` but not hashed until that processor extends the
+  reader, so an edit of it by hand is not seen as drift (the owned build
+  settings are #515). A test checks that every object `ios:xcconfig` records is
+  one of the lines the reader hashes.
 
 ## Owned objects
 

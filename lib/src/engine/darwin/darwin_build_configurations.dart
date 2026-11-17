@@ -36,10 +36,12 @@ import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 ///   the project `<Mode>` configuration and then the ones of the flavor;
 /// * the configuration `<Mode>-<flavor>` of the first native target, with
 ///   `PRODUCT_NAME`;
-/// * the reference to the xcconfig file of the mode, in the main group and in
-///   the resources of the target, unless the project has one at that path
-///   already. It is identified by its path, so flavors that share a file share
-///   the reference.
+/// * the reference to the xcconfig file of the mode, in the main group, unless
+///   the project has one at that path already (`ios:xcconfig` makes it, in the
+///   group of Flutter). It is identified by its path, so flavors that share a
+///   file share the reference. It is **not** put in the resources of the target:
+///   an xcconfig is the base configuration of the configurations below, never a
+///   resource, which 2.x got wrong and copied the files into the app bundle.
 ///
 /// Both configurations point to the xcconfig file as their base configuration.
 /// Everything is owned but the objects that existed (a `Debug-dev` made by 2.x,
@@ -92,8 +94,6 @@ abstract final class DarwinBuildConfigurations {
       final name = '$mode-$flavor';
       final xcconfig = _ensureXcconfig(
         owned,
-        target: target,
-        targetName: targetName,
         path: xcconfigPath(mode),
         claimExisting: claimExisting,
       );
@@ -150,53 +150,39 @@ abstract final class DarwinBuildConfigurations {
     }
   }
 
-  /// The reference to the xcconfig file at [path], and its build file.
+  /// The reference to the xcconfig file at [path].
   ///
-  /// What identifies them is the **path**, not the flavor: flavors that ask for
-  /// the same file share one reference and one build file, whichever of them
-  /// comes first, and a flavor that moves to another path asks for another
-  /// reference, leaving the old one to the flavors that still ask for it (and
-  /// to [OwnedObjects.settle], which removes it when none does). So nothing
-  /// depends on the order the flavors are processed in, nor on which one made
-  /// a file the others share.
+  /// What identifies it is the **path**, not the flavor: flavors that ask for
+  /// the same file share one reference, whichever of them comes first, and a
+  /// flavor that moves to another path asks for another reference, leaving the
+  /// old one to the flavors that still ask for it (and to
+  /// [OwnedObjects.settle], which removes it when none does). So nothing
+  /// depends on the order the flavors are processed in, nor on which one made a
+  /// file the others share.
+  ///
+  /// The one that `ios:xcconfig` made is found by its path and used as it is
+  /// (see `ensureXcconfigReference`: it has a seed of its own, so the two
+  /// processors never own the same object).
   static PBXFileReference _ensureXcconfig(
     OwnedObjects owned, {
-    required PBXNativeTarget target,
-    required String targetName,
     required String path,
     required bool claimExisting,
   }) {
     final project = owned.project;
-    final segments = path.split('/');
-    final reference = owned.ensure<PBXFileReference>(
+
+    return owned.ensure<PBXFileReference>(
       (g, u) => PBXFileReference(g, u),
-      kind: ['fileReference', ...segments],
+      kind: ['fileReference', ...path.split('/')],
       existing: () =>
           project.files.where((file) => file.path == path).firstOrNull,
       claimExisting: claimExisting,
       create: (file) {
         file.path = path;
         file.sourceTree = '<group>';
-        file.lastKnownFileType = FileTypes.byExtension['.xcconfig'];
+        file.lastKnownFileType = 'text.xcconfig';
         project.mainGroup.children.add(file);
       },
     );
-
-    final resources = target.resourcesBuildPhase;
-
-    owned.ensure<PBXBuildFile>(
-      (g, u) => PBXBuildFile(g, u),
-      target: targetName,
-      kind: ['buildFile', 'resources', ...segments],
-      existing: () => resources.buildFile(reference),
-      claimExisting: claimExisting,
-      create: (file) {
-        file.fileRef = reference;
-        resources.files.add(file);
-      },
-    );
-
-    return reference;
   }
 
   /// A deep copy of [value], so that two configurations never share a list.
