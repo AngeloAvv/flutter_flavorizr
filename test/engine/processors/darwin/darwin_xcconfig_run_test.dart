@@ -397,6 +397,41 @@ void main() {
       );
     });
 
+    test('takes them out for the flavors that flavorizr.yaml has not anymore, '
+        'which no lock tells apart from the ones of the user', () async {
+      project.write('flavorizr.yaml', _config(['citrus']));
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(_xcconfigResources(await open(_iosProject)), isEmpty);
+      expect(_xcconfigResources(await open(_macosProject)), isEmpty);
+    });
+
+    test('leaves the xcconfigs that are not named like the ones of a '
+        'flavor, wherever they are', () async {
+      for (final platform in ['ios', 'macos']) {
+        final path = '$platform/Runner.xcodeproj';
+        final xcodeproj = await open(path);
+        final target = xcodeproj.targets.whereType<PBXNativeTarget>().first;
+        final mine = xcodeproj.newObject<PBXFileReference>(
+          (g, u) => PBXFileReference(g, u),
+        );
+        mine.path = 'Shared/mine.xcconfig';
+        mine.sourceTree = '<group>';
+        xcodeproj.mainGroup.children.add(mine);
+        target.resourcesBuildPhase.addFileReference(mine);
+        await xcodeproj.save();
+      }
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      for (final path in [_iosProject, _macosProject]) {
+        expect(_xcconfigResources(await open(path)), ['Shared/mine.xcconfig']);
+      }
+    });
+
     test('is done after one more run, which changes nothing', () async {
       await apply();
       final before = project.snapshot();

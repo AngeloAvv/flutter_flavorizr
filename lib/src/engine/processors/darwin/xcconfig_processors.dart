@@ -121,7 +121,8 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
 /// xcconfigs are the base configuration of the build configurations (which
 /// `ios:buildTargets` points at them), not resources, and 2.x copying them
 /// into the app bundle was a bug. Whatever a 2.x run left in the Resources
-/// phase is taken out. See [addXcconfigReference].
+/// phase is taken out, whatever the flavor. See [addXcconfigReference] and
+/// [removeXcconfigsFromResources].
 ///
 /// The project is the shared `xcodeproj:ios`: it is not opened or saved here,
 /// and the processor tracks it, as a patched artifact.
@@ -161,6 +162,7 @@ class IosXcconfigProcessor extends _XcconfigProcessor {
         groupName: 'Flutter',
       );
     }
+    removeXcconfigsFromResources(project);
 
     ctx.track(XcodeprojResource.iosArtifact);
   }
@@ -239,6 +241,7 @@ class MacosConfigsProcessor extends _XcconfigProcessor {
     for (final path in paths) {
       addXcconfigReference(project, p.posix.relative(path, from: K.macOSPath));
     }
+    removeXcconfigsFromResources(project);
 
     ctx.track(XcodeprojResource.macosArtifact);
   }

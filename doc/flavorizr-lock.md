@@ -79,7 +79,9 @@ Notes:
   file, so the lock hashes only the part of it the processors own, which is told
   by `EngineResource(..., ownedContent: {path: reader})`. For now that part is
   what `ios:xcconfig` and `macos:configs` write: the file references to the
-  flavor xcconfigs (and no entry of theirs in a Resources phase). An edit of the
+  flavor xcconfigs (`Flutter/<flavor>Debug.xcconfig` and `Runner/Configs/...`,
+  and the `Profile` and `Release` ones, for any flavor) and their entries in a
+  Resources phase, which a run removes. An edit of the
   rest, by Xcode, CocoaPods, Flutter or a 2.x processor, is not drift. **Known
   limitation:** the owned build settings (#515) and the UUIDs of the objects the
   other processors create (#516) are not part of it yet, so an edit of them is

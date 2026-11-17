@@ -25,7 +25,6 @@
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _ios = 'example/ios/Runner.xcodeproj';
@@ -111,46 +110,6 @@ void main() {
       expect(project.toHash(), model);
     });
 
-    test('is taken out of Resources when 2.x put it there, and nothing else '
-        'is', () {
-      // The example was flavorized by 2.x: its xcconfigs are resources.
-      final all = _buildFiles(project).length;
-      final names = [
-        for (final flavor in ['apple', 'banana'])
-          for (final target in ['Debug', 'Profile', 'Release'])
-            'Flutter/$flavor$target.xcconfig',
-      ];
-      expect(_xcconfigResources(project), unorderedEquals(names));
-
-      for (final name in names) {
-        addXcconfigReference(project, name, groupName: 'Flutter');
-      }
-
-      expect(_xcconfigResources(project), isEmpty);
-      expect(_buildFiles(project).length, all - names.length);
-    });
-
-    test('is left alone in a Resources phase when it is not a flavor one', () {
-      // Which is every xcconfig that `addXcconfigReference` is not asked for.
-      DarwinAddFileProcessor.addTo(
-        project,
-        'Flutter/mine.xcconfig',
-        groupName: 'Flutter',
-      );
-
-      addXcconfigReference(
-        project,
-        'Flutter/appleDebug.xcconfig',
-        groupName: 'Flutter',
-      );
-
-      expect(_xcconfigResources(project), contains('Flutter/mine.xcconfig'));
-      expect(
-        _xcconfigResources(project),
-        isNot(contains('Flutter/appleDebug.xcconfig')),
-      );
-    });
-
     test('gets the type a 2.x reference lacked', () {
       final existing = flutterGroup().children
           .whereType<PBXFileReference>()
@@ -197,6 +156,184 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('the xcconfigs of the flavors in the Resources phases', () {
+    late XcodeProject project;
+
+    setUp(() async => project = await XcodeProject.open(_ios));
+
+    PBXNativeTarget target(String name) => project.targets
+        .whereType<PBXNativeTarget>()
+        .firstWhere((target) => target.name == name);
+
+    PBXFileReference reference(String path, {PBXGroup? group}) {
+      final file = project.newObject<PBXFileReference>(
+        (g, u) => PBXFileReference(g, u),
+      );
+
+      file.path = path;
+      file.sourceTree = '<group>';
+      (group ?? project.mainGroup).children.add(file);
+
+      return file;
+    }
+
+    PBXBuildFile resource(PBXNativeTarget target, PBXFileReference file) =>
+        target.resourcesBuildPhase.addFileReference(file);
+
+    test('are all taken out, whatever the flavor, and nothing else is', () {
+      // The example was flavorized by 2.x, with `apple` and `banana`.
+      final all = _buildFiles(project).length;
+      expect(_xcconfigResources(project), hasLength(6));
+
+      removeXcconfigsFromResources(project);
+
+      expect(_xcconfigResources(project), isEmpty);
+      expect(_buildFiles(project).length, all - 6);
+    });
+
+    test('are taken out of the project of macOS too', () async {
+      final macos = await XcodeProject.open(_macos);
+      expect(_xcconfigResources(macos), hasLength(6));
+
+      removeXcconfigsFromResources(macos);
+
+      expect(_xcconfigResources(macos), isEmpty);
+    });
+
+    test('are taken out of every target, and whatever the nesting of the '
+        'reference', () {
+      final nested = project.newObject<PBXGroup>((g, u) => PBXGroup(g, u));
+      project.mainGroup.children.add(nested);
+      resource(
+        target('Runner'),
+        reference('Flutter/zebraDebug.xcconfig', group: nested),
+      );
+      resource(
+        target('RunnerTests'),
+        reference('Runner/Configs/zebraRelease.xcconfig'),
+      );
+
+      removeXcconfigsFromResources(project);
+
+      expect(_xcconfigResources(project), isEmpty);
+    });
+
+    test('are taken out as many times as they are listed, and by whichever '
+        'reference they point at', () {
+      final first = reference('Flutter/zebraDebug.xcconfig');
+      final second = reference('Flutter/zebraDebug.xcconfig');
+      resource(target('Runner'), first);
+      resource(target('Runner'), first);
+      resource(target('Runner'), second);
+
+      removeXcconfigsFromResources(project);
+
+      expect(
+        _xcconfigResources(project),
+        isNot(contains('Flutter/zebraDebug.xcconfig')),
+      );
+    });
+
+    test('keep a flavor that has capitals, and ignore what is not named like '
+        'flavorizr names them', () {
+      final kept = [
+        'Flutter/Debug.xcconfig',
+        'Flutter/Release.xcconfig',
+        'Flutter/mine.xcconfig',
+        'Flutter/zebradebug.xcconfig',
+        'Flutter/ZebraDEBUG.xcconfig',
+        'Flutter-Debug.xcconfig',
+        'Debug.xcconfig',
+        'Other/zebraDebug.xcconfig',
+        'Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig',
+        'Flutter/zebraDebug.plist',
+      ];
+      for (final path in kept) {
+        resource(target('Runner'), reference(path));
+      }
+      resource(target('Runner'), reference('Flutter/MyZebraProfile.xcconfig'));
+
+      removeXcconfigsFromResources(project);
+
+      expect(
+        _xcconfigResources(project),
+        containsAll(kept.where((path) => path.endsWith('.xcconfig'))),
+      );
+      expect(
+        _xcconfigResources(project),
+        isNot(contains('Flutter/MyZebraProfile.xcconfig')),
+      );
+    });
+
+    test('are left in the phases that are not Resources', () {
+      final file = reference('Flutter/zebraDebug.xcconfig');
+      final runner = target('Runner');
+      final copy = runner.newCopyFilesBuildPhase('Copy');
+      copy.addFileReference(file);
+      runner.sourceBuildPhase.addFileReference(file);
+      resource(runner, file);
+
+      removeXcconfigsFromResources(project);
+
+      expect(copy.buildFile(file), isNotNull);
+      expect(runner.sourceBuildPhase.buildFile(file), isNotNull);
+      expect(runner.resourcesBuildPhase.buildFile(file), isNull);
+    });
+
+    test('are taken out of the phases that share an entry, which the other '
+        'phases keep whole', () {
+      final file = reference('Flutter/zebraDebug.xcconfig');
+      final runner = target('Runner');
+      final entry = resource(runner, file);
+      final copy = runner.newCopyFilesBuildPhase('Copy');
+      copy.files.add(entry);
+      target('RunnerTests').resourcesBuildPhase.files.add(entry);
+
+      removeXcconfigsFromResources(project);
+
+      expect(runner.resourcesBuildPhase.files, isNot(contains(entry)));
+      expect(
+        target('RunnerTests').resourcesBuildPhase.files,
+        isNot(contains(entry)),
+      );
+      // Still listed by a phase that is not Resources: it is not broken.
+      expect(copy.files, contains(entry));
+      expect(entry.fileRef, file);
+    });
+
+    test(
+      'are taken out of every Resources phase that lists the same entry',
+      () {
+        final entry = resource(
+          target('Runner'),
+          reference('Flutter/zebraDebug.xcconfig'),
+        );
+        target('RunnerTests').resourcesBuildPhase.files.add(entry);
+
+        removeXcconfigsFromResources(project);
+
+        expect(
+          target('Runner').resourcesBuildPhase.files,
+          isNot(contains(entry)),
+        );
+        expect(
+          target('RunnerTests').resourcesBuildPhase.files,
+          isNot(contains(entry)),
+        );
+        expect(entry.fileRef, isNull, reason: 'nothing lists it anymore');
+      },
+    );
+
+    test('are taken out once: a second call changes nothing', () {
+      removeXcconfigsFromResources(project);
+      final model = project.toHash();
+
+      removeXcconfigsFromResources(project);
+
+      expect(project.toHash(), model);
     });
   });
 

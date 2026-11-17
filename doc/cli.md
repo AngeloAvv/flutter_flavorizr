@@ -178,7 +178,14 @@ hand is reported as a conflict. The files of a flavor you remove from
 `Runner.xcodeproj`, where `ios:buildTargets` and `macos:buildTargets` use it as
 the base configuration of the flavor. The files are **not** added to the
 Resources build phase, which 2.x did and copied them into the app bundle: a
-run takes the ones 2.x added out of it. The references of a flavor you remove
+run takes the ones 2.x added out of every Resources phase of every target. The
+rule is the name, not the configuration, so it also cleans the flavors that
+`flavorizr.yaml` has not anymore: an entry is removed when it points at
+`Flutter/<flavor>Debug.xcconfig` (iOS) or `Runner/Configs/<flavor>Debug.xcconfig`
+(macOS), or the same with `Profile` or `Release`, whatever the `<flavor>`. The
+other xcconfigs (`Flutter/Debug.xcconfig`, the ones of Pods, your own, anything
+named otherwise, `debug` in lower case included) and the entries of the phases
+that are not Resources are left alone. The references of a flavor you remove
 stay in the project, as the build configurations of the flavor do, until the 2.x
 processors that own those are ported.
 

@@ -36,10 +36,8 @@ const _xcconfigFileType = 'text.xcconfig';
 /// **only there**: a flavor xcconfig is a base configuration of the build
 /// configurations, which is how Xcode reads it, never a resource. 2.x also put
 /// it in the Resources phase of the first target (as `DarwinAddFileProcessor`
-/// does for any file), which copied the xcconfigs into the app bundle. So the
-/// build files of the reference are taken out of every Resources phase, which
-/// cleans a project 2.x flavorized, and nothing else is: the xcconfigs that this
-/// call is not asked for are none of its business.
+/// does for any file), which copied the xcconfigs into the app bundle: see
+/// [removeXcconfigsFromResources], which cleans that.
 ///
 /// It is idempotent. A reference that is in the group already is the one used,
 /// and it is given the type 2.x did not write (`lastKnownFileType` is
@@ -53,7 +51,8 @@ PBXFileReference addXcconfigReference(
   String? groupName,
 }) {
   final group = _group(project, groupName);
-  final reference = group.children.whereType<PBXFileReference>().firstWhere(
+
+  return group.children.whereType<PBXFileReference>().firstWhere(
     (file) => file.path == path,
     orElse: () {
       final created = project.newObject<PBXFileReference>(
@@ -67,11 +66,53 @@ PBXFileReference addXcconfigReference(
       return created;
     },
   )..lastKnownFileType ??= _xcconfigFileType;
-
-  _removeFromResources(project, reference);
-
-  return reference;
 }
+
+/// Takes the flavor xcconfigs out of every Resources build phase of [project].
+///
+/// A flavor xcconfig is a file that is named the way flavorizr names them, in
+/// the folder it puts them in: `Flutter/<flavor>Debug.xcconfig` on iOS,
+/// `Runner/Configs/<flavor>Debug.xcconfig` on macOS, and the same with
+/// `Profile` and `Release`. The flavor is **any** name (the project may have
+/// been flavorized with flavors `flavorizr.yaml` has not anymore, and no lock
+/// tells which ones), so the rule is the name and not the configuration, in
+/// every target, whatever the group the reference is in and whichever reference
+/// of the same path the entry points at. Nothing else is touched: not the other
+/// xcconfigs (`Flutter/Debug.xcconfig`, the ones of Pods, the ones of the user
+/// that are named otherwise, which includes any other case), and not the
+/// entries of the phases that are not Resources.
+///
+/// An entry that other phases list as well is taken out of the Resources ones
+/// only, and stays whole in the others. The references themselves stay.
+///
+/// It is idempotent.
+void removeXcconfigsFromResources(XcodeProject project) {
+  final removed = <PBXBuildFile>{};
+
+  for (final target in project.targets.whereType<PBXNativeTarget>()) {
+    for (final phase
+        in target.buildPhases.whereType<PBXResourcesBuildPhase>()) {
+      for (final entry in phase.files.toList()) {
+        final reference = entry.fileRef;
+
+        if (reference is PBXFileReference && _isFlavorXcconfig(reference)) {
+          phase.files.remove(entry);
+          removed.add(entry);
+        }
+      }
+    }
+  }
+
+  // An entry that no phase lists anymore is let go, so that it is not written.
+  for (final entry in removed) {
+    if (!entry.referrers.any((referrer) => referrer is AbstractBuildPhase)) {
+      entry.fileRef = null;
+    }
+  }
+}
+
+bool _isFlavorXcconfig(PBXFileReference reference) =>
+    _flavorPath.hasMatch(reference.path ?? '');
 
 PBXGroup _group(XcodeProject project, String? name) {
   if (name == null) return project.mainGroup;
@@ -85,25 +126,15 @@ PBXGroup _group(XcodeProject project, String? name) {
   );
 }
 
-void _removeFromResources(XcodeProject project, PBXFileReference reference) {
-  for (final target in project.targets.whereType<PBXNativeTarget>()) {
-    for (final phase
-        in target.buildPhases.whereType<PBXResourcesBuildPhase>()) {
-      // A build file per entry, however many a project has: bounded, so that
-      // an entry that cannot be removed never loops.
-      final entries = phase.files.where((file) => file.fileRef == reference);
-
-      for (var i = entries.length; i > 0; i--) {
-        phase.removeFileReference(reference);
-      }
-    }
-  }
-}
-
 /// The file name of a flavor xcconfig: the flavor and the mode, as a regular
 /// expression. The xcconfigs of the templates of Flutter have no flavor
 /// (`Flutter/Debug.xcconfig`), so the two are told apart.
 const _flavorXcconfigFile = r'[^/\s";*]+(?:Debug|Profile|Release)\.xcconfig';
+
+/// The path of the file reference to a flavor xcconfig.
+final _flavorPath = RegExp(
+  '^(?:Flutter|Runner/Configs)/$_flavorXcconfigFile\$',
+);
 
 /// The definition of the file reference to a flavor xcconfig, which is in
 /// `Flutter/` (iOS) or `Runner/Configs/` (macOS).
