@@ -130,6 +130,154 @@ void main() {
       expect(leftovers(), isEmpty);
     });
 
+    group('folders left empty by a deletion', () {
+      Future<WorkspaceDiff> deleting(
+        ShadowWorkspace shadow,
+        Iterable<String> paths,
+      ) => shadow.diff(
+        tracked: [for (final path in paths) Artifact.local(path)],
+      );
+
+      test('are removed, up to the first one that is not empty', () async {
+        fx.project.write('android/app/src/dev/res/mipmap-mdpi/a.png', 'a');
+        fx.project.write('android/app/src/dev/res/mipmap-hdpi/a.png', 'a');
+        fx.project.write('android/app/src/dev/res/values/mine.xml', 'mine');
+        fx.project.write('android/app/src/prod/res/mipmap-mdpi/a.png', 'a');
+        fx.project.write('android/app/src/main/AndroidManifest.xml', 'm');
+        final shadow = await fx.create(['android/app/src']);
+        shadow.delete('android/app/src/dev/res/mipmap-mdpi/a.png');
+        shadow.delete('android/app/src/dev/res/mipmap-hdpi/a.png');
+        shadow.delete('android/app/src/prod/res/mipmap-mdpi/a.png');
+
+        final result = await shadow.copyBack(
+          await deleting(shadow, [
+            'android/app/src/dev/res/mipmap-mdpi/a.png',
+            'android/app/src/dev/res/mipmap-hdpi/a.png',
+            'android/app/src/prod/res/mipmap-mdpi/a.png',
+          ]),
+        );
+
+        // `prod` had only generated files: the whole flavor folder goes.
+        expect(fx.project.exists('android/app/src/prod'), isFalse);
+        // `dev` still holds a file of the user: its folder stays, the empty
+        // density folders do not.
+        expect(fx.project.exists('android/app/src/dev/res/mipmap-mdpi'), false);
+        expect(fx.project.exists('android/app/src/dev/res/mipmap-hdpi'), false);
+        expect(
+          fx.project.read('android/app/src/dev/res/values/mine.xml'),
+          'mine',
+        );
+        expect(
+          fx.project.exists('android/app/src/main/AndroidManifest.xml'),
+          true,
+        );
+        expect(result.prunedDirectories, [
+          'android/app/src/dev/res/mipmap-hdpi',
+          'android/app/src/dev/res/mipmap-mdpi',
+          'android/app/src/prod',
+          'android/app/src/prod/res',
+          'android/app/src/prod/res/mipmap-mdpi',
+        ]);
+      });
+
+      test('never include the folders the workspace covers', () async {
+        fx.project.write('android/app/src/prod/a.png', 'a');
+        final shadow = await fx.create(['android/app/src/prod']);
+        shadow.delete('android/app/src/prod/a.png');
+
+        await shadow.copyBack(
+          await deleting(shadow, ['android/app/src/prod/a.png']),
+        );
+
+        expect(fx.project.exists('android/app/src/prod'), isTrue);
+        expect(fx.project.exists('android/app/src'), isTrue);
+      });
+
+      test('are left alone when a folder was already empty', () async {
+        Directory(
+          fx.project.abs('android/app/src/other'),
+        ).createSync(recursive: true);
+        fx.project.write('android/app/src/prod/a.png', 'a');
+        final shadow = await fx.create(['android/app/src']);
+        shadow.delete('android/app/src/prod/a.png');
+
+        await shadow.copyBack(
+          await deleting(shadow, ['android/app/src/prod/a.png']),
+        );
+
+        expect(fx.project.exists('android/app/src/prod'), isFalse);
+        expect(fx.project.exists('android/app/src/other'), isTrue);
+      });
+
+      test('are kept when the copy-back is interrupted', () async {
+        fx.project.write('android/app/src/prod/a.png', 'a');
+        fx.project.write('android/app/src/qa/b.png', 'b');
+        final shadow = await fx.create(['android/app/src']);
+        shadow.delete('android/app/src/prod/a.png');
+        shadow.delete('android/app/src/qa/b.png');
+        final diff = await deleting(shadow, [
+          'android/app/src/prod/a.png',
+          'android/app/src/qa/b.png',
+        ]);
+
+        await expectLater(
+          shadow.copyBack(diff, files: _FailingFiles(failOn: 2)),
+          throwsA(isA<CopyBackInterruptedException>()),
+        );
+
+        // The first deletion was applied, and its folder is now empty: it is
+        // still there, because an interrupted copy-back prunes nothing.
+        expect(fx.project.exists('android/app/src/prod/a.png'), isFalse);
+        expect(fx.project.exists('android/app/src/prod'), isTrue);
+        expect(fx.project.exists('android/app/src/qa/b.png'), isTrue);
+      });
+
+      test(
+        'never include a path the run works on, even inside another',
+        () async {
+          fx.project.write('android/app/src/prod/a.png', 'a');
+          fx.project.write('android/app/src/dev/res/b.png', 'b');
+          final shadow = await fx.create(['android/app/src']);
+          shadow.delete('android/app/src/prod/a.png');
+          shadow.delete('android/app/src/dev/res/b.png');
+
+          final result = await copyBackChanges(
+            projectRoot: fx.project.root,
+            shadowRoot: shadow.root,
+            diff: await deleting(shadow, [
+              'android/app/src/prod/a.png',
+              'android/app/src/dev/res/b.png',
+            ]),
+            pruneBelow: ['android/app/src', 'android/app/src/prod'],
+          );
+
+          expect(fx.project.exists('android/app/src/prod'), isTrue);
+          expect(fx.project.exists('android/app/src/dev'), isFalse);
+          expect(result.prunedDirectories, [
+            'android/app/src/dev',
+            'android/app/src/dev/res',
+          ]);
+        },
+      );
+
+      test(
+        'are kept by copyBackChanges unless it is told where to prune',
+        () async {
+          fx.project.write('lib/sub/a.dart', 'a');
+          final shadow = await fx.create(['lib']);
+          shadow.delete('lib/sub/a.dart');
+
+          await copyBackChanges(
+            projectRoot: fx.project.root,
+            shadowRoot: shadow.root,
+            diff: await deleting(shadow, ['lib/sub/a.dart']),
+          );
+
+          expect(fx.project.exists('lib/sub'), isTrue);
+        },
+      );
+    });
+
     test('creates the missing folders of a new file', () async {
       final shadow = await fx.create(['android/app/src']);
       shadow.write('android/app/src/dev/res/values/strings.xml', '<r/>');

@@ -53,7 +53,9 @@ import 'package:sprintf/sprintf.dart';
 /// Every file is [Artifact.managed]: it is generated whole from a source icon,
 /// so it is hashed in the lock and a hand edit of it is a conflict. A flavor
 /// without icons, or one that was dropped, simply produces nothing: the files
-/// of a previous run are cleaned by the reconciliation of stale artifacts.
+/// of a previous run are cleaned by the reconciliation of stale artifacts, and
+/// copy-back removes the `src/<flavor>/res` folders that leaves empty. A file
+/// of the user in there is never touched, and keeps its folder.
 ///
 /// The source icons are user inputs, read from the real project (a path
 /// relative to it, which must stay inside it, links included); the output goes
