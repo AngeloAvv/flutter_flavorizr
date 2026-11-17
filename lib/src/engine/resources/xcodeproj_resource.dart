@@ -106,12 +106,17 @@ typedef XcodeprojSaver = Future<void> Function(XcodeProject project);
 ///   part is for the processors to say, with `EngineResource.ownedContent` in
 ///   the registry (owned build settings, #515). The UUIDs of the objects a
 ///   processor created are recorded in the lock (#516), but a reader gets the
-///   file alone, which does not say which objects are flavorizr's. Until one is
-///   registered, nothing is and the **whole file is hashed**: an edit anywhere
-///   in it, by Xcode, CocoaPods or Flutter, is then seen as drift in what
-///   flavorizr owns, and a run that changes the project reports it as a
-///   conflict. There is no owned-less hash that avoids it, and even a
-///   normalised model of the project holds what the user added.
+///   file alone, which does not say which objects are flavorizr's. So the reader
+///   is the one of the processors that own the objects: `ios:xcconfig` and
+///   `macos:configs` register the one of the references to the flavor
+///   xcconfigs (`xcconfigReferencesOwnedContent`). **A processor that owns other
+///   objects has to extend it**, or an edit of them is not drift, and a change
+///   of only them is not written back (the hash of the owned part has not
+///   changed). Until nothing is registered for a file, the **whole file is
+///   hashed**: an edit anywhere in it, by Xcode, CocoaPods or Flutter, is then
+///   seen as drift in what flavorizr owns, and a run that changes the project
+///   reports it as a conflict. There is no owned-less hash that avoids it, and
+///   even a normalised model of the project holds what the user added.
 /// * **Do not keep the project** after [FlavorizrProcessor.apply] returns, and
 ///   do not save it: the resource does, last.
 /// * **Order the consumers** with `dependsOn` / `after` when one needs the

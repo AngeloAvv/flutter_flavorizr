@@ -7,6 +7,14 @@
 # `only-comments: true` makes an entry cover a changed file only if it differs
 # from the golden in its `/* ... */` annotations and in nothing else.
 #
+# `drop-from-golden: <regex>` and `ignore: <regex>` say what else a pbxproj may
+# differ in, on top of `only-comments`: the lines of the golden the new output no
+# longer has (the golden is named again without them), and text that the new
+# output has more of in the lines it shares with the golden. Both are matched
+# against one line, and name the exact thing they vouch for (a generated flavor
+# xcconfig, not any xcconfig): what they match is allowed to differ, so a broad
+# pattern hides regressions. differ_test.dart runs this file.
+#
 # `*` matches within a path segment, `**` across segments. Paths are relative
 # to the generated project, binaries are listed as `<file>.sha256`.
 
@@ -55,16 +63,26 @@
     needed anymore.
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
+  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )'
   reason: >-
     dart_xcodeproj 0.4.0 (#513) prints only the annotations of its object model,
     as Ruby's xcodeproj does, where 0.3.0 guessed them from the shape of the
     strings (a file reference is now annotated by its basename, TestTargetID and
     remoteGlobalIDString are not annotated, shell script phases, target
-    dependencies, container proxies and Swift packages are). Nothing else
-    changes: the file is identical to the golden once the comments are stripped,
-    and xcodeproj 1.28.1 saves the golden back byte for byte as the new file.
+    dependencies, container proxies and Swift packages are). ios:xcconfig on the
+    engine (#518) stops adding the flavor xcconfigs to the Resources build phase,
+    where 2.6.0 copied them into the app bundle, and gives their file references
+    the type Xcode gives them (`lastKnownFileType = text.xcconfig`, which 2.6.0
+    lost, as DarwinAddFileProcessor looked the extension up with its dot). Nothing
+    else changes: the golden, once those entries are taken out and its UUIDs
+    named again, is identical to the new file once the comments are stripped.
 - path: macos/Runner.xcodeproj/project.pbxproj
   only-comments: true
+  drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )'
   reason: >-
-    Same as ios/Runner.xcodeproj/project.pbxproj: only the comments differ from
-    2.6.0, and they are the ones Ruby's xcodeproj writes (#513).
+    Same as ios/Runner.xcodeproj/project.pbxproj: the comments are the ones
+    Ruby's xcodeproj writes (#513), and macos:configs on the engine (#518) does
+    not add the flavor xcconfigs of Runner/Configs to the Resources build phase,
+    and types their file references.

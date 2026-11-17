@@ -35,7 +35,14 @@ const _macos = 'macos/Podfile';
 const _paths = [_ios, _macos];
 
 /// What a full run of a project with only iOS and macOS flavors covers.
-const _fullRun = ['flutter:flavors', 'ios:podfile', 'macos:podfile'];
+const _fullRun = [
+  'flutter:flavors',
+  'ios:podfile',
+  'macos:podfile',
+  'ios:xcconfig',
+  'macos:xcconfig',
+  'macos:configs',
+];
 
 final String _pristine = File(
   'test_resources/darwin/podfile_test/PodfileOriginal',
@@ -74,6 +81,10 @@ void main() {
     project.write('flavorizr.yaml', _config(['apple', 'banana']));
     for (final path in _paths) {
       project.write(path, _pristine);
+    }
+    for (final platform in ['ios', 'macos']) {
+      final path = '$platform/Runner.xcodeproj/project.pbxproj';
+      project.write(path, File('example/$path').readAsStringSync());
     }
   });
   tearDown(() => project.dispose());

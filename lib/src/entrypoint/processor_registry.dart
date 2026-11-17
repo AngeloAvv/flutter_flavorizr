@@ -36,6 +36,8 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
@@ -128,9 +130,9 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android, Linux, Podfile and Flutter
-  /// processors that were ported run on the engine, every other 2.x instruction
-  /// on the legacy pipeline.
+  /// The registry of this version: the Android, Linux, Flutter, xcconfig and
+  /// Podfile processors that were ported run on the engine, every other 2.x
+  /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
       EngineProcessor(
@@ -155,6 +157,15 @@ class ProcessorRegistry {
       const EngineProcessor(
         AndroidIconsProcessor(),
         paths: {'android/app/src'},
+      ),
+      EngineProcessor(const IosXcconfigProcessor(), paths: {K.iOSFlutterPath}),
+      EngineProcessor(
+        const MacosXcconfigProcessor(),
+        paths: {K.macOSFlutterPath},
+      ),
+      EngineProcessor(
+        const MacosConfigsProcessor(),
+        paths: {K.macOSConfigsPath},
       ),
       EngineProcessor(
         const LinuxCMakeListsPatchProcessor(),
@@ -199,13 +210,22 @@ class ProcessorRegistry {
       EngineProcessor(const FlutterMainProcessor(), paths: {K.flutterMainPath}),
     ],
     resources: [
+      // The part of the projects the lock hashes is the one the processors
+      // above own: the references to the xcconfigs of the flavors. The 2.x
+      // processors that run after the engine change the rest.
       EngineResource(
         XcodeprojResource.ios(),
         paths: const {XcodeprojResource.iosProject},
+        ownedContent: {
+          XcodeprojResource.iosArtifact.path: xcconfigReferencesOwnedContent,
+        },
       ),
       EngineResource(
         XcodeprojResource.macos(),
         paths: const {XcodeprojResource.macosProject},
+        ownedContent: {
+          XcodeprojResource.macosArtifact.path: xcconfigReferencesOwnedContent,
+        },
       ),
     ],
     legacyIds: Processor.defaultInstructionSet,
