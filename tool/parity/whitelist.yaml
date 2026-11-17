@@ -4,6 +4,9 @@
 # - path: android/app/src/main/res/**
 #   reason: M5 stops generating the dummy launcher assets (#527)
 #
+# `only-comments: true` makes an entry cover a changed file only if it differs
+# from the golden in its `/* ... */` annotations and in nothing else.
+#
 # `*` matches within a path segment, `**` across segments. Paths are relative
 # to the generated project, binaries are listed as `<file>.sha256`.
 
@@ -34,3 +37,18 @@
     overwrites it, and the project `flutter create` makes already has one, where
     2.6.0 replaced it. The 2.6.0 file initialized `F.appFlavor`, which is not
     needed anymore.
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  reason: >-
+    dart_xcodeproj 0.4.0 (#513) prints only the annotations of its object model,
+    as Ruby's xcodeproj does, where 0.3.0 guessed them from the shape of the
+    strings (a file reference is now annotated by its basename, TestTargetID and
+    remoteGlobalIDString are not annotated, shell script phases, target
+    dependencies, container proxies and Swift packages are). Nothing else
+    changes: the file is identical to the golden once the comments are stripped,
+    and xcodeproj 1.28.1 saves the golden back byte for byte as the new file.
+- path: macos/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  reason: >-
+    Same as ios/Runner.xcodeproj/project.pbxproj: only the comments differ from
+    2.6.0, and they are the ones Ruby's xcodeproj writes (#513).
