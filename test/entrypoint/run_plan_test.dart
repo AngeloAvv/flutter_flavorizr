@@ -209,4 +209,59 @@ flavors:
       expect(dummy.config.androidFlavors.keys, ['apple', 'banana']);
     });
   });
+
+  group('the linux processors', () {
+    final linux = '''
+flavors:
+  apple:
+    app:
+      name: "Apple"
+    linux:
+      applicationId: "com.example.apple"
+''';
+
+    test('run on the engine, in the order of the recipe, with no legacy '
+        'step', () {
+      final plan = resolve(linux, ['linux']);
+
+      expect(engine(plan), [
+        'linux:cmake',
+        'linux:runnerCmake',
+        'linux:myApplication',
+      ]);
+      expect(plan.legacy, isEmpty);
+      expect(plan.paths, {
+        'linux/CMakeLists.txt',
+        'linux/runner/CMakeLists.txt',
+        'linux/runner/my_application.cc',
+      });
+    });
+
+    test(
+      'are left out of the default run of a project with no linux flavors',
+      () {
+        final plan = resolve(android);
+
+        expect(engine(plan), isNot(contains('linux:cmake')));
+        expect(plan.messages.join(), contains('linux'));
+      },
+    );
+
+    test('are not what a full run of a project with no linux flavors has to '
+        'cover, and are what one with them has to', () {
+      final config = Flavorizr.parse(android);
+
+      expect(engineIdsFor(registry, config), {
+        'android:androidManifest',
+        'android:flavorizrGradle',
+        'android:buildGradle',
+        'android:icons',
+      });
+      expect(engineIdsFor(registry, Flavorizr.parse(linux)), {
+        'linux:cmake',
+        'linux:runnerCmake',
+        'linux:myApplication',
+      });
+    });
+  });
 }

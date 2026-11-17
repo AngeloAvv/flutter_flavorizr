@@ -58,6 +58,31 @@ final class RunPlan {
   bool get isEmpty => engine.steps.isEmpty && legacy.isEmpty;
 }
 
+/// The platforms [config] has no flavors for, which are left out of a run.
+Set<String> platformsWithoutFlavors(Flavorizr config) => {
+  if (!config.androidFlavorsAvailable) 'android',
+  if (!config.iosFlavorsAvailable) 'ios',
+  if (!config.macosFlavorsAvailable) 'macos',
+  if (!config.linuxFlavorsAvailable) 'linux',
+  if (!config.windowsFlavorsAvailable) 'windows',
+};
+
+/// The ids of the processors on the engine that apply to [config]: every one of
+/// them, but the ones of a platform it has no flavors for.
+///
+/// A run that covers all of them is a *full* run, the only one that records the
+/// flavors in the lock (see `updateLock`). A project that has no Linux flavors
+/// can never run the Linux processors, so they are not part of what a full run
+/// has to cover.
+Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
+  final skipped = platformsWithoutFlavors(config);
+
+  return {
+    for (final id in registry.engineIds)
+      if (!skipped.contains(id.split(':').first)) id,
+  };
+}
+
 /// Resolves what to run for [targets].
 ///
 /// A target is the name of a recipe or the id of a processor. Without targets,
@@ -91,13 +116,7 @@ RunPlan resolveRunPlan({
       ? const RecipeResolution([])
       : catalog.resolve(
           instructions ?? const [],
-          platformsWithoutFlavors: {
-            if (!config.androidFlavorsAvailable) 'android',
-            if (!config.iosFlavorsAvailable) 'ios',
-            if (!config.macosFlavorsAvailable) 'macos',
-            if (!config.linuxFlavorsAvailable) 'linux',
-            if (!config.windowsFlavorsAvailable) 'windows',
-          },
+          platformsWithoutFlavors: platformsWithoutFlavors(config),
         );
   final engine = resolveExecutionPlan(
     registry.engineProcessors.values,
