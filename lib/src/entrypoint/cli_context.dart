@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -93,13 +94,34 @@ class CliContext {
 /// Asks [executable], `flutter` of the `PATH` by default, for its version.
 ///
 /// It is `null` when the version cannot be told: flutter is missing, fails, or
-/// has not answered after [timeout], in which case it is killed so that it does
-/// not outlive the command.
+/// has not finished after [timeout]. The timeout bounds the whole probe, its
+/// output included, since a child of flutter may keep that open after flutter
+/// exited. Whatever is still running then is killed, so that it does not
+/// outlive the command.
 Future<String?> probeFlutterVersion({
   String executable = 'flutter',
   Duration timeout = const Duration(seconds: 60),
 }) async {
   Process? process;
+  final subscriptions = <StreamSubscription<List<int>>>[];
+
+  // The bytes of [stream], which are decoded last so that a stray one cannot
+  // fail the stream. The future is awaited from the start, by `Future.wait`.
+  Future<List<int>> read(Stream<List<int>> stream) {
+    final done = Completer<List<int>>();
+    final bytes = <int>[];
+
+    subscriptions.add(
+      stream.listen(
+        bytes.addAll,
+        onDone: () => done.complete(bytes),
+        onError: done.completeError,
+        cancelOnError: true,
+      ),
+    );
+
+    return done.future;
+  }
 
   try {
     process = await Process.start(executable, [
@@ -107,26 +129,26 @@ Future<String?> probeFlutterVersion({
       '--machine',
     ], runInShell: Platform.isWindows);
 
-    // Both streams are read to the end, or a chatty flutter would block on a
-    // full pipe, and a killed one would leave them open.
-    final stdout = process.stdout.transform(utf8.decoder).join();
-    final stderr = process.stderr.drain<void>();
-    final exitCode = await process.exitCode.timeout(timeout);
-
-    await stderr;
+    final [exitCode as int, stdout as List<int>, _] = await Future.wait<Object>(
+      [process.exitCode, read(process.stdout), read(process.stderr)],
+    ).timeout(timeout);
 
     if (exitCode != 0) return null;
 
     // Flutter may print noise before the JSON document.
-    final output = await stdout;
+    final output = utf8.decode(stdout, allowMalformed: true);
     final match = RegExp(r'"frameworkVersion"\s*:\s*"([^"]+)"').firstMatch(
       output.substring(output.contains('{') ? output.indexOf('{') : 0),
     );
 
     return match?.group(1);
   } on Object {
+    return null;
+  } finally {
     process?.kill(ProcessSignal.sigkill);
 
-    return null;
+    for (final subscription in subscriptions) {
+      unawaited(subscription.cancel());
+    }
   }
 }

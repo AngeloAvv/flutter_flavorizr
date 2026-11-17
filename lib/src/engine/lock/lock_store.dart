@@ -37,6 +37,8 @@ import 'package:path/path.dart' as p;
 /// the engine, which must write the lock after a fully successful apply and
 /// never before.
 class LockStore {
+  static int _staged = 0;
+
   /// The name of the lock file, in the root of the project.
   static const fileName = 'flavorizr.lock';
 
@@ -84,7 +86,11 @@ class LockStore {
   /// first, so that a file system that cannot hold it is found out before
   /// anything is changed, and commits it last.
   Future<StagedLock> stage(FlavorizrLock lock) async {
-    final temporary = File('${_file.path}.tmp');
+    // Its own file: staged locks that overlap must not publish or delete each
+    // other's.
+    final temporary = File(
+      '${_file.path}.${pid}_${_staged++}_${DateTime.now().microsecondsSinceEpoch}.tmp',
+    );
 
     try {
       await temporary.writeAsBytes(utf8.encode(LockCodec.encode(lock)));

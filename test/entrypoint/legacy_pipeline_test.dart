@@ -141,6 +141,24 @@ void main() {
       },
     );
 
+    test('a file the step did not change is not written again', () async {
+      write('android/app/flavorizr.gradle', 'GRADLE');
+      Process.runSync('chmod', [
+        '444',
+        p.join(project.path, 'android/app/flavorizr.gradle'),
+      ]);
+      addTearDown(
+        () => Process.runSync('chmod', [
+          '644',
+          p.join(project.path, 'android/app/flavorizr.gradle'),
+        ]),
+      );
+
+      await dummyAssets({'android/app/flavorizr.gradle'});
+
+      expect(read('android/app/flavorizr.gradle'), 'GRADLE');
+    }, skip: Platform.isWindows ? 'needs POSIX permissions' : false);
+
     test('a path that did not exist is not created', () async {
       await dummyAssets({
         'android/app/src/apple/res/mipmap-xhdpi/ic_launcher.png',

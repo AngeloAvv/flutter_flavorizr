@@ -43,10 +43,16 @@ targets) are still accepted, undocumented, until they are deprecated.
 | `70` | A processor failed, or the project changed during the run. |
 
 A run that fails does not write the engine's changes to the project, and the
-lock is written last. There are two exceptions, and both say so: a copy-back
-that is interrupted lists what was and what was not written, and a 2.x
-processor that fails after the engine finished leaves the engine's changes in
-place.
+lock is written last. A lock that cannot even be staged stops the run before
+anything is written. There are three exceptions, and each says so:
+
+* a copy-back that is interrupted lists what was and what was not written;
+* a lock that cannot replace `flavorizr.lock` once the files are written exits
+  with `70`: the engine's changes stay written, so fix what stops the lock from
+  being written (permissions, a folder in its place) and run flavorizr again,
+  which finds nothing to change and writes the lock;
+* a 2.x processor that fails after the engine finished leaves the engine's
+  changes in place.
 
 ## `status` and drift
 

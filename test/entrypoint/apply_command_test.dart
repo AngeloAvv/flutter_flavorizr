@@ -225,7 +225,8 @@ void main() {
 
     group('the lock', () {
       test('that cannot be staged stops the run before it writes', () async {
-        Directory(project.abs('flavorizr.lock.tmp')).createSync();
+        Process.runSync('chmod', ['555', project.root.path]);
+        addTearDown(() => Process.runSync('chmod', ['755', project.root.path]));
         final before = project.snapshot();
 
         final code = await project.run(['apply', '--yes', ...engine]);
@@ -244,7 +245,10 @@ void main() {
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
         expect(project.logger.errors.join(), contains('already written'));
         expect(project.logger.errors.join(), contains('flavorizr.lock'));
-        expect(project.exists('flavorizr.lock.tmp'), isFalse);
+        expect(
+          project.root.listSync().map((e) => e.path),
+          isNot(contains(endsWith('.tmp'))),
+        );
       });
     });
 

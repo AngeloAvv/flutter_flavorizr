@@ -70,6 +70,47 @@ void main() {
       );
     });
 
+    test('reads the version even when flutter prints a stray byte', () async {
+      final flutter = script('printf \'\\377{"frameworkVersion": "3.47.9"}\'');
+
+      expect(await probeFlutterVersion(executable: flutter), '3.47.9');
+    });
+
+    test('an output that fails to decode is not left unhandled', () async {
+      // The stream fails at once, while flutter is still running.
+      final flutter = script('printf \'\\377\'\nexec sleep 60');
+
+      final version = await probeFlutterVersion(
+        executable: flutter,
+        timeout: const Duration(milliseconds: 400),
+      );
+      // An error nobody observes is reported to the test after this point.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(version, isNull);
+    });
+
+    test('is bounded when a child of flutter keeps its output open', () async {
+      final pidFile = File(p.join(scratch.path, 'child'));
+      final flutter = script(
+        'sleep 60 &\necho \$! > "${pidFile.path}"\nexit 0',
+      );
+      addTearDown(() {
+        if (pidFile.existsSync()) {
+          Process.runSync('kill', [pidFile.readAsStringSync().trim()]);
+        }
+      });
+      final clock = Stopwatch()..start();
+
+      final version = await probeFlutterVersion(
+        executable: flutter,
+        timeout: const Duration(milliseconds: 500),
+      );
+
+      expect(version, isNull);
+      expect(clock.elapsed, lessThan(const Duration(seconds: 10)));
+    });
+
     test('does not leave flutter running after the timeout', () async {
       final pidFile = File(p.join(scratch.path, 'pid'));
       final flutter = script('echo \$\$ > "${pidFile.path}"\nexec sleep 60');

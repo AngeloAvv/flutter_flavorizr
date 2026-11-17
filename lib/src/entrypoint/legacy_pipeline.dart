@@ -113,9 +113,19 @@ class StandardLegacyPipeline implements LegacyPipeline {
         ).executeInstruction(step.id);
       } finally {
         for (final MapEntry(:key, :value) in kept.entries) {
-          File(p.join(projectRoot.path, key)).writeAsBytesSync(value);
+          final file = File(p.join(projectRoot.path, key));
+
+          // Only what the step changed: a file it left alone may well be one
+          // that cannot be written.
+          if (!file.existsSync() || !_same(file.readAsBytesSync(), value)) {
+            file.writeAsBytesSync(value);
+          }
         }
       }
     }
   }
 }
+
+bool _same(List<int> a, List<int> b) =>
+    a.length == b.length &&
+    Iterable.generate(a.length).every((i) => a[i] == b[i]);
