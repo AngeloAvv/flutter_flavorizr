@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_main_cpp_template_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_editors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_processor.dart';
@@ -52,6 +53,12 @@ class WindowsRunnerRcTemplateProcessor extends WindowsTemplateProcessor {
   String get targetPath => K.windowsRunnerRcTemplatePath;
 
   @override
-  String template(String source) =>
-      WindowsRunnerRcTemplateEditor.template(source);
+  String template(FlavorizrContext ctx, String source) =>
+      WindowsRunnerRcTemplateEditor.template(
+        source,
+        titles: [
+          for (final flavor in ctx.config.windowsFlavors.values)
+            flavor.app.name,
+        ],
+      );
 }

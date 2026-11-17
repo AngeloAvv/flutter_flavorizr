@@ -128,9 +128,63 @@ abstract final class WindowsRunnerCMakeListsEditor {
   static String ownedContent(String source) =>
       MarkedText.ownedContent(source, [marker]);
 
+  static final RegExp _bracket = RegExp(r'\[=*\[');
+  static final RegExp _quoted = RegExp(r'"(?:[^"\\]|\\.)*"');
+
+  /// Throws on what the editor reads line by line and cannot read that way:
+  /// a bracket argument or comment (`[[ ... ]]`, `#[[ ... ]]`, which may hold
+  /// parentheses and anything that looks like a command), a line that ends with
+  /// a `\` (which goes on with the next one) and a quoted argument that goes
+  /// over several lines. A line comment (`# ...`) is skipped, and what is in one
+  /// is not looked at. The file is only looked at outside of the region.
+  static void _checkPlain(List<TextLine> lines) {
+    UnsupportedRunnerLayoutException reject(String what, String fix) =>
+        UnsupportedRunnerLayoutException(
+          K.windowsRunnerCMakeListsPath,
+          reason: 'it has $what.',
+          fix: fix,
+        );
+
+    for (final line in lines) {
+      final text = line.text.trim();
+
+      if (text.startsWith('#') && !text.startsWith('#[')) continue;
+
+      if (_bracket.hasMatch(text)) {
+        throw reject(
+          'a bracket argument or comment (`[[ ... ]]`) on `$text`',
+          'Write it as a quoted argument or as `#` line comments.',
+        );
+      }
+
+      if (text.endsWith(r'\')) {
+        throw reject(
+          r'a line continuation (`\` at the end of a line) on `$text`',
+          'Join the lines.',
+        );
+      }
+
+      final code = text
+          .replaceAll(RegExp(r'\\.'), '')
+          .replaceAll(RegExp(r'"[^"]*"'), '')
+          .split('#')
+          .first;
+
+      if (code.contains('"')) {
+        throw reject(
+          'a quoted argument that goes over several lines, on `$text`',
+          'Close the quote on the line it starts on.',
+        );
+      }
+    }
+  }
+
   /// The line that closes the call that adds the executable.
   static TextLine _callEnd(MarkedText text) {
     final outside = text.outside;
+
+    _checkPlain(outside);
+
     final starts = outside
         .where((line) => line.text.trim() == _callStart)
         .toList(growable: false);
@@ -265,7 +319,7 @@ abstract final class WindowsRunnerCMakeListsEditor {
 
       call.add(text);
 
-      final code = text.replaceAll(RegExp(r'"[^"]*"'), '""').split('#').first;
+      final code = text.replaceAll(_quoted, '""').split('#').first;
 
       depth += '('.allMatches(code).length - ')'.allMatches(code).length;
 

@@ -209,65 +209,84 @@ flavorizr owns (hashed in the lock, so a hand edit of them is a conflict), and
 the two files they come from stay yours. `windows:cmake` only touches the region
 of `windows/runner/CMakeLists.txt` between the same `BEGIN`/`END FLUTTER_APP_FLAVOR`
 markers 2.x writes. The region sets the icon and the window title of the flavor
-that is built, makes `Runner.rc` and `main.cpp` from the templates with
-`configure_file` **in the build directory** (`${CMAKE_CURRENT_BINARY_DIR}`, not
-the source one, where 2.x wrote them over your files and changed them at every
-flavored build) and points the target at those copies. A flavor you drop from
-`flavorizr.yaml` is regenerated out of the region on the next run, as long as
-another flavor still has a `windows` section (dropping the last one is refused,
-as for Linux). A project that 2.x flavorized is adopted: the templates are the
-ones 2.x wrote, and 2.x put the region **before** `add_executable`, where the
-target does not exist yet, so the one change to such a file that is not inside
-the region is that the region moves after the call. A `Runner.rc` or `main.cpp`
-that a 2.x build already rewrote (with the icon and the title of a flavor in it)
-is templated all the same.
+that is built (the defaults for a flavor that is not in `flavorizr.yaml`), makes
+`Runner.rc` and `main.cpp` from the templates with `configure_file` **in the
+build directory** (`${CMAKE_CURRENT_BINARY_DIR}`, not the source one, where 2.x
+wrote them over your files and changed them at every flavored build) and points
+the target at those copies. A flavor you drop from `flavorizr.yaml` is
+regenerated out of the region on the next run, as long as another flavor still
+has a `windows` section (dropping the last one is refused, as for Linux). A
+project that 2.x flavorized is adopted: the templates are the ones 2.x wrote,
+and 2.x put the region **before** `add_executable`, where the target does not
+exist yet, so the one change to such a file that is not inside the region is
+that the region moves after the call. A `Runner.rc` or `main.cpp` that a 2.x
+build already rewrote (with the icon and the title of a flavor in it) is
+templated all the same. The templates are regenerated at every `apply`, so run
+it again after you change `main.cpp` or `Runner.rc`; `status` does not see a
+change of the files they are made from. The icon of a flavor is still
+`windows/runner/resources/<flavor>.ico`, which `windows:icons` and
+`windows:dummyAssets` make.
 
-For that, `windows/runner/CMakeLists.txt` has to add the executable the way
-`flutter create` writes it: `add_executable(${BINARY_NAME} WIN32` on a line of
-its own, only once outside of the region, the sources on the lines after it, and
-a line of its own with nothing but the closing `)`. `main.cpp` and `Runner.rc`
-have to be among the sources, each on a line of its own, as a name (quoted or
-not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`: the region swaps them for the
-copies of the build directory, and the target would otherwise compile both. A
-source that names one of them any other way (`./main.cpp`, `MAIN.CPP`,
-`sub/../main.cpp`, two names on a line, a comment after the name) is rejected
-too, for the same reason; the names are whole words, so `domain.cpp` or
-`main.cpp.in` are other files. After the call, no `target_sources`,
-`set_property` or `set_target_properties` may name `main.cpp` or `Runner.rc`
-either (a later call of another target is not told from one of this, and is
-rejected too), since it would put the file of the source dir back in the target
-after the region took it out. A name that is in a variable is not seen. When
-it is not like that the run fails, before anything is written, and says what to
-change. Only those ways of writing the call are looked for: it is not parsed, a
-different one is rejected rather than guessed at, and a `#` comment among the
-sources is skipped. In a flavored build, a flavor that is not in `flavorizr.yaml`
-gets the default icon and title. The templates are made by recognising the
-calls `window.Create(...)` in `main.cpp`, the `IDI_APP_ICON` line in `Runner.rc`
-and its `FileDescription` and `ProductName` entries. **Every** one of them has
-to be written as `flutter create` writes it, whatever branch of an `#if` it is
-in: `window.Create(L"...", origin, size)` with a plain title (no quote or
-backslash, so no raw, `u8` or `u` string, macro or two literals either),
-`IDI_APP_ICON ICON "resources\\<name>"`, and `VALUE "FileDescription", "..."
-"\0"` and `VALUE "ProductName", "..." "\0"` with a plain string. A file with one
-that is not, or with none of one of them, is rejected, since a build that picked
-that one would keep the old title; when all of them are plain, all of them are
-templated. Places that are in a comment (`//` or `/* */`, found knowing the string and
-character literals: the `//` of `L"https://..."` starts no comment) are skipped.
-Preprocessor directives are not looked at, a `window.Create(` in a string is one
-that cannot be templated, and only `window` is looked for as the name of the
-window (`window.Create`, `window->Create`). The `app.name` of a flavor is
-encoded for each file it ends up in, so `"`, `\` and non-ASCII characters are
-fine in it (in `main.cpp` as `\"`, `\\` and universal character names, in
-`Runner.rc` as `""` and `\\`, and then for CMake, which also protects a `$`); a
-control character, such as a line break, is rejected, and so is a flavor name
-that has anything but letters, digits, `_`, `-` and `.`, since it is the name of
-the icon file. `Runner.rc`, `main.cpp` and
-`CMakeLists.txt` have to be UTF-8, which is how `flutter create` writes them (a
-file that Visual Studio saved as UTF-16 is rejected). The
-templates are regenerated at every `apply`, so run it again after you change
-`main.cpp` or `Runner.rc`; `status` does not see a change of the files they are
-made from. The icon of a flavor is still `windows/runner/resources/<flavor>.ico`,
-which `windows:icons` and `windows:dummyAssets` make.
+The editors do not parse C++, CMake or resource scripts: they read the lines
+`flutter create` writes, and **reject** what they would have to guess at. The run
+then fails, before anything is written, and says what to change.
+
+*`windows/runner/CMakeLists.txt`* is read line by line. Supported:
+`add_executable(${BINARY_NAME} WIN32` alone on a line, once outside of the
+region, then the sources, then a line with only `)`; `main.cpp` and `Runner.rc`
+among the sources, each on a line of its own, as a name (quoted or not) or after
+`${CMAKE_CURRENT_SOURCE_DIR}/`; `#` comments; an old region before the call
+(moved after it). Rejected: any other way of writing the call (upper case, on
+one line, a closing `)` that is not alone, a second call); a source that names
+`main.cpp` or `Runner.rc` any other way (`./main.cpp`, `MAIN.CPP`,
+`sub/../main.cpp`, two names on a line, a comment after the name), where the
+names are whole words (`domain.cpp` is another file); a later
+`target_sources`, `set_property` or `set_target_properties` that names one of
+them (also for another target), since it would put the file of the source dir
+back in the target; bracket arguments and bracket comments (`[[ ... ]]`,
+`#[[ ... ]]`) anywhere outside the region; a line that ends with `\`; a quoted
+argument over several lines. A name that is in a variable is not seen.
+
+*`main.cpp` and `Runner.rc`* are read by a small scanner that knows comments
+(`//`, also continued with a `\` at the end of the line, and `/* */`; they do not
+nest) and the literals they cannot start in (`"..."`, `'...'` and the prefixes
+`L`, `u`, `U` and `u8`, raw strings `R"delimiter(...)delimiter"`, the digit
+separator `1'000`, and `""` of a script), with LF, CRLF or both in a file.
+Rejected: a string, character, raw string or block comment that is not closed;
+a raw string whose delimiter is longer than 16 characters or has a space,
+parenthesis or `\`; a `\` at the end of a line anywhere but in a `//` comment (a
+continued string, macro or directive); digraphs (`<%`, `%>`, `<:`, `:>`, `%:`)
+in `main.cpp`; an `#include` that is not of a header (`.h`, `.hpp`, `.hh`,
+`.hxx`) named by a literal, since the file may be generated and hold what is
+looked for; NUL, a form feed, a vertical tab or a lone carriage return anywhere
+in any of the three files; a file that is not UTF-8 (a UTF-16 one that Visual
+Studio saved, for one). Trigraphs (`??/`) are not supported, because MSVC does
+not read them unless `/Zc:trigraphs` is set, which Flutter does not do. The
+scanner does not tell the branches of an `#if` apart: it is code.
+
+*What is templated.* The call `window.Create(...)` in `main.cpp`, the
+`IDI_APP_ICON` line in `Runner.rc` and its `FileDescription` and `ProductName`
+entries. **Every** one of them, whatever branch of an `#if` it is in, has to be
+written as `flutter create` writes it, or the file is rejected, since a build
+that picked that one would keep the old title: `window.Create(L"...", origin,
+size)` with a plain title (no quote or backslash, so no raw, `u8` or `u` string,
+macro or two literals either; `window` is looked for as `window.Create` and
+`window->Create`), `IDI_APP_ICON ICON "resources\\<name>"`, and
+`VALUE "FileDescription", "..." "\0"` and `VALUE "ProductName", "..." "\0"`
+with a plain string. A file with none of one of them is rejected too. Places in a
+comment are skipped; when all of them are plain, all of them are templated.
+
+*Titles and flavor names.* The `app.name` of a flavor is encoded for each file
+it ends up in, so `"`, `\` and non-ASCII characters are fine in it (in
+`main.cpp` as `\"`, `\\` and universal character names; in `Runner.rc` as `""`
+and `\\`, which needs `#pragma code_page(65001)` in `Runner.rc` when the title is
+not ASCII, as `flutter create` writes it, and is rejected without it; and then
+for CMake, which also protects a `$`). A control character in it, such as a line
+break, is rejected. A flavor name is the name of an icon file and goes into
+CMake and `Runner.rc`, so it has to be made of letters, digits, `_`, `-` and
+`.`, not end with a dot, and not be a name Windows reserves for a device
+(`CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`, in any case and
+with any extension).
 
 Every other instruction (`ios:*`, `macos:*`, `windows:dummyAssets`,
 `windows:icons`, `google:firebase`, `huawei:agconnect`, `ide:config`,

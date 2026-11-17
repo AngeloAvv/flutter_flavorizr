@@ -45,9 +45,28 @@ abstract final class WindowsTitleEncoding {
   /// the right side of a comparison in CMake, and go in a path of `Runner.rc`.
   static final RegExp _plainName = RegExp(r'^[A-Za-z0-9_.-]+$');
 
+  /// The names Windows keeps for devices, whatever the case and the extension
+  /// (`con.ico` is `CON` too): a file cannot be made with one.
+  static final RegExp _device = RegExp(
+    r'^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$',
+    caseSensitive: false,
+  );
+
   /// Throws an [UnsupportedRunnerLayoutException] when the [flavor] or its
   /// [title] cannot be used.
   static void check(String flavor, String title) {
+    if (_device.hasMatch(flavor.split('.').first) || flavor.endsWith('.')) {
+      throw UnsupportedRunnerLayoutException(
+        K.windowsRunnerCMakeListsPath,
+        reason:
+            'the name of the flavor `$flavor` is a name Windows reserves for '
+            'a device (`CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` '
+            'to `LPT9`, with any extension) or ends with a dot, and it is the '
+            'name of the icon file of the flavor.',
+        fix: 'Rename the flavor.',
+      );
+    }
+
     if (!_plainName.hasMatch(flavor)) {
       throw UnsupportedRunnerLayoutException(
         K.windowsRunnerCMakeListsPath,

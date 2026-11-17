@@ -484,6 +484,69 @@ void main() {
           contains(_begin),
         );
       });
+
+      test('rejects a flavor name that Windows reserves, with or without an '
+          'extension and in any case, and one that ends with a dot', () {
+        for (final name in [
+          'CON',
+          'con',
+          'Prn',
+          'AUX',
+          'nul',
+          'NUL',
+          'com1',
+          'COM9',
+          'lpt1',
+          'LPT9',
+          'con.x',
+          'Nul.v2',
+          'aux.',
+          'apple.',
+        ]) {
+          expect(
+            () => _edit(_pristine(), {name: 'Title'}),
+            throwsA(
+              isA<UnsupportedRunnerLayoutException>().having(
+                (e) => e.toString(),
+                'message',
+                contains(name),
+              ),
+            ),
+            reason: name,
+          );
+        }
+
+        for (final name in [
+          'com0',
+          'com10',
+          'lpt0',
+          'console',
+          'auxiliary',
+          'con-x',
+          'nu',
+          'a.con',
+        ]) {
+          expect(
+            _edit(_pristine(), {name: 'Title'}),
+            contains(_begin),
+            reason: name,
+          );
+        }
+      });
+    });
+
+    test('accepts what looks like a bracket or a continuation but is not '
+        'one: in a comment, or a string with an escaped quote', () {
+      for (final extra in [
+        '# a [[ in a comment, and a backslash \\',
+        '# see [x] and \\"',
+        'set(A "a \\" b")',
+        'set(A "x # y")',
+      ]) {
+        final source = '$extra\n${_pristine()}';
+
+        expect(_edit(source), contains(_begin), reason: extra);
+      }
     });
 
     test('builds with the defaults, and not with an empty icon, when the '
@@ -501,6 +564,39 @@ void main() {
 
     group('rejects what it cannot edit with an actionable error', () {
       final cases = <_Rejected>[
+        (
+          name: 'the file has a bracket comment',
+          source: '#[[ a comment\n)\n]]\n${_pristine()}',
+          message: 'bracket',
+        ),
+        (
+          name: 'the file has a bracket comment with an equals sign',
+          source: '#[==[ a ]] comment ]==]\n${_pristine()}',
+          message: 'bracket',
+        ),
+        (
+          name: 'the file has a bracket argument',
+          source: 'message([[text]])\n${_pristine()}',
+          message: 'bracket',
+        ),
+        (
+          name: 'a later call has a bracket comment with a parenthesis',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\ntarget_sources(\${BINARY_NAME} PRIVATE\n  #[[\n  )\n  ]]\n  "main.cpp"\n)\napply_standard_settings',
+          ),
+          message: 'bracket',
+        ),
+        (
+          name: 'a line of the file ends with a backslash',
+          source: 'set(A "x\\\n y")\n${_pristine()}',
+          message: 'continuation',
+        ),
+        (
+          name: 'a quoted argument goes over several lines',
+          source: 'set(A "x\ny")\n${_pristine()}',
+          message: 'quote',
+        ),
         (
           name: 'a later target_sources adds main.cpp',
           source: _pristine().replaceFirst(

@@ -36,16 +36,34 @@ import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_except
 /// instead of failing on the first byte, or worse, being written back as
 /// something else.
 abstract final class WindowsRunnerText {
+  static final RegExp _control = RegExp(r'[\u0000\f\v]|\r(?!\n)');
+
   /// Reads [file], whose path in the project is [path]: its text, without the
   /// byte order mark, and whether it had one.
   ///
-  /// Throws an [UnsupportedRunnerLayoutException] when it is not UTF-8.
+  /// Throws an [UnsupportedRunnerLayoutException] when it is not UTF-8, or has
+  /// a character that no file of `flutter create` has and the editors do not
+  /// model: NUL, a form feed, a vertical tab, a lone carriage return.
+  /// The two kinds of line ending in one file are fine.
   static Future<({String text, bool hasBom})> read(
     File file,
     String path,
   ) async {
     try {
-      return await BomTextFile.read(file);
+      final read = await BomTextFile.read(file);
+
+      if (_control.hasMatch(read.text)) {
+        throw UnsupportedRunnerLayoutException(
+          path,
+          reason:
+              'it has a control character that is not a space or a line break '
+              '(NUL, a form feed, a vertical tab or a carriage return that is '
+              'not followed by a line feed).',
+          fix: 'Remove it.',
+        );
+      }
+
+      return read;
     } on FormatException {
       throw UnsupportedRunnerLayoutException(
         path,

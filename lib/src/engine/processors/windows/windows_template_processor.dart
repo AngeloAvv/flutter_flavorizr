@@ -58,7 +58,7 @@ abstract class WindowsTemplateProcessor extends FlavorizrProcessor {
 
   /// Returns the content of the template for [source], the content of the file
   /// of the user.
-  String template(String source);
+  String template(FlavorizrContext ctx, String source);
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
@@ -76,7 +76,7 @@ abstract class WindowsTemplateProcessor extends FlavorizrProcessor {
     ctx.logger.detail('[$id] Generating `$targetPath` from `$sourcePath`');
 
     await target.parent.create(recursive: true);
-    await BomTextFile.write(target, template(text), hasBom: hasBom);
+    await BomTextFile.write(target, template(ctx, text), hasBom: hasBom);
     ctx.track(Artifact.managed(targetPath));
   }
 }

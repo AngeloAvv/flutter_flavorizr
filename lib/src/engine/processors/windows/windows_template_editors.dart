@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/engine/processors/windows/windows_source_comments.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_source_scanner.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -57,7 +57,7 @@ abstract final class _Templater {
   /// templated. All of them have to be: a place that is not would keep the
   /// title of the file for a build that picks it, so it is a rejection and the
   /// others are not templated either. A place that is in a comment (see
-  /// [WindowsSourceComments]) is skipped.
+  /// [WindowsSourceScanner]) is skipped.
   ///
   /// Throws an [UnsupportedRunnerLayoutException] when a place cannot be
   /// templated, and when there is none.
@@ -71,12 +71,12 @@ abstract final class _Templater {
     required String fix,
     bool characterLiterals = true,
   }) {
-    final comments = WindowsSourceComments.of(
+    final scan = WindowsSourceScanner.scan(
       source,
-      characterLiterals: characterLiterals,
+      path: path,
+      cpp: characterLiterals,
     );
-    bool inComment(int offset) =>
-        WindowsSourceComments.contains(comments, offset);
+    final inComment = scan.inComment;
 
     final templatable = {
       for (final match in supported.allMatches(source)) match.start,
@@ -162,9 +162,40 @@ abstract final class WindowsRunnerRcTemplateEditor {
     multiLine: true,
   );
 
+  static final RegExp _codePage = RegExp(
+    r'^[ \t]*#[ \t]*pragma[ \t]+code_page[ \t]*\([ \t]*65001[ \t]*\)',
+    multiLine: true,
+  );
+
   /// Returns the content of `Runner.rc.in` for [source], the content of
   /// `Runner.rc`.
-  static String template(String source) {
+  ///
+  /// [titles] are the titles of the windows of the flavors. The title is
+  /// written in `Runner.rc` as it is, which is only right for a title that is
+  /// not ASCII if the file says `#pragma code_page(65001)`: it is rejected if
+  /// it does not, since the resource compiler would read the bytes of the title
+  /// in the code page of the machine. The file of `flutter create` has it.
+  static String template(String source, {Iterable<String> titles = const []}) {
+    if (titles.any((title) => title.runes.any((rune) => rune > 0x7f))) {
+      final scan = WindowsSourceScanner.scan(
+        source,
+        path: K.windowsRunnerRcPath,
+        cpp: false,
+      );
+
+      if (!_codePage.allMatches(source).any((m) => !scan.inComment(m.start))) {
+        throw UnsupportedRunnerLayoutException(
+          K.windowsRunnerRcPath,
+          reason:
+              'a title is not ASCII and the file has no `#pragma '
+              'code_page(65001)` that makes it UTF-8.',
+          fix:
+              'Add `#pragma code_page(65001)` at the top of the file, as '
+              '`flutter create` writes it, or use an ASCII `app.name`.',
+        );
+      }
+    }
+
     final withIcon = _Templater.replace(
       source,
       _iconCandidate,

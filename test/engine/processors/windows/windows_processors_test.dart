@@ -34,6 +34,7 @@ import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_r
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_processor.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -198,6 +199,30 @@ void main() {
           expect(processor.apply(ctx), throwsA(isA<FileNotFoundException>()));
         });
 
+        test('rejects a control character that is not a space or a line break: '
+            'NUL, form feed, vertical tab, a lone carriage return', () async {
+          for (final bad in ['\u0000', '\f', '\v', '\r']) {
+            write(
+              projectRoot,
+              testCase.source,
+              utf8.encode('${testCase.pristine}a${bad}b\n'),
+            );
+
+            await expectLater(
+              processor.apply(ctx),
+              throwsA(
+                isA<UnsupportedRunnerLayoutException>().having(
+                  (e) => e.toString(),
+                  'message',
+                  contains('control character'),
+                ),
+              ),
+              reason: bad.codeUnits.toString(),
+            );
+            expect(file(root, testCase.target).existsSync(), isFalse);
+          }
+        });
+
         test('rejects a file that is not UTF-8, which is what the resource '
             'editor of Visual Studio may save, and writes nothing', () async {
           for (final bytes in [
@@ -236,6 +261,47 @@ void main() {
         );
       });
     }
+  });
+
+  group('WindowsRunnerRcTemplateProcessor and a title that is not ASCII', () {
+    const processor = WindowsRunnerRcTemplateProcessor();
+    final pristine = _resource('runner_rc_content_processor_test/Runner.rc');
+    FlavorizrContext contextOf(String title) => FlavorizrContext(
+      config: Flavorizr.parse(
+        'flavors:\n  apple:\n    app:\n      name: "$title"\n    windows: {}\n',
+      ),
+      root: root,
+      projectRoot: projectRoot,
+      logger: TestUtils.quietLogger(),
+    );
+
+    test('is written when Runner.rc has the UTF-8 code page', () async {
+      write(projectRoot, K.windowsRunnerRcPath, utf8.encode(pristine));
+
+      await processor.apply(contextOf('Café'));
+
+      expect(file(root, K.windowsRunnerRcTemplatePath).existsSync(), isTrue);
+    });
+
+    test('is rejected when it has none, and nothing is written', () async {
+      write(
+        projectRoot,
+        K.windowsRunnerRcPath,
+        utf8.encode(pristine.replaceFirst('#pragma code_page(65001)', '')),
+      );
+
+      await expectLater(
+        processor.apply(contextOf('Café')),
+        throwsA(
+          isA<UnsupportedRunnerLayoutException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('code_page(65001)'),
+          ),
+        ),
+      );
+      expect(file(root, K.windowsRunnerRcTemplatePath).existsSync(), isFalse);
+    });
   });
 
   group('WindowsRunnerCMakeListsPatchProcessor', () {
@@ -313,6 +379,25 @@ void main() {
 
     test('fails when there is no file', () {
       expect(processor.apply(ctx), throwsA(isA<FileNotFoundException>()));
+    });
+
+    test('rejects a control character that is not a space or a line break, '
+        'and leaves the file as it is', () async {
+      final bytes = utf8.encode('$pristine\u0000\n');
+
+      write(root, path, bytes);
+
+      await expectLater(
+        processor.apply(ctx),
+        throwsA(
+          isA<UnsupportedRunnerLayoutException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('control character'),
+          ),
+        ),
+      );
+      expect(file(root, path).readAsBytesSync(), bytes);
     });
 
     test('rejects a file that is not UTF-8, and leaves it as it is', () async {

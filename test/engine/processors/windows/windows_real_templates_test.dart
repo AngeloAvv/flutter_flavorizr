@@ -125,6 +125,17 @@ void main() {
           );
           expect(mainIn.replaceAll('@WINDOW_TITLE@', 'my_app'), main);
         });
+
+        test('Runner.rc has the UTF-8 code page that a title that is not '
+            'ASCII needs', () {
+          final rc = _render(runner, 'Runner.rc.tmpl');
+
+          expect(rc, contains('#pragma code_page(65001)'));
+          expect(
+            WindowsRunnerRcTemplateEditor.template(rc, titles: ['Café 😀']),
+            isNotEmpty,
+          );
+        });
       });
     }
   });

@@ -99,6 +99,19 @@ void main() {
       expect(edit(source), '// window.Create(L"old", origin, size)\n$template');
     });
 
+    test('keeps a file that has both kinds of line endings as it is', () {
+      String mixed(String text) {
+        final lines = text.split('\n');
+
+        return [
+          for (final (index, line) in lines.indexed)
+            index.isEven && index < lines.length - 1 ? '$line\r' : line,
+        ].join('\n');
+      }
+
+      expect(edit(mixed(pristine)), mixed(template));
+    });
+
     group('knows where the comments and the literals are', () {
       final cases = {
         'a title with // in it, then another call on the line':
@@ -209,8 +222,8 @@ void main() {
     final template = _read(
       'runner_rc_content_processor_test/Runner_expected.rc',
     );
-    String edit(String source) =>
-        WindowsRunnerRcTemplateEditor.template(source);
+    String edit(String source, {List<String> titles = const []}) =>
+        WindowsRunnerRcTemplateEditor.template(source, titles: titles);
 
     test('is the 2.x template of the pristine file of Flutter', () {
       expect(edit(pristine), template);
@@ -233,6 +246,38 @@ void main() {
 
       expect(built, isNot(pristine));
       expect(edit(built), template);
+    });
+
+    group('a title that is not ASCII needs the UTF-8 code page', () {
+      const directive = '#pragma code_page(65001)';
+
+      test('is fine in a file that has the directive', () {
+        expect(pristine, contains(directive));
+        expect(edit(pristine, titles: ['Café', 'Apple']), template);
+      });
+
+      test('is rejected by a file that has no directive, or another one, or '
+          'one in a comment', () {
+        for (final source in [
+          pristine.replaceFirst(directive, ''),
+          pristine.replaceFirst(directive, '#pragma code_page(1252)'),
+          pristine.replaceFirst(directive, '// $directive'),
+          pristine.replaceFirst(directive, '/* $directive */'),
+        ]) {
+          expect(source, isNot(pristine));
+          expect(
+            () => edit(source, titles: ['Apple', 'Café']),
+            _rejects('windows/runner/Runner.rc', 'code_page(65001)'),
+          );
+        }
+      });
+
+      test('does not matter for ASCII titles', () {
+        expect(
+          edit(pristine.replaceFirst(directive, ''), titles: ['Apple']),
+          template.replaceFirst('$directive\n', '\n'),
+        );
+      });
     });
 
     test('is the same for a template', () {

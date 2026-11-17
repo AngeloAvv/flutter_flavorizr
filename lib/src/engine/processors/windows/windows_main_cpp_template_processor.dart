@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_editors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -45,6 +46,6 @@ class WindowsMainCppTemplateProcessor extends WindowsTemplateProcessor {
   String get targetPath => K.windowsMainCppTemplatePath;
 
   @override
-  String template(String source) =>
+  String template(FlavorizrContext ctx, String source) =>
       WindowsMainCppTemplateEditor.template(source);
 }
