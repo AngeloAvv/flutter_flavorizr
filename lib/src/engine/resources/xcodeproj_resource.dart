@@ -91,8 +91,9 @@ typedef XcodeprojSaver = Future<void> Function(XcodeProject project);
 ///   undoing a change within the run, is no change.
 /// * **Track the project file.** The shadow workspace never copies back a file
 ///   nobody tracked: declare [iosArtifact] or [macosArtifact] (patched, since
-///   the user and Flutter own the rest of the project) even when the processor
-///   happens to change nothing.
+///   the user and Flutter own the rest of the project), whether or not the
+///   processor happens to change anything. A run that changes the project and
+///   tracked nothing fails, rather than dropping the change.
 /// * **Do not keep the project** after [FlavorizrProcessor.apply] returns, and
 ///   do not save it: the resource does, last.
 /// * **Order the consumers** with `dependsOn` / `after` when one needs the
@@ -124,12 +125,15 @@ class XcodeprojResource extends Resource<XcodeProject> {
   /// The project bundle, relative to the project.
   final String projectPath;
 
+  /// The `project.pbxproj` of the project, which the consumers track.
+  final Artifact artifact;
+
   final XcodeprojOpener _open;
   final XcodeprojSaver _save;
 
   /// How each opened project looked when it was, to tell whether it changed.
   /// It is keyed by the project, so a resource never mixes up two runs.
-  final Expando<Object?> _opened = Expando('opened Xcode project');
+  final Expando<Object?> _baseline = Expando('baseline of an Xcode project');
 
   /// The resource of the iOS project.
   ///
@@ -147,7 +151,8 @@ class XcodeprojResource extends Resource<XcodeProject> {
     this.projectPath,
     XcodeprojOpener? open,
     XcodeprojSaver? save,
-  ) : _open = open ?? XcodeProject.open,
+  ) : artifact = Artifact.patched('$projectPath/$_pbxproj'),
+      _open = open ?? XcodeProject.open,
       _save = save ?? ((project) => project.save());
 
   @override
@@ -159,7 +164,7 @@ class XcodeprojResource extends Resource<XcodeProject> {
     }
 
     final project = await _open(ctx.resolve(projectPath));
-    _opened[project] = _snapshot(project);
+    _baseline[project] = _copy(project.toHash());
 
     return project;
   }
@@ -172,23 +177,31 @@ class XcodeprojResource extends Resource<XcodeProject> {
   }) async {
     if (!success || !_changed(value)) return;
 
+    // The shadow workspace never copies back a file nobody tracked: a change
+    // nobody owns would be dropped without a word.
+    if (!ctx.tracked.contains(artifact)) {
+      throw StateError(
+        'The Xcode project `${key.name}` was changed, but no processor tracked '
+        '`${artifact.path}`: a processor that requires it must call '
+        '`ctx.track` on the artifact of the resource.',
+      );
+    }
+
     await _save(value);
   }
 
   bool _changed(XcodeProject project) => !const DeepCollectionEquality().equals(
-    _opened[project],
-    _snapshot(project),
+    _baseline[project],
+    _copy(project.toHash()),
   );
 
-  /// A deep copy of the model of [project]: what is compared is the content,
-  /// not the text it is written as, and not the live objects, which a
+  /// A deep copy of [value], the model of a project: what is compared is the
+  /// content, not the text it is written as, and not the live objects, which a
   /// processor may well edit in place.
-  static Object? _snapshot(Object? value) => switch (value) {
-    XcodeProject() => _snapshot(value.toHash()),
-    Map() => {
-      for (final entry in value.entries) entry.key: _snapshot(entry.value),
-    },
-    List() => [for (final item in value) _snapshot(item)],
+  static Object? _copy(Object? value) => switch (value) {
+    Map() => {for (final entry in value.entries) entry.key: _copy(entry.value)},
+    List() => [for (final item in value) _copy(item)],
+    Set() => {for (final item in value) _copy(item)},
     _ => value,
   };
 }

@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run.dart' as cli;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -58,7 +59,8 @@ void main() {
               'test:ios',
               XcodeprojResource.iosKey,
               XcodeprojResource.iosArtifact,
-              (xcodeproj) => addFileReference(xcodeproj, 'one.xcconfig'),
+              (xcodeproj) =>
+                  DarwinAddFileProcessor.addTo(xcodeproj, 'one.xcconfig'),
               error: failure,
             ),
             // The project is not among its paths: the resource brings it.
@@ -101,6 +103,8 @@ void main() {
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.logger.output, contains('~ $_pbxproj'));
+      // It was saved, in the shadow workspace: that is what the preview shows.
+      expect(saves, ['ios']);
       expect(project.read(_pbxproj), before);
       expect(project.exists('flavorizr.lock'), isFalse);
     });

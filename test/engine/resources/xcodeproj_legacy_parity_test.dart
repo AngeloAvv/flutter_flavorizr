@@ -86,7 +86,7 @@ void main() {
             'test:add$index',
             XcodeprojResource.iosKey,
             XcodeprojResource.iosArtifact,
-            (project) => addFileReference(project, path),
+            (project) => DarwinAddFileProcessor.addTo(project, path),
             after: {if (index > 0) 'test:add${index - 1}'},
           ),
       ];

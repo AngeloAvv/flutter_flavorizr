@@ -28,7 +28,6 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
-import 'package:path/path.dart' as p;
 
 /// A processor that mutates the shared project the way a Darwin one does,
 /// without ever saving it.
@@ -41,6 +40,9 @@ class XcodeprojTestProcessor extends FlavorizrProcessor {
   final void Function(XcodeProject project) mutate;
   final Object? error;
 
+  /// Whether it tracks the project file, as it must.
+  final bool tracks;
+
   /// The project instance this processor was handed.
   XcodeProject? seen;
 
@@ -50,6 +52,7 @@ class XcodeprojTestProcessor extends FlavorizrProcessor {
     this.artifact,
     this.mutate, {
     this.error,
+    this.tracks = true,
     Set<String> after = const {},
   }) : _after = after;
 
@@ -64,28 +67,8 @@ class XcodeprojTestProcessor extends FlavorizrProcessor {
   @override
   Future<void> apply(FlavorizrContext ctx) async {
     seen = ctx.resource(key);
-    ctx.track(artifact);
+    if (tracks) ctx.track(artifact);
     mutate(seen!);
     if (error != null) throw error!;
   }
-}
-
-/// What the 2.x `DarwinAddFileProcessor` does to the project, without saving
-/// it: the engine does, once.
-void addFileReference(XcodeProject project, String path) {
-  final group = project.mainGroup;
-  final alreadyAdded = group.children.whereType<PBXFileReference>().any(
-    (f) => f.path == path,
-  );
-
-  if (alreadyAdded) return;
-
-  final ref = project.newObject<PBXFileReference>(
-    (g, u) => PBXFileReference(g, u),
-  );
-  ref.path = path;
-  ref.sourceTree = '<group>';
-  ref.lastKnownFileType = FileTypes.byExtension[p.extension(path)];
-  group.children.add(ref);
-  (project.targets.first as PBXNativeTarget).addResources([ref]);
 }

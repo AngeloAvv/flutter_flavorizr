@@ -28,12 +28,14 @@ import 'dart:io';
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -42,6 +44,24 @@ import 'xcodeproj_fixture.dart';
 
 const _iosPbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
 const _macosPbxproj = 'macos/Runner.xcodeproj/project.pbxproj';
+
+/// A step that has nothing to do with the project.
+class _Unrelated extends FlavorizrProcessor {
+  @override
+  final String id;
+
+  @override
+  final Set<String> after;
+
+  final Object? error;
+
+  _Unrelated(this.id, {this.after = const {}, this.error});
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {
+    if (error != null) throw error!;
+  }
+}
 
 void main() {
   late Directory project;
@@ -65,6 +85,7 @@ void main() {
     String id,
     void Function(XcodeProject project) mutate, {
     Object? error,
+    bool tracks = true,
     Set<String> after = const {},
   }) => XcodeprojTestProcessor(
     id,
@@ -72,6 +93,7 @@ void main() {
     XcodeprojResource.iosArtifact,
     mutate,
     error: error,
+    tracks: tracks,
     after: after,
   );
 
@@ -194,11 +216,11 @@ void main() {
         final report = await run([
           onIos(
             'test:first',
-            (project) => addFileReference(project, 'one.xcconfig'),
+            (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
           ),
           onIos(
             'test:second',
-            (project) => addFileReference(project, 'two.xcconfig'),
+            (project) => DarwinAddFileProcessor.addTo(project, 'two.xcconfig'),
             after: {'test:first'},
           ),
         ]);
@@ -307,11 +329,11 @@ void main() {
       final report = await run([
         onIos(
           'test:first',
-          (project) => addFileReference(project, 'one.xcconfig'),
+          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
         ),
         onIos(
           'test:second',
-          (project) => addFileReference(project, 'two.xcconfig'),
+          (project) => DarwinAddFileProcessor.addTo(project, 'two.xcconfig'),
           error: StateError('boom'),
           after: {'test:first'},
         ),
@@ -330,7 +352,7 @@ void main() {
       final report = await run([
         onIos(
           'test:only',
-          (project) => addFileReference(project, 'one.xcconfig'),
+          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
           error: StateError('boom'),
         ),
       ]);
@@ -338,6 +360,85 @@ void main() {
       expect(report.succeeded, isFalse);
       expect(events, ['open ios']);
       expect(file(_iosPbxproj).readAsBytesSync(), before);
+    });
+
+    test('stays open across a step that does not use it, and is saved once '
+        'at the end', () async {
+      final report = await run([
+        onIos('test:first', (project) {
+          DarwinAddFileProcessor.addTo(project, 'one.xcconfig');
+        }),
+        _Unrelated('test:between', after: {'test:first'}),
+        onIos('test:last', (project) {
+          DarwinAddFileProcessor.addTo(project, 'two.xcconfig');
+        }, after: {'test:between'}),
+      ]);
+
+      expect(report.succeeded, isTrue, reason: report.render());
+      expect(events, ['open ios', 'save ios']);
+      expect(file(_iosPbxproj).readAsStringSync(), contains('two.xcconfig'));
+    });
+
+    test('saves nothing when a step that comes after the last consumer '
+        'fails', () async {
+      final before = file(_iosPbxproj).readAsBytesSync();
+      final report = await PlanExecutor(logger: TestUtils.quietLogger())
+          .execute(
+            resolveExecutionPlan(
+              [
+                onIos('test:first', (project) {
+                  DarwinAddFileProcessor.addTo(project, 'one.xcconfig');
+                }),
+                _Unrelated(
+                  'test:later',
+                  after: {'test:first'},
+                  error: StateError('boom'),
+                ),
+              ],
+              requested: ['test:first', 'test:later'],
+            ),
+            config: Flavorizr.parse(
+              'flavors:\n  apple:\n    app:\n      name: apple\n'
+              '    ios:\n      bundleId: com.example.apple\n',
+            ),
+            projectRoot: project,
+            paths: [XcodeprojResource.iosProject],
+            resources: [ios],
+            commit: (shadow, ctx) async => fail('must not commit'),
+          );
+
+      // The shadow workspace had it, which is thrown away: the project did not.
+      expect(report.failed, 'test:later');
+      expect(file(_iosPbxproj).readAsBytesSync(), before);
+    });
+
+    test('fails the run when a processor changes the project and does not '
+        'track it', () async {
+      final before = file(_iosPbxproj).readAsBytesSync();
+
+      final report = await run([
+        onIos(
+          'test:forgetful',
+          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          tracks: false,
+        ),
+      ]);
+
+      expect(report.succeeded, isFalse);
+      expect(report.error, isA<StateError>());
+      expect(report.error.toString(), contains(_iosPbxproj));
+      expect(events, ['open ios']);
+      expect(file(_iosPbxproj).readAsBytesSync(), before);
+    });
+
+    test('does not mind a processor that tracks nothing and changes '
+        'nothing', () async {
+      final report = await run([
+        onIos('test:idle', (project) {}, tracks: false),
+      ]);
+
+      expect(report.succeeded, isTrue, reason: report.render());
+      expect(events, ['open ios']);
     });
 
     test('keeps the two platforms apart: one saves, the other stays byte '
@@ -348,7 +449,7 @@ void main() {
       final report = await run([
         onIos(
           'test:ios',
-          (project) => addFileReference(project, 'one.xcconfig'),
+          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
         ),
         onMacos('test:macos', (project) => project.targets.first.name),
       ]);
@@ -363,11 +464,11 @@ void main() {
       final report = await run([
         onIos(
           'test:ios',
-          (project) => addFileReference(project, 'one.xcconfig'),
+          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
         ),
         onMacos(
           'test:macos',
-          (project) => addFileReference(project, 'one.xcconfig'),
+          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
         ),
       ]);
 
@@ -392,7 +493,8 @@ void main() {
                 [
                   onIos(
                     'test:ios',
-                    (project) => addFileReference(project, 'a.xcconfig'),
+                    (project) =>
+                        DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
                   ),
                 ],
                 requested: ['test:ios'],
@@ -435,10 +537,16 @@ void main() {
       'is not shared between runs: a resource opens afresh every time',
       () async {
         await run([
-          onIos('test:a', (project) => addFileReference(project, 'a.xcconfig')),
+          onIos(
+            'test:a',
+            (project) => DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
+          ),
         ]);
         await run([
-          onIos('test:b', (project) => addFileReference(project, 'a.xcconfig')),
+          onIos(
+            'test:b',
+            (project) => DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
+          ),
         ]);
 
         // The second run found the file reference the first one saved: no change.
@@ -457,7 +565,8 @@ void main() {
                 [
                   onIos(
                     'test:ios',
-                    (project) => addFileReference(project, 'a.xcconfig'),
+                    (project) =>
+                        DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
                   ),
                 ],
                 requested: ['test:ios'],
