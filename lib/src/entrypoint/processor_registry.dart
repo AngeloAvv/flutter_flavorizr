@@ -79,8 +79,19 @@ final class EngineResource {
   /// requires the resource, so that a processor needs no path of it.
   final Set<String> paths;
 
+  /// How to read the part of a patched file that the processors sharing the
+  /// resource own, by path of the file, like [EngineProcessor.ownedContent].
+  /// It is what the lock hashes, so that an edit of the rest of the file, by
+  /// Xcode, CocoaPods or Flutter, is never drift. A file that is not here is
+  /// hashed whole.
+  final Map<String, String Function(String source)> ownedContent;
+
   /// Registers [resource], which works on [paths].
-  const EngineResource(this.resource, {this.paths = const {}});
+  const EngineResource(
+    this.resource, {
+    this.paths = const {},
+    this.ownedContent = const {},
+  });
 }
 
 /// Every processor flavorizr knows, and where each one runs.
@@ -208,15 +219,15 @@ class ProcessorRegistry {
   /// Hashes the part of a file that [artifact] owns: what the lock records and
   /// compares with the disk.
   ///
-  /// The owned part of a patched file is told by the processor that owns it,
-  /// anything else is hashed whole. A byte order mark never matters.
+  /// The owned part of a patched file is told by the processor or the shared
+  /// resource that owns it, anything else is hashed whole. A byte order mark never matters.
   String hash(Artifact artifact, List<int> bytes) {
     if (artifact.ownership != Ownership.patched) return digestOf(bytes);
 
-    final read = _engine.values
-        .map((entry) => entry.ownedContent[artifact.path])
-        .nonNulls
-        .firstOrNull;
+    final read = [
+      ..._engine.values.map((entry) => entry.ownedContent[artifact.path]),
+      ..._resources.values.map((entry) => entry.ownedContent[artifact.path]),
+    ].nonNulls.firstOrNull;
 
     if (read == null) return digestOf(bytes);
 

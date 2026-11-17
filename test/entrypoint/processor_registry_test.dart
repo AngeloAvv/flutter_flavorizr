@@ -123,6 +123,39 @@ void main() {
       },
     );
 
+    test('hashes the owned part of a file that a resource registers', () {
+      final custom = ProcessorRegistry(
+        resources: [
+          EngineResource(
+            XcodeprojResource.ios(),
+            ownedContent: {
+              XcodeprojResource.iosArtifact.path: (source) =>
+                  source.split('\n').first,
+            },
+          ),
+        ],
+      );
+      final path = XcodeprojResource.iosArtifact.path;
+
+      expect(
+        custom.hash(
+          XcodeprojResource.iosArtifact,
+          _bytes('mine\nxcode wrote this'),
+        ),
+        custom.hash(XcodeprojResource.iosArtifact, _bytes('mine\nother')),
+      );
+      expect(
+        custom.hash(XcodeprojResource.iosArtifact, _bytes('mine\nx')),
+        isNot(custom.hash(XcodeprojResource.iosArtifact, _bytes('yours\nx'))),
+      );
+      // Whole, when nothing owns a part of it.
+      expect(
+        registry.hash(XcodeprojResource.iosArtifact, _bytes('a\nb')),
+        isNot(registry.hash(XcodeprojResource.iosArtifact, _bytes('a\nc'))),
+        reason: path,
+      );
+    });
+
     test('keeps every other 2.x instruction on the legacy pipeline', () {
       expect(registry.legacyIds, contains('google:firebase'));
       expect(registry.legacyIds, contains('ios:podfile'));

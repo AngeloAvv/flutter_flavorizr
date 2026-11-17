@@ -94,6 +94,16 @@ typedef XcodeprojSaver = Future<void> Function(XcodeProject project);
 ///   the user and Flutter own the rest of the project), whether or not the
 ///   processor happens to change anything. A run that changes the project and
 ///   tracked nothing fails, rather than dropping the change.
+/// * **Know what the lock hashes.** `project.pbxproj` is a patched artifact,
+///   and the lock records the hash of the part of it that flavorizr owns. Which
+///   part is for the processors to say, with `EngineResource.ownedContent` in
+///   the registry: owned build settings (#515) and the UUIDs of the objects a
+///   processor creates (#516). Until one does, nothing is registered and the
+///   **whole file is hashed**: an edit anywhere in it, by Xcode, CocoaPods or
+///   Flutter, is then seen as drift in what flavorizr owns, and a run that
+///   changes the project reports it as a conflict. There is no owned-less
+///   hash that avoids it: the hash must be computed from the file alone, and
+///   even a normalised model of the project holds what the user added.
 /// * **Do not keep the project** after [FlavorizrProcessor.apply] returns, and
 ///   do not save it: the resource does, last.
 /// * **Order the consumers** with `dependsOn` / `after` when one needs the

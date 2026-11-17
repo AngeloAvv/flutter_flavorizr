@@ -43,6 +43,8 @@ void main() {
   late CliFixture project;
   late List<String> saves;
   late Object? failure;
+  late List<String> files;
+  late Map<String, String Function(String source)> owned;
 
   /// The CLI of the project, with processors that require the iOS project.
   Future<int> run(List<String> args) {
@@ -59,8 +61,11 @@ void main() {
               'test:ios',
               XcodeprojResource.iosKey,
               XcodeprojResource.iosArtifact,
-              (xcodeproj) =>
-                  DarwinAddFileProcessor.addTo(xcodeproj, 'one.xcconfig'),
+              (xcodeproj) {
+                for (final file in files) {
+                  DarwinAddFileProcessor.addTo(xcodeproj, file);
+                }
+              },
               error: failure,
             ),
             // The project is not among its paths: the resource brings it.
@@ -77,6 +82,7 @@ void main() {
               },
             ),
             paths: const {XcodeprojResource.iosProject},
+            ownedContent: owned,
           ),
         ],
       ),
@@ -89,6 +95,8 @@ void main() {
     project = CliFixture(android: false);
     saves = [];
     failure = null;
+    files = ['one.xcconfig'];
+    owned = {};
 
     final source = File('example/$_pbxproj');
     project.write(_pbxproj, source.readAsStringSync());
@@ -151,5 +159,74 @@ void main() {
       expect(project.read(_pbxproj), before);
       expect(project.exists('flavorizr.lock'), isFalse);
     });
+
+    /// An edit of the project that is nobody's business but Xcode's.
+    void editElsewhere() => project.write(
+      _pbxproj,
+      project
+          .read(_pbxproj)
+          .replaceFirst('LastUpgradeCheck = 1510;', 'LastUpgradeCheck = 1600;'),
+    );
+
+    // KNOWN LIMITATION: until a processor says which part of the project it
+    // owns (#515, #516), the lock hashes `project.pbxproj` whole.
+    test('reports a conflict on an edit elsewhere in the file, as the lock '
+        'hashes the whole project by default', () async {
+      await run(['apply', '--yes', 'test:ios']);
+      editElsewhere();
+      files = ['one.xcconfig', 'two.xcconfig'];
+
+      final code = await run(['apply', '--yes', 'test:ios']);
+
+      expect(code, ExitCodes.attention, reason: project.logger.output);
+      expect(project.read(_pbxproj), isNot(contains('two.xcconfig')));
+    });
+
+    test('does not mind an edit elsewhere in the file when its owner hashes '
+        'only what it owns', () async {
+      // The stand-in for an owned part: the lines of the files it adds.
+      owned = {
+        _pbxproj: (source) => source
+            .split('\n')
+            .where((line) => line.contains('.xcconfig in Resources'))
+            .join('\n'),
+      };
+      await run(['apply', '--yes', 'test:ios']);
+      editElsewhere();
+      files = ['one.xcconfig', 'two.xcconfig'];
+
+      final code = await run(['apply', '--yes', 'test:ios']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.read(_pbxproj), contains('two.xcconfig'));
+      expect(project.read(_pbxproj), contains('LastUpgradeCheck = 1600;'));
+    });
+
+    test(
+      'still reports a conflict on an edit of what its owner hashes',
+      () async {
+        owned = {
+          _pbxproj: (source) => source
+              .split('\n')
+              .where((line) => line.contains('.xcconfig in Resources'))
+              .join('\n'),
+        };
+        await run(['apply', '--yes', 'test:ios']);
+        project.write(
+          _pbxproj,
+          project
+              .read(_pbxproj)
+              .replaceFirst(
+                'one.xcconfig in Resources',
+                'edited.xcconfig in Resources',
+              ),
+        );
+        files = ['one.xcconfig', 'two.xcconfig'];
+
+        final code = await run(['apply', '--yes', 'test:ios']);
+
+        expect(code, ExitCodes.attention, reason: project.logger.output);
+      },
+    );
   });
 }

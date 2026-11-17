@@ -130,6 +130,32 @@ void main() {
       );
 
       expect(Differ.projectDiff(legacyProject, engineProject), isNull);
+
+      // And what they agree on is right, by values written here and not read
+      // from what 2.x wrote: each file is a reference of the main group and a
+      // resource of the first native target, once.
+      for (final project in [legacyProject, engineProject]) {
+        final target = project.targets.first as PBXNativeTarget;
+        final resources = [
+          for (final buildFile in target.resourcesBuildPhase.files)
+            if (buildFile.fileRef case final PBXFileReference ref) ref.path,
+        ];
+        final mainGroup = [
+          for (final child in project.mainGroup.children)
+            if (child is PBXFileReference) child.path,
+        ];
+
+        for (final path in files) {
+          expect(resources.where((resource) => resource == path), hasLength(1));
+          expect(mainGroup.where((child) => child == path), hasLength(1));
+        }
+        expect(
+          project.files
+              .firstWhere((file) => file.path == 'logo.png')
+              .sourceTree,
+          '<group>',
+        );
+      }
       expect(
         File(p.join(engine.path, _pbxproj)).readAsLinesSync(),
         hasLength(File(p.join(legacy.path, _pbxproj)).readAsLinesSync().length),
