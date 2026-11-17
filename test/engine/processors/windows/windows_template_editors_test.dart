@@ -99,6 +99,69 @@ void main() {
       expect(edit(source), '// window.Create(L"old", origin, size)\n$template');
     });
 
+    group('knows where the comments and the literals are', () {
+      final cases = {
+        'a title with // in it, then another call on the line':
+            'if (alt) window.Create(L"https://a", origin, size); '
+            'else window.Create(L"B", origin, size);',
+        'a title with /* in it, then another call':
+            'a(); window.Create(L"a/*b", origin, size); '
+            'window.Create(L"c", origin, size);',
+        'several calls on one line, and a comment after them':
+            'window.Create(L"a", origin, size); '
+            'window.Create(L"b", origin, size); '
+            '// window.Create(L"c", origin, size)',
+        'a call after a block comment on its line':
+            '/* old */ window.Create(L"a", origin, size);',
+        'a call after a comment that ends on its line':
+            '/* a\n   b */ window.Create(L"a", origin, size);',
+        'a call after a quote in a comment':
+            '// say "hi\nwindow.Create(L"a", origin, size);',
+        'a call after a character literal with a quote':
+            'char q = \'"\'; window.Create(L"a", origin, size);',
+        'a call after a string with an escaped quote and //':
+            r'puts("a\"//"); window.Create(L"a", origin, size);',
+        'a call after a raw string with // and a quote':
+            'auto r = R"x(//" )x"; window.Create(L"a", origin, size);',
+        'a call after a digit separator':
+            'int n = 1\'000; window.Create(L"a", origin, size);',
+      };
+
+      for (final MapEntry(key: name, value: source) in cases.entries) {
+        test(name, () {
+          final templated = edit(source);
+          final commented = source.contains('// window.Create') ? 1 : 0;
+
+          expect(
+            '@WINDOW_TITLE@'.allMatches(templated).length,
+            RegExp(r'window\.Create\(L"').allMatches(source).length - commented,
+            reason: templated,
+          );
+          expect(
+            templated.replaceAll('@WINDOW_TITLE@', ''),
+            isNot(contains('window.Create(L"a"')),
+            reason: templated,
+          );
+        });
+      }
+
+      test('leaves a call that is really commented as it is', () {
+        const commented =
+            'foo(); // window.Create(L"y", origin, size)\n'
+            '/* window.Create(L"z", origin, size)\n'
+            '   window.Create(L"w", origin, size) */\n';
+
+        expect(edit('$commented$pristine'), '$commented$template');
+      });
+
+      test('rejects a call that is in a string that has // before it', () {
+        expect(
+          () => edit('puts("//"); puts("window.Create(");\n'),
+          _rejects('windows/runner/main.cpp', 'window.Create'),
+        );
+      });
+    });
+
     group('rejects what it cannot template with an actionable error', () {
       final cases = {
         'there is no call': 'int main() {}\n',
@@ -200,6 +263,33 @@ void main() {
           '$pristine\n${pristine.substring(pristine.indexOf('IDI_APP_ICON'))}';
 
       expect('@RUNNER_APP_ICON@'.allMatches(edit(twice)), hasLength(2));
+    });
+
+    test('is not taken in by a // that is in a string of the entries before '
+        'the one it templates', () {
+      final source = pristine.replaceFirst(
+        'VALUE "CompanyName", "com.example"',
+        'VALUE "CompanyName", "http://example.com"',
+      );
+
+      expect(source, isNot(pristine));
+      expect(
+        edit(source),
+        template.replaceFirst(
+          'VALUE "CompanyName", "com.example"',
+          'VALUE "CompanyName", "http://example.com"',
+        ),
+      );
+    });
+
+    test('does not look at an icon or an entry that is in a block comment', () {
+      const commented =
+          '/* a comment\n'
+          'IDI_APP_ICON ICON "bad"\n'
+          'VALUE "ProductName", TITLE "\\0"\n'
+          '*/\n';
+
+      expect(edit('$commented$pristine'), '$commented$template');
     });
 
     group('rejects what it cannot template with an actionable error', () {

@@ -262,7 +262,8 @@ void main() {
       final patched = file(root, path).readAsStringSync();
 
       expect(patched, contains('FLUTTER_APP_FLAVOR STREQUAL "apple"'));
-      expect(patched, contains('set(WINDOW_TITLE "Banana App")'));
+      expect(patched, contains('set(WINDOW_TITLE_CPP "Banana App")'));
+      expect(patched, contains('set(WINDOW_TITLE_RC "Banana App")'));
       expect(patched, contains(r'"${CMAKE_CURRENT_BINARY_DIR}/Runner.rc"'));
       expect(ctx.tracked, [Artifact.patched(path)]);
     });

@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_source_comments.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -37,8 +38,8 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 /// that was built, and is templated just the same. Everything else is written
 /// back byte for byte.
 ///
-/// Like in 2.x the places are found by what they say, not parsed: one that has a
-/// `//` before it on its line is in a comment and is skipped, and every other
+/// Like in 2.x the places are found by what they say, not parsed: one that is in a
+/// comment (`//` or `/* */`, which the literals do not start) is skipped, and every other
 /// one is templated, the ones of `#if` branches included. **All** of them have
 /// to be written the way `flutter create` writes them, since a build may pick
 /// any: a file with one that is not (a raw or `u8` string, a macro, two
@@ -55,8 +56,8 @@ abstract final class _Templater {
   /// [supported] (which has to start where it does) the ones that can be
   /// templated. All of them have to be: a place that is not would keep the
   /// title of the file for a build that picks it, so it is a rejection and the
-  /// others are not templated either. A place that has a `//` before it on its
-  /// line is in a comment and is skipped.
+  /// others are not templated either. A place that is in a comment (see
+  /// [WindowsSourceComments]) is skipped.
   ///
   /// Throws an [UnsupportedRunnerLayoutException] when a place cannot be
   /// templated, and when there is none.
@@ -68,12 +69,14 @@ abstract final class _Templater {
     required String path,
     required String what,
     required String fix,
+    bool characterLiterals = true,
   }) {
-    bool inComment(int offset) {
-      final head = source.substring(0, offset);
-
-      return head.substring(head.lastIndexOf('\n') + 1).contains('//');
-    }
+    final comments = WindowsSourceComments.of(
+      source,
+      characterLiterals: characterLiterals,
+    );
+    bool inComment(int offset) =>
+        WindowsSourceComments.contains(comments, offset);
 
     final templatable = {
       for (final match in supported.allMatches(source)) match.start,
@@ -168,6 +171,7 @@ abstract final class WindowsRunnerRcTemplateEditor {
       _icon,
       '@RUNNER_APP_ICON@',
       path: K.windowsRunnerRcPath,
+      characterLiterals: false,
       what: r'`IDI_APP_ICON ICON "resources\\<icon>"` icon',
       fix: 'Restore the icon as `flutter create` writes it.',
     );
@@ -180,6 +184,7 @@ abstract final class WindowsRunnerRcTemplateEditor {
         _entry(name),
         '@WINDOW_TITLE@',
         path: K.windowsRunnerRcPath,
+        characterLiterals: false,
         what: '`VALUE "$name", "..." "\\0"` entry',
         fix: 'Restore the entry as `flutter create` writes it.',
       ),

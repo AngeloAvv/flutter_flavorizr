@@ -44,21 +44,25 @@ String _region(Map<String, String> titles) {
   return [
     _begin,
     'set(RUNNER_APP_ICON "app_icon.ico")',
-    r'set(WINDOW_TITLE "${BINARY_NAME}")',
+    r'set(WINDOW_TITLE_CPP "${BINARY_NAME}")',
+    r'set(WINDOW_TITLE_RC "${BINARY_NAME}")',
     'if(DEFINED FLUTTER_APP_FLAVOR)',
     for (final (index, entry) in entries.indexed) ...[
       '  ${index == 0 ? 'if' : 'elseif'}(FLUTTER_APP_FLAVOR STREQUAL "${entry.key}")',
       '    set(RUNNER_APP_ICON "${entry.key}.ico")',
-      '    set(WINDOW_TITLE "${entry.value}")',
+      '    set(WINDOW_TITLE_CPP "${entry.value}")',
+      '    set(WINDOW_TITLE_RC "${entry.value}")',
     ],
     '  endif()',
     'endif()',
     '',
+    r'set(WINDOW_TITLE "${WINDOW_TITLE_RC}")',
     'configure_file(',
     r'  "${CMAKE_CURRENT_SOURCE_DIR}/Runner.rc.in"',
     r'  "${CMAKE_CURRENT_BINARY_DIR}/Runner.rc"',
     '  @ONLY',
     ')',
+    r'set(WINDOW_TITLE "${WINDOW_TITLE_CPP}")',
     'configure_file(',
     r'  "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp.in"',
     r'  "${CMAKE_CURRENT_BINARY_DIR}/main.cpp"',
@@ -305,12 +309,6 @@ void main() {
       expect(_edit(patched), patched);
     });
 
-    test('escapes the title of a flavor, which ends up in a CMake string', () {
-      final patched = _edit(_pristine(), {'apple': r'My "App" \ 1'});
-
-      expect(patched, contains(r'set(WINDOW_TITLE "My \"App\" \\ 1")'));
-    });
-
     test('ignores what looks like the call in a comment, and a marker that '
         'is only part of a line', () {
       final source =
@@ -383,6 +381,111 @@ void main() {
       }
     });
 
+    test('accepts later calls that add other sources, comment out the '
+        'entrypoints, or add them to another target', () {
+      for (final later in [
+        'target_sources(\${BINARY_NAME} PRIVATE "extra.cpp" "domain.cpp")',
+        '# target_sources(\${BINARY_NAME} PRIVATE "main.cpp")',
+        'add_executable(other "main.cpp")',
+        'target_sources(\${BINARY_NAME} PRIVATE\n  "extra.cpp"\n)',
+      ]) {
+        final source = _pristine().replaceFirst(
+          '\napply_standard_settings',
+          '\n$later\napply_standard_settings',
+        );
+        final patched = _edit(source);
+
+        expect(patched, contains(_begin), reason: later);
+        expect(patched, contains('\n$later\n'), reason: later);
+      }
+    });
+
+    group('writes the title the way each file it ends up in reads it', () {
+      /// What CMake makes of the argument of `set(VAR "...")`.
+      String cmakeValue(String argument) =>
+          argument.replaceAllMapped(RegExp(r'\\(.)'), (match) => match[1]!);
+
+      /// The values the region gives `WINDOW_TITLE_CPP` and `WINDOW_TITLE_RC`
+      /// for the only flavor, after CMake decoded them, put where
+      /// `configure_file` puts them in the templates.
+      ({String main, String rc}) generated(String title) {
+        final region = _edit(_pristine(), {'apple': title});
+        String value(String name) => cmakeValue(
+          RegExp(
+            'set\\($name "((?:[^"\\\\]|\\\\.)*)"\\)',
+          ).allMatches(region).last.group(1)!,
+        );
+
+        return (
+          main: _read(
+            'test_resources/windows/main_cpp_title_processor_test/main_expected.cpp',
+          ).replaceAll('@WINDOW_TITLE@', value('WINDOW_TITLE_CPP')),
+          rc: _read(
+            'test_resources/windows/runner_rc_content_processor_test/Runner_expected.rc',
+          ).replaceAll('@WINDOW_TITLE@', value('WINDOW_TITLE_RC')),
+        );
+      }
+
+      // The title, what main.cpp holds for it, and what Runner.rc holds.
+      final titles = [
+        ('Apple App', 'Apple App', 'Apple App'),
+        (r'My "App"', r'My \"App\"', 'My ""App""'),
+        (r'a\b', r'a\\b', r'a\\b'),
+        (
+          r'ends with a backslash\',
+          r'ends with a backslash\\',
+          r'ends with a backslash\\',
+        ),
+        (
+          r'${HOME} $x @VAR@ a;b [c] 100%',
+          r'${HOME} $x @VAR@ a;b [c] 100%',
+          r'${HOME} $x @VAR@ a;b [c] 100%',
+        ),
+        ('Café 😀', r'Caf\u00e9 \U0001f600', 'Café 😀'),
+      ];
+
+      for (final (title, cpp, rc) in titles) {
+        test('`$title`', () {
+          final files = generated(title);
+
+          expect(files.main, contains('window.Create(L"$cpp", origin, size)'));
+          expect(files.rc, contains('VALUE "FileDescription", "$rc" "\\0"'));
+          expect(files.rc, contains('VALUE "ProductName", "$rc" "\\0"'));
+        });
+      }
+
+      test('rejects a title with a line break or a control character', () {
+        for (final title in ['a\nb', 'a\tb', 'a\u0000b', 'a\u0085b']) {
+          expect(
+            () => _edit(_pristine(), {'apple': title}),
+            throwsA(
+              isA<UnsupportedRunnerLayoutException>().having(
+                (e) => e.toString(),
+                'message',
+                allOf(contains('apple'), contains('control')),
+              ),
+            ),
+            reason: title.codeUnits.toString(),
+          );
+        }
+      });
+
+      test('rejects a flavor name that is not a plain name, since it is the '
+          'name of an icon file and goes into CMake and Runner.rc', () {
+        for (final name in ['a"b', r'a\b', 'a/b', r'a$b', 'a b', 'a;b', '']) {
+          expect(
+            () => _edit(_pristine(), {name: 'Title'}),
+            throwsA(isA<UnsupportedRunnerLayoutException>()),
+            reason: name,
+          );
+        }
+        expect(
+          _edit(_pristine(), {'my-flavor_2.x': 'Title'}),
+          contains(_begin),
+        );
+      });
+    });
+
     test('builds with the defaults, and not with an empty icon, when the '
         'flavor is not one of the configured ones', () {
       final region = _edit(_pristine());
@@ -398,6 +501,46 @@ void main() {
 
     group('rejects what it cannot edit with an actionable error', () {
       final cases = <_Rejected>[
+        (
+          name: 'a later target_sources adds main.cpp',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\ntarget_sources(\${BINARY_NAME} PRIVATE "main.cpp")\napply_standard_settings',
+          ),
+          message: 'main.cpp',
+        ),
+        (
+          name: 'a later multi-line target_sources adds an alias of Runner.rc',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\ntarget_sources(\${BINARY_NAME} PRIVATE\n  "extra.cpp"\n  "./Runner.rc"\n)\napply_standard_settings',
+          ),
+          message: 'Runner.rc',
+        ),
+        (
+          name: 'a later TARGET_SOURCES is in upper case',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\nTARGET_SOURCES(runner PRIVATE main.cpp)\napply_standard_settings',
+          ),
+          message: 'main.cpp',
+        ),
+        (
+          name: 'a later set_property appends main.cpp to the sources',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\nset_property(TARGET \${BINARY_NAME} APPEND PROPERTY SOURCES\n  "\${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")\napply_standard_settings',
+          ),
+          message: 'main.cpp',
+        ),
+        (
+          name: 'a later set_target_properties sets the sources',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\nset_target_properties(\${BINARY_NAME} PROPERTIES SOURCES main.cpp)\napply_standard_settings',
+          ),
+          message: 'main.cpp',
+        ),
         (
           name: 'the call does not list main.cpp',
           source: _pristine(

@@ -232,8 +232,11 @@ copies of the build directory, and the target would otherwise compile both. A
 source that names one of them any other way (`./main.cpp`, `MAIN.CPP`,
 `sub/../main.cpp`, two names on a line, a comment after the name) is rejected
 too, for the same reason; the names are whole words, so `domain.cpp` or
-`main.cpp.in` are other files. A name that is in a variable, and sources that
-are added to the target with `target_sources`, are not seen. When
+`main.cpp.in` are other files. After the call, no `target_sources`,
+`set_property` or `set_target_properties` may name `main.cpp` or `Runner.rc`
+either (a later call of another target is not told from one of this, and is
+rejected too), since it would put the file of the source dir back in the target
+after the region took it out. A name that is in a variable is not seen. When
 it is not like that the run fails, before anything is written, and says what to
 change. Only those ways of writing the call are looked for: it is not parsed, a
 different one is rejected rather than guessed at, and a `#` comment among the
@@ -248,12 +251,17 @@ backslash, so no raw, `u8` or `u` string, macro or two literals either),
 "\0"` and `VALUE "ProductName", "..." "\0"` with a plain string. A file with one
 that is not, or with none of one of them, is rejected, since a build that picked
 that one would keep the old title; when all of them are plain, all of them are
-templated. Places that have a `//` before them on their line are skipped. Block
-comments, strings and preprocessor directives are not looked at (a
-`window.Create(` in a string is one that cannot be templated), only `window` is
-looked for as the name of the window (`window.Create`, `window->Create`), and the
-`app.name` of a flavor goes into the window title and the version information
-as it is: do not use `"` or `\` in it. `Runner.rc`, `main.cpp` and
+templated. Places that are in a comment (`//` or `/* */`, found knowing the string and
+character literals: the `//` of `L"https://..."` starts no comment) are skipped.
+Preprocessor directives are not looked at, a `window.Create(` in a string is one
+that cannot be templated, and only `window` is looked for as the name of the
+window (`window.Create`, `window->Create`). The `app.name` of a flavor is
+encoded for each file it ends up in, so `"`, `\` and non-ASCII characters are
+fine in it (in `main.cpp` as `\"`, `\\` and universal character names, in
+`Runner.rc` as `""` and `\\`, and then for CMake, which also protects a `$`); a
+control character, such as a line break, is rejected, and so is a flavor name
+that has anything but letters, digits, `_`, `-` and `.`, since it is the name of
+the icon file. `Runner.rc`, `main.cpp` and
 `CMakeLists.txt` have to be UTF-8, which is how `flutter create` writes them (a
 file that Visual Studio saved as UTF-16 is rejected). The
 templates are regenerated at every `apply`, so run it again after you change
