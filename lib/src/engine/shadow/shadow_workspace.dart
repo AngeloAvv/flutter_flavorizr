@@ -352,6 +352,9 @@ class ShadowWorkspace {
   /// and an `UnapprovedConflictsException` for a conflict nobody approved.
   /// Both leave the project untouched.
   ///
+  /// The folders a deletion leaves empty are removed too, below [paths] and
+  /// never [paths] themselves: see `pruneBelow` of [copyBackChanges].
+  ///
   /// Writes are atomic per file, not across files, and a process that edits a
   /// target in the few calls between its last check and its rename still loses
   /// that edit: there is no lock nor compare-and-swap to prevent it. See the
@@ -366,6 +369,7 @@ class ShadowWorkspace {
     diff: diff,
     approvedConflicts: approvedConflicts,
     files: files,
+    pruneBelow: paths,
   );
 
   /// Deletes the workspace. It is safe to call it more than once.

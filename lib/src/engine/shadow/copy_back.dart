@@ -63,8 +63,16 @@ final class CopyBackResult {
   /// The changes written to the project, in the order they were written.
   final List<FileChange> applied;
 
-  CopyBackResult(Iterable<FileChange> applied)
-    : applied = List.unmodifiable(applied);
+  /// The folders that were left empty by the deletions of [applied] and
+  /// removed, by canonical path, sorted. See `pruneBelow` of
+  /// [copyBackChanges].
+  final List<String> prunedDirectories;
+
+  CopyBackResult(
+    Iterable<FileChange> applied, {
+    Iterable<String> prunedDirectories = const [],
+  }) : applied = List.unmodifiable(applied),
+       prunedDirectories = List.unmodifiable(prunedDirectories);
 }
 
 /// Writes the changes of [diff] from the shadow workspace [shadowRoot] to the
@@ -79,6 +87,14 @@ final class CopyBackResult {
 /// 4. Staged files are moved over their targets, one atomic rename each. If
 ///    one fails, the staged files that are left are removed and a
 ///    [CopyBackInterruptedException] lists what was already applied.
+///
+/// Once everything was applied, the folders a deletion left empty are removed,
+/// but only below one of the [pruneBelow] paths (the ones the run works on, such
+/// as `ShadowWorkspace.paths`), never those paths themselves: a flavor that is
+/// dropped leaves no empty `src/<flavor>/res` behind. A folder that still holds
+/// anything, a file of the user included, stays, and so do the ones above it.
+/// Nothing is pruned when [pruneBelow] is empty, or when the copy-back is
+/// interrupted.
 ///
 /// A staged file lives in the folder of its target, which guarantees the rename
 /// does not cross filesystems. It is created exclusively, and its name gets
@@ -97,6 +113,7 @@ Future<CopyBackResult> copyBackChanges({
   Set<String> approvedConflicts = const {},
   CopyBackFiles files = const LocalCopyBackFiles(),
   String Function(int attempt)? stagingSuffix,
+  Iterable<String> pruneBelow = const [],
 }) async {
   final unapproved = diff.conflicts
       .where((change) => !approvedConflicts.contains(change.path))
@@ -213,7 +230,57 @@ Future<CopyBackResult> copyBackChanges({
     }
   }
 
-  return CopyBackResult(applied);
+  return CopyBackResult(
+    applied,
+    prunedDirectories: await _pruneEmptyDirectories(
+      projectRoot,
+      pruneBelow.map(canonicalPath).toList(),
+      [
+        for (final change in applied)
+          if (change.kind == ChangeKind.deleted) change.path,
+      ],
+    ),
+  );
+}
+
+/// Removes the folders that [deleted] files left empty, below one of [roots],
+/// deepest first, and returns them sorted.
+///
+/// A folder is only removed when it is empty (the deletion is not recursive),
+/// is a real folder and not a link, so what a user keeps there is never lost.
+Future<List<String>> _pruneEmptyDirectories(
+  Directory projectRoot,
+  List<String> roots,
+  Iterable<String> deleted,
+) async {
+  final pruned = <String>{};
+  final candidates = <String>{
+    for (final path in deleted)
+      for (
+        var dir = p.posix.dirname(path);
+        roots.any((root) => p.posix.isWithin(root, dir));
+        dir = p.posix.dirname(dir)
+      )
+        dir,
+  }.toList()..sort((a, b) => b.length.compareTo(a.length));
+
+  for (final candidate in candidates) {
+    final path = resolveIn(projectRoot, candidate);
+
+    try {
+      if (await FileSystemEntity.type(path, followLinks: false) !=
+          FileSystemEntityType.directory) {
+        continue;
+      }
+
+      await Directory(path).delete();
+      pruned.add(candidate);
+    } on FileSystemException {
+      // Not empty (or not ours to remove): it stays, like the folders above.
+    }
+  }
+
+  return pruned.toList()..sort();
 }
 
 /// Throws a [ProjectChangedException] when a file in [writes] is not the way
