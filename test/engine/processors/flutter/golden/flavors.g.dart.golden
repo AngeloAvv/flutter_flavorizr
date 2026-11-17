@@ -1,0 +1,57 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND.
+//
+// flutter_flavorizr writes this file from flavorizr.yaml, and writes it again
+// whenever the flavors change. Put your own code in flavors.dart, which
+// exports this file and which flutter_flavorizr never overwrites.
+
+import 'package:flutter/services.dart' as services;
+
+enum Flavor {
+  apple('apple'),
+  banana('Banana');
+
+  const Flavor(this.flavorName);
+
+  /// The name of the flavor in flavorizr.yaml: what `--flavor` takes and
+  /// `appFlavor` returns, casing included.
+  final String flavorName;
+}
+
+class F {
+  F._();
+
+  /// The flavor the app was built as.
+  ///
+  /// Throws a [StateError] when the app was built without a flavor, or with
+  /// one that flavorizr.yaml does not define.
+  static Flavor get appFlavor {
+    final name = services.appFlavor;
+
+    if (name == null) {
+      throw StateError(
+        'The app was built without a flavor. Build or run it with '
+        '--flavor <name>, where <name> is one of: apple, Banana.',
+      );
+    }
+
+    for (final flavor in Flavor.values) {
+      if (flavor.flavorName == name) return flavor;
+    }
+
+    throw StateError(
+      'The app was built with the flavor "$name", which flavorizr.yaml does '
+      'not define. Its flavors are: apple, Banana.',
+    );
+  }
+
+  static String get name => appFlavor.name;
+
+  static String get title {
+    switch (appFlavor) {
+      case Flavor.apple:
+        return 'Apple App';
+      case Flavor.banana:
+        return 'Banana\'s \$App';
+    }
+  }
+}

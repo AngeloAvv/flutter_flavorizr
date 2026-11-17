@@ -132,10 +132,10 @@ flavorizr:
 | android:androidManifest | Android       | Changes the reference of the app name in the AndroidManifest.xml        |
 | android:dummyAssets     | Android       | Generates some default icons for your custom flavors                    |
 | android:icons           | Android       | Creates a set of icons for each flavor according to the icon directive  |
-| flutter:flavors         | Flutter       | Creates the flutter flavor configuration file                           |
-| flutter:app             | Flutter       | Creates the app.dart entry                                              |
-| flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
-| flutter:main            | Flutter       | Creates the main target to run the app                                  |
+| flutter:flavors         | Flutter       | Generates lib/flavors.g.dart and, once, lib/flavors.dart               |
+| flutter:app             | Flutter       | Creates lib/app.dart if it does not exist (`flutter:scaffold`)          |
+| flutter:pages           | Flutter       | Creates a default page for the app if it does not exist (`flutter:scaffold`) |
+| flutter:main            | Flutter       | Creates lib/main.dart if it does not exist (`flutter:scaffold`)         |
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
 | huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
 | ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
@@ -528,9 +528,6 @@ By default, when you do not specify a custom set of processors by appending the 
 * android:dummyAssets
 * android:icons
 * flutter:flavors
-* flutter:app
-* flutter:pages
-* flutter:main
 * ios:podfile
 * ios:xcconfig
 * ios:buildTargets
@@ -562,11 +559,14 @@ By default, when you do not specify a custom set of processors by appending the 
 
 ## Customize your app
 
-Flutter_flavorizr creates different dart files in the lib folder. In the flavors.dart file we have the F class which contains all of our customizations.
+Flutter_flavorizr writes two files in the lib folder:
+
+* `flavors.g.dart` holds the `Flavor` enum and the `F` class. It is generated from `flavorizr.yaml` and written again whenever the flavors change, so do not edit it.
+* `flavors.dart` exports `flavors.g.dart`. It is created once and never overwritten: it is yours, so this is the place to add your own code (a color palette per flavor, the URL of each environment, and so on).
 
 ```dart
 class F {
-  static late final Flavor appFlavor;
+  static Flavor get appFlavor { /* ... */ }
 
   static String get name => appFlavor.name;
 
@@ -578,13 +578,18 @@ class F {
         return 'Banana App';
     }
   }
-
 }
 ```
 
-The process creates a simple title customization: a switch which checks the current appFlavor (defined in our app starting point) and returns the correct value. Here you can write whatever you want, you can create your custom app color palette, differentiate the URL action of a button, and so on.
+`F.appFlavor` reads the flavor the app was built with (`flutter run --flavor apple`) from `appFlavor` of `package:flutter/services.dart`, and finds it by the name the flavor has in `flavorizr.yaml`, casing included. Nothing has to initialize it. An app built without a flavor, or with one that is not in `flavorizr.yaml`, fails with an error that says how to fix it.
 
-If you are wondering how to use these getters, you can find an example under the pages folder: in the my_home_page.dart file, the page shown after the launch of the app, we can see a clear reference on the title getter defined in the F class.
+Flavorizr does not touch your `main.dart`, `app.dart` or `pages`. A new app can start from a ready made set of them with the `flutter:scaffold` recipe:
+
+```sh
+flutter pub run flutter_flavorizr apply flutter:scaffold
+```
+
+The recipe creates `lib/main.dart`, `lib/app.dart` and `lib/pages/my_home_page.dart`, which show how to use the getters above, and a file that exists is never overwritten. A new Flutter project already has a `lib/main.dart`: add `--overwrite-scaffold` to replace it (and any other file of the recipe that exists).
 
 ## Third party services
 

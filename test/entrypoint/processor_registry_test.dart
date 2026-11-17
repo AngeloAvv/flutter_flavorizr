@@ -43,17 +43,34 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   group('ProcessorRegistry', () {
-    test('runs the ported Android processors on the engine', () {
+    test('runs the ported Android and Flutter processors on the engine', () {
       expect(registry.engineIds, {
         'android:androidManifest',
         'android:flavorizrGradle',
         'android:buildGradle',
         'android:icons',
+        'flutter:flavors',
+        'flutter:pages',
+        'flutter:app',
+        'flutter:main',
       });
     });
 
+    test(
+      'a full run is the one of the `all` recipe, which has no scaffold',
+      () {
+        expect(registry.fullRunIds, {
+          'android:androidManifest',
+          'android:flavorizrGradle',
+          'android:buildGradle',
+          'android:icons',
+          'flutter:flavors',
+        });
+      },
+    );
+
     test('keeps every other 2.x instruction on the legacy pipeline', () {
-      expect(registry.legacyIds, contains('flutter:flavors'));
+      expect(registry.legacyIds, contains('google:firebase'));
       expect(registry.legacyIds, contains('ios:podfile'));
       expect(registry.legacyIds, contains('android:dummyAssets'));
       expect(registry.legacyIds, isNot(contains('android:icons')));

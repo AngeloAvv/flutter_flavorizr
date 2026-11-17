@@ -226,7 +226,11 @@ abstract class TargetCommand extends FlavorizrCommand {
 
   /// What the processors of the engine would change, or `null` when there are
   /// none. Fails when one of them does.
-  Future<EnginePreview?> dryRun(RunPlan plan, Flavorizr config) async {
+  Future<EnginePreview?> dryRun(
+    RunPlan plan,
+    Flavorizr config, {
+    bool overwriteScaffold = false,
+  }) async {
     if (plan.engine.steps.isEmpty) return null;
 
     final verbose = logger.level == Level.verbose;
@@ -235,6 +239,7 @@ abstract class TargetCommand extends FlavorizrCommand {
       config: config,
       plan: plan,
       logger: verbose ? logger : Logger(level: Level.quiet),
+      overwriteScaffold: overwriteScaffold,
     );
 
     if (!run.report.succeeded) {

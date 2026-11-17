@@ -1,0 +1,8 @@
+// This file is yours: flutter_flavorizr creates it once and never writes it
+// again. Add what you need around the flavors, such as colors or URLs by
+// flavor.
+//
+// The Flavor enum and F live in flavors.g.dart, which flutter_flavorizr
+// writes again whenever the flavors change.
+
+export 'flavors.g.dart';

@@ -73,15 +73,11 @@ void main() {
   test('the default is the `all` recipe', () {
     final plan = resolve(android);
 
-    expect(engine(plan), hasLength(4));
+    expect(engine(plan), hasLength(5));
     expect(plan.legacy.map((step) => step.id), [
       'assets:download',
       'assets:extract',
       'android:dummyAssets',
-      'flutter:flavors',
-      'flutter:app',
-      'flutter:pages',
-      'flutter:main',
       'google:firebase',
       'huawei:agconnect',
       'assets:clean',
@@ -101,11 +97,11 @@ void main() {
   test('the instructions of the configuration are used without targets', () {
     final plan = resolve(
       '$android'
-      'instructions:\n  - android:flavorizrGradle\n  - flutter:flavors\n',
+      'instructions:\n  - android:flavorizrGradle\n  - google:firebase\n',
     );
 
     expect(engine(plan), ['android:flavorizrGradle']);
-    expect(plan.legacy.map((step) => step.id), ['flutter:flavors']);
+    expect(plan.legacy.map((step) => step.id), ['google:firebase']);
   });
 
   test('instructions that are empty run nothing, like in 2.x', () {
@@ -132,7 +128,7 @@ void main() {
   });
 
   test('a target wins over the instructions', () {
-    final plan = resolve('${android}instructions:\n  - flutter:flavors\n', [
+    final plan = resolve('${android}instructions:\n  - google:firebase\n', [
       'android:icons',
     ]);
 
@@ -141,12 +137,12 @@ void main() {
   });
 
   test('the recipes of the configuration are targets', () {
-    final yaml = '${android}recipes:\n  ci: [android:icons, flutter:flavors]\n';
+    final yaml = '${android}recipes:\n  ci: [android:icons, google:firebase]\n';
 
     final plan = resolve(yaml, ['ci']);
 
     expect(engine(plan), ['android:icons']);
-    expect(plan.legacy.map((step) => step.id), ['flutter:flavors']);
+    expect(plan.legacy.map((step) => step.id), ['google:firebase']);
   });
 
   test('the default recipe of the configuration runs without targets', () {
