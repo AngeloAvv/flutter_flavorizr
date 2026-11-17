@@ -532,6 +532,114 @@ void main() {
     });
   });
 
+  group('LinuxMyApplicationEditor reading the variable past comments and '
+      'strings', () {
+    // The declaration is there, and both setters were changed to something
+    // else: whatever mentions `window_title` below is the only thing left.
+    final unread = _readingTheVariable
+        .replaceFirst(
+          'gtk_header_bar_set_title(header_bar, window_title);',
+          'gtk_header_bar_set_title(header_bar, custom_title);',
+        )
+        .replaceFirst(
+          'gtk_window_set_title(window, window_title);',
+          'gtk_window_set_title(window, custom_title);',
+        );
+
+    void expectUnread(String source) => expect(
+      () => LinuxMyApplicationEditor.withWindowTitles(source, _titles),
+      throwsA(isA<MalformedResourceException>()),
+    );
+
+    test('a block comment on a line of its own is no reader', () {
+      expectUnread(
+        unread.replaceFirst(
+          '  if (use_header_bar) {\n',
+          '  /* window_title was previously used here */\n'
+              '  if (use_header_bar) {\n',
+        ),
+      );
+    });
+
+    test(
+      'a block comment before a statement on the same line is no reader',
+      () {
+        expectUnread(
+          unread.replaceFirst(
+            '  if (use_header_bar) {\n',
+            '  /* window_title */ if (use_header_bar) {\n',
+          ),
+        );
+      },
+    );
+
+    test('a comment after a custom setter is no reader', () {
+      expectUnread(
+        unread
+            .replaceFirst(
+              'gtk_header_bar_set_title(header_bar, custom_title);',
+              'gtk_header_bar_set_title(header_bar, custom_title); '
+                  '// window_title',
+            )
+            .replaceFirst(
+              'gtk_window_set_title(window, custom_title);',
+              'gtk_window_set_title(window, custom_title); /* window_title */',
+            ),
+      );
+    });
+
+    test('a block comment over several lines is no reader', () {
+      expectUnread(
+        unread.replaceFirst(
+          '  if (use_header_bar) {\n',
+          '  /*\n'
+              '   * The title used to be window_title,\n'
+              '   * which the setters read.\n'
+              '   */\n'
+              '  if (use_header_bar) {\n',
+        ),
+      );
+    });
+
+    test('a mention inside a string literal is no reader', () {
+      expectUnread(
+        unread.replaceFirst(
+          '  if (use_header_bar) {\n',
+          '  g_message("window_title");\n  if (use_header_bar) {\n',
+        ),
+      );
+    });
+
+    test('a real reader is still found after what looks like a comment in a '
+        'string', () {
+      final source = _readingTheVariable.replaceFirst(
+        '  if (use_header_bar) {\n',
+        '  const char* note = "/* not a comment // either";\n'
+            '  if (use_header_bar) {\n',
+      );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        source,
+        _titles,
+      );
+
+      expect(patched, contains(_begin('window_title')));
+      expect(_outsideTheRegions(patched), _outsideTheRegions(source));
+    });
+
+    test('a real reader on the line of a comment is found', () {
+      final source = _readingTheVariable.replaceFirst(
+        'gtk_window_set_title(window, window_title);',
+        '/* title */ gtk_window_set_title(window, window_title); // reads it',
+      );
+
+      expect(
+        LinuxMyApplicationEditor.withWindowTitles(source, _titles),
+        contains(_begin('window_title')),
+      );
+    });
+  });
+
   group(
     'LinuxMyApplicationEditor with a title that has escaped characters',
     () {

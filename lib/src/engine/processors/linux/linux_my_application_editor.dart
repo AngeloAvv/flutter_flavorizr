@@ -114,9 +114,14 @@ abstract final class LinuxMyApplicationEditor {
     '^\\s*gtk_window_set_title\\(window, $_literal\\);$_trailing',
   );
 
-  // Anything that uses the variable, whatever the layout of the call: a line
-  // that only has it in a comment does not count.
-  static final RegExp _windowTitleUse = RegExp(r'^(?!\s*//).*\bwindow_title\b');
+  // What is not code: a comment, or a string or character literal, an
+  // unterminated one included.
+  static final RegExp _nonCode = RegExp(
+    r'//[^\n]*|/\*[\s\S]*?(?:\*/|$)|"(?:[^"\\\n]|\\.)*"?|'
+    r"'(?:[^'\\\n]|\\.)*'?",
+  );
+
+  static final RegExp _windowTitleWord = RegExp(r'\bwindow_title\b');
 
   /// Returns [source] with the regions up to date for [titles], the title of
   /// the window of each flavor by name.
@@ -133,23 +138,23 @@ abstract final class LinuxMyApplicationEditor {
   /// `window_title` that no setter reads, and when the markers do not form
   /// regions.
   static String withWindowTitles(String source, Map<String, String> titles) {
-    final outside = MarkedText(
-      source,
-      _markers,
-    ).outside.map((line) => line.text).toList(growable: false);
+    final text = MarkedText(source, _markers);
+    final outside = text.outside.map((line) => line.text).toList();
     bool any(RegExp pattern) => outside.any(pattern.hasMatch);
 
     final headerBarLiteral = any(_headerBarTitleLiteral);
     final windowLiteral = any(_windowTitleLiteral);
     // The variable gets a region when something reads it: a declaration that
     // nothing uses would take assignments no setter reads, and the flavor would
-    // silently have no effect.
+    // silently have no effect. Only code counts, so what the comments and the
+    // strings say about it is left out.
+    final code = _codeOnly(source).split('\n');
     final variable =
         any(_windowTitleVariable) &&
-        outside.any(
+        text.outside.any(
           (line) =>
-              _windowTitleUse.hasMatch(line) &&
-              !_windowTitleVariable.hasMatch(line),
+              _windowTitleWord.hasMatch(code[line.index]) &&
+              !_windowTitleVariable.hasMatch(line.text),
         );
 
     if (!variable && !headerBarLiteral && !windowLiteral) {
@@ -190,6 +195,40 @@ abstract final class LinuxMyApplicationEditor {
   /// what the lock hashes. See [MarkedText.ownedContent].
   static String ownedContent(String source) =>
       MarkedText.ownedContent(source, _markers);
+
+  /// [source] with the text of its comments (line and block ones, over several
+  /// lines too) and of its string and character literals blanked out, which
+  /// keeps every line where it was. The quotes of a literal stay.
+  static String _codeOnly(String source) {
+    final code = StringBuffer();
+    var i = 0;
+
+    String blank(String text) => text.replaceAll(RegExp(r'[^\r\n]'), ' ');
+
+    while (i < source.length) {
+      final text = _nonCode.matchAsPrefix(source, i)?[0];
+
+      if (text == null) {
+        code.write(source[i++]);
+        continue;
+      }
+
+      final quote = text[0];
+      final isLiteral = quote == '"' || quote == "'";
+      final closed = isLiteral && text.length > 1 && text.endsWith(quote);
+
+      code.write(
+        !isLiteral
+            ? blank(text)
+            : closed
+            ? '$quote${blank(text.substring(1, text.length - 1))}$quote'
+            : '$quote${blank(text.substring(1))}',
+      );
+      i += text.length;
+    }
+
+    return code.toString();
+  }
 
   static String _upsert(
     String source,
