@@ -115,6 +115,9 @@ Future<CopyBackResult> copyBackChanges({
   String Function(int attempt)? stagingSuffix,
   Iterable<String> pruneBelow = const [],
 }) async {
+  // Validated up front: an invalid root must not be found out after the
+  // project was written.
+  final pruneRoots = pruneBelow.map(canonicalPath).toList();
   final unapproved = diff.conflicts
       .where((change) => !approvedConflicts.contains(change.path))
       .map((change) => change.path);
@@ -232,22 +235,21 @@ Future<CopyBackResult> copyBackChanges({
 
   return CopyBackResult(
     applied,
-    prunedDirectories: await _pruneEmptyDirectories(
-      projectRoot,
-      pruneBelow.map(canonicalPath).toList(),
-      [
-        for (final change in applied)
-          if (change.kind == ChangeKind.deleted) change.path,
-      ],
-    ),
+    prunedDirectories: await _pruneEmptyDirectories(projectRoot, pruneRoots, [
+      for (final change in applied)
+        if (change.kind == ChangeKind.deleted) change.path,
+    ]),
   );
 }
 
 /// Removes the folders that [deleted] files left empty, below one of [roots],
 /// deepest first, and returns them sorted.
 ///
-/// A folder is only removed when it is empty (the deletion is not recursive),
-/// is a real folder and not a link, so what a user keeps there is never lost.
+/// A folder is only removed when it is empty, is a real folder and not a link
+/// (the deletion is not recursive), so what a user keeps there is never lost.
+/// It is best effort, like the cleanup of a failed copy-back: a folder that
+/// cannot be removed (rights, a file that showed up meanwhile) stays, and the
+/// ones above it with it.
 Future<List<String>> _pruneEmptyDirectories(
   Directory projectRoot,
   List<String> roots,
@@ -273,10 +275,14 @@ Future<List<String>> _pruneEmptyDirectories(
         continue;
       }
 
-      await Directory(path).delete();
-      pruned.add(candidate);
+      final directory = Directory(path);
+
+      if (await directory.list(followLinks: false).isEmpty) {
+        await directory.delete();
+        pruned.add(candidate);
+      }
     } on FileSystemException {
-      // Not empty (or not ours to remove): it stays, like the folders above.
+      // Left in place, whatever the reason: it is only a leftover folder.
     }
   }
 
