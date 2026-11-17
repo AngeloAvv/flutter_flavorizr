@@ -262,4 +262,56 @@ flavors:
       });
     });
   });
+
+  group('the windows processors', () {
+    final windows = '''
+flavors:
+  apple:
+    app:
+      name: "Apple"
+    windows: {}
+''';
+
+    test('that make files run on the engine, in the order of the recipe, '
+        'and the ones that make icons on the legacy pipeline after them', () {
+      final plan = resolve(windows, ['windows']);
+
+      expect(engine(plan), [
+        'windows:mainCppTemplate',
+        'windows:runnerRcTemplate',
+        'windows:cmake',
+      ]);
+      expect(plan.legacy.map((step) => step.id), [
+        'windows:dummyAssets',
+        'windows:icons',
+      ]);
+      expect(plan.paths, {
+        'windows/runner/main.cpp.in',
+        'windows/runner/Runner.rc.in',
+        'windows/runner/CMakeLists.txt',
+      });
+    });
+
+    test('are left out of the default run of a project with no windows '
+        'flavors', () {
+      final plan = resolve(android);
+
+      expect(engine(plan), isNot(contains('windows:cmake')));
+      expect(plan.messages.join(), contains('windows'));
+    });
+
+    test('are not what a full run of a project with no windows flavors has '
+        'to cover, and are what one with them has to', () {
+      expect(
+        engineIdsFor(registry, Flavorizr.parse(android)),
+        isNot(contains('windows:cmake')),
+      );
+      expect(engineIdsFor(registry, Flavorizr.parse(windows)), {
+        'windows:mainCppTemplate',
+        'windows:runnerRcTemplate',
+        'windows:cmake',
+        'flutter:flavors',
+      });
+    });
+  });
 }

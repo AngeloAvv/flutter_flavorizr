@@ -37,6 +37,15 @@
     literals: 2.6.0 rewrote them to use a new `window_title` variable, outside
     of the markers, which cannot be tracked or reverted. 3.0 leaves the two calls
     alone and sets the title again from a region right after each one.
+- path: windows/runner/CMakeLists.txt
+  reason: >-
+    windows:cmake runs on the engine (#526), which touches only the marked
+    region, and moves it. The region now sits after `add_executable`, where the
+    target exists, and `configure_file` writes `Runner.rc` and `main.cpp` to
+    `${CMAKE_CURRENT_BINARY_DIR}` and points the target at them, where 2.6.0
+    overwrote the two files of the source tree on every flavored build. The
+    rest of the file is the golden one. The templates (`Runner.rc.in`,
+    `main.cpp.in`) and every other Windows file are identical to the golden.
 - path: lib/flavors.dart
   reason: >-
     flutter:flavors on the engine (#510) makes flavors.dart a scaffold that
