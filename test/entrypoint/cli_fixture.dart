@@ -27,7 +27,9 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
+import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run.dart' as cli;
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
@@ -95,6 +97,9 @@ class FakeLegacy implements LegacyPipeline {
   /// What [check] throws, if anything.
   Object? checkFailure;
 
+  /// The id of the step that fails when it runs, after the ones before it.
+  String? failAt;
+
   /// The steps [check] was asked about.
   final List<LegacyStep> checked = [];
 
@@ -113,11 +118,26 @@ class FakeLegacy implements LegacyPipeline {
     Iterable<LegacyStep> steps, {
     required Logger logger,
     Set<String> preserve = const {},
+    StepObserver? observer,
   }) async {
     if (failure case final error?) throw error;
 
     preserved.add(preserve);
-    ran.addAll(steps);
+
+    for (final step in steps) {
+      observer?.started(step.id);
+
+      if (step.id == failAt) {
+        final error = StateError('${step.id} failed');
+
+        observer?.failed(step.id, const Duration(milliseconds: 1), error);
+
+        throw error;
+      }
+
+      ran.add(step);
+      observer?.finished(step.id, const Duration(milliseconds: 1));
+    }
   }
 }
 
@@ -129,6 +149,14 @@ const engineTargets = [
   'android:buildGradle',
   'android:icons',
 ];
+
+/// A terminal that shows colour and animation.
+const terminal = OutputEnvironment(
+  stdoutIsTerminal: true,
+  stderrIsTerminal: true,
+  stdinIsTerminal: true,
+  supportsAnsi: true,
+);
 
 const _manifest = '''
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -159,6 +187,13 @@ class CliFixture {
 
   /// What the user answers when asked to confirm.
   bool answer = true;
+
+  /// What stdout holds: the JSON document of `--json`, and what is drawn on a
+  /// terminal.
+  final StringBuffer stdout = StringBuffer();
+
+  /// What the process looks like: a pipe, as in a CI, unless a test says so.
+  OutputEnvironment environment = const OutputEnvironment.plain();
 
   String? flutterVersion = '3.47.9';
 
@@ -198,6 +233,8 @@ class CliFixture {
     },
     legacy: legacy,
     flutterVersion: () async => flutterVersion,
+    environment: environment,
+    sink: stdout,
     version: '3.0.0',
   );
 

@@ -476,7 +476,7 @@ flutter pub run flutter_flavorizr list      # recipes and processors
 flutter pub run flutter_flavorizr doctor    # Groovy or Kotlin, Xcode project, Pods, Flutter version
 ```
 
-Every command has `--help`, and every one ends with an exit code a CI can rely on. See [doc/cli.md](doc/cli.md) for the options, the exit codes and the processors that do not run on the new engine yet.
+Every command has `--help`, and every one ends with an exit code a CI can rely on. `plan`, `apply`, `status` and `list` take `--json` to print one JSON document instead of text, for CI, IDEs and agents ([schema and examples](doc/json-output.md)). See [doc/cli.md](doc/cli.md) for the options, the exit codes and the processors that do not run on the new engine yet.
 
 ## Run your flavors
 

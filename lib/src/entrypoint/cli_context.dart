@@ -29,6 +29,8 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/utils/version.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -53,8 +55,18 @@ class CliContext {
   /// Where conflicts are asked about.
   final ConflictTerminal terminal;
 
-  /// Asks for the confirmation of `apply`.
-  final Confirm confirm;
+  final Confirm? _confirm;
+
+  /// Asks for the confirmation of `apply`. Without a terminal to answer it,
+  /// nothing is asked and the answer is yes: a CI has nobody to ask.
+  Confirm get confirm => _confirm ?? _askIfAnybodyIsThere;
+
+  /// What the process looks like: whether output goes to a terminal, and what
+  /// the terminal can show. It decides how the commands print.
+  final OutputEnvironment environment;
+
+  /// Where the JSON document and the animation are written: stdout.
+  final StringSink sink;
 
   /// Every processor, on the engine or not.
   final ProcessorRegistry registry;
@@ -77,14 +89,29 @@ class CliContext {
     ProcessorRegistry? registry,
     LegacyPipeline? legacy,
     FlutterVersionProbe? flutterVersion,
+    OutputEnvironment? environment,
+    StringSink? sink,
     this.version = flavorizrVersion,
   }) : terminal = terminal ?? const ConsoleConflictTerminal(),
-       confirm =
-           confirm ??
-           ((question) async => logger.confirm(question, defaultValue: true)),
+       environment = environment ?? OutputEnvironment.current(),
+       sink = sink ?? stdout,
+       _confirm = confirm,
        registry = registry ?? ProcessorRegistry.standard(),
        legacy = legacy ?? StandardLegacyPipeline(projectRoot),
        flutterVersion = flutterVersion ?? probeFlutterVersion;
+
+  Future<bool> _askIfAnybodyIsThere(String question) async =>
+      environment.interactive
+      ? logger.confirm(question, defaultValue: true)
+      : true;
+
+  /// How a command prints: [json] asks for the document of `--json`.
+  Output createOutput({bool json = false}) => Output.create(
+    logger: logger,
+    environment: environment,
+    json: json,
+    sink: sink,
+  );
 
   /// The context of the real thing: the project is the working directory.
   factory CliContext.standard({required Logger logger}) =>

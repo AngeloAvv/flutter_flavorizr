@@ -27,11 +27,14 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
 
 /// `flavorizr list`: the recipes and the processors, with what each one needs.
 class ListCommand extends FlavorizrCommand {
   /// Creates the command.
-  ListCommand(super.context);
+  ListCommand(super.context) {
+    addJsonFlag();
+  }
 
   @override
   String get name => 'list';
@@ -54,8 +57,16 @@ class ListCommand extends FlavorizrCommand {
     );
     final processors = registry.engineProcessors;
 
-    logger.info('Recipes\n${catalog.renderListing()}');
-    logger.info(
+    output.data({
+      'recipes': recipeFields(catalog.listing()),
+      'processors': listedProcessorFields(
+        ids: registry.ids,
+        engine: processors,
+      ),
+    });
+
+    output.info('Recipes\n${catalog.renderListing()}');
+    output.info(
       'Processors (engine: previewed, checked against the lock and written '
       'atomically; legacy: applied straight to the project)',
     );
@@ -63,7 +74,7 @@ class ListCommand extends FlavorizrCommand {
     for (final id in (registry.ids.toList()..sort())) {
       final processor = processors[id];
 
-      logger.info(
+      output.info(
         '  $id [${processor == null ? 'legacy' : 'engine'}]${_tree(processor)}',
       );
     }

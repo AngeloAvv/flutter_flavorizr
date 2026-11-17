@@ -31,6 +31,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_lifecycle.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
+import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:mason_logger/mason_logger.dart';
 
@@ -60,8 +61,26 @@ class PlanExecutor {
   /// The logger of the run, which the report is printed through.
   final Logger logger;
 
+  /// Told when each processor starts and ends, or `null`.
+  ///
+  /// With an observer, whatever shows the steps is also what announces a run
+  /// that went well: the summary of the report is not printed. The report of a
+  /// run that failed always is, since it says what was skipped.
+  final StepObserver? observer;
+
   /// Creates an executor.
-  const PlanExecutor({required this.logger});
+  const PlanExecutor({required this.logger, this.observer});
+
+  /// Tells the observer something. What it throws, such as a write to a stdout
+  /// that was closed, is no business of the run: the processors decide how it
+  /// ends, so it is noted and dropped.
+  void _notify(void Function() notification) {
+    try {
+      notification();
+    } on Object catch (error) {
+      logger.detail('A step observer failed: $error');
+    }
+  }
 
   /// Applies [plan] to the project in [projectRoot], whose [paths] are copied
   /// to the shadow workspace the processors write to.
@@ -73,7 +92,8 @@ class PlanExecutor {
   /// [commit] runs only when every processor completed, and the errors it
   /// throws are not caught, since the report would no longer tell what
   /// happened: the shadow workspace is deleted all the same. The summary of a
-  /// run that went well is printed once [commit] returned.
+  /// run that went well is printed once [commit] returned, unless there is an
+  /// [observer].
   Future<ExecutionReport> execute(
     ExecutionPlan plan, {
     required Flavorizr config,
@@ -105,10 +125,22 @@ class PlanExecutor {
 
         try {
           await lifecycle.run(ctx, (step, stepCtx) async {
-            currentId = step.processor.id;
-            await step.processor.apply(stepCtx);
-            completed.add(step.processor.id);
+            final id = step.processor.id;
+            final stopwatch = Stopwatch()..start();
+
+            currentId = id;
+            _notify(() => observer?.started(id));
+
+            try {
+              await step.processor.apply(stepCtx);
+            } on Object catch (caught) {
+              _notify(() => observer?.failed(id, stopwatch.elapsed, caught));
+              rethrow;
+            }
+
+            completed.add(id);
             currentId = null;
+            _notify(() => observer?.finished(id, stopwatch.elapsed));
           });
         } on Object catch (caught, trace) {
           error = caught;
@@ -139,7 +171,7 @@ class PlanExecutor {
         // The summary comes after the commit: a run whose changes could not be
         // written must not be announced as a success.
         await commit(shadow, ctx);
-        logger.info(report.render());
+        if (observer == null) logger.info(report.render());
 
         return report;
       },

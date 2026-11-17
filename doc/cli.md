@@ -16,6 +16,9 @@ command has `--help`.
 | `list` | The recipes (built-in and the ones of `flavorizr.yaml`) and the processors, with what each needs. |
 | `doctor` | Groovy or Kotlin build scripts, Xcode project layout, Pods, Flutter version, configuration and lock. |
 
+`plan`, `apply`, `status` and `list` also take `--json`, which prints one JSON
+document instead of text: see [the output](json-output.md).
+
 A *target* is the name of a recipe (`android`, `all`, or one of yours) or the
 id of a processor (`android:icons`). Without a target the default recipe runs:
 the `instructions` of `flavorizr.yaml` when it has any, otherwise `default`
@@ -29,6 +32,16 @@ when it defines one, otherwise `all`.
 | `--on-conflict=keep\|overwrite` | What to do with a file edited by hand that the run would change. Without it a terminal asks for each file, and anything else fails. |
 | `--overwrite-scaffold` | Also replaces the scaffold files that exist, which a run never does otherwise: all of them, `flavors.dart` included (see below). |
 | `-v`, `--verbose` | Prints what every processor does (every command has it). |
+
+## Output
+
+On a terminal the commands show a spinner for each processor, grouped by
+platform, a coloured diff of the files and a summary with the counts
+(`+3 ~2 -0`) and the time. Anywhere else (a pipe, a file, a CI) the same words
+are printed as plain lines: no colour, no animation, nothing is asked. `NO_COLOR`
+removes the colour, and warnings and errors always go to stderr. With `--json`
+stdout is one JSON document with a schema that is stable in 3.x. How the output
+decides, and what the documents hold, is in [json-output.md](json-output.md).
 
 ## Deprecated options
 
@@ -187,6 +200,9 @@ Known limits of the mix, which go away as processors are ported:
 * `status` can only vouch for the processors of the engine. When some are not,
   it says `In sync, as far as the engine can tell` and lists the ones it did not
   check.
-* `apply` asks `Do you want to proceed?` when there is a terminal, and, like in
-  2.x, goes on when there is nobody to answer. Pass `--yes` in a CI to say so
-  explicitly.
+* `apply` asks `Do you want to proceed?` when stdin and stdout are a terminal,
+  and goes on when there is not: nobody is asked, **even when an answer is piped
+  to stdin**. In 2.x `echo n | flutter pub run flutter_flavorizr` could cancel;
+  it now applies. Pass `--yes` in a CI and in any script to say so explicitly,
+  `--on-conflict=keep|overwrite` for the files edited by hand, and use `plan` or
+  `status` when nothing must be written.

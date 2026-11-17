@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
 import 'package:flutter_flavorizr/src/entrypoint/plan_report.dart';
 
 /// `flavorizr plan [target...]`: what `apply` would do, without writing
@@ -63,7 +64,7 @@ class PlanCommand extends TargetCommand {
 
     await checkNothingIsDropped(config);
 
-    logger.info(renderRunPlan(plan));
+    output.info(renderRunPlan(plan));
 
     final preview = await dryRun(
       plan,
@@ -71,9 +72,12 @@ class PlanCommand extends TargetCommand {
       overwriteScaffold: argResults!['overwrite-scaffold'] == true,
     );
 
+    output.data(previewFields(preview));
+
     if (preview == null) return ExitCodes.ok;
 
-    logger.info(renderPreview(preview));
+    output.info(renderPreview(preview, style: output.style));
+    output.summary('Plan', countChanges(preview));
 
     return preview.hasConflicts ? ExitCodes.attention : ExitCodes.ok;
   }

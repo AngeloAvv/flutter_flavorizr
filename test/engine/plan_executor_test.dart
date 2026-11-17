@@ -32,6 +32,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
+import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
@@ -64,6 +65,50 @@ class _RecordingLogger extends Logger {
 
   @override
   void success(String? message, {LogStyle? style}) => lines.add('$message');
+}
+
+/// An observer that records what it is told.
+class _RecordingObserver implements StepObserver {
+  final List<String> events = [];
+  final List<Duration> elapsed = [];
+  final List<Object> errors = [];
+
+  @override
+  void started(String id) => events.add('started $id');
+
+  @override
+  void finished(String id, Duration elapsed) {
+    events.add('finished $id');
+    this.elapsed.add(elapsed);
+  }
+
+  @override
+  void failed(String id, Duration elapsed, Object error) {
+    events.add('failed $id');
+    this.elapsed.add(elapsed);
+    errors.add(error);
+  }
+}
+
+/// An observer that throws when told about [on], as an output whose stdout was
+/// closed would.
+class _ThrowingObserver implements StepObserver {
+  final String on;
+
+  _ThrowingObserver(this.on);
+
+  void _maybe(String what) {
+    if (on == what) throw StateError('stdout is closed ($what)');
+  }
+
+  @override
+  void started(String id) => _maybe('started');
+
+  @override
+  void finished(String id, Duration elapsed) => _maybe('finished');
+
+  @override
+  void failed(String id, Duration elapsed, Object error) => _maybe('failed');
 }
 
 /// A resource that records what happens to it in [events].
@@ -159,7 +204,8 @@ void main() {
     List<_FakeResource> resources = const [],
     CommitRun? commit,
     Directory? tempParent,
-  }) => PlanExecutor(logger: logger).execute(
+    StepObserver? observer,
+  }) => PlanExecutor(logger: logger, observer: observer).execute(
     planOf(processors),
     config: TestUtils.parseFlavorizr('test_resources/pubspec'),
     projectRoot: fx.project.root,
@@ -380,6 +426,102 @@ void main() {
         );
 
         expect(logger.lines, isEmpty);
+      });
+    });
+
+    group('the observer', () {
+      test('is told when each processor starts and finishes', () async {
+        final observer = _RecordingObserver();
+
+        await execute([
+          _FakeProcessor('b', events),
+          _FakeProcessor('a', events),
+        ], observer: observer);
+
+        expect(observer.events, [
+          'started a',
+          'finished a',
+          'started b',
+          'finished b',
+        ]);
+        expect(observer.elapsed, everyElement(isA<Duration>()));
+      });
+
+      test('is told which processor failed, with what', () async {
+        final observer = _RecordingObserver();
+        final error = StateError('malformed project');
+
+        await execute([
+          _FakeProcessor('a', events),
+          _FakeProcessor('b', events, error: error),
+          _FakeProcessor('c', events),
+        ], observer: observer);
+
+        expect(observer.events, [
+          'started a',
+          'finished a',
+          'started b',
+          'failed b',
+        ]);
+        expect(observer.errors, [same(error)]);
+      });
+
+      test('takes over the summary of a run that went well', () async {
+        await execute([
+          _FakeProcessor('a', events),
+        ], observer: _RecordingObserver());
+
+        expect(logger.lines, isEmpty);
+      });
+
+      test('leaves the report of a run that failed', () async {
+        await execute([
+          _FakeProcessor('a', events, error: StateError('boom')),
+        ], observer: _RecordingObserver());
+
+        expect(logger.errors, ['Failed: a (Bad state: boom)']);
+      });
+    });
+
+    group('an observer that throws', () {
+      test('does not skip the processor it was told about', () async {
+        final committed = <String>[];
+
+        final report = await execute(
+          [_FakeProcessor('a', events), _FakeProcessor('b', events)],
+          observer: _ThrowingObserver('started'),
+          commit: (shadow, ctx) async => committed.add('commit'),
+        );
+
+        expect(events, ['apply a', 'apply b']);
+        expect(report.succeeded, isTrue);
+        expect(report.completed, ['a', 'b']);
+        expect(committed, ['commit']);
+      });
+
+      test('does not skip the commit of a run that went well', () async {
+        final committed = <String>[];
+
+        final report = await execute(
+          [_FakeProcessor('a', events)],
+          observer: _ThrowingObserver('finished'),
+          commit: (shadow, ctx) async => committed.add('commit'),
+        );
+
+        expect(report.succeeded, isTrue);
+        expect(report.completed, ['a']);
+        expect(committed, ['commit']);
+      });
+
+      test('does not replace the error of the processor that failed', () async {
+        final error = StateError('malformed project');
+
+        final report = await execute([
+          _FakeProcessor('a', events, error: error),
+        ], observer: _ThrowingObserver('failed'));
+
+        expect(report.failed, 'a');
+        expect(report.error, same(error));
       });
     });
 

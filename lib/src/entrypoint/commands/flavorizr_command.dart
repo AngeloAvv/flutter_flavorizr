@@ -33,6 +33,8 @@ import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/exception/configuration_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
@@ -64,7 +66,8 @@ class CommandFailure implements Exception {
 }
 
 /// What the commands have in common: the context, `--verbose`, the help that
-/// goes through the logger, and the way every error becomes an exit code.
+/// goes through the logger, the output and the way every error becomes an exit
+/// code.
 abstract class FlavorizrCommand extends Command<int> {
   /// What the command runs on.
   final CliContext context;
@@ -79,14 +82,29 @@ abstract class FlavorizrCommand extends Command<int> {
     );
   }
 
-  /// Where the command prints.
-  Logger get logger => context.logger;
+  /// Adds `--json`, for the commands that have a document to print.
+  void addJsonFlag() => argParser.addFlag(
+    'json',
+    negatable: false,
+    help:
+        'Prints one JSON document on stdout instead of text, for CI, IDEs and '
+        'agents. Warnings and errors still go to stderr. See '
+        'doc/json-output.md.',
+  );
+
+  bool get _json =>
+      argParser.options.containsKey('json') && argResults!['json'] == true;
+
+  /// Where the command prints: it decides what that looks like, on a terminal,
+  /// in a log, or as the document of `--json`.
+  late final Output output = context.createOutput(json: _json);
 
   @override
   String? get usageFooter => exitCodesHelp;
 
+  // The help is not output of a run: it goes straight to the logger.
   @override
-  void printUsage() => logger.info(usage);
+  void printUsage() => context.logger.info(usage);
 
   /// Runs the command and returns its exit code.
   Future<int> execute();
@@ -96,23 +114,31 @@ abstract class FlavorizrCommand extends Command<int> {
   List<String> get deprecations => const [];
 
   @override
-  Future<int> run() async {
-    if (argResults!['verbose'] == true) logger.level = Level.verbose;
+  Future<int> run() => overrideAnsiOutput(output.style.color, _run);
+
+  Future<int> _run() async {
+    if (argResults!['verbose'] == true) output.verbose = true;
+
+    int code;
 
     try {
-      deprecations.forEach(logger.warn);
+      deprecations.forEach(output.warn);
 
-      return await execute();
+      code = await execute();
     } on CommandFailure catch (failure) {
-      logger.err(failure.message);
+      output.err(failure.message);
 
-      return failure.exitCode;
+      code = failure.exitCode;
     } on Object catch (error, stackTrace) {
-      logger.err('$error');
-      logger.detail('$stackTrace');
+      output.err('$error');
+      output.logger.detail('$stackTrace');
 
-      return ExitCodes.of(error) ?? ExitCodes.software;
+      code = ExitCodes.of(error) ?? ExitCodes.software;
     }
+
+    output.finish(name, code);
+
+    return code;
   }
 
   /// The configuration of the project, or `null` when it has none: no
@@ -158,6 +184,7 @@ abstract class FlavorizrCommand extends Command<int> {
 abstract class TargetCommand extends FlavorizrCommand {
   /// Adds `[target...]`, and the 2.x `-p`, which still names targets.
   TargetCommand(super.context) {
+    addJsonFlag();
     argParser.addMultiOption(
       'processors',
       abbr: 'p',
@@ -197,8 +224,10 @@ abstract class TargetCommand extends FlavorizrCommand {
           );
 
     for (final message in plan.messages) {
-      logger.info(message);
+      output.info(message);
     }
+
+    output.data(processorFields(plan));
 
     return plan;
   }
@@ -233,13 +262,16 @@ abstract class TargetCommand extends FlavorizrCommand {
   }) async {
     if (plan.engine.steps.isEmpty) return null;
 
-    final verbose = logger.level == Level.verbose;
-    final run = await runEngine(
-      context,
-      config: config,
-      plan: plan,
-      logger: verbose ? logger : Logger(level: Level.quiet),
-      overwriteScaffold: overwriteScaffold,
+    final verbose = output.verbose;
+    final run = await output.busy(
+      'Working out the changes',
+      () => runEngine(
+        context,
+        config: config,
+        plan: plan,
+        logger: verbose ? output.logger : output.warningsLogger,
+        overwriteScaffold: overwriteScaffold,
+      ),
     );
 
     if (!run.report.succeeded) {

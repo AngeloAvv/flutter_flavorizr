@@ -51,7 +51,24 @@ Future<void> execute(List<String> args) async {
 /// Runs the command named by [args] in [context], and returns its exit code.
 ///
 /// The command may be anywhere in [args], and `apply` runs when there is none.
-Future<int> run(List<String> args, {required CliContext context}) async {
+///
+/// A command line that is wrong is reported on stderr, with the usage on
+/// stdout. With `--json` stdout is a document and nothing else, so the usage is
+/// left out: the command line is not understood, and there is no document.
+Future<int> run(List<String> args, {required CliContext context}) {
+  final json = args.contains('--json');
+
+  return overrideAnsiOutput(
+    context.environment.color && !json,
+    () => _run(args, context: context, json: json),
+  );
+}
+
+Future<int> _run(
+  List<String> args, {
+  required CliContext context,
+  required bool json,
+}) async {
   final runner = _Runner(context);
 
   try {
@@ -59,7 +76,7 @@ Future<int> run(List<String> args, {required CliContext context}) async {
         ExitCodes.ok;
   } on UsageException catch (error) {
     context.logger.err(error.message);
-    context.logger.info('\n${error.usage}');
+    if (!json) context.logger.info('\n${error.usage}');
 
     return ExitCodes.usage;
   } on ArgParserException catch (error) {
