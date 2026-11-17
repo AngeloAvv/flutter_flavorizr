@@ -45,6 +45,24 @@ class DarwinAddFileProcessor extends AbstractProcessor<void> {
   @override
   Future<void> execute() async {
     final project = await XcodeProject.open(projectPath);
+
+    if (addTo(project, filePath, groupName: groupName)) {
+      await project.save();
+    }
+  }
+
+  /// Adds a reference to [filePath] to the group [groupName] of [project], or
+  /// to its main group, and to the resources of its first target.
+  ///
+  /// It is what the processor does without opening or saving the project, so
+  /// that processors of the engine, which share one, do the same. Returns
+  /// whether something was added: it is not when the group has the file
+  /// already.
+  static bool addTo(
+    XcodeProject project,
+    String filePath, {
+    String? groupName,
+  }) {
     final group = groupName == null
         ? project.mainGroup
         : project.groups.firstWhere((g) => g.name == groupName);
@@ -53,21 +71,21 @@ class DarwinAddFileProcessor extends AbstractProcessor<void> {
       (f) => f.path == filePath,
     );
 
-    if (!alreadyAdded) {
-      final fileRef = project.newObject<PBXFileReference>(
-        (g, u) => PBXFileReference(g, u),
-      );
-      fileRef.path = filePath;
-      fileRef.sourceTree = '<group>';
-      fileRef.lastKnownFileType =
-          FileTypes.byExtension[p.extension(filePath).toLowerCase()];
-      group.children.add(fileRef);
+    if (alreadyAdded) return false;
 
-      final target = project.targets.first as PBXNativeTarget;
-      target.addResources([fileRef]);
+    final fileRef = project.newObject<PBXFileReference>(
+      (g, u) => PBXFileReference(g, u),
+    );
+    fileRef.path = filePath;
+    fileRef.sourceTree = '<group>';
+    fileRef.lastKnownFileType =
+        FileTypes.byExtension[p.extension(filePath).toLowerCase()];
+    group.children.add(fileRef);
 
-      await project.save();
-    }
+    final target = project.targets.first as PBXNativeTarget;
+    target.addResources([fileRef]);
+
+    return true;
   }
 
   @override

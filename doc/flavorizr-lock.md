@@ -74,6 +74,15 @@ Notes:
 * `flavors` and `processors` are required on read, the sections of a processor
   are optional. Unknown keys at the same `schemaVersion` are ignored on read.
 * A UTF-8 byte order mark at the start of the file is tolerated on read.
+* **Known limitation, `project.pbxproj`.** The Xcode project of a platform is
+  shared by every Darwin processor (`xcodeproj:ios`, `xcodeproj:macos`) and is
+  a `patched` file. Until the processors that own parts of it say which ones
+  (owned build settings, #515, and the UUIDs of the objects they create, #516),
+  no owned-content reader is registered for it and the whole file is hashed. An
+  edit anywhere in it, by Xcode, CocoaPods or Flutter, then reads as an edit of
+  what flavorizr owns, and the next run that changes the project asks about it
+  as a conflict. The reader is registered with
+  `EngineResource(..., ownedContent: {path: reader})`.
 
 ## Determinism
 

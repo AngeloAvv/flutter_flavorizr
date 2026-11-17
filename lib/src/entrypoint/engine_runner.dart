@@ -142,6 +142,7 @@ Future<EngineRun> runEngine(
     config: config,
     projectRoot: context.projectRoot,
     paths: plan.paths,
+    resources: registry.resources,
     previousFlavors: previous?.flavorNames ?? const {},
     commit: (shadow, ctx) async {
       final reconciliation = await reconcile(

@@ -66,6 +66,41 @@ void main() {
     });
   });
 
+  test(
+      'Test DarwinAddFileProcessor.addTo adds the file to the resources of the '
+      'first native target, and tells whether it added anything', () async {
+    final project = await XcodeProject.open(exampleProjectPath);
+    final target = project.targets.first as PBXNativeTarget;
+    List<String?> resources() => [
+          for (final buildFile in target.resourcesBuildPhase.files)
+            if (buildFile.fileRef case final PBXFileReference ref) ref.path,
+        ];
+
+    expect(resources(), isNot(contains('Runner/new_asset.txt')));
+    expect(
+      DarwinAddFileProcessor.addTo(project, 'Runner/new_asset.txt'),
+      isTrue,
+    );
+    expect(
+      resources().where((path) => path == 'Runner/new_asset.txt'),
+      hasLength(1),
+    );
+    expect(
+      project.mainGroup.children
+          .whereType<PBXFileReference>()
+          .where((file) => file.path == 'Runner/new_asset.txt'),
+      hasLength(1),
+    );
+    expect(
+      DarwinAddFileProcessor.addTo(project, 'Runner/new_asset.txt'),
+      isFalse,
+    );
+    expect(
+      resources().where((path) => path == 'Runner/new_asset.txt'),
+      hasLength(1),
+    );
+  });
+
   test('Test DarwinAddFileProcessor is idempotent when file already added',
       () async {
     await TestUtils.withTempDir((dir) async {

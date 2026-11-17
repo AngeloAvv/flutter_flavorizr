@@ -34,7 +34,7 @@
 /// The resource lifecycle (setup before the first consumer, teardown after the
 /// last one) is built on top of it: see `Resource` and `ResourceLifecycle`.
 final class ResourceKey<T> {
-  /// A unique, human readable name of the resource, e.g. `ios:xcodeproj`.
+  /// A unique, human readable name of the resource, e.g. `xcodeproj:ios`.
   final String name;
 
   /// Creates a key for the resource called [name].
