@@ -174,7 +174,10 @@ ends on that line after it, and nothing governing it without braces (no `if`,
 `else`, `for`, `while`, `do`, `case` or label right before it): the region goes
 right after the call, and otherwise it would not do what the call does. When it
 is not like that the run fails, before anything is written, and says what to
-change. Comments, strings and preprocessor directives are not looked at. When
+change. The variable `window_title`, when the setters read it, has to be declared
+once as `const gchar* window_title = "...";`, and each way of setting the title
+(`gtk_header_bar_set_title`, `gtk_window_set_title`) may be a literal call only
+once. Comments, strings and preprocessor directives are not looked at. When
 `my_application.cc` sets the window title with two string
 literals, as `flutter create` writes it, 2.x rewrote those two calls to use a
 variable; 3.0 leaves them alone and sets the title again from regions right after

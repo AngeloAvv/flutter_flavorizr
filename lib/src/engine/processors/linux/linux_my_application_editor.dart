@@ -119,10 +119,10 @@ abstract final class LinuxMyApplicationEditor {
   // spaces: a literal is one or more of them, and the layout between the tokens
   // is free.
   static const String _literal = r'(?:"[^"\n]*"\s*)+';
+  // A declaration of the variable, with what comes before it in its statement,
+  // which is its type and qualifiers.
   static final RegExp _variable = RegExp(
-    r'(?<!\bstatic\s+)\bconst\s+gchar\s*\*\s*window_title\s*=\s*' +
-        _literal +
-        r';',
+    r'([^;{}]*?)\bwindow_title\s*=\s*' + _literal + r';',
   );
   static final RegExp _headerBarSetter = RegExp(
     r'\bgtk_header_bar_set_title\s*\(\s*header_bar\s*,\s*' +
@@ -161,21 +161,37 @@ abstract final class LinuxMyApplicationEditor {
     final window = _statements(text, code, _windowSetter);
 
     for (final (statement, setter) in [
-      ...variable.map((match) => (match, false)),
-      ...headerBar.map((match) => (match, true)),
-      ...window.map((match) => (match, true)),
+      ...variable.map((site) => (site, false)),
+      ...headerBar.map((site) => (site, true)),
+      ...window.map((site) => (site, true)),
     ]) {
       _check(source, code, statement, setter: setter);
+    }
+
+    // A region follows one statement, so a title that is set by several is
+    // not something to guess about.
+    for (final sites in [headerBar, window]) {
+      if (sites.length > 1) {
+        throw UnsafeTitleSetterException(
+          source.substring(sites[1].start, sites[1].end),
+          reason:
+              'it is one of ${sites.length} calls that set the title in the '
+              'same way, and flavorizr cannot tell which one runs.',
+          fix:
+              'Keep a single call, and set the title of the other branches '
+              'with something else.',
+        );
+      }
     }
 
     // The variable gets a region when something reads it: a declaration that
     // nothing uses would take assignments no setter reads, and the flavor would
     // silently have no effect.
     final declared = {
-      for (final match in variable)
+      for (final site in variable)
         for (
-          var i = _lineOf(text.lines, match.start);
-          i <= _lineOf(text.lines, match.end - 1);
+          var i = _lineOf(text.lines, site.start);
+          i <= _lineOf(text.lines, site.end - 1);
           i++
         )
           i,
@@ -192,6 +208,22 @@ abstract final class LinuxMyApplicationEditor {
 
     if (!read && headerBar.isEmpty && window.isEmpty) {
       throw MalformedResourceException(source);
+    }
+
+    // What the region assigns has to be a variable that can be assigned.
+    if (read) {
+      final type = variable.first.prefix.replaceAll(RegExp(r'\s+'), ' ');
+
+      if (variable.length > 1 || type.replaceAll(' *', '*') != 'const gchar*') {
+        throw UnsafeTitleSetterException(
+          source.substring(variable.last.start, variable.last.end),
+          reason: variable.length > 1
+              ? 'window_title is declared ${variable.length} times.'
+              : 'window_title is declared as `$type`, which flavorizr cannot '
+                    'assign to.',
+          fix: 'Declare it once, as `const gchar* window_title = "...";`.',
+        );
+      }
     }
 
     var patched = source;
@@ -285,14 +317,33 @@ abstract final class LinuxMyApplicationEditor {
     );
   }
 
-  /// The matches of [pattern] in [code] that are outside the regions.
-  static List<Match> _statements(MarkedText text, String code, RegExp pattern) {
+  /// The statements [pattern] finds in [code] that are outside the regions. A
+  /// declaration of the variable is one that has a type before the name: an
+  /// assignment is not.
+  static List<_Site> _statements(MarkedText text, String code, RegExp pattern) {
     final outside = {for (final line in text.outside) line.index};
 
     return [
       for (final match in pattern.allMatches(code))
-        if (outside.contains(_lineOf(text.lines, match.start))) match,
+        if (_site(match) case final site?)
+          if (outside.contains(_lineOf(text.lines, site.start))) site,
     ];
+  }
+
+  static _Site? _site(RegExpMatch match) {
+    if (match.groupCount == 0) return _Site(match.start, match.end, '');
+
+    final raw = match[1]!;
+    final prefix = raw.trim();
+
+    // `self->window_title = "x";` and `window_title = "x";` are not declarations.
+    if (!RegExp(r'[\w*]$').hasMatch(prefix)) return null;
+
+    return _Site(
+      match.start + raw.length - raw.trimLeft().length,
+      match.end,
+      prefix,
+    );
   }
 
   /// The position of the line that has [offset].
@@ -311,7 +362,7 @@ abstract final class LinuxMyApplicationEditor {
   static void _check(
     String source,
     String code,
-    Match statement, {
+    _Site statement, {
     required bool setter,
   }) {
     final text = source.substring(statement.start, statement.end);
@@ -364,4 +415,13 @@ abstract final class LinuxMyApplicationEditor {
       '#endif',
     ];
   }
+}
+
+/// A statement in the code: where it is, and what comes before the name in it.
+final class _Site {
+  final int start;
+  final int end;
+  final String prefix;
+
+  const _Site(this.start, this.end, this.prefix);
 }

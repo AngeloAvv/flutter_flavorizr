@@ -35,23 +35,35 @@
 ///
 /// is not a block the region would be in, and neither is a call that shares its
 /// line with other code, or that is followed by a comment that goes on past
-/// its line, which the region would end up in. flavorizr does not guess:
-/// nothing is written.
+/// its line, which the region would end up in. It is also thrown when what the
+/// region would assign to cannot be assigned, or when there is more than one
+/// statement for it to follow. flavorizr does not guess: nothing is written.
 class UnsafeTitleSetterException implements Exception {
   /// The statement, as the file has it.
   final String statement;
 
-  /// Creates the exception for [statement].
-  UnsafeTitleSetterException(this.statement);
+  /// Why flavorizr cannot go on, ending in a period.
+  final String reason;
+
+  /// What the user can do about it.
+  final String fix;
+
+  /// Creates the exception for [statement]. Without a [reason] and a [fix], it
+  /// is about a statement that a region cannot follow.
+  UnsafeTitleSetterException(
+    this.statement, {
+    this.reason =
+        'flavorizr adds its code on the line after the statement, and here '
+        'that would not be the same as being the statement.',
+    this.fix =
+        'Make the statement one of its own: put it between braces ({ ... }) '
+        'if an `if`, `else`, `for`, `while`, `do`, `case` or label comes '
+        'before it, give it a line of its own, and close any comment after it '
+        'on that line.',
+  });
 
   @override
   String toString() =>
       'Cannot flavor `${statement.replaceAll(RegExp(r'\s+'), ' ')}` in '
-      'linux/runner/my_application.cc: flavorizr adds its code on the line '
-      'after the statement, and here that would not be the same as being '
-      'the statement.\n'
-      'Make the statement one of its own: put it between braces ({ ... }) if '
-      'an `if`, `else`, `for`, `while`, `do`, `case` or label comes before it, '
-      'give it a line of its own, and close any comment after it on that line. '
-      'Then run flavorizr again.';
+      'linux/runner/my_application.cc: $reason\n$fix Then run flavorizr again.';
 }
