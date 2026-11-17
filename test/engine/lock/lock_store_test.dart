@@ -90,6 +90,53 @@ void main() {
       expect(second, first);
     });
 
+    group('stage', () {
+      test('writes nothing to the lock until it is committed', () async {
+        final staged = await store.stage(sample());
+
+        expect(await store.read(), isNull);
+
+        await staged.commit();
+
+        expect(await store.read(), sample());
+        expect(project.listSync().map((e) => p.basename(e.path)), [
+          'flavorizr.lock',
+        ]);
+      });
+
+      test('fails now when the lock cannot be written', () async {
+        Directory(p.join(project.path, 'flavorizr.lock.tmp')).createSync();
+
+        await expectLater(
+          store.stage(sample()),
+          throwsA(isA<FileSystemException>()),
+        );
+      });
+
+      test('can be discarded, leaving the previous lock and no file', () async {
+        await store.write(FlavorizrLock(flavorizrVersion: '3.0.0'));
+
+        final staged = await store.stage(sample());
+        await staged.discard();
+
+        expect(await store.read(), FlavorizrLock(flavorizrVersion: '3.0.0'));
+        expect(project.listSync().map((e) => p.basename(e.path)), [
+          'flavorizr.lock',
+        ]);
+      });
+
+      test('a commit that fails leaves no file behind either', () async {
+        Directory(p.join(project.path, 'flavorizr.lock')).createSync();
+        final staged = await store.stage(sample());
+
+        await expectLater(staged.commit(), throwsA(isA<FileSystemException>()));
+
+        expect(project.listSync().map((e) => p.basename(e.path)), [
+          'flavorizr.lock',
+        ]);
+      });
+    });
+
     test('replaces a previous lock and leaves nothing else behind', () async {
       await store.write(sample());
       await store.write(FlavorizrLock(flavorizrVersion: '3.0.0'));

@@ -61,7 +61,8 @@ final class RunPlan {
 /// Resolves what to run for [targets].
 ///
 /// A target is the name of a recipe or the id of a processor. Without targets,
-/// the `instructions` of the configuration are run when it has any, as in 2.x,
+/// the `instructions` of the configuration are run when it has any, as in 2.x
+/// (an empty list runs nothing),
 /// otherwise its default recipe: `default` when the configuration defines it,
 /// `all` if not. The recipes of the platforms with no flavors are left out, with
 /// a message.
@@ -83,59 +84,33 @@ RunPlan resolveRunPlan({
     recipes: config.recipes ?? const {},
     defaultRecipe: config.defaultRecipe,
   );
-  final resolution = catalog.resolve(
-    targets.isNotEmpty ? targets : config.instructions ?? const [],
-    platformsWithoutFlavors: {
-      if (!config.androidFlavorsAvailable) 'android',
-      if (!config.iosFlavorsAvailable) 'ios',
-      if (!config.macosFlavorsAvailable) 'macos',
-      if (!config.linuxFlavorsAvailable) 'linux',
-      if (!config.windowsFlavorsAvailable) 'windows',
-    },
-  );
+  final instructions = targets.isNotEmpty ? targets : config.instructions;
+  // `instructions: []` is a choice, which 2.x honored by running nothing: it is
+  // not the absence of one, which the catalog answers with its default recipe.
+  final resolution = instructions != null && instructions.isEmpty
+      ? const RecipeResolution([])
+      : catalog.resolve(
+          instructions ?? const [],
+          platformsWithoutFlavors: {
+            if (!config.androidFlavorsAvailable) 'android',
+            if (!config.iosFlavorsAvailable) 'ios',
+            if (!config.macosFlavorsAvailable) 'macos',
+            if (!config.linuxFlavorsAvailable) 'linux',
+            if (!config.windowsFlavorsAvailable) 'windows',
+          },
+        );
   final engine = resolveExecutionPlan(
     registry.engineProcessors.values,
     requested: resolution.processorIds.where(registry.isEngine),
   );
-  final dummyAssetsConfig =
-      engine.steps.any((step) => step.processor.id == _androidIcons)
-      ? _withoutIconFlavors(config)
-      : config;
 
   return RunPlan(
     messages: resolution.messages,
     engine: engine,
     legacy: [
       for (final id in resolution.processorIds)
-        if (!registry.isEngine(id))
-          LegacyStep(
-            id,
-            id == _androidDummyAssets ? dummyAssetsConfig : config,
-          ),
+        if (!registry.isEngine(id)) LegacyStep(id, config),
     ],
     paths: registry.pathsOf(engine.steps.map((step) => step.processor)),
   );
 }
-
-const _androidIcons = 'android:icons';
-const _androidDummyAssets = 'android:dummyAssets';
-
-/// [config] without the flavors that have a PNG icon.
-///
-/// In 2.x the icons of `android:icons` were copied over the placeholders of
-/// `android:dummyAssets`, so a flavor with an icon ended up with its icon. The
-/// engine runs first and a file it wrote cannot be overwritten by a processor
-/// that runs later, so the placeholders are simply not made for those flavors:
-/// the result is the same, and a placeholder never has to be told from a file
-/// of the user.
-Flavorizr _withoutIconFlavors(Flavorizr config) => Flavorizr(
-  app: config.app,
-  flavors: {
-    for (final entry in config.flavors.entries)
-      if ((entry.value.android?.icon ?? entry.value.app.icon) == null)
-        entry.key: entry.value,
-  },
-  instructions: config.instructions,
-  assetsUrl: config.assetsUrl,
-  ide: config.ide,
-);

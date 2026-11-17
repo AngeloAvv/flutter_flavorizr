@@ -107,6 +107,29 @@ recipes:
       expect(project.logger.output, contains('android:icons [engine]'));
     });
 
+    test('works when pubspec.yaml has no flavorizr section', () async {
+      File(project.abs('flavorizr.yaml')).deleteSync();
+      project.write('pubspec.yaml', 'name: app\n');
+
+      expect(await project.run(['list']), ExitCodes.ok);
+    });
+
+    test('is 65 when flavorizr.yaml cannot be read, and says why', () async {
+      project.write('flavorizr.yaml', 'flavors: [');
+
+      final code = await project.run(['list']);
+
+      expect(code, ExitCodes.data);
+      expect(project.logger.errors, isNotEmpty);
+      expect(project.logger.output, isNot(contains('android:icons [engine]')));
+    });
+
+    test('is 65 when flavorizr.yaml has no flavors', () async {
+      project.write('flavorizr.yaml', 'recipes:\n  ci: [android]\n');
+
+      expect(await project.run(['list']), ExitCodes.data);
+    });
+
     test('is 65 when a recipe of flavorizr.yaml is not valid', () async {
       project.write(
         'flavorizr.yaml',

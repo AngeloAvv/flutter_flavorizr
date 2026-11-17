@@ -53,7 +53,15 @@ abstract interface class LegacyPipeline {
   void check(Iterable<LegacyStep> steps);
 
   /// Runs [steps] in order. The first one that throws aborts the run.
-  Future<void> run(Iterable<LegacyStep> steps, {required Logger logger});
+  ///
+  /// [preserve] are paths of the project, relative to it, that the engine
+  /// generated: whatever a step does to them is undone, so that a 2.x processor
+  /// never overwrites what the engine owns.
+  Future<void> run(
+    Iterable<LegacyStep> steps, {
+    required Logger logger,
+    Set<String> preserve = const {},
+  });
 }
 
 /// The pipeline of the 2.x processors.
@@ -69,8 +77,9 @@ class StandardLegacyPipeline implements LegacyPipeline {
   void check(Iterable<LegacyStep> steps) {
     if (steps.isEmpty) return;
 
-    if (p.canonicalize(Directory.current.path) !=
-        p.canonicalize(projectRoot.path)) {
+    // The same folder may be reached through links, such as /tmp on macOS.
+    if (Directory.current.resolveSymbolicLinksSync() !=
+        projectRoot.resolveSymbolicLinksSync()) {
       throw StateError(
         'The 2.x processors work on the current directory: run flavorizr from '
         'the root of the project.',
@@ -79,15 +88,34 @@ class StandardLegacyPipeline implements LegacyPipeline {
   }
 
   @override
-  Future<void> run(Iterable<LegacyStep> steps, {required Logger logger}) async {
+  Future<void> run(
+    Iterable<LegacyStep> steps, {
+    required Logger logger,
+    Set<String> preserve = const {},
+  }) async {
     check(steps);
 
     for (final step in steps) {
-      await Processor(
-        step.config,
-        force: true,
-        logger: logger,
-      ).executeInstruction(step.id);
+      // A step may copy a whole folder over files of the engine, such as the
+      // placeholders of `android:dummyAssets` over the icons: the folder is
+      // copied as it always was, and these files are put back.
+      final kept = {
+        for (final path in preserve)
+          if (File(p.join(projectRoot.path, path)).existsSync())
+            path: File(p.join(projectRoot.path, path)).readAsBytesSync(),
+      };
+
+      try {
+        await Processor(
+          step.config,
+          force: true,
+          logger: logger,
+        ).executeInstruction(step.id);
+      } finally {
+        for (final MapEntry(:key, :value) in kept.entries) {
+          File(p.join(projectRoot.path, key)).writeAsBytesSync(value);
+        }
+      }
     }
   }
 }

@@ -30,11 +30,13 @@ import 'package:flutter_flavorizr/src/engine/conflict/conflict_policy.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
+import 'package:flutter_flavorizr/src/exception/lock_not_written_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:mason_logger/mason_logger.dart';
 
@@ -86,6 +88,10 @@ final class EngineRun {
   /// Whether the changes were written to the project, and the lock with them.
   final bool applied;
 
+  /// The files of the project that the processors generate whole, which is to
+  /// say that nothing else may write to them. Empty unless the run was applied.
+  final Set<String> generated;
+
   /// Whether the run was stopped because [approve] said no.
   final bool cancelled;
 
@@ -94,6 +100,7 @@ final class EngineRun {
     required this.report,
     this.preview,
     this.applied = false,
+    this.generated = const {},
     this.cancelled = false,
   });
 }
@@ -125,6 +132,7 @@ Future<EngineRun> runEngine(
   EnginePreview? preview;
   var applied = false;
   var cancelled = false;
+  var generated = <String>{};
 
   final report = await PlanExecutor(logger: logger).execute(
     plan.engine,
@@ -186,15 +194,33 @@ Future<EngineRun> runEngine(
         policy: policy,
         yes: yes,
       ).resolve(diff);
-      // Built before anything is written, written after everything was.
+      // Built and staged before anything is written, committed after
+      // everything was: a lock that cannot be written is found out while the
+      // project is still untouched.
       final lock = reconciliation.lockAfter(diff: diff, resolution: resolution);
+      final staged = lock == previous ? null : await store.stage(lock);
 
-      await shadow.copyBack(
-        resolution.applyTo(diff),
-        approvedConflicts: resolution.approved,
-      );
+      try {
+        await shadow.copyBack(
+          resolution.applyTo(diff),
+          approvedConflicts: resolution.approved,
+        );
+      } on Object {
+        await staged?.discard();
 
-      if (lock != previous) await store.write(lock);
+        rethrow;
+      }
+
+      try {
+        await staged?.commit();
+      } on Object catch (error) {
+        throw LockNotWrittenException(error);
+      }
+
+      generated = {
+        for (final artifact in ctx.tracked)
+          if (artifact.ownership == Ownership.managed) artifact.path,
+      };
       applied = true;
     },
   );
@@ -203,6 +229,7 @@ Future<EngineRun> runEngine(
     report: report,
     preview: preview,
     applied: applied,
+    generated: generated,
     cancelled: cancelled,
   );
 }

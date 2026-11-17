@@ -27,6 +27,7 @@ import 'package:flutter_flavorizr/src/exception/copy_back_interrupted_exception.
 import 'package:flutter_flavorizr/src/exception/dependency_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
+import 'package:flutter_flavorizr/src/exception/lock_not_written_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_lock_file_exception.dart';
 import 'package:flutter_flavorizr/src/exception/project_changed_exception.dart';
 import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
@@ -76,7 +77,9 @@ abstract final class ExitCodes {
     DependencyCycleException() ||
     MalformedLockFileException() ||
     UnsupportedLockVersionException() => data,
-    ProjectChangedException() || CopyBackInterruptedException() => software,
+    ProjectChangedException() ||
+    CopyBackInterruptedException() ||
+    LockNotWrittenException() => software,
     _ => null,
   };
 }

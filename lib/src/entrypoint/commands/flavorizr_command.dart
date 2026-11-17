@@ -26,6 +26,8 @@
 import 'package:args/command_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
+import 'package:flutter_flavorizr/src/exception/configuration_not_found_exception.dart';
+import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
@@ -50,8 +52,11 @@ class CommandFailure implements Exception {
   /// What went wrong.
   final String message;
 
+  /// What was thrown, when the failure reports it.
+  final Object? cause;
+
   /// Creates a failure.
-  const CommandFailure(this.exitCode, this.message);
+  const CommandFailure(this.exitCode, this.message, {this.cause});
 }
 
 /// What the commands have in common: the context, `--verbose`, the help that
@@ -100,6 +105,27 @@ abstract class FlavorizrCommand extends Command<int> {
     }
   }
 
+  /// The configuration of the project, or `null` when it has none: no
+  /// `flavorizr.yaml` and no `flavorizr` section in `pubspec.yaml`.
+  ///
+  /// A configuration that exists and cannot be used is not absent: it fails
+  /// like [loadConfig] does.
+  Flavorizr? loadConfigIfPresent() {
+    try {
+      return loadConfig();
+    } on CommandFailure catch (failure) {
+      final cause = failure.cause;
+      final noSection =
+          cause is MissingRequiredFieldsException &&
+          cause.fields.length == 1 &&
+          cause.fields.single == 'flavorizr';
+
+      if (cause is ConfigurationNotFoundException || noSection) return null;
+
+      rethrow;
+    }
+  }
+
   /// The configuration of the project, from `flavorizr.yaml` or from the
   /// `flavorizr` section of `pubspec.yaml`.
   ///
@@ -113,7 +139,7 @@ abstract class FlavorizrCommand extends Command<int> {
     try {
       return parser.parse();
     } on Object catch (error) {
-      throw CommandFailure(ExitCodes.data, '$error');
+      throw CommandFailure(ExitCodes.data, '$error', cause: error);
     }
   }
 }

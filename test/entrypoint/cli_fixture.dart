@@ -86,6 +86,9 @@ class FakeLegacy implements LegacyPipeline {
   /// What [check] and [run] throw, if anything.
   Object? failure;
 
+  /// The paths each run was asked to keep.
+  final List<Set<String>> preserved = [];
+
   /// What [check] throws, if anything.
   Object? checkFailure;
 
@@ -103,9 +106,14 @@ class FakeLegacy implements LegacyPipeline {
   }
 
   @override
-  Future<void> run(Iterable<LegacyStep> steps, {required Logger logger}) async {
+  Future<void> run(
+    Iterable<LegacyStep> steps, {
+    required Logger logger,
+    Set<String> preserve = const {},
+  }) async {
     if (failure case final error?) throw error;
 
+    preserved.add(preserve);
     ran.addAll(steps);
   }
 }

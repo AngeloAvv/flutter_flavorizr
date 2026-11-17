@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
@@ -89,24 +90,43 @@ class CliContext {
       CliContext(projectRoot: Directory.current, logger: logger);
 }
 
-/// Asks the `flutter` executable of the `PATH` for its version.
-Future<String?> probeFlutterVersion() async {
+/// Asks [executable], `flutter` of the `PATH` by default, for its version.
+///
+/// It is `null` when the version cannot be told: flutter is missing, fails, or
+/// has not answered after [timeout], in which case it is killed so that it does
+/// not outlive the command.
+Future<String?> probeFlutterVersion({
+  String executable = 'flutter',
+  Duration timeout = const Duration(seconds: 60),
+}) async {
+  Process? process;
+
   try {
-    final result = await Process.run('flutter', [
+    process = await Process.start(executable, [
       '--version',
       '--machine',
-    ], runInShell: Platform.isWindows).timeout(const Duration(seconds: 60));
+    ], runInShell: Platform.isWindows);
 
-    if (result.exitCode != 0) return null;
+    // Both streams are read to the end, or a chatty flutter would block on a
+    // full pipe, and a killed one would leave them open.
+    final stdout = process.stdout.transform(utf8.decoder).join();
+    final stderr = process.stderr.drain<void>();
+    final exitCode = await process.exitCode.timeout(timeout);
+
+    await stderr;
+
+    if (exitCode != 0) return null;
 
     // Flutter may print noise before the JSON document.
-    final output = '${result.stdout}';
+    final output = await stdout;
     final match = RegExp(r'"frameworkVersion"\s*:\s*"([^"]+)"').firstMatch(
       output.substring(output.contains('{') ? output.indexOf('{') : 0),
     );
 
     return match?.group(1);
   } on Object {
+    process?.kill(ProcessSignal.sigkill);
+
     return null;
   }
 }

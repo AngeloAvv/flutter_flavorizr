@@ -108,6 +108,29 @@ void main() {
     expect(plan.legacy.map((step) => step.id), ['flutter:flavors']);
   });
 
+  test('instructions that are empty run nothing, like in 2.x', () {
+    final plan = resolve('${android}instructions: []\n');
+
+    expect(plan.isEmpty, isTrue);
+    expect(plan.engine.steps, isEmpty);
+    expect(plan.legacy, isEmpty);
+  });
+
+  test('a target wins over empty instructions', () {
+    final plan = resolve('${android}instructions: []\n', ['android:icons']);
+
+    expect(engine(plan), ['android:icons']);
+  });
+
+  test('a recipe default does not win over empty instructions', () {
+    final plan = resolve(
+      '${android}instructions: []\nrecipes:\n  ci: [android:icons]\n'
+      '  default: ci\n',
+    );
+
+    expect(plan.isEmpty, isTrue);
+  });
+
   test('a target wins over the instructions', () {
     final plan = resolve('${android}instructions:\n  - flutter:flavors\n', [
       'android:icons',
@@ -173,48 +196,17 @@ flavors:
       name: Banana
     android:
       applicationId: com.example.banana
-  cherry:
-    app:
-      name: Cherry
-    android:
-      applicationId: com.example.cherry
-      adaptiveIcon:
-        foreground: assets/f.png
-        background: assets/b.png
 ''';
 
-    Iterable<String> dummyFlavors(RunPlan plan) => plan.legacy
-        .singleWhere((step) => step.id == 'android:dummyAssets')
-        .config
-        .androidFlavors
-        .keys;
-
-    test('are not made for the flavors whose icon the engine renders', () {
+    test('are made for every flavor, the ones with an icon too', () {
       final plan = resolve(icons, ['android']);
-
-      expect(dummyFlavors(plan), ['banana', 'cherry']);
-    });
-
-    test('are made for every flavor when the engine does not do the icons', () {
-      final plan = resolve(icons, [
-        'android:flavorizrGradle',
-        'android:dummyAssets',
-      ]);
-
-      expect(dummyFlavors(plan), ['apple', 'banana', 'cherry']);
-    });
-
-    test('do not change what the other instructions read', () {
-      final plan = resolve(icons, ['android', 'flutter:flavors']);
-
-      expect(
-        plan.legacy
-            .singleWhere((step) => step.id == 'flutter:flavors')
-            .config
-            .flavors
-            .keys,
-        ['apple', 'banana', 'cherry'],
+      final dummy = plan.legacy.singleWhere(
+        (step) => step.id == 'android:dummyAssets',
       );
+
+      // What the engine wrote is kept by the pipeline (see `preserve`), so the
+      // rest of what the assets hold reaches every flavor.
+      expect(dummy.config.androidFlavors.keys, ['apple', 'banana']);
     });
   });
 }

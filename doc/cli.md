@@ -53,7 +53,10 @@ place.
 `status` runs the processors on a copy of the project, like `plan`, and exits
 with `1` when any of these holds:
 
-* there is no `flavorizr.lock`;
+* there is no `flavorizr.lock`, when the selection holds processors of the
+  engine: only a run of the engine writes the lock, so a selection with none
+  (for example a project with no Android flavors, or `status flutter:flavors`)
+  has nothing to check, and says so;
 * the flavors of `flavorizr.yaml` and of the lock differ (added, removed or
   changed);
 * a file is not what `flavorizr.yaml` asks for, or is missing;
@@ -79,9 +82,12 @@ every time they meet one, and `list` shows where each processor runs. When the
 engine fails nothing else runs, and each port moves a processor from the 2.x
 pipeline to the engine without any change to how you call flavorizr.
 
-`android:dummyAssets` is the only one with a rule of its own, because 2.x
-copied the icons of `android:icons` over its placeholders: when the engine
-renders the icon of a flavor, the placeholders of that flavor are not made.
+The 2.x processors never overwrite what the engine generated: the files the
+engine writes whole (`flavorizr.gradle`, the launcher icons of `android:icons`)
+are put back if a 2.x processor changes them. That is how
+`android:dummyAssets`, which copies its whole folder over every flavor, keeps
+the icons of the engine, as 2.x did by running `android:icons` last, and still
+brings the rest of what the assets hold.
 
 Known limits of the mix, which go away as processors are ported:
 

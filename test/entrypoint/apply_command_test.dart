@@ -208,6 +208,46 @@ void main() {
       });
     });
 
+    test('with `instructions: []` and no target runs nothing', () async {
+      project.write(
+        'flavorizr.yaml',
+        CliFixture.config(['apple'], extra: 'instructions: []\n'),
+      );
+      final before = project.snapshot();
+
+      final code = await project.run(['apply', '--yes']);
+
+      expect(code, ExitCodes.ok);
+      expect(project.snapshot(), before);
+      expect(project.legacy.ran, isEmpty);
+      expect(project.logger.output, contains('nothing to run'));
+    });
+
+    group('the lock', () {
+      test('that cannot be staged stops the run before it writes', () async {
+        Directory(project.abs('flavorizr.lock.tmp')).createSync();
+        final before = project.snapshot();
+
+        final code = await project.run(['apply', '--yes', ...engine]);
+
+        expect(code, ExitCodes.software);
+        expect(project.snapshot(), before);
+        expect(project.exists('android/app/flavorizr.gradle'), isFalse);
+      });
+
+      test('that cannot be replaced is a partial application', () async {
+        Directory(project.abs('flavorizr.lock')).createSync();
+
+        final code = await project.run(['apply', '--yes', ...engine]);
+
+        expect(code, ExitCodes.software);
+        expect(project.exists('android/app/flavorizr.gradle'), isTrue);
+        expect(project.logger.errors.join(), contains('already written'));
+        expect(project.logger.errors.join(), contains('flavorizr.lock'));
+        expect(project.exists('flavorizr.lock.tmp'), isFalse);
+      });
+    });
+
     group('exit codes', () {
       test('an unknown target is a usage error, with a suggestion', () async {
         final code = await project.run(['apply', 'andriod']);
@@ -284,6 +324,14 @@ void main() {
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
         expect(project.legacy.ids, ['flutter:flavors', 'ide:config']);
+      });
+
+      test('are asked to keep the files the engine generated', () async {
+        await project.run(['apply', '--yes', ...engine, 'flutter:flavors']);
+
+        expect(project.legacy.preserved.single, {
+          'android/app/flavorizr.gradle',
+        });
       });
 
       test('are named in the plan, with what that means', () async {

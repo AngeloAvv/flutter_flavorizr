@@ -90,6 +90,17 @@ class StatusCommand extends TargetCommand {
       );
     }
 
+    if (drift.isEmpty && plan.engine.steps.isEmpty) {
+      // Without processors of the engine there is no lock to be in sync with,
+      // since only a run of the engine writes it.
+      logger.info(
+        'Nothing to check: no processor of the engine is selected, and the '
+        'others cannot be checked.',
+      );
+
+      return ExitCodes.ok;
+    }
+
     if (drift.isEmpty) {
       logger.success(
         plan.legacy.isEmpty

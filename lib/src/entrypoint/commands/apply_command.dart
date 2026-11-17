@@ -90,6 +90,8 @@ class ApplyCommand extends TargetCommand {
     // Before anything is written: the engine goes first.
     context.legacy.check(plan.legacy);
 
+    var generated = const <String>{};
+
     if (plan.engine.steps.isNotEmpty) {
       final run = await runEngine(
         context,
@@ -106,12 +108,18 @@ class ApplyCommand extends TargetCommand {
 
       if (!run.report.succeeded) return run.report.exitCode;
       if (run.cancelled) return _cancelled();
+
+      generated = run.generated;
     } else if (!await _confirm()) {
       return _cancelled();
     }
 
     try {
-      await context.legacy.run(plan.legacy, logger: logger);
+      await context.legacy.run(
+        plan.legacy,
+        logger: logger,
+        preserve: generated,
+      );
     } on Object {
       if (plan.engine.steps.isNotEmpty) {
         logger.warn(

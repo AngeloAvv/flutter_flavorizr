@@ -27,7 +27,6 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 
 /// `flavorizr list`: the recipes and the processors, with what each one needs.
 class ListCommand extends FlavorizrCommand {
@@ -44,8 +43,9 @@ class ListCommand extends FlavorizrCommand {
 
   @override
   Future<int> execute() async {
-    // A project without configuration still has processors to list.
-    final config = _tryLoadConfig();
+    // A project without configuration still has processors to list, one whose
+    // configuration is broken has not.
+    final config = loadConfigIfPresent();
     final registry = context.registry;
     final catalog = RecipeCatalog(
       processorIds: registry.ids,
@@ -89,12 +89,4 @@ class ListCommand extends FlavorizrCommand {
 
   String _describe(String id) =>
       '$id${context.registry.isEngine(id) ? '' : ' (legacy)'}';
-
-  Flavorizr? _tryLoadConfig() {
-    try {
-      return loadConfig();
-    } on CommandFailure {
-      return null;
-    }
-  }
 }
