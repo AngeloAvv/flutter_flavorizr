@@ -1,0 +1,448 @@
+/*
+ * Copyright (c) 2026 Angelo Cassano
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+import 'dart:io';
+
+import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../../entrypoint/cli_fixture.dart';
+
+const _iosProject = 'ios/Runner.xcodeproj';
+const _macosProject = 'macos/Runner.xcodeproj';
+const _iosPbxproj = '$_iosProject/project.pbxproj';
+const _macosPbxproj = '$_macosProject/project.pbxproj';
+
+/// The processors of this slice, with the Flutter one, which makes the run a
+/// full one of what a project with no Android, Linux or Windows flavors has.
+const _targets = [
+  'flutter:flavors',
+  'ios:xcconfig',
+  'macos:xcconfig',
+  'macos:configs',
+];
+
+String _config(Iterable<String> flavors, {String ios = ''}) =>
+    'flavors:\n${[for (final flavor in flavors) '''
+  "$flavor":
+    app:
+      name: "${flavor[0].toUpperCase()}${flavor.substring(1)} App"
+    ios:
+      bundleId: "com.example.$flavor"
+$ios    macos:
+      bundleId: "com.example.$flavor"
+'''].join()}';
+
+/// What 2.x wrote in `ios/Flutter/<flavor><Target>.xcconfig`.
+String _iosText(String flavor, String mode, String pods) =>
+    '''
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.$pods.xcconfig"
+#include "Generated.xcconfig"
+
+ASSET_PREFIX=$flavor
+BUNDLE_NAME=${flavor[0].toUpperCase()}${flavor.substring(1)} App
+BUNDLE_DISPLAY_NAME=${flavor[0].toUpperCase()}${flavor.substring(1)} App
+''';
+
+/// The xcconfig files that any Resources phase of [project] holds.
+List<String> _xcconfigResources(XcodeProject project) => [
+  for (final target in project.targets.whereType<PBXNativeTarget>())
+    for (final phase in target.buildPhases.whereType<PBXResourcesBuildPhase>())
+      for (final file in phase.files.map((file) => file.fileRef))
+        if (file is PBXFileReference && file.path!.endsWith('.xcconfig'))
+          file.path!,
+];
+
+void main() {
+  late CliFixture project;
+
+  Future<int> apply([List<String> extra = const []]) =>
+      project.run(['apply', '--yes', ...extra, ..._targets]);
+
+  Future<XcodeProject> open(String bundle) =>
+      XcodeProject.open(project.abs(bundle));
+
+  setUp(() {
+    project = CliFixture(android: false);
+    project.write('flavorizr.yaml', _config(['citrus', 'dates']));
+    for (final platform in ['ios', 'macos']) {
+      project.write(
+        '$platform/Runner.xcodeproj/project.pbxproj',
+        File(
+          'example/$platform/Runner.xcodeproj/project.pbxproj',
+        ).readAsStringSync(),
+      );
+    }
+  });
+  tearDown(() => project.dispose());
+
+  group('apply', () {
+    test('writes the flavor xcconfigs of iOS as text, with the Pods one '
+        'optional', () async {
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(
+        project.read('ios/Flutter/citrusDebug.xcconfig'),
+        '#include? "Pods/Target Support Files/Pods-Runner/'
+        'Pods-Runner.debug.xcconfig"\n'
+        '#include "Generated.xcconfig"\n'
+        '\n'
+        'ASSET_PREFIX=citrus\n'
+        'BUNDLE_NAME=Citrus App\n'
+        'BUNDLE_DISPLAY_NAME=Citrus App\n',
+      );
+      for (final flavor in ['citrus', 'dates']) {
+        for (final target in ['Debug', 'Profile', 'Release']) {
+          expect(
+            project.read('ios/Flutter/$flavor$target.xcconfig'),
+            startsWith('#include? "Pods/'),
+            reason: '$flavor$target',
+          );
+        }
+      }
+    });
+
+    test('keeps what the xcconfig of a flavor says, as text', () async {
+      project.write(
+        'flavorizr.yaml',
+        _config(
+          ['citrus'],
+          ios: '''
+      variables:
+        API_URL:
+          value: "https://citrus.example.com"
+        DEBUG_ONLY:
+          target: debug
+          value: "1"
+''',
+        ),
+      );
+
+      await apply();
+
+      expect(
+        project.read('ios/Flutter/citrusDebug.xcconfig'),
+        endsWith(
+          'BUNDLE_DISPLAY_NAME=Citrus App\n'
+          'API_URL=https://citrus.example.com\n'
+          'DEBUG_ONLY=1\n',
+        ),
+      );
+      expect(
+        project.read('ios/Flutter/citrusRelease.xcconfig'),
+        isNot(contains('DEBUG_ONLY')),
+      );
+    });
+
+    test('writes the flavor xcconfigs of macOS, in Flutter and in '
+        'Runner/Configs', () async {
+      await apply();
+
+      expect(
+        project.read('macos/Flutter/citrusProfile.xcconfig'),
+        '#include? "Pods/Target Support Files/Pods-Runner/'
+        'Pods-Runner.release.xcconfig"\n'
+        '#include "ephemeral/Flutter-Generated.xcconfig"\n',
+      );
+      expect(
+        project.read('macos/Runner/Configs/citrusProfile.xcconfig'),
+        '#include "../../Flutter/citrusProfile.xcconfig"\n'
+        '#include "Warnings.xcconfig"\n'
+        '\n'
+        'ASSET_PREFIX=citrus\n'
+        'BUNDLE_NAME=Citrus App\n'
+        'BUNDLE_DISPLAY_NAME=Citrus App\n',
+      );
+    });
+
+    test(
+      'references them in the projects, and in no Resources phase',
+      () async {
+        await apply();
+
+        final ios = await open(_iosProject);
+        final macos = await open(_macosProject);
+        final references = {
+          'Flutter/citrusDebug.xcconfig': ios,
+          'Flutter/datesRelease.xcconfig': ios,
+          'Runner/Configs/citrusDebug.xcconfig': macos,
+          'Runner/Configs/datesProfile.xcconfig': macos,
+        };
+
+        for (final MapEntry(key: path, value: xcodeproj)
+            in references.entries) {
+          final reference = xcodeproj.files.firstWhere(
+            (file) => file.path == path,
+          );
+
+          expect(reference.lastKnownFileType, 'text.xcconfig', reason: path);
+          expect(_xcconfigResources(xcodeproj), isNot(contains(path)));
+        }
+        for (final pbxproj in [_iosPbxproj, _macosPbxproj]) {
+          expect(
+            project.read(pbxproj),
+            isNot(matches(RegExp(r'(citrus|dates)\w*\.xcconfig in Resources'))),
+          );
+        }
+      },
+    );
+
+    test('records them as managed, the projects as patched', () async {
+      await apply();
+
+      final lock = (await LockStore(
+        project.root,
+        runningVersion: '3.0.0',
+      ).read())!;
+
+      expect(
+        lock.processors['ios:xcconfig']!.files.map(
+          (path, file) => MapEntry(path, file.ownership),
+        ),
+        {
+          for (final flavor in ['citrus', 'dates'])
+            for (final target in ['Debug', 'Profile', 'Release'])
+              'ios/Flutter/$flavor$target.xcconfig': Ownership.managed,
+          _iosPbxproj: Ownership.patched,
+        },
+      );
+      expect(
+        lock.processors['macos:configs']!.files.keys,
+        contains(_macosPbxproj),
+      );
+      expect(
+        lock.processors['macos:xcconfig']!.files.keys,
+        isNot(contains(_macosPbxproj)),
+      );
+      // The run covered everything that applies to the project: the platforms
+      // with no flavors (Android, Linux, Windows) are not waited for.
+      expect(lock.flavorNames, {'citrus', 'dates'});
+    });
+
+    test('leaves the rest to the 2.x pipeline: nothing of this slice is '
+        'handed to it', () async {
+      await apply();
+
+      expect(project.legacy.ran, isEmpty);
+    });
+
+    test('is a no-op the second time: nothing changes, the projects are not '
+        'written', () async {
+      await apply();
+      final before = project.snapshot();
+      final modified = File(project.abs(_iosPbxproj)).lastModifiedSync();
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.snapshot(), before);
+      expect(File(project.abs(_iosPbxproj)).lastModifiedSync(), modified);
+    });
+
+    test('does not mind a change of the project that is not theirs, as the '
+        '2.x processors that run after the engine make', () async {
+      await apply();
+      for (final pbxproj in [_iosPbxproj, _macosPbxproj]) {
+        project.write(
+          pbxproj,
+          project
+              .read(pbxproj)
+              .replaceFirst(
+                RegExp(r'LastUpgradeCheck = \d+;'),
+                'LastUpgradeCheck = 9999;',
+              ),
+        );
+      }
+      final before = project.snapshot();
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.snapshot(), before);
+    });
+
+    test(
+      'reports a hand edit of an xcconfig as a conflict, and keeps it',
+      () async {
+        await apply();
+        project.write('ios/Flutter/citrusDebug.xcconfig', '// mine\n');
+
+        final code = await apply();
+
+        expect(code, ExitCodes.attention, reason: project.logger.output);
+        expect(project.read('ios/Flutter/citrusDebug.xcconfig'), '// mine\n');
+      },
+    );
+
+    test('writes nothing in a dry run', () async {
+      final before = project.snapshot();
+
+      final code = await project.run(['plan', ..._targets]);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.snapshot(), before);
+    });
+
+    test('removes the xcconfigs of a flavor that was dropped, and only '
+        'those', () async {
+      await apply();
+
+      project.write('flavorizr.yaml', _config(['citrus']));
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      for (final path in [
+        'ios/Flutter/datesDebug.xcconfig',
+        'macos/Flutter/datesRelease.xcconfig',
+        'macos/Runner/Configs/datesProfile.xcconfig',
+      ]) {
+        expect(project.exists(path), isFalse, reason: path);
+      }
+      for (final path in [
+        'ios/Flutter/citrusDebug.xcconfig',
+        'macos/Flutter/citrusRelease.xcconfig',
+        'macos/Runner/Configs/citrusProfile.xcconfig',
+      ]) {
+        expect(project.exists(path), isTrue, reason: path);
+      }
+
+      final lock = (await LockStore(
+        project.root,
+        runningVersion: '3.0.0',
+      ).read())!;
+      expect(
+        lock.processors.values.expand((p) => p.files.keys),
+        everyElement(isNot(contains('dates'))),
+      );
+    });
+
+    test('keeps what an xcconfig of the user has in the same folder', () async {
+      project.write('ios/Flutter/Mine.xcconfig', '// mine\n');
+
+      await apply();
+      project.write('flavorizr.yaml', _config(['citrus']));
+      await apply();
+
+      expect(project.read('ios/Flutter/Mine.xcconfig'), '// mine\n');
+    });
+  });
+
+  group('apply on a project 2.x flavorized', () {
+    setUp(() {
+      project.write('flavorizr.yaml', _config(['apple', 'banana']));
+      // What 2.x wrote.
+      for (final flavor in ['apple', 'banana']) {
+        project.write(
+          'ios/Flutter/${flavor}Debug.xcconfig',
+          _iosText(flavor, 'Debug', 'debug'),
+        );
+        project.write(
+          'ios/Flutter/${flavor}Profile.xcconfig',
+          _iosText(flavor, 'Profile', 'release'),
+        );
+        project.write(
+          'ios/Flutter/${flavor}Release.xcconfig',
+          _iosText(flavor, 'Release', 'release'),
+        );
+      }
+    });
+
+    test('takes the xcconfigs out of the Resources phase, which is where 2.x '
+        'put them', () async {
+      expect(
+        _xcconfigResources(await open(_iosProject)),
+        hasLength(6),
+        reason: 'the fixture is a project 2.x flavorized',
+      );
+      expect(_xcconfigResources(await open(_macosProject)), hasLength(6));
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(_xcconfigResources(await open(_iosProject)), isEmpty);
+      expect(_xcconfigResources(await open(_macosProject)), isEmpty);
+      expect(
+        project.read(_iosPbxproj),
+        isNot(contains('xcconfig in Resources')),
+      );
+      expect(
+        project.read(_macosPbxproj),
+        isNot(contains('xcconfig in Resources')),
+      );
+    });
+
+    test('is done after one more run, which changes nothing', () async {
+      await apply();
+      final before = project.snapshot();
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.snapshot(), before);
+    });
+  });
+
+  group('a flavor that is not a name for a file', () {
+    for (final name in ['a/b', '..']) {
+      test('`$name` fails the run, which writes nothing', () async {
+        project.write('flavorizr.yaml', _config([name]));
+        final before = project.snapshot();
+
+        final code = await apply();
+
+        expect(code, ExitCodes.software, reason: project.logger.output);
+        expect(project.logger.output, contains('as the name of a file'));
+        expect(project.snapshot(), before);
+      });
+    }
+  });
+
+  group('macos:xcconfig', () {
+    test('needs no Xcode project: it only writes text', () async {
+      File(project.abs(_macosPbxproj)).deleteSync();
+
+      final code = await project.run(['apply', '--yes', 'macos:xcconfig']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('macos/Flutter/citrusDebug.xcconfig'), isTrue);
+    });
+  });
+
+  group('ios:xcconfig', () {
+    test('fails, writing nothing, when there is no Xcode project', () async {
+      File(project.abs(_iosPbxproj)).deleteSync();
+      final before = project.snapshot();
+
+      final code = await project.run(['apply', '--yes', 'ios:xcconfig']);
+
+      expect(code, isNot(ExitCodes.ok));
+      expect(project.snapshot(), before);
+    });
+  });
+}

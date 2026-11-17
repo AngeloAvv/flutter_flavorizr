@@ -175,7 +175,7 @@ Future<EngineRun> runEngine(
               ),
         },
         desiredFlavors: config.flavorFingerprints,
-        availableProcessors: registry.fullRunIds,
+        availableProcessors: engineIdsFor(registry, config),
         flavorizrVersion: context.version,
         hasher: registry.hash,
       );

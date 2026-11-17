@@ -65,6 +65,26 @@ cannot hide a real change in a `project.pbxproj`:
   reason: dart_xcodeproj 0.4.0 annotates as Ruby's xcodeproj does (#513)
 ```
 
+Two more options say what else a `project.pbxproj` may differ in. Both are
+regular expressions, and the file is covered only if it is identical to the
+golden once they are applied (and, with `only-comments`, once the annotations
+are stripped):
+
+* `drop-from-golden` removes the lines of the golden that match, and names its
+  UUIDs again, since the normalizer names a build file after its place in the
+  list it is in and taking one out renames the ones after it. It is what the new
+  output no longer has.
+* `ignore` removes what matches from both files. It is what the new output has
+  more of, in the lines it shares with the golden.
+
+```yaml
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  drop-from-golden: '\.xcconfig in Resources'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; '
+  reason: the xcconfigs are not resources, and have a type (#518)
+```
+
 ## Tests
 
 The unit tests run with `flutter test`. The end-to-end one, which flavorizes

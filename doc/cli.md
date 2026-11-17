@@ -164,16 +164,35 @@ change like any other (`plan` takes the flag too, to show it without applying).
 > and so are an edited `app.dart` or page. `--yes` skips the confirmation. Use
 > it on a fresh project, or commit first.
 
+## The xcconfig files of the flavors
+
+`ios:xcconfig`, `macos:xcconfig` and `macos:configs` write one `.xcconfig` for
+each flavor and mode (`debug`, `profile`, `release`): `ios/Flutter`,
+`macos/Flutter` and `macos/Runner/Configs`. They are generated files that
+flavorizr owns, written as text, so `#include?` of the Pods xcconfig stays
+optional (it does not exist until `pod install` ran), and a file you edit by
+hand is reported as a conflict. The files of a flavor you remove from
+`flavorizr.yaml` are deleted.
+
+`ios:xcconfig` and `macos:configs` also add a reference to each file to
+`Runner.xcodeproj`, where `ios:buildTargets` and `macos:buildTargets` use it as
+the base configuration of the flavor. The files are **not** added to the
+Resources build phase, which 2.x did and copied them into the app bundle: a
+run takes the ones 2.x added out of it. The references of a flavor you remove
+stay in the project, as the build configurations of the flavor do, until the 2.x
+processors that own those are ported.
+
 ## Processors that are not on the engine yet
 
 The engine runs the processors that were ported to it, which today are the
 Android ones (`android:androidManifest`, `android:flavorizrGradle`,
-`android:buildGradle` and `android:icons`) and the Flutter ones
-(`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`). For
-these a run is previewed, checked against the lock, written atomically and
-recorded in `flavorizr.lock`.
+`android:buildGradle` and `android:icons`), the Flutter ones
+(`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`) and the
+xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
+`macos:configs`). For these a run is previewed, checked against the lock,
+written atomically and recorded in `flavorizr.lock`.
 
-Every other instruction (`ios:*`, `macos:*`, `linux:*`,
+Every other instruction (the other `ios:*` and `macos:*`, `linux:*`,
 `windows:*`, `google:firebase`, `huawei:agconnect`, `ide:config`,
 `android:dummyAssets` and the `assets:*` ones) still is a 2.x processor. They
 are not dropped: `apply` runs them with the 2.x pipeline, **after** the engine,

@@ -29,6 +29,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../tool/parity/src/differ.dart';
+import '../../tool/parity/src/pbxproj_normalizer.dart';
 
 void main() {
   late Directory golden;
@@ -221,6 +222,160 @@ void main() {
 
     test('does not hide a removed file', () {
       write(golden, pbxproj, 'a = B;\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+  });
+
+  group('a whitelist entry that drops lines of the golden', () {
+    const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+    final whitelist = Whitelist.parse('''
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  drop-from-golden: '\\.xcconfig in Resources'
+  ignore: 'lastKnownFileType = text\\.xcconfig; '
+  reason: the xcconfigs are not resources
+''');
+
+    /// A project with a reference to each of [files], in a group, and a build
+    /// file in the Resources phase for each of [resources].
+    ///
+    /// The UUIDs are the ones of the normalizer, which names a build file after
+    /// its place in the phase: taking one out renames the ones after it.
+    String project(
+      List<String> files, {
+      required List<String> resources,
+      String type = '',
+    }) {
+      String id(String name) =>
+          'F${files.indexOf(name).toString().padLeft(23, '0')}';
+      String buildFile(String name) =>
+          'B${files.indexOf(name).toString().padLeft(23, '0')}';
+
+      return normalizePbxproj(
+        '// !\$*UTF8*\$!\n'
+        '{\n'
+        '\tobjects = {\n'
+        '\n'
+        '/* Begin PBXBuildFile section */\n'
+        '${resources.map((name) => '\t\t${buildFile(name)} /* $name in Resources */ = '
+            '{isa = PBXBuildFile; fileRef = ${id(name)} /* $name */; };\n').join()}'
+        '/* End PBXBuildFile section */\n'
+        '\n'
+        '/* Begin PBXFileReference section */\n'
+        '${files.map((name) => '\t\t${id(name)} /* $name */ = '
+            '{isa = PBXFileReference; includeInIndex = 1; '
+            '${name.endsWith('.xcconfig') ? type : ''}'
+            'path = $name; sourceTree = "<group>"; };\n').join()}'
+        '/* End PBXFileReference section */\n'
+        '\n'
+        '/* Begin PBXGroup section */\n'
+        '\t\tAAAAAAAAAAAAAAAAAAAAAAA1 /* Group */ = {\n'
+        '\t\t\tisa = PBXGroup;\n'
+        '\t\t\tchildren = (\n'
+        '${files.map((name) => '\t\t\t\t${id(name)} /* $name */,\n').join()}'
+        '\t\t\t);\n'
+        '\t\t};\n'
+        '/* End PBXGroup section */\n'
+        '\n'
+        '/* Begin PBXNativeTarget section */\n'
+        '\t\tBBBBBBBBBBBBBBBBBBBBBBBB /* Runner */ = {\n'
+        '\t\t\tisa = PBXNativeTarget;\n'
+        '\t\t\tbuildPhases = (\n'
+        '\t\t\t\tCCCCCCCCCCCCCCCCCCCCCCCC /* Resources */,\n'
+        '\t\t\t);\n'
+        '\t\t};\n'
+        '/* End PBXNativeTarget section */\n'
+        '\n'
+        '/* Begin PBXProject section */\n'
+        '\t\tAAAAAAAAAAAAAAAAAAAAAAAA /* Project object */ = {\n'
+        '\t\t\tisa = PBXProject;\n'
+        '\t\t\tmainGroup = AAAAAAAAAAAAAAAAAAAAAAA1 /* Group */;\n'
+        '\t\t\ttargets = (\n'
+        '\t\t\t\tBBBBBBBBBBBBBBBBBBBBBBBB /* Runner */,\n'
+        '\t\t\t);\n'
+        '\t\t};\n'
+        '/* End PBXProject section */\n'
+        '\n'
+        '/* Begin PBXResourcesBuildPhase section */\n'
+        '\t\tCCCCCCCCCCCCCCCCCCCCCCCC /* Resources */ = {\n'
+        '\t\t\tisa = PBXResourcesBuildPhase;\n'
+        '\t\t\tfiles = (\n'
+        '${resources.map((name) => '\t\t\t\t${buildFile(name)} /* $name in Resources */,\n').join()}'
+        '\t\t\t);\n'
+        '\t\t};\n'
+        '/* End PBXResourcesBuildPhase section */\n'
+        '\t};\n'
+        '\trootObject = AAAAAAAAAAAAAAAAAAAAAAAA /* Project object */;\n'
+        '}\n',
+      );
+    }
+
+    const files = ['a.xcconfig', 'b.xcconfig', 'Info.storyboard'];
+
+    test('tolerates the entries it dropped, though the ones after them are '
+        'named again', () {
+      write(golden, pbxproj, project(files, resources: files));
+      write(actual, pbxproj, project(files, resources: ['Info.storyboard']));
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isTrue, reason: report.describe());
+      expect(report.differences.single.reason, isNotNull);
+    });
+
+    test('tolerates the type that the references gained', () {
+      write(golden, pbxproj, project(files, resources: files));
+      write(
+        actual,
+        pbxproj,
+        project(
+          files,
+          resources: ['Info.storyboard'],
+          type: 'lastKnownFileType = text.xcconfig; ',
+        ),
+      );
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isTrue, reason: report.describe());
+    });
+
+    test('does not hide a resource that is not an xcconfig', () {
+      write(golden, pbxproj, project(files, resources: files));
+      write(actual, pbxproj, project(files, resources: []));
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+      expect(report.differences.single.reason, isNull);
+    });
+
+    test('does not hide an xcconfig that is still a resource', () {
+      write(golden, pbxproj, project(files, resources: files));
+      write(
+        actual,
+        pbxproj,
+        project(files, resources: ['a.xcconfig', 'Info.storyboard']),
+      );
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+
+    test('does not hide any other change', () {
+      write(golden, pbxproj, project(files, resources: files));
+      write(
+        actual,
+        pbxproj,
+        project(
+          files,
+          resources: ['Info.storyboard'],
+        ).replaceFirst('path = Info.storyboard;', 'path = Other.storyboard;'),
+      );
 
       final report = compareTrees(golden, actual, whitelist: whitelist);
 
