@@ -117,6 +117,72 @@ void main() {
     });
   });
 
+  group('an observer that throws', () {
+    late Directory project;
+    late Directory previous;
+
+    String placed() => File(
+      p.join(project.path, 'android/app/src/apple/res/values/custom.xml'),
+    ).existsSync().toString();
+
+    setUp(() {
+      project = Directory.systemTemp.createTempSync('flavorizr_throwing_');
+      previous = Directory.current;
+      Directory.current = project;
+      File(p.join(project.path, '.tmp/android/res/values/custom.xml'))
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('<resources/>');
+    });
+
+    tearDown(() {
+      Directory.current = previous;
+      project.deleteSync(recursive: true);
+    });
+
+    Future<void> run(StepObserver observer) =>
+        StandardLegacyPipeline(project).run(
+          [
+            LegacyStep('android:dummyAssets', config),
+            LegacyStep('android:dummyAssets', config),
+          ],
+          logger: TestUtils.quietLogger(),
+          observer: observer,
+        );
+
+    test('does not skip the step it was told about', () async {
+      final observer = _ThrowingObserver('started');
+
+      await run(observer);
+
+      expect(placed(), 'true');
+      expect(observer.finishes, 2, reason: 'both steps ran, once each');
+    });
+
+    test('does not stop the steps that follow a step that went well', () async {
+      final observer = _ThrowingObserver('finished');
+
+      await run(observer);
+
+      expect(observer.starts, 2);
+      expect(
+        observer.failures,
+        0,
+        reason: 'a step that went well did not fail',
+      );
+    });
+
+    test('does not replace the error of the step that failed', () async {
+      await expectLater(
+        StandardLegacyPipeline(Directory.current).run(
+          [LegacyStep('nope:nope', config)],
+          logger: TestUtils.quietLogger(),
+          observer: _ThrowingObserver('failed'),
+        ),
+        throwsA(isA<UnknownProcessorException>()),
+      );
+    });
+  });
+
   group('preserve', () {
     late Directory project;
     late Directory previous;
@@ -251,5 +317,34 @@ class _ProgressCountingLogger extends Logger {
     progresses++;
 
     return super.progress(message, options: options);
+  }
+}
+
+/// An observer that throws when told about [on], as an output whose stdout was
+/// closed would, and counts what reached it.
+class _ThrowingObserver implements StepObserver {
+  final String on;
+  int starts = 0;
+  int finishes = 0;
+  int failures = 0;
+
+  _ThrowingObserver(this.on);
+
+  @override
+  void started(String id) {
+    starts++;
+    if (on == 'started') throw StateError('stdout is closed');
+  }
+
+  @override
+  void finished(String id, Duration elapsed) {
+    finishes++;
+    if (on == 'finished') throw StateError('stdout is closed');
+  }
+
+  @override
+  void failed(String id, Duration elapsed, Object error) {
+    failures++;
+    if (on == 'failed') throw StateError('stdout is closed');
   }
 }

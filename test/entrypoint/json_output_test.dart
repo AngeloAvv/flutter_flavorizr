@@ -64,6 +64,21 @@ void main() {
       (doc['changes'] as List).cast<Map<String, Object?>>();
 
   group('--json', () {
+    test(
+      'the paths of the structured fields are relative to the project',
+      () async {
+        await project.run(['plan', '--json', ...engineTargets]);
+
+        for (final change in changes(document())) {
+          final path = change['path'] as String;
+
+          expect(path, isNot(startsWith('/')));
+          expect(path, isNot(contains(project.root.path)));
+          expect(path, isNot(contains(r'\')));
+        }
+      },
+    );
+
     group('plan', () {
       test('prints the processors, the flavors and the changes', () async {
         final code = await project.run(['plan', '--json', ...engineTargets]);
@@ -204,6 +219,37 @@ void main() {
         expect((doc['errors'] as List).single, contains('flavor'));
         expect(project.logger.errors, doc['errors']);
       });
+
+      test(
+        'of a lock that cannot be read names it, as the system does',
+        () async {
+          // The text of the error holds the absolute path of the file. The
+          // document passes diagnostics through as they are, which is why it
+          // does not promise otherwise.
+          project.write('flavorizr.lock', 'version: 1\n');
+          addTearDown(
+            () => Process.runSync('chmod', [
+              '644',
+              project.abs('flavorizr.lock'),
+            ]),
+          );
+          Process.runSync('chmod', ['000', project.abs('flavorizr.lock')]);
+
+          final code = await project.run(['plan', '--json', ...engineTargets]);
+          final doc = document();
+
+          expect(code, ExitCodes.software, reason: project.logger.output);
+          expect(
+            (doc['errors'] as List).join('\n'),
+            contains(project.root.path),
+            reason: 'diagnostics are not sanitised',
+          );
+          expect(project.logger.errors, doc['errors']);
+        },
+        skip: Platform.isWindows
+            ? 'chmod does not lock a file on Windows'
+            : false,
+      );
 
       test('of a processor is 70', () async {
         File(

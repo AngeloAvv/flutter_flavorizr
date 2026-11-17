@@ -70,6 +70,15 @@ void main() {
     });
   }
 
+  test('the document does not promise what the diagnostics cannot keep', () {
+    // The text of an error comes from the system, with the absolute path of the
+    // file it could not read: only the structured fields are relative.
+    expect(doc, isNot(contains('hold no secret')));
+    expect(doc, isNot(contains('and no\nabsolute path')));
+    expect(doc, contains('diagnostic'));
+    expect(doc, contains('before you share'));
+  });
+
   test('the examples are found in a document with CRLF line endings', () {
     final crlf = doc.replaceAll('\r\n', '\n').replaceAll('\n', '\r\n');
 

@@ -117,16 +117,18 @@ class StandardLegacyPipeline implements LegacyPipeline {
       try {
         final processor = Processor(step.config, force: true, logger: logger);
 
-        observer?.started(step.id);
+        _notify(logger, () => observer?.started(step.id));
 
         if (observer == null) {
           await processor.executeInstruction(step.id);
         } else {
           await processor.runInstruction(step.id);
-          observer.finished(step.id, stopwatch.elapsed);
         }
       } on Object catch (error) {
-        observer?.failed(step.id, stopwatch.elapsed, error);
+        _notify(
+          logger,
+          () => observer?.failed(step.id, stopwatch.elapsed, error),
+        );
 
         rethrow;
       } finally {
@@ -140,7 +142,22 @@ class StandardLegacyPipeline implements LegacyPipeline {
           }
         }
       }
+
+      // Not in the `try`: a step that went well is not one that failed, and it
+      // is never run again because somebody could not be told.
+      _notify(logger, () => observer?.finished(step.id, stopwatch.elapsed));
     }
+  }
+}
+
+/// Tells the observer something. What it throws, such as a write to a stdout
+/// that was closed, is no business of the pipeline: the processors decide how
+/// it ends, so it is noted and dropped.
+void _notify(Logger logger, void Function() notification) {
+  try {
+    notification();
+  } on Object catch (error) {
+    logger.detail('A step observer failed: $error');
   }
 }
 

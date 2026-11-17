@@ -53,8 +53,13 @@ Available on `plan`, `apply`, `status` and `list`. `doctor` has no document.
   An error the command finds itself (an unknown target, a configuration that
   cannot be used, a processor that fails) is a document, with the exit code and
   the error.
-* The key order is not part of the contract. The documents hold no secret and no
-  absolute path: paths are relative to the project and use `/`.
+* The key order is not part of the contract. The paths of the structured fields
+  (`changes[].path`, `drift[].paths`) are relative to the project and use `/`.
+* The text of `errors`, `warnings` and `drift[].message` is a diagnostic, not a
+  structured field: it is what is printed on stderr, and it can quote what the system says, such as the
+  **absolute path** of a `flavorizr.lock` that cannot be read. flavorizr does not
+  rewrite it, so read those strings before you share a document (in an issue, a
+  log, a bot).
 
 ### The schema
 
