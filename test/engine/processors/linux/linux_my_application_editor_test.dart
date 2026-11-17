@@ -52,10 +52,24 @@ final _withVariable = _read(
   'test_resources/linux/my_application_processor_test/my_application_expected.cc',
 );
 
+/// The title declared as a variable, with the two setters still literals: the
+/// variable is not read by anything.
 final _plain = _pristine.replaceFirst(
   '  if (use_header_bar) {\n',
   '  const gchar* window_title = "example";\n  if (use_header_bar) {\n',
 );
+
+/// The declaration and the two setters that read it, which is what 2.x made of
+/// a `flutter create` file.
+final _readingTheVariable = _plain
+    .replaceFirst(
+      'gtk_header_bar_set_title(header_bar, "example");',
+      'gtk_header_bar_set_title(header_bar, window_title);',
+    )
+    .replaceFirst(
+      'gtk_window_set_title(window, "example");',
+      'gtk_window_set_title(window, window_title);',
+    );
 
 /// The lines of [text] that are not inside a region.
 List<String> _outsideTheRegions(String text) {
@@ -210,19 +224,29 @@ void main() {
       expect(_outsideTheRegions(removed), _outsideTheRegions(_withVariable));
     });
 
-    test('drops the regions of a file that had no variable, which the user '
-        'then added', () {
+    test('swaps the regions of the literals for the one of the variable when '
+        'the setters read the variable', () {
       final flavorized = LinuxMyApplicationEditor.withWindowTitles(
         _pristine,
         _titles,
       );
-      final withVariable = flavorized.replaceFirst(
-        '  if (use_header_bar) {\n',
-        '  const gchar* window_title = "example";\n  if (use_header_bar) {\n',
-      );
+      // The user declares the variable and points both setters to it.
+      final converted = flavorized
+          .replaceFirst(
+            '  if (use_header_bar) {\n',
+            '  const gchar* window_title = "example";\n  if (use_header_bar) {\n',
+          )
+          .replaceFirst(
+            'gtk_header_bar_set_title(header_bar, "example");',
+            'gtk_header_bar_set_title(header_bar, window_title);',
+          )
+          .replaceFirst(
+            'gtk_window_set_title(window, "example");',
+            'gtk_window_set_title(window, window_title);',
+          );
 
       final patched = LinuxMyApplicationEditor.withWindowTitles(
-        withVariable,
+        converted,
         _titles,
       );
 
@@ -237,23 +261,183 @@ void main() {
       );
     });
 
-    test('adds the region to a variable that is declared with the plain '
-        'template, which is what 2.x did byte for byte', () {
+    test('adds the region right after a declaration whose setters read it, as '
+        '2.x did byte for byte', () {
       final patched = LinuxMyApplicationEditor.withWindowTitles(
-        _plain,
+        _readingTheVariable,
         _titles,
       );
       final legacy = LinuxMyApplicationProcessor(
-        input: _plain,
+        input: _readingTheVariable,
         config: TestUtils.parseFlavorizr('test_resources/linux/pubspec'),
         logger: TestUtils.quietLogger(),
       ).execute();
 
-      expect(_outsideTheRegions(patched), _outsideTheRegions(_plain));
+      expect(
+        _outsideTheRegions(patched),
+        _outsideTheRegions(_readingTheVariable),
+      );
       expect(patched, contains(_begin('window_title')));
       expect(patched, legacy);
     });
+
+    test('keeps the overrides of the setters that are still literals, since a '
+        'variable cannot change a literal', () {
+      // Declared, but nothing reads it.
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        _plain,
+        _titles,
+      );
+
+      expect(_outsideTheRegions(patched), _outsideTheRegions(_plain));
+      expect(patched, contains(_begin('header_bar_title')));
+      expect(patched, contains(_begin('plain_window_title')));
+      expect(patched, isNot(contains(_begin('window_title'))));
+      expect(
+        LinuxMyApplicationEditor.withWindowTitles(patched, _titles),
+        patched,
+      );
+    });
+
+    test('overrides each setter in the way it sets the title when only one '
+        'reads the variable', () {
+      final mixed = _readingTheVariable.replaceFirst(
+        'gtk_window_set_title(window, window_title);',
+        'gtk_window_set_title(window, "example");',
+      );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(mixed, _titles);
+
+      expect(_outsideTheRegions(patched), _outsideTheRegions(mixed));
+      expect(patched, contains(_begin('window_title')));
+      expect(patched, contains(_begin('plain_window_title')));
+      expect(patched, isNot(contains(_begin('header_bar_title'))));
+    });
+
+    test('drops the region of the variable that nothing reads anymore', () {
+      final withRegion = LinuxMyApplicationEditor.withWindowTitles(
+        _readingTheVariable,
+        _titles,
+      );
+      final literals = withRegion
+          .replaceFirst(
+            'gtk_header_bar_set_title(header_bar, window_title);',
+            'gtk_header_bar_set_title(header_bar, "example");',
+          )
+          .replaceFirst(
+            'gtk_window_set_title(window, window_title);',
+            'gtk_window_set_title(window, "example");',
+          );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        literals,
+        _titles,
+      );
+
+      expect(patched, isNot(contains(_begin('window_title'))));
+      expect(patched, contains(_begin('header_bar_title')));
+      expect(patched, contains(_begin('plain_window_title')));
+    });
   });
+
+  group('LinuxMyApplicationEditor with a setter the user changed', () {
+    final flavorized = LinuxMyApplicationEditor.withWindowTitles(
+      _pristine,
+      _titles,
+    );
+
+    test('drops the region of a header bar setter that is not a literal '
+        'anymore, so a removed flavor leaves no branch behind', () {
+      final custom = flavorized.replaceFirst(
+        'gtk_header_bar_set_title(header_bar, "example");',
+        'gtk_header_bar_set_title(header_bar, custom_title);',
+      );
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(custom, {
+        'apple': 'Apple App',
+      });
+
+      expect(patched, isNot(contains('header_bar_title')));
+      expect(patched, contains(_begin('plain_window_title')));
+      expect(patched, isNot(contains('Banana')));
+      expect(_outsideTheRegions(patched), _outsideTheRegions(custom));
+    });
+
+    test(
+      'drops the region of a window setter that is not a literal anymore',
+      () {
+        final custom = flavorized.replaceFirst(
+          'gtk_window_set_title(window, "example");',
+          'gtk_window_set_title(window, custom_title);',
+        );
+
+        final patched = LinuxMyApplicationEditor.withWindowTitles(custom, {
+          'apple': 'Apple App',
+        });
+
+        expect(patched, isNot(contains('plain_window_title')));
+        expect(patched, contains(_begin('header_bar_title')));
+        expect(patched, isNot(contains('Banana')));
+      },
+    );
+
+    test('fails once no setter is left to override, instead of keeping stale '
+        'regions silently', () {
+      final custom = flavorized
+          .replaceFirst(
+            'gtk_header_bar_set_title(header_bar, "example");',
+            'gtk_header_bar_set_title(header_bar, custom_title);',
+          )
+          .replaceFirst(
+            'gtk_window_set_title(window, "example");',
+            'gtk_window_set_title(window, custom_title);',
+          );
+
+      expect(
+        () => LinuxMyApplicationEditor.withWindowTitles(custom, _titles),
+        throwsA(isA<MalformedResourceException>()),
+      );
+    });
+  });
+
+  group(
+    'LinuxMyApplicationEditor with a title that has escaped characters',
+    () {
+      const escaped = r'The \"App\" \\';
+
+      test('overrides literal setters', () {
+        final source = _pristine.replaceAll('"example"', '"$escaped"');
+
+        final patched = LinuxMyApplicationEditor.withWindowTitles(
+          source,
+          _titles,
+        );
+
+        expect(_outsideTheRegions(patched), _outsideTheRegions(source));
+        expect(patched, contains(_begin('header_bar_title')));
+        expect(patched, contains(_begin('plain_window_title')));
+        expect(
+          LinuxMyApplicationEditor.withWindowTitles(patched, _titles),
+          patched,
+        );
+      });
+
+      test('overrides a declaration', () {
+        final source = _readingTheVariable.replaceFirst(
+          'const gchar* window_title = "example";',
+          'const gchar* window_title = "$escaped";',
+        );
+
+        final patched = LinuxMyApplicationEditor.withWindowTitles(
+          source,
+          _titles,
+        );
+
+        expect(_outsideTheRegions(patched), _outsideTheRegions(source));
+        expect(patched, contains(_begin('window_title')));
+      });
+    },
+  );
 
   group('LinuxMyApplicationEditor.ownedContent', () {
     test('is the regions and nothing else, whatever the mode', () {
