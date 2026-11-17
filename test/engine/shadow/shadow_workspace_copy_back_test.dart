@@ -211,13 +211,13 @@ void main() {
 
       test('are kept when the copy-back is interrupted', () async {
         fx.project.write('android/app/src/prod/a.png', 'a');
-        fx.project.write('android/app/src/prod/b.png', 'b');
+        fx.project.write('android/app/src/qa/b.png', 'b');
         final shadow = await fx.create(['android/app/src']);
         shadow.delete('android/app/src/prod/a.png');
-        shadow.delete('android/app/src/prod/b.png');
+        shadow.delete('android/app/src/qa/b.png');
         final diff = await deleting(shadow, [
           'android/app/src/prod/a.png',
-          'android/app/src/prod/b.png',
+          'android/app/src/qa/b.png',
         ]);
 
         await expectLater(
@@ -225,8 +225,40 @@ void main() {
           throwsA(isA<CopyBackInterruptedException>()),
         );
 
+        // The first deletion was applied, and its folder is now empty: it is
+        // still there, because an interrupted copy-back prunes nothing.
+        expect(fx.project.exists('android/app/src/prod/a.png'), isFalse);
         expect(fx.project.exists('android/app/src/prod'), isTrue);
+        expect(fx.project.exists('android/app/src/qa/b.png'), isTrue);
       });
+
+      test(
+        'never include a path the run works on, even inside another',
+        () async {
+          fx.project.write('android/app/src/prod/a.png', 'a');
+          fx.project.write('android/app/src/dev/res/b.png', 'b');
+          final shadow = await fx.create(['android/app/src']);
+          shadow.delete('android/app/src/prod/a.png');
+          shadow.delete('android/app/src/dev/res/b.png');
+
+          final result = await copyBackChanges(
+            projectRoot: fx.project.root,
+            shadowRoot: shadow.root,
+            diff: await deleting(shadow, [
+              'android/app/src/prod/a.png',
+              'android/app/src/dev/res/b.png',
+            ]),
+            pruneBelow: ['android/app/src', 'android/app/src/prod'],
+          );
+
+          expect(fx.project.exists('android/app/src/prod'), isTrue);
+          expect(fx.project.exists('android/app/src/dev'), isFalse);
+          expect(result.prunedDirectories, [
+            'android/app/src/dev',
+            'android/app/src/dev/res',
+          ]);
+        },
+      );
 
       test(
         'are kept by copyBackChanges unless it is told where to prune',

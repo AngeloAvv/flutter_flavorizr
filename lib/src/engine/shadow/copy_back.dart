@@ -256,15 +256,17 @@ Future<List<String>> _pruneEmptyDirectories(
   Iterable<String> deleted,
 ) async {
   final pruned = <String>{};
-  final candidates = <String>{
-    for (final path in deleted)
-      for (
-        var dir = p.posix.dirname(path);
-        roots.any((root) => p.posix.isWithin(root, dir));
-        dir = p.posix.dirname(dir)
-      )
-        dir,
-  }.toList()..sort((a, b) => b.length.compareTo(a.length));
+  final candidates =
+      <String>{
+          for (final path in deleted)
+            for (
+              var dir = p.posix.dirname(path);
+              roots.any((root) => p.posix.isWithin(root, dir));
+              dir = p.posix.dirname(dir)
+            )
+              dir,
+        }.where((dir) => !roots.contains(dir)).toList()
+        ..sort((a, b) => b.length.compareTo(a.length));
 
   for (final candidate in candidates) {
     final path = resolveIn(projectRoot, candidate);
