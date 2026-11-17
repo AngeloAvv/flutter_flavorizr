@@ -696,6 +696,21 @@ final _supported = <_Case>[
 /// to change.
 final _unsafe = <({String name, List<String> source, String reason})>[
   (
+    name: 'an assignment-form conditional around the mapping',
+    source: ['settings = if enabled', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
+    name: 'a symbol named end inside the enclosing block',
+    source: ['if enabled', 'mode = :end', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
+    name: 'a command-argument regex containing a mapping',
+    source: ['puts /prefix', ..._decoy, 'suffix/'],
+    reason: 'regular expression',
+  ),
+  (
     name: 'a Podfile without the mapping',
     source: ["target 'Runner' do", 'end'],
     reason: 'no line',
@@ -971,6 +986,10 @@ final _lexicalSupported = <_Case>[
     '  puts item',
     'end',
     'x = 1 if y',
+    'settings = value if enabled',
+    'settings = if enabled',
+    '  mode = :end',
+    'end',
   ]),
 ];
 

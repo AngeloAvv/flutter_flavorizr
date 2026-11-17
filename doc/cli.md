@@ -307,7 +307,9 @@ is in it, so a `project 'Runner', {` or a marker there is not the mapping):
   nested or not, that close on their line;
 * regular expressions `/.../` that close on their line and have no quote,
   backtick or `#` in them, but for an interpolated name (`/^\s*#{symbol}/`). A
-  `/` after a word, a `)`, a `]` or a `}` is a division;
+  `/` after a word, a `)`, a `]` or a `}` is a division, except that a space
+  before the slash with none after it is ambiguous with a command-argument
+  regular expression and is refused (write division as `total / 2`);
 * heredocs `<<ID`, `<<-ID` and `<<~ID`, any number on a line, whose delimiter is
   a name (letters, digits, `_` and non-ASCII characters) or any text in quotes
   (`'`, `"` or `` ` ``, even empty, as in `<<~'POD-TEXT'`). The body ends on a

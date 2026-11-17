@@ -45,8 +45,9 @@ import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
 /// * `%q`, `%w` and `%i` literals with a bracket pair (`[]`, `()`, `{}`, `<>`),
 ///   nested or not, that close on their line;
 /// * regular expressions `/.../` with no quote, backtick or `#` in them (but
-///   for an interpolation of a name, `#{symbol}`), that close on their line (a `/` after a word, a `)`, a `]` or a `}` is a
-///   division);
+///   for an interpolation of a name, `#{symbol}`), that close on their line;
+///   division after an operand is supported, except a slash with whitespace
+///   before it and none after it, which may open a command-argument regex;
 /// * heredocs `<<ID`, `<<-ID` and `<<~ID`, any number on a line, whose
 ///   delimiter is an identifier (letters, digits, `_`, any non-ASCII character)
 ///   or any text in quotes (`'`, `"` or `` ` ``), even empty. The body ends on a
@@ -71,7 +72,8 @@ import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
 /// * the mapping line inside a block (`if`, `unless`, `begin`, `def`, `case`,
 ///   `while`, `until`, `for`, `class`, `module`, `do`, a lambda or any `{` that
 ///   ends a line), which [isInBlock] finds by counting the lines that open a
-///   block and the `end`s and `}`s at the start of a line.
+///   block (including assignment-form expressions), closing `end` keywords
+///   (not symbols or method names), and `}`s at the start of a line.
 ///
 /// What is **not** looked at is everything else, which is why it can be written
 /// in any way: a `;` joins statements, but a mapping line has to start its
@@ -101,10 +103,10 @@ final class LexedPodfile {
   static final RegExp _simple = RegExp(r'#\{[\w@.]+\}');
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
-    r'^\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b|'
+    r'(?:^|[=(:,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b|'
     r'(?:\bdo|\{)\s*(?:\|[^|]*\|)?\s*$',
   );
-  static final RegExp _end = RegExp(r'\bend\b');
+  static final RegExp _end = RegExp(r'(?<![\w:.])end\b(?![!?=:])');
   static const _pairs = {'[': ']', '(': ')', '{': '}', '<': '>'};
 
   /// Reads [lines], the ones of the Podfile at [path].
@@ -293,6 +295,19 @@ final class LexedPodfile {
           'the global variable `${text.substring(i, i + 2)}` in `${text.trim()}` '
               'cannot be told from a string.',
           'Use another way to read it, such as `Regexp.last_match`.',
+        );
+      }
+
+      if (char == '/' &&
+          _operand.hasMatch(code.toString().trimRight()) &&
+          i > 0 &&
+          text[i - 1].trim().isEmpty &&
+          i + 1 < text.length &&
+          text[i + 1].trim().isNotEmpty) {
+        _refuse(
+          path,
+          'a slash in `${text.trim()}` may start a command-argument regular expression.',
+          'Use `Regexp.new(...)` for the regular expression, or put spaces on both sides of a division.',
         );
       }
 
