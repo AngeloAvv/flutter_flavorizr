@@ -16,6 +16,9 @@ command has `--help`.
 | `list` | The recipes (built-in and the ones of `flavorizr.yaml`) and the processors, with what each needs. |
 | `doctor` | Groovy or Kotlin build scripts, Xcode project layout, Pods, Flutter version, configuration and lock. |
 
+`plan`, `apply`, `status` and `list` also take `--json`, which prints one JSON
+document instead of text: see [the output](json-output.md).
+
 A *target* is the name of a recipe (`android`, `all`, or one of yours) or the
 id of a processor (`android:icons`). Without a target the default recipe runs:
 the `instructions` of `flavorizr.yaml` when it has any, otherwise `default`
@@ -28,6 +31,16 @@ when it defines one, otherwise `all`.
 | `-y`, `--yes` | Does not ask for confirmation, which is what a CI wants. |
 | `--on-conflict=keep\|overwrite` | What to do with a file edited by hand that the run would change. Without it a terminal asks for each file, and anything else fails. |
 | `-v`, `--verbose` | Prints what every processor does (every command has it). |
+
+## Output
+
+On a terminal the commands show a spinner for each processor, grouped by
+platform, a coloured diff of the files and a summary with the counts
+(`+3 ~2 -0`) and the time. Anywhere else (a pipe, a file, a CI) the same words
+are printed as plain lines: no colour, no animation, nothing is asked. `NO_COLOR`
+removes the colour, and warnings and errors always go to stderr. With `--json`
+stdout is one JSON document with a schema that is stable in 3.x. How the output
+decides, and what the documents hold, is in [json-output.md](json-output.md).
 
 ## Deprecated options
 

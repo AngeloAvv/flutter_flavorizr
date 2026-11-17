@@ -1,0 +1,170 @@
+# Output: terminal, logs and `--json`
+
+Every command prints in one of three ways, and picks it by itself:
+
+| Where it runs | What it prints |
+| --- | --- |
+| a terminal | **Rich**: a spinner for each processor, grouped by platform, a coloured diff of the files (`+` green, `~` yellow, `-` red, conflicts red) and a summary with the counts and the time: `Applied  +3 ~2 -0  in 1.2 s`. |
+| a pipe, a file, a CI | **Linear**: plain lines, with no colour and no animation, and nothing is asked unless a terminal can answer. The same words as the rich output, one line at a time. |
+| `--json` | **One JSON document** on stdout, and nothing else. For CI, IDEs and agents. |
+
+## How it decides
+
+The output is rich when **stdout and stderr are both a terminal that understands
+ANSI escape codes**, `TERM` is not `dumb`, and the process does **not** run in a
+CI (`CI` is set to anything but `false` or `0`, or one of `GITHUB_ACTIONS`,
+`GITLAB_CI`, `BUILDKITE`, `CIRCLECI`, `JENKINS_URL`, `TF_BUILD`,
+`TEAMCITY_VERSION`, `TRAVIS`, `APPVEYOR`). Otherwise it is linear. The check
+is the same on macOS, Linux and Windows: it asks Dart whether the streams are
+terminals and whether they support ANSI escapes, which a Windows console only
+does when it enabled them.
+
+* [`NO_COLOR`](https://no-color.org) (set, and not empty) removes every colour.
+  The spinner stays, since it is not a colour.
+* `--verbose` prints what each processor does, which would end up in the middle
+  of a spinner: with it, steps are printed as lines, with no animation.
+* A question is asked only when stdin **and** stdout are a terminal (a CI that
+  hands out a pseudo terminal can still be answered: that is a choice of whoever
+  runs it). With no one to ask, `apply` goes on, as it always did. Pass `--yes`
+  to say so explicitly.
+* Warnings and errors always go to **stderr**. Exit codes are the ones of
+  [the command line](cli.md#exit-codes), whatever the output.
+
+## `--json`
+
+Available on `plan`, `apply`, `status` and `list`. `doctor` has no document.
+
+* stdout is **exactly one line**: a JSON document, ending with a newline. Nothing
+  else is printed there, whatever happens, including `--verbose`.
+* Warnings and errors are printed on stderr, as always, **and** are in the
+  document (`warnings`, `errors`), so that a reader of stdout alone loses nothing.
+* The exit code of the process is also in the document (`exitCode`).
+* Nobody is asked: `apply --json` goes on without confirmation, like any run
+  with nobody to answer, and a file edited by hand is a conflict that fails with
+  `1`, unless you pass `--on-conflict=keep|overwrite`. Pass `--yes` all the same,
+  so that the command says what it does.
+* `--help` prints the help, as text: it is not a run.
+* A command line that is not understood (`--nope`, a missing value) exits with
+  `64` with an **empty stdout**: there is no command, so there is no document.
+  An error the command finds itself (an unknown target, a configuration that
+  cannot be used, a processor that fails) is a document, with the exit code and
+  the error.
+* The key order is not part of the contract. The documents hold no secret and no
+  absolute path: paths are relative to the project and use `/`.
+
+### The schema
+
+[`doc/schemas/flavorizr-output.schema.json`](schemas/flavorizr-output.schema.json)
+is a JSON Schema (2020-12) of the four documents. It is what the tests of this
+package hold the output to. Validate a run with any validator, for example:
+
+```sh
+flutter pub run flutter_flavorizr plan --json > plan.json
+npx ajv-cli validate --spec=draft2020 -s doc/schemas/flavorizr-output.schema.json -d plan.json
+```
+
+### What is stable
+
+The documents are versioned by `schemaVersion`, which is `1` in the whole of
+**3.x**. Within it:
+
+* a field is never removed, renamed or given another type, and an enum value is
+  never taken away;
+* a field **may be added**, and an enum **may get a new value** in a minor
+  release: **ignore what you do not know**;
+* `durationMs` and `message` texts describe a run, not a contract: do not compare
+  them. The `kind` of a drift, the ids and the paths are the contract.
+
+A change that breaks this is a new `schemaVersion`, and it is not before 4.0.
+
+### The envelope
+
+Every document starts with:
+
+| Field | Type | |
+| --- | --- | --- |
+| `schemaVersion` | `1` | The version of the document. |
+| `command` | `"plan"`, `"apply"`, `"status"` or `"list"` | The command that printed it. |
+| `exitCode` | integer | `0`, `1`, `64`, `65` or `70`, the same as the exit code of the process. |
+| `warnings` | `string[]` | What went to stderr as a warning, such as the use of a deprecated option. |
+| `errors` | `string[]` | What went to stderr as an error, such as a refusal. |
+| `durationMs` | integer | How long the command took. |
+
+The other fields describe what the command found. They are all present when
+`exitCode` is `0` or `1` (the command went all the way), and the ones it did not
+get to are **missing** when it failed (`64`, `65`, `70`): check `exitCode` first.
+
+### `plan`, `apply` and `status`: what runs and what changes
+
+| Field | Type | |
+| --- | --- | --- |
+| `messages` | `string[]` | What was left out of the run and why, such as the recipe of a platform with no flavors. |
+| `processors` | `{id, platform, runsOn, auto}[]` | What runs, in order. `runsOn` is `engine` (previewed, checked against the lock and written atomically) or `legacy` (a 2.x processor, applied straight to the project afterwards). `auto` is `true` for the processors a dependency pulled in. |
+| `flavors` | `{added, removed, changed}` | The names of the flavors that differ between `flavorizr.yaml` and `flavorizr.lock`. |
+| `changes` | `{path, platform, change, disposition, ownership}[]` | The files of the engine, sorted by path. `change` is `added`, `modified` or `deleted`. `disposition` is `apply` (it would be written), `conflict` (it was edited by hand and the change would lose that) or `blocked` (a link or a path flavorizr never writes). `ownership` is `scaffold`, `managed`, `patched` or `null`. `platform` is `android`, `ios`, `macos`, `linux`, `windows`, `flutter` (the Dart sources) or `project`. |
+| `summary` | `{added, modified, deleted, conflicts}` | The counts of `changes`: the ones that would be written, and the conflicts. In an `apply` that wrote, the counts of what was written: a conflict that was overwritten is the change it is, and `conflicts` are the ones that were kept. |
+
+Processors that are not on the engine have no preview: they add nothing to
+`changes` or `summary`.
+
+### `apply`
+
+On top of the fields above:
+
+| Field | Type | |
+| --- | --- | --- |
+| `applied` | boolean | Whether the changes of the engine were written, with the lock. |
+| `cancelled` | boolean | Whether the run was stopped by an answer. It cannot be with `--json`, where nobody is asked. |
+| `steps` | `{id, status, durationMs}[]` | What ran, in order, ending with the ones that were skipped. `status` is `completed`, `failed` or `skipped`. `durationMs` is `null` for a step that was skipped. |
+
+`apply` always has these three, even when it failed: `steps` tells where.
+
+### `status`
+
+On top of the fields of `plan`:
+
+| Field | Type | |
+| --- | --- | --- |
+| `checked` | boolean | `false` when no processor of the engine was selected: there is no lock to compare with, so nothing was checked. |
+| `inSync` | boolean | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. The exit code is `1` when it is not. |
+| `drift` | `{kind, message, paths}[]` | How they differ. `kind` is `lock` (there is no `flavorizr.lock`), `flavors` (the flavors differ: see `flavors`), `files` (files that are not what `flavorizr.yaml` asks for, in `paths`) or `edited` (generated files edited by hand, in `paths`). |
+| `notChecked` | `string[]` | The processors that are not on the engine, which `status` cannot vouch for. |
+
+### `list`
+
+| Field | Type | |
+| --- | --- | --- |
+| `recipes` | `{name, builtIn, default, members, processors}[]` | The recipes: `members` is what the recipe lists (processors and other recipes), `processors` is what it stands for, with the nested recipes expanded. |
+| `processors` | `{id, platform, runsOn, needs, after}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after: both are empty for a `legacy` processor. |
+
+### Examples
+
+A `plan` with a file in the way:
+
+```json
+{"schemaVersion":1,"command":"plan","exitCode":1,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false},{"id":"android:flavorizrGradle","platform":"android","runsOn":"engine","auto":true},{"id":"flutter:flavors","platform":"flutter","runsOn":"legacy","auto":false}],"flavors":{"added":["pear"],"removed":[],"changed":[]},"changes":[{"path":"android/app/flavorizr.gradle","platform":"android","change":"modified","disposition":"conflict","ownership":"managed"},{"path":"android/app/src/main/AndroidManifest.xml","platform":"android","change":"modified","disposition":"apply","ownership":"patched"}],"summary":{"added":0,"modified":1,"deleted":0,"conflicts":1},"warnings":[],"errors":[],"durationMs":412}
+```
+
+An `apply` where a processor failed:
+
+```json
+{"schemaVersion":1,"command":"apply","exitCode":70,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false},{"id":"android:icons","platform":"android","runsOn":"engine","auto":false}],"applied":false,"cancelled":false,"steps":[{"id":"android:androidManifest","status":"failed","durationMs":3},{"id":"android:icons","status":"skipped","durationMs":null}],"warnings":["-f/--force is deprecated and will be removed in 4.0. Use --yes (-y) instead."],"errors":["Failed: android:androidManifest (AndroidManifest.xml not found)\nSkipped: android:icons"],"durationMs":57}
+```
+
+A `status` that is in sync:
+
+```json
+{"schemaVersion":1,"command":"status","exitCode":0,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false}],"flavors":{"added":[],"removed":[],"changed":[]},"changes":[],"summary":{"added":0,"modified":0,"deleted":0,"conflicts":0},"checked":true,"inSync":true,"drift":[],"notChecked":[],"warnings":[],"errors":[],"durationMs":301}
+```
+
+A `list`:
+
+```json
+{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[]},{"id":"flutter:flavors","platform":"flutter","runsOn":"legacy","needs":[],"after":[]}],"warnings":[],"errors":[],"durationMs":8}
+```
+
+A command that fails before it got far, here a `plan` with an unknown target:
+
+```json
+{"schemaVersion":1,"command":"plan","exitCode":64,"warnings":[],"errors":["Unknown target \"nope\"."],"durationMs":5}
+```

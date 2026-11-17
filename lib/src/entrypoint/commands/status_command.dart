@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
 
 /// `flavorizr status [target...]`: whether `flavorizr.yaml`, `flavorizr.lock`
 /// and the files of the project agree. It is meant for CI.
@@ -49,51 +50,78 @@ class StatusCommand extends TargetCommand {
     final config = loadConfig();
     final plan = resolve(config);
     final preview = await dryRun(plan, config);
-    final drift = <String>[];
+    final drift = <_Drift>[];
 
     if (preview != null) {
       if (preview.previous == null) {
         drift.add(
-          'flavorizr.lock does not exist: nothing is recorded as applied.',
+          const _Drift(
+            'lock',
+            'flavorizr.lock does not exist: nothing is recorded as applied.',
+          ),
         );
       }
 
       if (!preview.reconciliation.flavors.isEmpty) {
         drift.add(
-          'The flavors of flavorizr.yaml and of flavorizr.lock differ:\n'
-          '${preview.reconciliation.flavors.render()}',
+          _Drift(
+            'flavors',
+            'The flavors of flavorizr.yaml and of flavorizr.lock differ:\n'
+                '${output.style.diff(preview.reconciliation.flavors.render())}',
+          ),
         );
       }
 
-      final pending = preview.changes.where(
-        (c) => !preview.diff.conflicts.contains(c),
-      );
+      final pending = preview.changes
+          .where((c) => !preview.diff.conflicts.contains(c))
+          .toList();
       if (pending.isNotEmpty) {
         drift.add(
-          'These files are not what flavorizr.yaml asks for:\n'
-          '${[for (final change in pending) '  ${change.describe()}'].join('\n')}',
+          _Drift(
+            'files',
+            'These files are not what flavorizr.yaml asks for:\n'
+                '${[for (final change in pending) '  ${output.style.change(change)}'].join('\n')}',
+            [for (final change in pending) change.path],
+          ),
         );
       }
 
       if (preview.hasConflicts) {
         drift.add(
-          'These files were edited by hand:\n'
-          '${[for (final change in preview.diff.conflicts) '  ${change.describe()}'].join('\n')}',
+          _Drift(
+            'edited',
+            'These files were edited by hand:\n'
+                '${[for (final change in preview.diff.conflicts) '  ${output.style.change(change)}'].join('\n')}',
+            [for (final change in preview.diff.conflicts) change.path],
+          ),
         );
       }
     }
 
+    final checked = plan.engine.steps.isNotEmpty;
+
+    output.data({
+      ...previewFields(preview),
+      'checked': checked,
+      'inSync': drift.isEmpty,
+      'drift': [
+        for (final item in drift)
+          {'kind': item.kind, 'message': item.message, 'paths': item.paths},
+      ],
+      'notChecked': [for (final step in plan.legacy) step.id],
+    });
+
     if (plan.legacy.isNotEmpty) {
-      logger.info(
+      output.info(
         'Not checked, since they are not on the engine yet: '
         '${plan.legacy.map((step) => step.id).join(', ')}.',
       );
     }
 
-    if (drift.isEmpty && plan.engine.steps.isEmpty) {
+    if (drift.isEmpty && !checked) {
       // Without processors of the engine there is no lock to be in sync with,
       // since only a run of the engine writes it.
-      logger.info(
+      output.info(
         'Nothing to check: no processor of the engine is selected, and the '
         'others cannot be checked.',
       );
@@ -102,19 +130,33 @@ class StatusCommand extends TargetCommand {
     }
 
     if (drift.isEmpty) {
-      logger.success(
+      output.success(
         plan.legacy.isEmpty
             ? 'In sync.'
             : 'In sync, as far as the engine can tell: the processors above '
                   'are not checked.',
       );
+      output.summary('Status', countChanges(preview));
 
       return ExitCodes.ok;
     }
 
-    drift.forEach(logger.info);
-    logger.err('The project drifted from flavorizr.yaml or flavorizr.lock.');
+    for (final item in drift) {
+      output.info(item.message);
+    }
+    output.summary('Status', countChanges(preview));
+    output.err('The project drifted from flavorizr.yaml or flavorizr.lock.');
 
     return ExitCodes.attention;
   }
+}
+
+/// One way the project drifted: what it is (`lock`, `flavors`, `files`,
+/// `edited`), what to tell about it, and the files it concerns.
+final class _Drift {
+  final String kind;
+  final String message;
+  final List<String> paths;
+
+  const _Drift(this.kind, this.message, [this.paths = const []]);
 }

@@ -88,23 +88,23 @@ class DoctorCommand extends FlavorizrCommand {
 
       switch (check.level) {
         case CheckLevel.ok:
-          logger.success(line);
+          output.success(line);
         case CheckLevel.warning:
-          logger.warn(line);
+          output.warn(line);
         case CheckLevel.error:
-          logger.err(line);
+          output.err(line);
       }
     }
 
     final errors = checks.where((c) => c.level == CheckLevel.error).length;
 
     if (errors == 0) {
-      logger.info('No problem found.');
+      output.info('No problem found.');
 
       return ExitCodes.ok;
     }
 
-    logger.err('$errors ${errors == 1 ? 'problem' : 'problems'} found.');
+    output.err('$errors ${errors == 1 ? 'problem' : 'problems'} found.');
 
     return ExitCodes.attention;
   }

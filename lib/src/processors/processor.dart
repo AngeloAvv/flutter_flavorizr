@@ -204,12 +204,7 @@ class Processor extends AbstractProcessor<void> {
     progress.update('[$instruction] Executing');
 
     try {
-      final create = _availableProcessors[instruction];
-      if (create == null) {
-        throw UnknownProcessorException(instruction);
-      }
-
-      await create().execute();
+      await runInstruction(instruction);
     } on Object {
       // The first failure aborts the run: nothing is executed after it.
       progress.fail('[$instruction] An error has occurred');
@@ -217,6 +212,17 @@ class Processor extends AbstractProcessor<void> {
     }
 
     progress.complete('[$instruction] Completed');
+  }
+
+  /// Runs the single [instruction] and shows nothing about it: whoever calls
+  /// this is the one that shows the step.
+  Future<void> runInstruction(String instruction) async {
+    final create = _availableProcessors[instruction];
+    if (create == null) {
+      throw UnknownProcessorException(instruction);
+    }
+
+    await create().execute();
   }
 
   static Map<String, AbstractProcessor<void> Function()>

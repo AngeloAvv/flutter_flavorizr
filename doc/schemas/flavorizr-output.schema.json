@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "flutter_flavorizr --json output",
+  "description": "The document that `plan`, `apply`, `status` and `list` print on stdout with --json. See doc/json-output.md.",
+  "oneOf": [
+    { "$ref": "#/$defs/plan" },
+    { "$ref": "#/$defs/apply" },
+    { "$ref": "#/$defs/status" },
+    { "$ref": "#/$defs/list" }
+  ],
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "command",
+        "exitCode",
+        "warnings",
+        "errors",
+        "durationMs"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "command": { "enum": ["plan", "apply", "status", "list"] },
+        "exitCode": { "type": "integer", "enum": [0, 1, 64, 65, 70] },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "durationMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "strings": { "type": "array", "items": { "type": "string" } },
+    "processor": {
+      "type": "object",
+      "required": ["id", "platform", "runsOn", "auto"],
+      "properties": {
+        "id": { "type": "string" },
+        "platform": { "type": "string" },
+        "runsOn": { "enum": ["engine", "legacy"] },
+        "auto": { "type": "boolean" }
+      }
+    },
+    "flavors": {
+      "type": "object",
+      "required": ["added", "removed", "changed"],
+      "properties": {
+        "added": { "$ref": "#/$defs/strings" },
+        "removed": { "$ref": "#/$defs/strings" },
+        "changed": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "change": {
+      "type": "object",
+      "required": ["path", "platform", "change", "disposition", "ownership"],
+      "properties": {
+        "path": { "type": "string" },
+        "platform": { "type": "string" },
+        "change": { "enum": ["added", "modified", "deleted"] },
+        "disposition": { "enum": ["apply", "conflict", "blocked"] },
+        "ownership": { "enum": ["scaffold", "managed", "patched", null] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["added", "modified", "deleted", "conflicts"],
+      "properties": {
+        "added": { "type": "integer", "minimum": 0 },
+        "modified": { "type": "integer", "minimum": 0 },
+        "deleted": { "type": "integer", "minimum": 0 },
+        "conflicts": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["id", "status", "durationMs"],
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "enum": ["completed", "failed", "skipped"] },
+        "durationMs": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "drift": {
+      "type": "object",
+      "required": ["kind", "message", "paths"],
+      "properties": {
+        "kind": { "enum": ["lock", "flavors", "files", "edited"] },
+        "message": { "type": "string" },
+        "paths": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "required": ["name", "builtIn", "default", "members", "processors"],
+      "properties": {
+        "name": { "type": "string" },
+        "builtIn": { "type": "boolean" },
+        "default": { "type": "boolean" },
+        "members": { "$ref": "#/$defs/strings" },
+        "processors": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "listedProcessor": {
+      "type": "object",
+      "required": ["id", "platform", "runsOn", "needs", "after"],
+      "properties": {
+        "id": { "type": "string" },
+        "platform": { "type": "string" },
+        "runsOn": { "enum": ["engine", "legacy"] },
+        "needs": { "$ref": "#/$defs/strings" },
+        "after": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "messages": { "$ref": "#/$defs/strings" },
+        "processors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/processor" }
+        },
+        "flavors": { "$ref": "#/$defs/flavors" },
+        "changes": { "type": "array", "items": { "$ref": "#/$defs/change" } },
+        "summary": { "$ref": "#/$defs/summary" }
+      },
+      "if": { "properties": { "exitCode": { "enum": [0, 1] } } },
+      "then": {
+        "required": ["messages", "processors", "flavors", "changes", "summary"]
+      }
+    },
+    "plan": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        { "$ref": "#/$defs/run" },
+        { "properties": { "command": { "const": "plan" } } }
+      ]
+    },
+    "apply": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        { "$ref": "#/$defs/run" },
+        {
+          "required": ["applied", "cancelled", "steps"],
+          "properties": {
+            "command": { "const": "apply" },
+            "applied": { "type": "boolean" },
+            "cancelled": { "type": "boolean" },
+            "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+          }
+        }
+      ]
+    },
+    "status": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        { "$ref": "#/$defs/run" },
+        {
+          "properties": {
+            "command": { "const": "status" },
+            "checked": { "type": "boolean" },
+            "inSync": { "type": "boolean" },
+            "drift": { "type": "array", "items": { "$ref": "#/$defs/drift" } },
+            "notChecked": { "$ref": "#/$defs/strings" }
+          },
+          "if": { "properties": { "exitCode": { "enum": [0, 1] } } },
+          "then": {
+            "required": ["checked", "inSync", "drift", "notChecked"]
+          }
+        }
+      ]
+    },
+    "list": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        {
+          "properties": {
+            "command": { "const": "list" },
+            "recipes": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/recipe" }
+            },
+            "processors": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/listedProcessor" }
+            }
+          },
+          "if": { "properties": { "exitCode": { "const": 0 } } },
+          "then": { "required": ["recipes", "processors"] }
+        }
+      ]
+    }
+  }
+}

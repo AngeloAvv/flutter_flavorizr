@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -57,10 +58,15 @@ abstract interface class LegacyPipeline {
   /// [preserve] are paths of the project, relative to it, that the engine
   /// generated: whatever a step does to them is undone, so that a 2.x processor
   /// never overwrites what the engine owns.
+  ///
+  /// With an [observer], it is told about each step, and is the one that shows
+  /// it: the step prints nothing of its own. Without, each step shows its own
+  /// progress through [logger], as it did in 2.x.
   Future<void> run(
     Iterable<LegacyStep> steps, {
     required Logger logger,
     Set<String> preserve = const {},
+    StepObserver? observer,
   });
 }
 
@@ -92,6 +98,7 @@ class StandardLegacyPipeline implements LegacyPipeline {
     Iterable<LegacyStep> steps, {
     required Logger logger,
     Set<String> preserve = const {},
+    StepObserver? observer,
   }) async {
     check(steps);
 
@@ -105,12 +112,23 @@ class StandardLegacyPipeline implements LegacyPipeline {
             path: File(p.join(projectRoot.path, path)).readAsBytesSync(),
       };
 
+      final stopwatch = Stopwatch()..start();
+
       try {
-        await Processor(
-          step.config,
-          force: true,
-          logger: logger,
-        ).executeInstruction(step.id);
+        final processor = Processor(step.config, force: true, logger: logger);
+
+        observer?.started(step.id);
+
+        if (observer == null) {
+          await processor.executeInstruction(step.id);
+        } else {
+          await processor.runInstruction(step.id);
+          observer.finished(step.id, stopwatch.elapsed);
+        }
+      } on Object catch (error) {
+        observer?.failed(step.id, stopwatch.elapsed, error);
+
+        rethrow;
       } finally {
         for (final MapEntry(:key, :value) in kept.entries) {
           final file = File(p.join(projectRoot.path, key));

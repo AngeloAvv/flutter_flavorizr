@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
@@ -66,6 +67,51 @@ void main() {
       ], logger: TestUtils.quietLogger()),
       throwsA(isA<UnknownProcessorException>()),
     );
+  });
+
+  group('the observer', () {
+    test('is told that a step failed, and the error goes on', () async {
+      final observer = _RecordingObserver();
+
+      await expectLater(
+        StandardLegacyPipeline(Directory.current).run(
+          [LegacyStep('nope:nope', config)],
+          logger: TestUtils.quietLogger(),
+          observer: observer,
+        ),
+        throwsA(isA<UnknownProcessorException>()),
+      );
+
+      expect(observer.events, ['started nope:nope', 'failed nope:nope']);
+    });
+
+    test('is told about a step that went well, which shows nothing', () async {
+      final project = Directory.systemTemp.createTempSync(
+        'flavorizr_observer_',
+      );
+      final previous = Directory.current;
+      final observer = _RecordingObserver();
+
+      addTearDown(() {
+        Directory.current = previous;
+        project.deleteSync(recursive: true);
+      });
+      Directory.current = project;
+      File(p.join(project.path, '.tmp/android/res/values/custom.xml'))
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('<resources/>');
+
+      await StandardLegacyPipeline(project).run(
+        [LegacyStep('android:dummyAssets', config)],
+        logger: TestUtils.quietLogger(),
+        observer: observer,
+      );
+
+      expect(observer.events, [
+        'started android:dummyAssets',
+        'finished android:dummyAssets',
+      ]);
+    });
   });
 
   group('preserve', () {
@@ -175,4 +221,18 @@ void main() {
       );
     });
   });
+}
+
+class _RecordingObserver implements StepObserver {
+  final List<String> events = [];
+
+  @override
+  void started(String id) => events.add('started $id');
+
+  @override
+  void finished(String id, Duration elapsed) => events.add('finished $id');
+
+  @override
+  void failed(String id, Duration elapsed, Object error) =>
+      events.add('failed $id');
 }

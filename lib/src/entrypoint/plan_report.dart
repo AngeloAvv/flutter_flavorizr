@@ -26,6 +26,7 @@
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
+import 'package:flutter_flavorizr/src/entrypoint/output/style.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 
 /// The processors of [plan] as text: the ones of the engine in the order they
@@ -50,7 +51,14 @@ String renderRunPlan(RunPlan plan) {
 /// What [preview] would change, as text: the flavors that changed, then the
 /// files, grouped by platform, as `+` (added), `~` (changed) and `-` (deleted),
 /// and a count.
-String renderPreview(EnginePreview preview) {
+///
+/// The changes are coloured as a diff with [style]: green for what is added,
+/// yellow for what changes, red for what is deleted or in conflict. It changes
+/// no word of the text.
+String renderPreview(
+  EnginePreview preview, {
+  Style style = const Style.none(),
+}) {
   final groups = <String, List<FileChange>>{};
 
   for (final change in preview.changes) {
@@ -70,12 +78,12 @@ String renderPreview(EnginePreview preview) {
   ];
 
   return [
-    preview.reconciliation.flavors.render(),
+    style.diff(preview.reconciliation.flavors.render()),
     if (names.isEmpty)
       'The files of the project are up to date.'
     else ...[
       for (final name in names)
-        '$name\n${[for (final change in groups[name]!) '  ${change.describe()}'].join('\n')}',
+        '${style.bold(name)}\n${[for (final change in groups[name]!) '  ${style.change(change)}'].join('\n')}',
       counts.join(', '),
     ],
     if (preview.reconciliation.deletions.released.isNotEmpty)

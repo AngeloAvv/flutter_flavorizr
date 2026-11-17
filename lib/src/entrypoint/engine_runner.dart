@@ -28,12 +28,14 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_policy.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
+import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
+import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 import 'package:flutter_flavorizr/src/exception/lock_not_written_exception.dart';
@@ -95,6 +97,10 @@ final class EngineRun {
   /// Whether the run was stopped because [approve] said no.
   final bool cancelled;
 
+  /// What was decided about the conflicts, or `null` when the run did not get
+  /// to decide: it was a dry run, it was cancelled, or it failed first.
+  final ConflictResolution? resolution;
+
   /// Creates an outcome.
   const EngineRun({
     required this.report,
@@ -102,6 +108,7 @@ final class EngineRun {
     this.applied = false,
     this.generated = const {},
     this.cancelled = false,
+    this.resolution,
   });
 }
 
@@ -114,6 +121,10 @@ final class EngineRun {
 /// `--on-conflict` and `--yes` flags), the changes are written back atomically
 /// and the lock is written last.
 ///
+/// An [observer] is told when each processor starts and ends, and takes over the
+/// summary of a run that went well. Conflicts are asked about on [terminal],
+/// which is the one of [context] by default.
+///
 /// A processor that fails ends the run with nothing written, and its error is in
 /// the report. Everything else that goes wrong, such as a conflict nobody can
 /// resolve or a lock that cannot be read, is thrown: see `ExitCodes.of`.
@@ -122,6 +133,8 @@ Future<EngineRun> runEngine(
   required Flavorizr config,
   required RunPlan plan,
   required Logger logger,
+  StepObserver? observer,
+  ConflictTerminal? terminal,
   Future<bool> Function(EnginePreview preview)? approve,
   ConflictPolicy? policy,
   bool yes = false,
@@ -133,8 +146,9 @@ Future<EngineRun> runEngine(
   var applied = false;
   var cancelled = false;
   var generated = <String>{};
+  ConflictResolution? decided;
 
-  final report = await PlanExecutor(logger: logger).execute(
+  final report = await PlanExecutor(logger: logger, observer: observer).execute(
     plan.engine,
     config: config,
     projectRoot: context.projectRoot,
@@ -189,11 +203,12 @@ Future<EngineRun> runEngine(
       }
 
       final resolution = await ConflictResolver(
-        terminal: context.terminal,
+        terminal: terminal ?? context.terminal,
         content: reconciliation.conflictContent(ShadowConflictContent(shadow)),
         policy: policy,
         yes: yes,
       ).resolve(diff);
+      decided = resolution;
       // Built and staged before anything is written, committed after
       // everything was: a lock that cannot be written is found out while the
       // project is still untouched.
@@ -231,5 +246,6 @@ Future<EngineRun> runEngine(
     applied: applied,
     generated: generated,
     cancelled: cancelled,
+    resolution: decided,
   );
 }
