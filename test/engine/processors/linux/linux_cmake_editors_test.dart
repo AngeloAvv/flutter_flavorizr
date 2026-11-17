@@ -177,6 +177,14 @@ void main() {
       }
     });
 
+    test('writes a region that is balanced when there is no flavor to '
+        'override', () {
+      expect(
+        LinuxCMakeListsEditor.withApplicationIds(_pristine, {}),
+        contains('if(DEFINED FLUTTER_APP_FLAVOR)\nendif()\n$_end'),
+      );
+    });
+
     test('fails without the flutter directory', () {
       expect(
         () => LinuxCMakeListsEditor.withApplicationIds(

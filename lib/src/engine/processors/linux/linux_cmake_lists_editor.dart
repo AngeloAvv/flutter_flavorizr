@@ -102,7 +102,7 @@ abstract final class LinuxCMakeListsEditor {
         '  ${index == 0 ? 'if' : 'elseif'}(FLUTTER_APP_FLAVOR STREQUAL "${entry.key}")',
         '    set(APPLICATION_ID "${escapeQuotedString(entry.value)}")',
       ],
-      '  endif()',
+      if (entries.isNotEmpty) '  endif()',
       'endif()',
     ];
   }

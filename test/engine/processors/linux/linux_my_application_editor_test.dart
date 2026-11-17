@@ -152,6 +152,21 @@ void main() {
       );
     });
 
+    test('writes regions that are balanced when there is no flavor to '
+        'override', () {
+      final patched = LinuxMyApplicationEditor.withWindowTitles(_pristine, {});
+
+      expect(
+        patched,
+        contains(
+          '    #ifdef FLUTTER_APP_FLAVOR\n'
+          '    #endif\n'
+          '    ${_end('header_bar_title')}',
+        ),
+      );
+      expect(_outsideTheRegions(patched), _outsideTheRegions(_pristine));
+    });
+
     test('fails when the title is set by neither a variable nor a literal', () {
       expect(
         () => LinuxMyApplicationEditor.withWindowTitles(

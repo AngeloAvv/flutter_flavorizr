@@ -192,7 +192,7 @@ abstract final class LinuxMyApplicationEditor {
         '${index == 0 ? 'if' : '} else if'} (g_strcmp0(FLUTTER_APP_FLAVOR, "${entry.key}") == 0) {',
         '  ${statement(escapeQuotedString(entry.value))}',
       ],
-      '}',
+      if (entries.isNotEmpty) '}',
       '#endif',
     ];
   }
