@@ -228,21 +228,34 @@ its own, only once outside of the region, the sources on the lines after it, and
 a line of its own with nothing but the closing `)`. `main.cpp` and `Runner.rc`
 have to be among the sources, each on a line of its own, as a name (quoted or
 not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`: the region swaps them for the
-copies of the build directory, and the target would otherwise compile both. When
+copies of the build directory, and the target would otherwise compile both. A
+source that names one of them any other way (`./main.cpp`, `MAIN.CPP`,
+`sub/../main.cpp`, two names on a line, a comment after the name) is rejected
+too, for the same reason; the names are whole words, so `domain.cpp` or
+`main.cpp.in` are other files. A name that is in a variable, and sources that
+are added to the target with `target_sources`, are not seen. When
 it is not like that the run fails, before anything is written, and says what to
 change. Only those ways of writing the call are looked for: it is not parsed, a
 different one is rejected rather than guessed at, and a `#` comment among the
 sources is skipped. In a flavored build, a flavor that is not in `flavorizr.yaml`
 gets the default icon and title. The templates are made by recognising the
-call `window.Create(L"...", origin, size)` in `main.cpp`, the
-`IDI_APP_ICON ICON "resources\\..."` line in `Runner.rc` and its
-`VALUE "FileDescription", "..." "\0"` and `VALUE "ProductName", "..." "\0"`
-entries, each with nothing but spaces before it on its line (the call: with no
-`//` before it on its line). All of those that are there are templated, and a
-file with none of one of them, or a title in `main.cpp` with a quote or a
-backslash in it, is rejected. Block comments, strings and preprocessor
-directives are not looked at, and the `app.name` of a flavor goes into the window
-title and the version information as it is: do not use `"` or `\` in it. The
+calls `window.Create(...)` in `main.cpp`, the `IDI_APP_ICON` line in `Runner.rc`
+and its `FileDescription` and `ProductName` entries. **Every** one of them has
+to be written as `flutter create` writes it, whatever branch of an `#if` it is
+in: `window.Create(L"...", origin, size)` with a plain title (no quote or
+backslash, so no raw, `u8` or `u` string, macro or two literals either),
+`IDI_APP_ICON ICON "resources\\<name>"`, and `VALUE "FileDescription", "..."
+"\0"` and `VALUE "ProductName", "..." "\0"` with a plain string. A file with one
+that is not, or with none of one of them, is rejected, since a build that picked
+that one would keep the old title; when all of them are plain, all of them are
+templated. Places that have a `//` before them on their line are skipped. Block
+comments, strings and preprocessor directives are not looked at (a
+`window.Create(` in a string is one that cannot be templated), only `window` is
+looked for as the name of the window (`window.Create`, `window->Create`), and the
+`app.name` of a flavor goes into the window title and the version information
+as it is: do not use `"` or `\` in it. `Runner.rc`, `main.cpp` and
+`CMakeLists.txt` have to be UTF-8, which is how `flutter create` writes them (a
+file that Visual Studio saved as UTF-16 is rejected). The
 templates are regenerated at every `apply`, so run it again after you change
 `main.cpp` or `Runner.rc`; `status` does not see a change of the files they are
 made from. The icon of a flavor is still `windows/runner/resources/<flavor>.ico`,

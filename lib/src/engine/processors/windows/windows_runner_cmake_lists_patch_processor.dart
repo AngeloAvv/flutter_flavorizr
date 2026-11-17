@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/bom_text_file.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_text.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_rc_template_processor.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -69,7 +70,7 @@ class WindowsRunnerCMakeListsPatchProcessor extends FlavorizrProcessor {
       throw FileNotFoundException(path);
     }
 
-    final (:text, :hasBom) = await BomTextFile.read(file);
+    final (:text, :hasBom) = await WindowsRunnerText.read(file, path);
     final patched = WindowsRunnerCMakeListsEditor.withFlavors(text, {
       for (final MapEntry(key: name, value: flavor)
           in ctx.config.windowsFlavors.entries)

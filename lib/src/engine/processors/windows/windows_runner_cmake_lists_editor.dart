@@ -71,9 +71,11 @@ import 'package:flutter_flavorizr/src/utils/desktop_utils.dart';
 /// * the sources on the lines after it;
 /// * a line of its own that is only `)`, which closes it;
 /// * `main.cpp` and `Runner.rc` among the sources, each on a line of its own,
-///   as a name (quoted or not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`: they
-///   are the files the region replaces with the ones of the binary dir, and
-///   with any other way of listing them the target would compile both copies.
+///   as a name (quoted or not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`
+///   (see [sourceSpellings]): they are the files the region replaces with the
+///   ones of the binary dir. A source that names one of them any other way
+///   (`./main.cpp`, `MAIN.CPP`, `sub/../main.cpp`) is rejected, since it would
+///   stay in the target next to the copy of the binary dir.
 ///
 /// Comments and strings are not looked at: a line is recognised for what it is
 /// as a whole.
@@ -172,23 +174,62 @@ abstract final class WindowsRunnerCMakeListsEditor {
     );
   }
 
-  /// Throws unless `main.cpp` and `Runner.rc` are among the sources of the call
-  /// between the lines [start] and [end].
+  /// The files the region replaces with the ones of the binary dir.
+  static const List<String> _entrypoints = ['main.cpp', 'Runner.rc'];
+
+  /// The ways the call may name the source [name], quotes aside. They are the
+  /// ones the region removes from the target, so what is accepted and what is
+  /// removed cannot differ.
+  static List<String> sourceSpellings(String name) => [
+    name,
+    '\${CMAKE_CURRENT_SOURCE_DIR}/$name',
+  ];
+
+  /// Throws unless each of the files in [_entrypoints] is among the sources of
+  /// the call between the lines [start] and [end], in one of the ways of
+  /// [sourceSpellings], and no source names it in another one: an alias such as
+  /// `./main.cpp` would stay in the target next to the copy of the binary dir,
+  /// and both would define `wWinMain`.
+  ///
+  /// The sources are looked at as lines of text: a name is the whole of a word,
+  /// so `domain.cpp` and `main.cpp.in` are other files, and the case does not
+  /// matter, since the files of Windows are not case sensitive. A name that is
+  /// in a variable cannot be seen.
   static void _checkSources(List<TextLine> lines, int start, int end) {
-    final sources = {
+    final sources = [
       for (final line in lines)
         if (line.index > start && line.index < end) line.text.trim(),
-    };
+    ].where((text) => text.isNotEmpty && !text.startsWith('#')).toList();
 
-    for (final name in ['main.cpp', 'Runner.rc']) {
-      final listed = [
-        name,
-        '"$name"',
-        '\${CMAKE_CURRENT_SOURCE_DIR}/$name',
-        '"\${CMAKE_CURRENT_SOURCE_DIR}/$name"',
-      ].any(sources.contains);
+    for (final name in _entrypoints) {
+      final mention = RegExp(
+        '(?<![A-Za-z0-9_.-])${RegExp.escape(name)}(?![A-Za-z0-9_.-])',
+        caseSensitive: false,
+      );
+      final accepted = {
+        for (final spelling in sourceSpellings(name)) ...[
+          spelling,
+          '"$spelling"',
+        ],
+      };
+      final mentions = sources.where(mention.hasMatch).toList();
+      final other = mentions.where((text) => !accepted.contains(text));
 
-      if (!listed) {
+      if (other.isNotEmpty) {
+        throw UnsupportedRunnerLayoutException(
+          K.windowsRunnerCMakeListsPath,
+          reason:
+              'the call that adds the executable has `${other.first}`, which '
+              'is not one of the ways it can list `$name`, so the build could '
+              'not tell whether the copy of it made in the binary dir is the '
+              'only one in the target.',
+          fix:
+              'List `"$name"` on a line of its own among the sources of the '
+              'call, and no other way of naming it.',
+        );
+      }
+
+      if (mentions.isEmpty) {
         throw UnsupportedRunnerLayoutException(
           K.windowsRunnerCMakeListsPath,
           reason:
@@ -233,10 +274,8 @@ abstract final class WindowsRunnerCMakeListsEditor {
       ')',
       r'get_target_property(FLAVORIZR_RUNNER_SOURCES ${BINARY_NAME} SOURCES)',
       'list(REMOVE_ITEM FLAVORIZR_RUNNER_SOURCES',
-      '  "main.cpp"',
-      '  "Runner.rc"',
-      r'  "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"',
-      r'  "${CMAKE_CURRENT_SOURCE_DIR}/Runner.rc"',
+      for (final name in _entrypoints)
+        for (final spelling in sourceSpellings(name)) '  "$spelling"',
       ')',
       r'set_property(TARGET ${BINARY_NAME} PROPERTY SOURCES ${FLAVORIZR_RUNNER_SOURCES})',
       r'target_sources(${BINARY_NAME} PRIVATE',

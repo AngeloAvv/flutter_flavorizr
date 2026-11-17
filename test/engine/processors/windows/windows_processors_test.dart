@@ -43,6 +43,13 @@ import '../../../test_utils.dart';
 String _resource(String path) =>
     File('test_resources/windows/$path').readAsStringSync();
 
+/// [text] as UTF-16 with a byte order mark.
+List<int> _utf16(String text, {required bool bigEndian}) => [
+  if (bigEndian) ...[0xfe, 0xff] else ...[0xff, 0xfe],
+  for (final unit in text.codeUnits)
+    ...(bigEndian ? [unit >> 8, unit & 0xff] : [unit & 0xff, unit >> 8]),
+];
+
 void main() {
   late Directory root;
   late Directory projectRoot;
@@ -191,6 +198,29 @@ void main() {
           expect(processor.apply(ctx), throwsA(isA<FileNotFoundException>()));
         });
 
+        test('rejects a file that is not UTF-8, which is what the resource '
+            'editor of Visual Studio may save, and writes nothing', () async {
+          for (final bytes in [
+            _utf16(testCase.pristine, bigEndian: false),
+            _utf16(testCase.pristine, bigEndian: true),
+            [0x61, 0xff, 0xfe, 0x62],
+          ]) {
+            write(projectRoot, testCase.source, bytes);
+
+            await expectLater(
+              processor.apply(ctx),
+              throwsA(
+                isA<UnsupportedRunnerLayoutException>().having(
+                  (e) => e.toString(),
+                  'message',
+                  contains('UTF-8'),
+                ),
+              ),
+            );
+            expect(file(root, testCase.target).existsSync(), isFalse);
+          }
+        });
+
         test(
           'fails on a file it cannot template, and writes nothing',
           () async {
@@ -282,6 +312,24 @@ void main() {
 
     test('fails when there is no file', () {
       expect(processor.apply(ctx), throwsA(isA<FileNotFoundException>()));
+    });
+
+    test('rejects a file that is not UTF-8, and leaves it as it is', () async {
+      final utf16 = _utf16(pristine, bigEndian: false);
+
+      write(root, path, utf16);
+
+      await expectLater(
+        processor.apply(ctx),
+        throwsA(
+          isA<UnsupportedRunnerLayoutException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('UTF-8'),
+          ),
+        ),
+      );
+      expect(file(root, path).readAsBytesSync(), utf16);
     });
 
     test('fails on a file it cannot edit', () {

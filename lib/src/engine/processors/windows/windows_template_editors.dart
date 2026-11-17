@@ -39,36 +39,65 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 ///
 /// Like in 2.x the places are found by what they say, not parsed: one that has a
 /// `//` before it on its line is in a comment and is skipped, and every other
-/// one is templated, the ones of `#if` branches included. A file with none of
-/// one of them is rejected with an [UnsupportedRunnerLayoutException] instead
-/// of guessed at. Block comments, strings and preprocessor directives are not
-/// looked at.
+/// one is templated, the ones of `#if` branches included. **All** of them have
+/// to be written the way `flutter create` writes them, since a build may pick
+/// any: a file with one that is not (a raw or `u8` string, a macro, two
+/// literals, an escaped quote), or with none of one of them, is rejected with
+/// an [UnsupportedRunnerLayoutException] instead of guessed at. Block comments,
+/// strings and preprocessor directives are not looked at, so a `window.Create(`
+/// in a string is one that cannot be templated.
 abstract final class _Templater {
-  /// Swaps the group 2 of every match of [pattern] in a line of code for
+  /// Swaps the group 2 of every match of [supported] in a line of code for
   /// [value]: the part of the match before it, which is group 1, and the one
   /// after it, which is group 3, stay.
   ///
-  /// Throws an [UnsupportedRunnerLayoutException] when there is none.
+  /// [candidate] finds every place that is [what], however it is written, and
+  /// [supported] (which has to start where it does) the ones that can be
+  /// templated. All of them have to be: a place that is not would keep the
+  /// title of the file for a build that picks it, so it is a rejection and the
+  /// others are not templated either. A place that has a `//` before it on its
+  /// line is in a comment and is skipped.
+  ///
+  /// Throws an [UnsupportedRunnerLayoutException] when a place cannot be
+  /// templated, and when there is none.
   static String replace(
     String source,
-    RegExp pattern,
+    RegExp candidate,
+    RegExp supported,
     String value, {
     required String path,
     required String what,
     required String fix,
   }) {
+    bool inComment(int offset) {
+      final head = source.substring(0, offset);
+
+      return head.substring(head.lastIndexOf('\n') + 1).contains('//');
+    }
+
+    final templatable = {
+      for (final match in supported.allMatches(source)) match.start,
+    };
     var found = false;
 
-    final result = source.replaceAllMapped(pattern, (match) {
-      final head = source.substring(0, match.start);
-      final lineStart = head.lastIndexOf('\n') + 1;
+    for (final match in candidate.allMatches(source)) {
+      if (inComment(match.start)) continue;
 
-      if (head.substring(lineStart).contains('//')) return match[0]!;
+      if (!templatable.contains(match.start)) {
+        final line = source
+            .substring(match.start)
+            .split(RegExp(r'\r?\n'))
+            .first;
+
+        throw UnsupportedRunnerLayoutException(
+          path,
+          reason: 'it has `${line.trim()}`, which is not a $what.',
+          fix: fix,
+        );
+      }
 
       found = true;
-
-      return '${match[1]}$value${match[3]}';
-    });
+    }
 
     if (!found) {
       throw UnsupportedRunnerLayoutException(
@@ -78,13 +107,18 @@ abstract final class _Templater {
       );
     }
 
-    return result;
+    return source.replaceAllMapped(
+      supported,
+      (match) =>
+          inComment(match.start) ? match[0]! : '${match[1]}$value${match[3]}',
+    );
   }
 }
 
 /// The template of `windows/runner/main.cpp`: the title of the window of
 /// `window.Create(L"...", origin, size)` is `@WINDOW_TITLE@`.
 abstract final class WindowsMainCppTemplateEditor {
+  static final RegExp _call = RegExp(r'\bwindow\s*(?:\.|->)\s*Create\b');
   static final RegExp _create = RegExp(
     r'(window\.Create\(L")([^"\\\r\n]*)(", origin, size\))',
   );
@@ -93,6 +127,7 @@ abstract final class WindowsMainCppTemplateEditor {
   /// `main.cpp`.
   static String template(String source) => _Templater.replace(
     source,
+    _call,
     _create,
     '@WINDOW_TITLE@',
     path: K.windowsMainCppPath,
@@ -107,10 +142,17 @@ abstract final class WindowsMainCppTemplateEditor {
 /// `@RUNNER_APP_ICON@`, and the `FileDescription` and `ProductName` entries
 /// are `@WINDOW_TITLE@`.
 abstract final class WindowsRunnerRcTemplateEditor {
+  static final RegExp _iconCandidate = RegExp(
+    r'^[ \t]*IDI_APP_ICON\b',
+    multiLine: true,
+  );
   static final RegExp _icon = RegExp(
     r'^([ \t]*IDI_APP_ICON[ \t]+ICON[ \t]+"resources\\\\)([^"\\\r\n]+)(")',
     multiLine: true,
   );
+
+  static RegExp _entryCandidate(String name) =>
+      RegExp('^[ \\t]*VALUE[ \\t]+"$name"', multiLine: true);
 
   static RegExp _entry(String name) => RegExp(
     '^([ \\t]*VALUE "$name", ")([^"\\r\\n]*)(" "\\\\0")',
@@ -122,6 +164,7 @@ abstract final class WindowsRunnerRcTemplateEditor {
   static String template(String source) {
     final withIcon = _Templater.replace(
       source,
+      _iconCandidate,
       _icon,
       '@RUNNER_APP_ICON@',
       path: K.windowsRunnerRcPath,
@@ -133,6 +176,7 @@ abstract final class WindowsRunnerRcTemplateEditor {
       withIcon,
       (text, name) => _Templater.replace(
         text,
+        _entryCandidate(name),
         _entry(name),
         '@WINDOW_TITLE@',
         path: K.windowsRunnerRcPath,

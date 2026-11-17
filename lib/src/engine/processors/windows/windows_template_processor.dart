@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/bom_text_file.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_text.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 
 /// A processor that generates a template of the Windows runner from a file of
@@ -69,7 +70,7 @@ abstract class WindowsTemplateProcessor extends FlavorizrProcessor {
       throw FileNotFoundException(sourcePath);
     }
 
-    final (:text, :hasBom) = await BomTextFile.read(source);
+    final (:text, :hasBom) = await WindowsRunnerText.read(source, sourcePath);
     final target = File(ctx.resolve(targetPath));
 
     ctx.logger.detail('[$id] Generating `$targetPath` from `$sourcePath`');

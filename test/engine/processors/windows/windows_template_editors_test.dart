@@ -83,6 +83,16 @@ void main() {
       expect(edit(two), two.replaceAll(RegExp('L"[ab]"'), 'L"@WINDOW_TITLE@"'));
     });
 
+    test('does not look at a call that cannot be templated if it is in a '
+        'comment', () {
+      final source = '// window.Create(L"a\\"b", origin, size)\n$pristine';
+
+      expect(
+        edit(source),
+        '// window.Create(L"a\\"b", origin, size)\n$template',
+      );
+    });
+
     test('does not look at a call in a comment', () {
       final source = '// window.Create(L"old", origin, size)\n$pristine';
 
@@ -99,6 +109,25 @@ void main() {
         'the arguments are not the ones of Flutter':
             'window.Create(L"x", Point(1, 1), size)',
         'the title is not a wide literal': 'window.Create("x", origin, size)',
+        'the title is a raw wide string':
+            'window.Create(LR"(x)", origin, size)',
+        'the title is a UTF-8 or UTF-16 literal':
+            'window.Create(u8"x", origin, size)',
+        'the title is a macro': 'window.Create(TITLE, origin, size)',
+        'the title is empty and then something':
+            'window.Create(L"" L"x", origin, size)',
+        'the title is two literals': 'window.Create(L"a" L"b", origin, size)',
+        'a call that is in a string': 'puts("window.Create(");\n',
+        'a call with a space before the parenthesis':
+            'window.Create (L"x", origin, size)',
+        'a call through a pointer': 'window->Create(L"x", origin, size)',
+        'one branch has a title that cannot be templated, the other a plain '
+                'one':
+            '#if ALT\n  window.Create(L"My \\"App\\"", origin, size);\n'
+            '#else\n  window.Create(L"Default", origin, size);\n#endif\n',
+        'the plain one comes first, the other one is a macro':
+            'window.Create(L"Default", origin, size);\n'
+            'window.Create(TITLE, origin, size);\n',
       };
 
       for (final MapEntry(key: name, value: source) in cases.entries) {
@@ -191,6 +220,14 @@ void main() {
           '"ProductName"',
           '"Other"',
         ),
+        'a second icon is not one that can be templated':
+            '$pristine\nIDI_APP_ICON ICON "app.ico"\n',
+        'a second icon has a path with slashes':
+            '$pristine\nIDI_APP_ICON ICON "resources/app_icon.ico"\n',
+        'a second file description is a macro':
+            '$pristine\n  VALUE "FileDescription", TITLE "\\0"\n',
+        'a second product name has more than a string':
+            '$pristine\n  VALUE "ProductName", "a" "b" "\\0"\n',
       };
 
       for (final MapEntry(key: name, value: source) in cases.entries) {

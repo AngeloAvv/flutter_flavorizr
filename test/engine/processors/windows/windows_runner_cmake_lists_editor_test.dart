@@ -67,8 +67,8 @@ String _region(Map<String, String> titles) {
     r'get_target_property(FLAVORIZR_RUNNER_SOURCES ${BINARY_NAME} SOURCES)',
     'list(REMOVE_ITEM FLAVORIZR_RUNNER_SOURCES',
     '  "main.cpp"',
-    '  "Runner.rc"',
     r'  "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"',
+    '  "Runner.rc"',
     r'  "${CMAKE_CURRENT_SOURCE_DIR}/Runner.rc"',
     ')',
     r'set_property(TARGET ${BINARY_NAME} PROPERTY SOURCES ${FLAVORIZR_RUNNER_SOURCES})',
@@ -332,6 +332,57 @@ void main() {
       expect(_edit(call), contains(_region(_titles)));
     });
 
+    test('removes every spelling it accepts from the target, and only those: '
+        'the unrelated sources, whatever they are called, are left alone', () {
+      const call =
+          'add_executable(\${BINARY_NAME} WIN32\n'
+          '  "flutter_window.cpp"\n'
+          '  "domain.cpp"\n'
+          '  "my_main.cpp"\n'
+          '  "main.cpp.in"\n'
+          '  "Runner.rc.in"\n'
+          '  # was "./main.cpp"\n'
+          '  "main.cpp"\n'
+          '  \${CMAKE_CURRENT_SOURCE_DIR}/Runner.rc\n'
+          ')';
+      final patched = _edit(_pristine(call));
+      final removed = RegExp(r'list\(REMOVE_ITEM[^)]*\)')
+          .firstMatch(patched)!
+          .group(0)!
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.startsWith('"'))
+          .toSet();
+
+      expect(removed, {
+        for (final name in ['main.cpp', 'Runner.rc'])
+          for (final spelling in WindowsRunnerCMakeListsEditor.sourceSpellings(
+            name,
+          ))
+            '"$spelling"',
+      });
+      expect(patched, contains(call));
+    });
+
+    test('accepts every spelling it removes, quoted or not', () {
+      for (final main in WindowsRunnerCMakeListsEditor.sourceSpellings(
+        'main.cpp',
+      )) {
+        for (final rc in WindowsRunnerCMakeListsEditor.sourceSpellings(
+          'Runner.rc',
+        )) {
+          for (final quote in ['', '"']) {
+            final call = _pristine(
+              'add_executable(\${BINARY_NAME} WIN32\n'
+              '  $quote$main$quote\n  $quote$rc$quote\n)',
+            );
+
+            expect(_edit(call), contains(_begin), reason: '$main $rc $quote');
+          }
+        }
+      }
+    });
+
     test('builds with the defaults, and not with an empty icon, when the '
         'flavor is not one of the configured ones', () {
       final region = _edit(_pristine());
@@ -359,6 +410,55 @@ void main() {
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n'
             '  "runner/Runner.rc"\n)',
+          ),
+          message: 'Runner.rc',
+        ),
+        (
+          name: 'main.cpp is also listed as ./main.cpp',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "./main.cpp"\n  "Runner.rc"\n)',
+          ),
+          message: './main.cpp',
+        ),
+        (
+          name: 'Runner.rc is also listed as an alias',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "Runner.rc"\n  "./Runner.rc"\n)',
+          ),
+          message: './Runner.rc',
+        ),
+        (
+          name: 'main.cpp is listed with another case',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "Main.cpp"\n  "Runner.rc"\n)',
+          ),
+          message: 'Main.cpp',
+        ),
+        (
+          name: 'main.cpp is also listed in a folder',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "sub/../main.cpp"\n  "Runner.rc"\n)',
+          ),
+          message: 'sub/../main.cpp',
+        ),
+        (
+          name: 'main.cpp is also listed after the source dir with an alias',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "\${CMAKE_CURRENT_SOURCE_DIR}/./main.cpp"\n  "Runner.rc"\n)',
+          ),
+          message: './main.cpp',
+        ),
+        (
+          name: 'two sources are on one line',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp" "./main.cpp"\n  "Runner.rc"\n)',
+          ),
+          message: './main.cpp',
+        ),
+        (
+          name: 'a source has a comment after it',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "Runner.rc" # resources\n)',
           ),
           message: 'Runner.rc',
         ),
