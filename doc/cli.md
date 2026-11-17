@@ -59,7 +59,7 @@ assets:download,android:buildGradle` runs on 3.x with warnings only.
 | `0` | Everything went well. |
 | `1` | Needs attention: files edited by hand are in the way (`plan`, `apply`), the project drifted (`status`), or a check failed (`doctor`). |
 | `64` | The command line is wrong, e.g. an unknown target. |
-| `65` | The configuration or `flavorizr.lock` cannot be used. |
+| `65` | The configuration or `flavorizr.lock` cannot be used, or the configuration asks for what flavorizr cannot undo (see below). |
 | `70` | A processor failed, or the project changed during the run. |
 
 A run that fails does not write the engine's changes to the project, and the
@@ -73,6 +73,34 @@ anything is written. There are three exceptions, and each says so:
   which finds nothing to change and writes the lock;
 * a 2.x processor that fails after the engine finished leaves the engine's
   changes in place.
+
+## Removing flavors, and what flavorizr refuses
+
+Removing flavors from `flavorizr.yaml` works, down to the last one: the files a
+dropped flavor generated are deleted, and the lock follows.
+
+`plan` and `apply` **refuse** two things, with exit code `65`, before any
+processor runs, so nothing is written (not even the lock):
+
+* removing **every** flavor, when `flavorizr.lock` records flavors;
+* dropping a **platform** that `flavorizr.lock` shows was flavorized: no flavor
+  has an `android` (`ios`, `macos`, ...) section anymore, and the lock records
+  files of the processors of that platform. The message names the platform and
+  lists the files the lock records for it.
+
+The reason is that flavorizr overwrites the values it owns (`android:label` in
+the manifest, `CFBundleName` in a plist) and does not store the originals, so it
+cannot put them back. Fully un-flavorizing a project, or a platform, is out of
+scope for 3.0. To do it, restore the files flavorizr changed from version
+control (or put the original values back), delete the files it generated and
+`flavorizr.lock`, and run flavorizr again with what remains in
+`flavorizr.yaml`.
+
+The check compares `flavorizr.yaml` with the lock only, whatever the targets,
+and it only knows what the lock records (a lock that cannot be read fails it
+with `65`, as it does a run of the engine): a project with no `flavorizr.lock`, or
+a platform with no processor on the engine yet (which the lock cannot record),
+is never refused. `status`, `list` and `doctor` do not run this check.
 
 ## `status` and drift
 

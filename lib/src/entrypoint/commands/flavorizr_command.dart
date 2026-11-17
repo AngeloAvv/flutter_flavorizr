@@ -25,6 +25,8 @@
 
 import 'package:args/command_runner.dart';
 import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
+import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/destructive_removal.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/deprecated_options.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
@@ -43,7 +45,7 @@ Exit codes:
   0   everything went well
   1   needs attention: conflicts with files edited by hand, drift (status), or a failed check (doctor)
   64  the command line is wrong
-  65  the configuration or the lock cannot be used
+  65  the configuration or the lock cannot be used, or it removes the last flavor or a whole platform
   70  a processor failed, or the project changed during the run''';
 
 /// A command failed in a way that has an exit code, and something to tell.
@@ -200,6 +202,27 @@ abstract class TargetCommand extends FlavorizrCommand {
 
     return plan;
   }
+
+  /// Fails when [config] asks to remove what flavorizr cannot undo: the last
+  /// flavor, or the flavors of a platform that the lock says was flavorized.
+  ///
+  /// It is meant to run before anything is done, whatever the targets: it
+  /// compares the configuration with the lock, and nothing is written. See
+  /// [checkRemoval].
+  Future<void> checkNothingIsDropped(Flavorizr config) async => checkRemoval(
+    previous: await LockStore(
+      context.projectRoot,
+      runningVersion: context.version,
+    ).read(),
+    flavors: config.flavors.keys.toSet(),
+    platforms: {
+      if (config.androidFlavorsAvailable) 'android',
+      if (config.iosFlavorsAvailable) 'ios',
+      if (config.macosFlavorsAvailable) 'macos',
+      if (config.linuxFlavorsAvailable) 'linux',
+      if (config.windowsFlavorsAvailable) 'windows',
+    },
+  );
 
   /// What the processors of the engine would change, or `null` when there are
   /// none. Fails when one of them does.

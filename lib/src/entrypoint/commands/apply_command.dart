@@ -89,6 +89,8 @@ class ApplyCommand extends TargetCommand {
     final config = loadConfig();
     final plan = resolve(config);
 
+    await checkNothingIsDropped(config);
+
     logger.info('Flavorization process started');
     logger.info(renderRunPlan(plan));
 
