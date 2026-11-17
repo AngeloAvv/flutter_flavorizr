@@ -27,8 +27,10 @@ import 'package:flutter_flavorizr/src/exception/copy_back_interrupted_exception.
 import 'package:flutter_flavorizr/src/exception/dependency_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
+import 'package:flutter_flavorizr/src/exception/last_flavor_removal_exception.dart';
 import 'package:flutter_flavorizr/src/exception/lock_not_written_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_lock_file_exception.dart';
+import 'package:flutter_flavorizr/src/exception/platform_drop_exception.dart';
 import 'package:flutter_flavorizr/src/exception/project_changed_exception.dart';
 import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unapproved_conflicts_exception.dart';
@@ -45,7 +47,7 @@ import 'package:io/io.dart';
 /// | 0 | Everything went well. |
 /// | 1 | Needs attention: files edited by hand are in the way (`plan`, `apply`), the project drifted from `flavorizr.yaml` or from the lock (`status`), or a check failed (`doctor`). |
 /// | 64 | The command line is wrong, e.g. an unknown target. |
-/// | 65 | The configuration or the lock cannot be used. |
+/// | 65 | The configuration or the lock cannot be used: it is invalid, or it asks to remove the last flavor or a whole platform, which flavorizr cannot undo. |
 /// | 70 | A processor failed, or the project changed during the run. |
 abstract final class ExitCodes {
   /// Everything went well.
@@ -75,6 +77,8 @@ abstract final class ExitCodes {
     DuplicateProcessorException() ||
     UnknownProcessorException() ||
     DependencyCycleException() ||
+    LastFlavorRemovalException() ||
+    PlatformDropException() ||
     MalformedLockFileException() ||
     UnsupportedLockVersionException() => data,
     ProjectChangedException() ||
