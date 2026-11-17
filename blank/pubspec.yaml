@@ -19,7 +19,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  # `flutter create .` keeps this file, but writes the lib/main.dart of the
+  # Flutter that runs it, which needs its Dart (it uses dot shorthands, 3.10):
+  # keep this at or above what the pinned Flutter (.fvmrc) creates.
+  sdk: '>=3.13.0 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
