@@ -160,7 +160,7 @@ flavorizr:
 | linux:myApplication     | Linux         | Sets the window title for each flavor in my_application.cc              |
 | windows:mainCppTemplate | Windows       | Templates main.cpp into main.cpp.in so its window title can be set per flavor |
 | windows:runnerRcTemplate| Windows       | Templates Runner.rc into Runner.rc.in so its icon/window title can be set per flavor |
-| windows:cmake           | Windows       | Sets the icon/window title for each flavor in runner/CMakeLists.txt and wires the .in templates via configure_file |
+| windows:cmake           | Windows       | Sets the icon/window title for each flavor in runner/CMakeLists.txt and builds the .in templates into the build directory with configure_file |
 | windows:dummyAssets     | Windows       | Generates a default icon for your custom flavors                        |
 | windows:icons           | Windows       | Creates an icon for each flavor according to the icon directive          |
 
