@@ -40,6 +40,16 @@ final _schema =
 
 final _ansi = RegExp('\x1B');
 
+bool _canRead(String path) {
+  try {
+    File(path).readAsStringSync();
+
+    return true;
+  } on FileSystemException {
+    return false;
+  }
+}
+
 void main() {
   late CliFixture project;
 
@@ -234,6 +244,14 @@ void main() {
             ]),
           );
           Process.runSync('chmod', ['000', project.abs('flavorizr.lock')]);
+
+          // Root, and a file system that ignores permissions, read it all the
+          // same: there is no error to look at.
+          if (_canRead(project.abs('flavorizr.lock'))) {
+            markTestSkipped('flavorizr.lock is readable despite chmod 000');
+
+            return;
+          }
 
           final code = await project.run(['plan', '--json', ...engineTargets]);
           final doc = document();
