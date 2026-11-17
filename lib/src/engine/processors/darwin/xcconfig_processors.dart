@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_sources.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
@@ -77,7 +78,7 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
     for (final MapEntry(key: flavorName, value: flavor) in flavors(
       ctx.config,
     ).entries) {
-      _checkFlavorName(flavorName);
+      checkFlavorName(flavorName);
 
       for (final target in Target.values) {
         sources[p.posix.join(folder, xcconfigName(flavorName, target))] =
@@ -96,21 +97,6 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
     }
 
     return sources.keys.toList(growable: false);
-  }
-
-  /// A flavor name becomes part of a file name, so it must be a single path
-  /// segment: `../Runner` or `a/b` would write somewhere else in the project.
-  static void _checkFlavorName(String flavor) {
-    if (flavor.isEmpty ||
-        flavor == '.' ||
-        flavor == '..' ||
-        flavor.contains(RegExp(r'[/\\\x00]'))) {
-      throw ArgumentError.value(
-        flavor,
-        'flavor',
-        'cannot be used as the name of a file',
-      );
-    }
   }
 }
 

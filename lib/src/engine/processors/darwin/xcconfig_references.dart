@@ -25,6 +25,7 @@
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
 
 /// The type Xcode gives a `.xcconfig` file, in `lastKnownFileType`.
 const _xcconfigFileType = 'text.xcconfig';
@@ -122,7 +123,7 @@ void removeXcconfigsFromResources(XcodeProject project) {
 }
 
 bool _isFlavorXcconfig(PBXFileReference reference) =>
-    _flavorPath.hasMatch(reference.path ?? '');
+    isFlavorXcconfigPath(reference.path ?? '');
 
 PBXGroup _group(XcodeProject project, String? name) {
   if (name == null) return project.mainGroup;
@@ -136,35 +137,35 @@ PBXGroup _group(XcodeProject project, String? name) {
   );
 }
 
-/// The file name of a flavor xcconfig: the flavor and the mode, as a regular
-/// expression. The xcconfigs of the templates of Flutter have no flavor
-/// (`Flutter/Debug.xcconfig`), so the two are told apart.
-const _flavorXcconfigFile = r'[^/\s";*]+(?:Debug|Profile|Release)\.xcconfig';
-
-/// The path of the file reference to a flavor xcconfig.
-final _flavorPath = RegExp(
-  '^(?:Flutter|Runner/Configs)/$_flavorXcconfigFile\$',
+/// A definition of an object of `project.pbxproj`, on a line of its own, which
+/// is how `dart_xcodeproj` writes the file references and the build files.
+final _definition = RegExp(
+  r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)? = \{isa = (\w+);(.*)\};\s*$',
 );
 
-/// The definition of the file reference to a flavor xcconfig, which is in
-/// `Flutter/` (iOS) or `Runner/Configs/` (macOS).
-final _flavorReference = RegExp(
-  'path = "?(?:Flutter|Runner/Configs)/$_flavorXcconfigFile"?;',
+final _referencePath = RegExp(r'\bpath = (?:"([^"]*)"|([^;"\s]+));');
+final _fileRef = RegExp(r'\bfileRef = ([0-9A-F]{24}(?:[0-9A-F]{8})?)\b');
+final _listing = RegExp(
+  r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)?,\s*$',
 );
 
-/// The entries that put such a file in the Resources phase, which are annotated
-/// by the name of the file, with or without its folder.
-final _flavorResource = RegExp(
-  '/\\* (?:[^/\\s*]+/)*$_flavorXcconfigFile in Resources \\*/',
-);
-
-/// The part of a `project.pbxproj` the references of [addXcconfigReference]
+/// The part of a `project.pbxproj` the references of [ensureXcconfigReference]
 /// make up, which is what the lock hashes for the processors that write them:
 ///
-/// * the definitions of the file references to the flavor xcconfigs, and
-/// * the entries that put them in the Resources phase, which are none when the
-///   project is as it should be. An xcconfig that is a resource again is
-///   something the processor changes, so it has to show.
+/// * the definitions of the file references to the flavor xcconfigs
+///   ([isFlavorXcconfigPath]), and
+/// * the entries that put **those** in a Resources phase, which are none when
+///   the project is as it should be: an xcconfig that is a resource again is
+///   something the processor changes, so it has to show. They are the build
+///   files whose `fileRef` is one of the references above and that a Resources
+///   phase lists, with the lines of the phase that list them.
+///
+/// It goes by what the objects refer to, never by the annotation of a line,
+/// which is the name of the file without its folder: an xcconfig that is not in
+/// the folder of flavorizr (`Other/appleDebug.xcconfig`), and its entry in
+/// Resources, is not in it, as the cleanup does not touch it either. The entries
+/// of the phases that are not Resources are not in it either, for the same
+/// reason.
 ///
 /// The rest of the project belongs to Xcode, to CocoaPods, to Flutter, to the
 /// user and to the other processors, so an edit of it is not drift in what these
@@ -173,12 +174,85 @@ final _flavorResource = RegExp(
 ///
 /// A reference to an xcconfig of the user that is named like the ones of the
 /// flavors, in these folders, is taken for one of them.
-String xcconfigReferencesOwnedContent(String source) => source
-    .split(RegExp(r'\r?\n'))
-    .where(
-      (line) =>
-          (line.contains('isa = PBXFileReference;') &&
-              _flavorReference.hasMatch(line)) ||
-          _flavorResource.hasMatch(line),
-    )
-    .join('\n');
+String xcconfigReferencesOwnedContent(String source) {
+  final lines = source.split(RegExp(r'\r?\n'));
+  final inResources = _inResourcesPhases(lines);
+  final references = <String>{};
+  final fileRefOf = <String, String>{};
+  final listed = <String>{};
+
+  for (final (index, line) in lines.indexed) {
+    if (inResources[index]) {
+      final uuid = _listing.firstMatch(line)?.group(1);
+
+      if (uuid != null) listed.add(uuid);
+    }
+
+    final definition = _definition.firstMatch(line);
+
+    if (definition == null) continue;
+
+    final uuid = definition.group(1)!;
+    final body = definition.group(3)!;
+
+    switch (definition.group(2)) {
+      case 'PBXFileReference':
+        final path = _referencePath.firstMatch(body);
+        final value = path?.group(1) ?? path?.group(2);
+
+        if (value != null && isFlavorXcconfigPath(value)) references.add(uuid);
+      case 'PBXBuildFile':
+        final fileRef = _fileRef.firstMatch(body)?.group(1);
+
+        if (fileRef != null) fileRefOf[uuid] = fileRef;
+    }
+  }
+
+  final entries = {
+    for (final uuid in listed)
+      if (references.contains(fileRefOf[uuid])) uuid,
+  };
+
+  return [
+    for (final (index, line) in lines.indexed)
+      if (_isOwned(line, inResources[index], references, entries)) line,
+  ].join('\n');
+}
+
+bool _isOwned(
+  String line,
+  bool inResources,
+  Set<String> references,
+  Set<String> entries,
+) {
+  final definition = _definition.firstMatch(line);
+
+  if (definition != null) {
+    final uuid = definition.group(1)!;
+
+    return switch (definition.group(2)) {
+      'PBXFileReference' => references.contains(uuid),
+      'PBXBuildFile' => entries.contains(uuid),
+      _ => false,
+    };
+  }
+
+  final listed = inResources ? _listing.firstMatch(line)?.group(1) : null;
+
+  return listed != null && entries.contains(listed);
+}
+
+/// For each of [lines], whether it is in the section of the Resources phases.
+List<bool> _inResourcesPhases(List<String> lines) {
+  var inside = false;
+
+  return [
+    for (final line in lines)
+      if (line.contains('/* Begin PBXResourcesBuildPhase section */'))
+        inside = true
+      else if (line.contains('/* End PBXResourcesBuildPhase section */'))
+        inside = false
+      else
+        inside,
+  ];
+}

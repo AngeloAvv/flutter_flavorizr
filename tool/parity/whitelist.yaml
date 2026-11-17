@@ -63,8 +63,8 @@
     needed anymore.
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '^\s*\w{24} /\* Flutter/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig"?; )'
+  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )'
   reason: >-
     dart_xcodeproj 0.4.0 (#513) prints only the annotations of its object model,
     as Ruby's xcodeproj does, where 0.3.0 guessed them from the shape of the
@@ -79,8 +79,8 @@
     named again, is identical to the new file once the comments are stripped.
 - path: macos/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig"?; )'
+  drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )'
   reason: >-
     Same as ios/Runner.xcodeproj/project.pbxproj: the comments are the ones
     Ruby's xcodeproj writes (#513), and macos:configs on the engine (#518) does

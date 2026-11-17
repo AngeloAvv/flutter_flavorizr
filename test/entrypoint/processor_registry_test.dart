@@ -167,7 +167,7 @@ void main() {
 
     group('hashes of an Xcode project only', () {
       String reference(String path) =>
-          '\t\tA /* x */ = {isa = PBXFileReference; path = $path; };';
+          '\t\t${'A' * 24} /* x */ = {isa = PBXFileReference; path = $path; };';
 
       for (final (artifact, path) in [
         (XcodeprojResource.iosArtifact, 'Flutter/appleDebug.xcconfig'),

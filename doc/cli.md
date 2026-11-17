@@ -172,7 +172,11 @@ each flavor and mode (`debug`, `profile`, `release`): `ios/Flutter`,
 flavorizr owns, written as text, so `#include?` of the Pods xcconfig stays
 optional (it does not exist until `pod install` ran), and a file you edit by
 hand is reported as a conflict. The files of a flavor you remove from
-`flavorizr.yaml` are deleted.
+`flavorizr.yaml` are deleted. The name of a flavor is part of the name of its
+files, so a run refuses (before it writes anything) a flavor that is empty, `.`
+or `..`, or that has whitespace, a control or non-ASCII character, or any of
+`" \ ; * /`: they cannot be told apart in `project.pbxproj`, and the project is
+not read back as it was written when a name is not ASCII.
 
 `ios:xcconfig` and `macos:configs` also add a reference to each file to
 `Runner.xcodeproj`, where `ios:buildTargets` and `macos:buildTargets` use it as

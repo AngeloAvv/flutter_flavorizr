@@ -626,7 +626,7 @@ void main() {
   });
 
   group('a flavor that is not a name for a file', () {
-    for (final name in ['a/b', '..']) {
+    for (final name in ['a/b', '..', 'qa east', 'a;b', 'a*b', 'é']) {
       test('`$name` fails the run, which writes nothing', () async {
         project.write('flavorizr.yaml', _config([name]));
         final before = project.snapshot();

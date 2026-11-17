@@ -444,10 +444,45 @@ void main() {
   });
 
   group('what the lock hashes of a project', () {
-    String line(String path, {String? type = 'text.xcconfig'}) =>
-        '\t\tAAAA /* $path */ = {isa = PBXFileReference; '
+    String id(String letter) => letter * 24;
+
+    /// The definition of a file reference, on a line of its own, as the project
+    /// writes it.
+    String line(
+      String path, {
+      String uuid = 'A',
+      String? type = 'text.xcconfig',
+    }) =>
+        '\t\t${id(uuid)} /* ${path.replaceAll('"', '')} */ = '
+        '{isa = PBXFileReference; '
         '${type == null ? '' : 'lastKnownFileType = $type; '}'
         'path = $path; sourceTree = "<group>"; };';
+
+    /// The entry that puts the file reference [file] in a phase, and the line
+    /// that lists it in the phase.
+    String entry(String uuid, String file, String name) =>
+        '\t\t${id(uuid)} /* $name in Resources */ = '
+        '{isa = PBXBuildFile; fileRef = ${id(file)} /* $name */; };';
+
+    String listing(String uuid, String name) =>
+        '\t\t\t\t${id(uuid)} /* $name in Resources */,';
+
+    /// A project with [definitions], and the Resources phase that lists
+    /// [listings].
+    String project(List<String> definitions, List<String> listings) => [
+      'LastUpgradeCheck = 1510;',
+      '/* Begin PBXBuildFile section */',
+      ...definitions,
+      '/* End PBXBuildFile section */',
+      '/* Begin PBXResourcesBuildPhase section */',
+      '\t\t${id('R')} /* Resources */ = {',
+      '\t\t\tisa = PBXResourcesBuildPhase;',
+      '\t\t\tfiles = (',
+      ...listings,
+      '\t\t\t);',
+      '\t\t};',
+      '/* End PBXResourcesBuildPhase section */',
+    ].join('\n');
 
     const other = '\t\tBBBB /* Runner */ = {isa = PBXGroup; name = Runner; };';
 
@@ -456,8 +491,8 @@ void main() {
         'before',
         line('Flutter/appleDebug.xcconfig'),
         other,
-        line('Runner/Configs/bananaRelease.xcconfig', type: null),
-        line('"Flutter/my-flavorProfile.xcconfig"'),
+        line('Runner/Configs/bananaRelease.xcconfig', uuid: 'B', type: null),
+        line('"Flutter/my-flavorProfile.xcconfig"', uuid: 'C'),
         'after',
       ].join('\n');
 
@@ -465,39 +500,96 @@ void main() {
         xcconfigReferencesOwnedContent(source),
         [
           line('Flutter/appleDebug.xcconfig'),
-          line('Runner/Configs/bananaRelease.xcconfig', type: null),
-          line('"Flutter/my-flavorProfile.xcconfig"'),
+          line('Runner/Configs/bananaRelease.xcconfig', uuid: 'B', type: null),
+          line('"Flutter/my-flavorProfile.xcconfig"', uuid: 'C'),
         ].join('\n'),
       );
     });
 
-    test('are the entries of the Resources phase that 2.x added for them', () {
-      final definition =
-          '\t\tCCCC /* Flutter/appleDebug.xcconfig in Resources */ = '
-          '{isa = PBXBuildFile; fileRef = AAAA /* appleDebug.xcconfig */; };';
-      final listing = '\t\t\t\tCCCC /* appleDebug.xcconfig in Resources */,';
+    test('are the entries of the Resources phase that put them there, and '
+        'nothing that is not theirs', () {
+      final flavor = entry('C', 'A', 'appleDebug.xcconfig');
+      final source = project(
+        [
+          line('Flutter/appleDebug.xcconfig'),
+          line('Flutter/UserOverrides.xcconfig', uuid: 'U'),
+          line('Other/appleDebug.xcconfig', uuid: 'O'),
+          flavor,
+          entry('D', 'U', 'UserOverrides.xcconfig'),
+          // The annotation is the same as the one of the flavor: it is not it.
+          entry('E', 'O', 'appleDebug.xcconfig'),
+          '\t\t${id('F')} /* Assets.xcassets in Resources */ = '
+              '{isa = PBXBuildFile; };',
+        ],
+        [
+          listing('C', 'appleDebug.xcconfig'),
+          listing('D', 'UserOverrides.xcconfig'),
+          listing('E', 'appleDebug.xcconfig'),
+          listing('F', 'Assets.xcassets'),
+        ],
+      );
+
+      expect(
+        xcconfigReferencesOwnedContent(source),
+        [
+          line('Flutter/appleDebug.xcconfig'),
+          flavor,
+          listing('C', 'appleDebug.xcconfig'),
+        ].join('\n'),
+      );
+    });
+
+    test('are not the entries of a phase that is not Resources', () {
       final source = [
-        '\t\tDDDD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; };',
-        definition,
-        '\t\t\t\tDDDD /* Assets.xcassets in Resources */,',
-        listing,
-        '\t\t\t\tEEEE /* Debug.xcconfig in Resources */,',
+        line('Flutter/appleDebug.xcconfig'),
+        entry('C', 'A', 'appleDebug.xcconfig'),
+        '/* Begin PBXCopyFilesBuildPhase section */',
+        listing('C', 'appleDebug.xcconfig'),
+        '/* End PBXCopyFilesBuildPhase section */',
       ].join('\n');
 
       expect(
         xcconfigReferencesOwnedContent(source),
-        [definition, listing].join('\n'),
+        line('Flutter/appleDebug.xcconfig'),
+      );
+    });
+
+    test('change when the entry of an xcconfig of the user does not, and '
+        'when the entry of a flavor does', () {
+      String source({required bool user, required bool flavor}) => project(
+        [
+          line('Flutter/appleDebug.xcconfig'),
+          line('Other/appleDebug.xcconfig', uuid: 'O'),
+          entry('C', 'A', 'appleDebug.xcconfig'),
+          entry('E', 'O', 'appleDebug.xcconfig'),
+        ],
+        [
+          if (flavor) listing('C', 'appleDebug.xcconfig'),
+          if (user) listing('E', 'appleDebug.xcconfig'),
+        ],
+      );
+
+      expect(
+        xcconfigReferencesOwnedContent(source(user: true, flavor: false)),
+        xcconfigReferencesOwnedContent(source(user: false, flavor: false)),
+      );
+      expect(
+        xcconfigReferencesOwnedContent(source(user: true, flavor: true)),
+        isNot(
+          xcconfigReferencesOwnedContent(source(user: true, flavor: false)),
+        ),
       );
     });
 
     test('are not the xcconfigs of Flutter or of the user', () {
       final source = [
         line('Flutter/Debug.xcconfig'),
-        line('Flutter/Release.xcconfig'),
-        line('Debug.xcconfig'),
-        line('Flutter-Debug.xcconfig'),
-        line('Runner/Configs/AppInfo.xcconfig'),
-        line('Other/appleDebug.xcconfig'),
+        line('Flutter/Release.xcconfig', uuid: 'B'),
+        line('Debug.xcconfig', uuid: 'C'),
+        line('Flutter-Debug.xcconfig', uuid: 'D'),
+        line('Runner/Configs/AppInfo.xcconfig', uuid: 'E'),
+        line('Other/appleDebug.xcconfig', uuid: 'F'),
+        line('Flutter/qa eastDebug.xcconfig', uuid: 'G'),
       ].join('\n');
 
       expect(xcconfigReferencesOwnedContent(source), isEmpty);

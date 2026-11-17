@@ -86,8 +86,8 @@ happens to have the same attribute). `differ_test.dart` runs the entries of
 ```yaml
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '^\s*\w{24} /\* Flutter/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^/\s*";]+(?:Debug|Profile|Release)\.xcconfig"?; )'
+  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )'
   reason: the generated xcconfigs are not resources, and have a type (#518)
 ```
 

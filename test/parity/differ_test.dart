@@ -28,8 +28,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
+
 import '../../tool/parity/src/differ.dart';
 import '../../tool/parity/src/pbxproj_normalizer.dart';
+
+/// [path] as a plist writes it: quoted unless it is made of plain characters.
+String _quoted(String path) =>
+    RegExp(r'^[A-Za-z0-9_./]+$').hasMatch(path) ? path : '"$path"';
 
 void main() {
   late Directory golden;
@@ -271,7 +277,7 @@ void main() {
             '{isa = PBXFileReference; includeInIndex = 1; '
             '${typeOf[name] ?? (name.endsWith('.xcconfig') ? type : '')}'
             '${extra.isEmpty ? '' : '$extra '}'
-            'path = $name; sourceTree = "<group>"; };\n').join()}'
+            'path = ${_quoted(name)}; sourceTree = "<group>"; };\n').join()}'
         '/* End PBXFileReference section */\n'
         '\n'
         '/* Begin PBXGroup section */\n'
@@ -317,6 +323,25 @@ void main() {
     }
 
     const typed = 'lastKnownFileType = text.xcconfig; ';
+
+    test('spell the name of a flavor as the processors take it', () {
+      final text = File('tool/parity/whitelist.yaml').readAsStringSync();
+      final patterns = RegExp(
+        r"^  (?:drop-from-golden|ignore): '(.*)'$",
+        multiLine: true,
+      ).allMatches(text).map((match) => match.group(1)!).toList();
+
+      // The two patterns of each of the two projects.
+      expect(patterns, hasLength(4));
+      for (final pattern in patterns) {
+        expect(pattern, contains('$flavorNameCharacter+'));
+        expect(
+          pattern.replaceAll(flavorNameCharacter, ''),
+          isNot(contains('[^')),
+          reason: 'a character class of its own is another definition',
+        );
+      }
+    });
 
     for (final (platform, folder) in [
       ('ios', 'Flutter'),
@@ -486,6 +511,36 @@ void main() {
             ),
             isFalse,
           );
+        });
+
+        test('tolerates a flavor that is named with any character a flavor may '
+            'have', () {
+          for (final name in [
+            'my-flavor',
+            'my.flavor',
+            '1abc',
+            'a\$b',
+            'a{b}',
+            'a#b',
+            'a,b',
+            'a=b',
+          ]) {
+            final flavor = '$folder/${name}Debug.xcconfig';
+            final all = [flavor, overrides, storyboard];
+
+            expect(
+              clean(
+                project(all, resources: all),
+                project(
+                  all,
+                  resources: [overrides, storyboard],
+                  typeOf: {flavor: typed},
+                ),
+              ),
+              isTrue,
+              reason: name,
+            );
+          }
         });
 
         test('fails on any other change', () {
