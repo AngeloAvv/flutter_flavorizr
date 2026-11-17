@@ -136,8 +136,37 @@ class Whitelist {
     return null;
   }
 
-  static String _withoutComments(String content) =>
-      content.replaceAll(RegExp(r' /\*.*?\*/'), '');
+  /// [content] without its `/* ... */` annotations, and the space before each.
+  /// A quoted value is copied as it is, escapes included, as the ASCII plist
+  /// grammar reads it, so that a `/* ... */` inside a shell script is content.
+  static String _withoutComments(String content) {
+    final result = StringBuffer();
+    var i = 0;
+    while (i < content.length) {
+      final char = content[i];
+      if (char == '"') {
+        final start = i++;
+        while (i < content.length && content[i] != '"') {
+          i += content[i] == '\\' ? 2 : 1;
+        }
+        i = i < content.length ? i + 1 : content.length;
+        result.write(content.substring(start, i));
+      } else if (char == ' ' && content.startsWith('/*', i + 1)) {
+        i++;
+      } else if (content.startsWith('/*', i)) {
+        final end = content.indexOf('*/', i + 2);
+        if (end == -1) {
+          result.write(content.substring(i));
+          break;
+        }
+        i = end + 2;
+      } else {
+        result.write(char);
+        i++;
+      }
+    }
+    return result.toString();
+  }
 }
 
 /// Compares two normalized trees, see [normalizeTree].

@@ -32,7 +32,26 @@ import 'package:path/path.dart' as p;
 
 import '../../test_utils.dart';
 
+/// Compares the content as it is stored: `readAsStringSync` decodes UTF-8 and
+/// drops a leading BOM, so it would not see one being added or removed.
+void expectSameContent(File actual, File expected) =>
+    expect(actual.readAsBytesSync(), orderedEquals(expected.readAsBytesSync()));
+
 void main() {
+  test('Test the comparison of the round trips sees a BOM that is added', () {
+    TestUtils.withTempDir((dir) {
+      final withBom = File('${dir.path}/with_bom')
+        ..writeAsBytesSync([0xEF, 0xBB, 0xBF, 0x61, 0x0A]);
+      final withoutBom = File('${dir.path}/without_bom')
+        ..writeAsBytesSync([0x61, 0x0A]);
+
+      expect(
+        () => expectSameContent(withBom, withoutBom),
+        throwsA(isA<TestFailure>()),
+      );
+    });
+  });
+
   for (final platform in ['ios', 'macos']) {
     final projectPath = 'example/$platform/Runner.xcodeproj';
 
@@ -46,9 +65,9 @@ void main() {
           final project = await XcodeProject.open(copyPath);
           await project.save();
 
-          expect(
-            File('$copyPath/project.pbxproj').readAsStringSync(),
-            File('$projectPath/project.pbxproj').readAsStringSync(),
+          expectSameContent(
+            File('$copyPath/project.pbxproj'),
+            File('$projectPath/project.pbxproj'),
           );
         });
       },
@@ -69,10 +88,7 @@ void main() {
             final opened = await XCScheme.open(scheme.path);
             await opened.saveAs(copyPath);
 
-            expect(
-              File(copyPath).readAsStringSync(),
-              scheme.readAsStringSync(),
-            );
+            expectSameContent(File(copyPath), scheme);
           });
         },
       );

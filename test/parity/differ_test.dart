@@ -158,6 +158,59 @@ void main() {
       expect(report.differences.single.reason, isNull);
     });
 
+    test('does not hide a change inside a quoted value', () {
+      write(golden, pbxproj, 'shellScript = "echo \' /* old */\'";\n');
+      write(actual, pbxproj, 'shellScript = "echo \' /* new */\'";\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+      expect(report.differences.single.reason, isNull);
+    });
+
+    test('does not hide a change after an escaped quote', () {
+      write(golden, pbxproj, 'shellScript = "echo \\" /* old */";\n');
+      write(actual, pbxproj, 'shellScript = "echo \\" /* new */";\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+
+    test('tolerates annotations around a quoted value that did not change', () {
+      write(
+        golden,
+        pbxproj,
+        'a = B /* old */;\nshellScript = "echo \' /* same */\'";\n',
+      );
+      write(
+        actual,
+        pbxproj,
+        'a = B /* new */;\nshellScript = "echo \' /* same */\'";\n',
+      );
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isTrue);
+    });
+
+    test('tolerates an annotation that holds quotes', () {
+      write(
+        golden,
+        pbxproj,
+        'a = B /* XCLocalSwiftPackageReference "Old" */;\n',
+      );
+      write(
+        actual,
+        pbxproj,
+        'a = B /* XCLocalSwiftPackageReference "New" */;\n',
+      );
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isTrue);
+    });
+
     test('does not hide an added file', () {
       write(actual, pbxproj, 'a = B;\n');
 
