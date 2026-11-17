@@ -47,6 +47,14 @@ import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 /// every run. The UUID is the first 24 hex characters of the MD5 of the seed
 /// (`UuidGenerator.deterministic`), which looks like the ones Xcode writes.
 ///
+/// An object that several flavors may share (the reference to an xcconfig file
+/// two of them use) is identified by **what it is**, not by the flavor that
+/// happened to ask first: it takes `@all` for the flavor and a kind that names
+/// it, such as `fileReference/Flutter/shared.xcconfig`, one segment per part of
+/// the path. Then it is the same object for every flavor that asks for it,
+/// whatever order they are processed in, and a flavor that moves to another path
+/// asks for another object instead of changing the shared one.
+///
 /// A segment holds no `/`, so that two different seeds can never spell the same
 /// path, and `@` is reserved to the two markers above: a target or a flavor
 /// cannot start by it. Truncating the digest makes a clash a little more

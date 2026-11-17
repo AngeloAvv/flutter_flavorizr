@@ -95,6 +95,9 @@ void main() {
   late bool claim;
   late bool shared;
 
+  /// The xcconfig files of a flavor, without the mode, when the test says.
+  late Map<String, String> stems;
+
   Future<int> run(
     CliFixture project, {
     String command = 'apply',
@@ -111,9 +114,9 @@ void main() {
           EngineProcessor(
             _BuildTargetsProcessor(
               () => wanted,
-              (flavor, mode) => shared
-                  ? '$xcconfigDir/shared$mode.xcconfig'
-                  : '$xcconfigDir/$flavor$mode.xcconfig',
+              (flavor, mode) =>
+                  '${stems[flavor] ?? (shared ? '$xcconfigDir/shared' : '$xcconfigDir/$flavor')}'
+                  '$mode.xcconfig',
               () => claim,
             ),
             paths: const {},
@@ -174,6 +177,20 @@ void main() {
     ],
   );
 
+  /// The UUID of the reference to the xcconfig file at [path], and of the build
+  /// file that puts it in the resources: they stand for the file, not for a
+  /// flavor.
+  String referenceUuid(String path) => PbxprojSeed.uuid(
+    platform: 'ios',
+    kind: ['fileReference', ...path.split('/')],
+  );
+
+  String buildFileUuid(String path) => PbxprojSeed.uuid(
+    platform: 'ios',
+    target: 'Runner',
+    kind: ['buildFile', 'resources', ...path.split('/')],
+  );
+
   setUpAll(() async {
     final temp = Directory.systemTemp.createTempSync('flavorizr_pristine_');
     addTearDown(() => temp.deleteSync(recursive: true));
@@ -186,6 +203,7 @@ void main() {
     xcconfigDir = 'Flutter';
     claim = false;
     shared = false;
+    stems = {};
     wanted = {
       'apple': {'FLAVOR': 'apple'},
       'banana': {'FLAVOR': 'banana'},
@@ -213,8 +231,8 @@ void main() {
           containsAll([
             uuidOf('apple', 'Debug'),
             uuidOf('apple', 'Debug', target: 'Runner'),
-            uuidOf('banana', 'Release', kind: 'fileReference'),
-            uuidOf('banana', 'Profile', target: 'Runner', kind: 'buildFile'),
+            referenceUuid('Flutter/bananaRelease.xcconfig'),
+            buildFileUuid('Flutter/bananaProfile.xcconfig'),
           ]),
         );
         expect(
@@ -434,7 +452,30 @@ void main() {
       final text = project.read(_pbxprojPath);
       expect(text, contains('path = Flutter/flavors/appleDebug.xcconfig;'));
       expect(text, isNot(contains('path = Flutter/appleDebug.xcconfig;')));
-      expect(lockedObjects(project), recorded);
+      // The file is another one, so it has another identity: the old reference
+      // and build file are gone, and nothing else changed hands.
+      expect(lockedObjects(project), hasLength(recorded.length));
+      for (final mode in DarwinBuildConfigurations.modes) {
+        expect(
+          recorded,
+          containsAll([
+            referenceUuid('Flutter/apple$mode.xcconfig'),
+            buildFileUuid('Flutter/apple$mode.xcconfig'),
+          ]),
+        );
+        expect(
+          lockedObjects(project),
+          containsAll([
+            referenceUuid('Flutter/flavors/apple$mode.xcconfig'),
+            buildFileUuid('Flutter/flavors/apple$mode.xcconfig'),
+          ]),
+        );
+        expect(
+          lockedObjects(project),
+          isNot(contains(referenceUuid('Flutter/apple$mode.xcconfig'))),
+        );
+      }
+      expect(danglingUuids(text), isEmpty);
     });
 
     test('are all owned, the ones 2.x made too, when the processor claims '
@@ -567,12 +608,14 @@ void main() {
         expect(text, isNot(contains('path = Flutter/apple$mode.xcconfig;')));
         expect(
           lockedObjects(project),
-          isNot(contains(uuidOf('apple', mode, kind: 'fileReference'))),
+          isNot(contains(referenceUuid('Flutter/apple$mode.xcconfig'))),
         );
       }
       expect(before.difference(objectUuids(text)), {
-        for (final mode in DarwinBuildConfigurations.modes)
-          uuidOf('apple', mode, kind: 'fileReference'),
+        for (final mode in DarwinBuildConfigurations.modes) ...[
+          referenceUuid('Flutter/apple$mode.xcconfig'),
+          buildFileUuid('Flutter/apple$mode.xcconfig'),
+        ],
       });
     });
 
@@ -614,6 +657,153 @@ void main() {
       expect(await apply(project), ExitCodes.ok, reason: project.logger.output);
 
       expect(project.read(_pbxprojPath), pristine);
+    });
+
+    /// What a project says about the build configurations of its flavors and
+    /// their xcconfig files, in a form that does not depend on the order the
+    /// lists were filled in.
+    Future<String> snapshot(CliFixture project) async {
+      final opened = await XcodeProject.open(
+        p.join(project.root.path, XcodeprojResource.iosProject),
+      );
+      final target = opened.targets.first as PBXNativeTarget;
+      final lines = <String>[
+        for (final config in [
+          ...opened.buildConfigurationList.buildConfigurations,
+          ...target.buildConfigurationList!.buildConfigurations,
+        ])
+          if (config.name!.contains('-'))
+            '${config.name} ${config.uuid} -> '
+                '${config.baseConfigurationReference?.path}',
+        for (final file in opened.files)
+          if (file.path!.endsWith('.xcconfig') &&
+              file.path!.startsWith('Flutter/'))
+            'ref ${file.uuid} ${file.path}',
+        for (final file in target.resourcesBuildPhase.files)
+          if (file.fileRef case final PBXFileReference reference
+              when reference.path?.startsWith('Flutter/') ?? false)
+            'resource ${file.uuid} ${reference.path}',
+        'objects ${(objectUuids(project.read(_pbxprojPath)).toList()..sort()).join(',')}',
+        'locked ${(lockedObjects(project).toList()..sort()).join(',')}',
+      ]..sort();
+
+      return lines.join('\n');
+    }
+
+    Map<String, Map<String, dynamic>> flavorsOf(Iterable<String> names) => {
+      for (final name in names) name: {'FLAVOR': name},
+    };
+
+    List<List<T>> permutations<T>(List<T> items) => items.length <= 1
+        ? [items]
+        : [
+            for (var i = 0; i < items.length; i++)
+              for (final rest in permutations([
+                ...items.sublist(0, i),
+                ...items.sublist(i + 1),
+              ]))
+                [items[i], ...rest],
+          ];
+
+    // What a run does to the xcconfig files of the flavors must not depend on
+    // the order the flavors are processed in, nor on which one made a file the
+    // others share: it is what a project that never had the old state gets.
+    final scenarios = <String, (Map<String, String>, Map<String, String>)>{
+      'a shared file the flavor that made it moves away from': (
+        {'apple': 'Flutter/s', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+        {'apple': 'Flutter/t', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+      ),
+      'two flavors that move away from a shared file': (
+        {'apple': 'Flutter/s', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+        {'apple': 'Flutter/t', 'banana': 'Flutter/u', 'cherry': 'Flutter/s'},
+      ),
+      'two flavors that swap their files': (
+        {'apple': 'Flutter/p', 'banana': 'Flutter/q', 'cherry': 'Flutter/p'},
+        {'apple': 'Flutter/q', 'banana': 'Flutter/p', 'cherry': 'Flutter/p'},
+      ),
+      'a flavor that goes while another moves': (
+        {'apple': 'Flutter/s', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+        {'apple': 'Flutter/t', 'banana': 'Flutter/s'},
+      ),
+      'a flavor that is renamed and moves': (
+        {'apple': 'Flutter/s', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+        {'pear': 'Flutter/t', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+      ),
+      'flavors that all end up on one file': (
+        {'apple': 'Flutter/p', 'banana': 'Flutter/q', 'cherry': 'Flutter/r'},
+        {'apple': 'Flutter/q', 'banana': 'Flutter/q', 'cherry': 'Flutter/q'},
+      ),
+      'flavors that stay': (
+        {'apple': 'Flutter/s', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+        {'apple': 'Flutter/s', 'banana': 'Flutter/s', 'cherry': 'Flutter/s'},
+      ),
+    };
+
+    for (final MapEntry(key: name, value: (before, after))
+        in scenarios.entries) {
+      test('give the same project for $name, whatever the order the flavors '
+          'are processed in', () async {
+        // A project that went straight to the final state.
+        final fresh = newProject();
+        stems = after;
+        wanted = flavorsOf(after.keys);
+        expect(await apply(fresh), ExitCodes.ok, reason: fresh.logger.output);
+        final expected = await snapshot(fresh);
+
+        for (final order in permutations(after.keys.toList())) {
+          final project = newProject();
+          stems = before;
+          wanted = flavorsOf(before.keys);
+          expect(await apply(project), ExitCodes.ok);
+
+          stems = after;
+          wanted = flavorsOf(order);
+          final code = await apply(project);
+
+          expect(code, ExitCodes.ok, reason: '$order ${project.logger.output}');
+          expect(
+            danglingUuids(project.read(_pbxprojPath)),
+            isEmpty,
+            reason: '$order',
+          );
+          expect(await snapshot(project), expected, reason: '$order');
+        }
+      });
+    }
+
+    test('keep a file that a flavor still asks for when the flavor that made '
+        'it moves, and the unchanged flavor is processed first', () async {
+      final project = newProject();
+      stems = {'apple': 'Flutter/s', 'banana': 'Flutter/s'};
+      await apply(project);
+      stems = {'apple': 'Flutter/t', 'banana': 'Flutter/s'};
+      wanted = {
+        'banana': {'FLAVOR': 'banana'},
+        'apple': {'FLAVOR': 'apple'},
+      };
+
+      expect(await apply(project), ExitCodes.ok, reason: project.logger.output);
+
+      final opened = await XcodeProject.open(
+        p.join(project.root.path, XcodeprojResource.iosProject),
+      );
+      for (final mode in DarwinBuildConfigurations.modes) {
+        expect(
+          opened
+              .buildConfigurationList['$mode-banana']!
+              .baseConfigurationReference
+              ?.path,
+          'Flutter/s$mode.xcconfig',
+        );
+        expect(
+          opened
+              .buildConfigurationList['$mode-apple']!
+              .baseConfigurationReference
+              ?.path,
+          'Flutter/t$mode.xcconfig',
+        );
+      }
+      expect(project.read(_pbxprojPath), contains('Flutter/sDebug.xcconfig'));
     });
 
     test('only add what a project 2.x flavorized lacks, and use the rest as it '

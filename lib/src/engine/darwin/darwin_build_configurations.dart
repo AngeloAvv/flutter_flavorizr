@@ -38,7 +38,8 @@ import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 ///   `PRODUCT_NAME`;
 /// * the reference to the xcconfig file of the mode, in the main group and in
 ///   the resources of the target, unless the project has one at that path
-///   already.
+///   already. It is identified by its path, so flavors that share a file share
+///   the reference.
 ///
 /// Both configurations point to the xcconfig file as their base configuration.
 /// Everything is owned but the objects that existed (a `Debug-dev` made by 2.x,
@@ -93,8 +94,6 @@ abstract final class DarwinBuildConfigurations {
         owned,
         target: target,
         targetName: targetName,
-        flavor: flavor,
-        mode: mode,
         path: xcconfigPath(mode),
         claimExisting: claimExisting,
       );
@@ -151,52 +150,44 @@ abstract final class DarwinBuildConfigurations {
     }
   }
 
+  /// The reference to the xcconfig file at [path], and its build file.
+  ///
+  /// What identifies them is the **path**, not the flavor: flavors that ask for
+  /// the same file share one reference and one build file, whichever of them
+  /// comes first, and a flavor that moves to another path asks for another
+  /// reference, leaving the old one to the flavors that still ask for it (and
+  /// to [OwnedObjects.settle], which removes it when none does). So nothing
+  /// depends on the order the flavors are processed in, nor on which one made
+  /// a file the others share.
   static PBXFileReference _ensureXcconfig(
     OwnedObjects owned, {
     required PBXNativeTarget target,
     required String targetName,
-    required String flavor,
-    required String mode,
     required String path,
     required bool claimExisting,
   }) {
     final project = owned.project;
-    final atPath = project.files.where((file) => file.path == path).firstOrNull;
-    final made =
-        project.objectsByUuid[owned.uuidOf(
-          flavor: flavor,
-          kind: ['fileReference', mode],
-        )];
-
-    // The file moved to a path that has a reference already: it is the one
-    // that is used, and the reference of flavorizr, which is not returned any
-    // more, goes (see `OwnedObjects.settle`).
-    final reference =
-        made is PBXFileReference && atPath != null && made != atPath
-        ? owned.use(atPath, claimExisting: claimExisting)
-        : owned.ensure<PBXFileReference>(
-            (g, u) => PBXFileReference(g, u),
-            flavor: flavor,
-            kind: ['fileReference', mode],
-            existing: () => atPath,
-            claimExisting: claimExisting,
-            create: (file) {
-              file.path = path;
-              file.sourceTree = '<group>';
-              file.lastKnownFileType = FileTypes.byExtension['.xcconfig'];
-              project.mainGroup.children.add(file);
-            },
-          );
-
-    // An xcconfig file that moved: what flavorizr owns follows it.
-    if (owned.owned.contains(reference.uuid)) reference.path = path;
+    final segments = path.split('/');
+    final reference = owned.ensure<PBXFileReference>(
+      (g, u) => PBXFileReference(g, u),
+      kind: ['fileReference', ...segments],
+      existing: () =>
+          project.files.where((file) => file.path == path).firstOrNull,
+      claimExisting: claimExisting,
+      create: (file) {
+        file.path = path;
+        file.sourceTree = '<group>';
+        file.lastKnownFileType = FileTypes.byExtension['.xcconfig'];
+        project.mainGroup.children.add(file);
+      },
+    );
 
     final resources = target.resourcesBuildPhase;
-    final buildFile = owned.ensure<PBXBuildFile>(
+
+    owned.ensure<PBXBuildFile>(
       (g, u) => PBXBuildFile(g, u),
       target: targetName,
-      flavor: flavor,
-      kind: ['buildFile', 'resources', mode],
+      kind: ['buildFile', 'resources', ...segments],
       existing: () => resources.buildFile(reference),
       claimExisting: claimExisting,
       create: (file) {
@@ -204,11 +195,6 @@ abstract final class DarwinBuildConfigurations {
         resources.files.add(file);
       },
     );
-
-    if (owned.owned.contains(buildFile.uuid) &&
-        !identical(buildFile.fileRef, reference)) {
-      buildFile.fileRef = reference;
-    }
 
     return reference;
   }

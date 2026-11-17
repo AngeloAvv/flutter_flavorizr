@@ -86,7 +86,10 @@ typedef ObjectFactory<T extends AbstractObject> =
 ///
 /// ## Objects several owners need
 ///
-/// Ownership belongs to the **object**, not to the seed that made it. Flavors
+/// Ownership belongs to the **object**, not to the seed that made it. An object
+/// that flavors may share must be identified by what it is, not by a flavor
+/// (see [PbxprojSeed]): a seed with the flavor of the first that asked would
+/// make the result depend on which one it was. Flavors
 /// that share a file (the same xcconfig) share the one object: the first makes
 /// it, the others find it through `existing`. An owned object is kept by
 /// [settle] as long as **any** `ensure` of the run returns it, whether it found
