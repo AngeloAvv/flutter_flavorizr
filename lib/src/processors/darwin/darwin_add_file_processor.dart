@@ -49,13 +49,14 @@ class DarwinAddFileProcessor extends AbstractProcessor<void> {
         ? project.mainGroup
         : project.groups.firstWhere((g) => g.name == groupName);
 
-    final alreadyAdded = group.children
-        .whereType<PBXFileReference>()
-        .any((f) => f.path == filePath);
+    final alreadyAdded = group.children.whereType<PBXFileReference>().any(
+      (f) => f.path == filePath,
+    );
 
     if (!alreadyAdded) {
-      final fileRef = project
-          .newObject<PBXFileReference>((g, u) => PBXFileReference(g, u));
+      final fileRef = project.newObject<PBXFileReference>(
+        (g, u) => PBXFileReference(g, u),
+      );
       fileRef.path = filePath;
       fileRef.sourceTree = '<group>';
       fileRef.lastKnownFileType =
@@ -63,10 +64,7 @@ class DarwinAddFileProcessor extends AbstractProcessor<void> {
       group.children.add(fileRef);
 
       final target = project.targets.first as PBXNativeTarget;
-      target.buildPhases
-          .whereType<PBXResourcesBuildPhase>()
-          .first
-          .addFileReference(fileRef);
+      target.addResources([fileRef]);
 
       await project.save();
     }

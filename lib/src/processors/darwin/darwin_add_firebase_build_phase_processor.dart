@@ -30,6 +30,8 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 import 'package:mason_logger/mason_logger.dart';
 
+const _phaseName = 'Firebase Setup';
+
 class DarwinAddFirebaseBuildPhaseProcessor extends AbstractProcessor<void> {
   final String projectPath;
   final String scriptFilePath;
@@ -47,22 +49,16 @@ class DarwinAddFirebaseBuildPhaseProcessor extends AbstractProcessor<void> {
     final project = await XcodeProject.open(projectPath);
     final target = project.targets.first as PBXNativeTarget;
 
-    final existing = target.buildPhases
-        .whereType<PBXShellScriptBuildPhase>()
-        .where((phase) => phase.name == 'Firebase Setup')
+    final existing = target.shellScriptBuildPhases
+        .where((phase) => phase.name == _phaseName)
         .toList();
     for (final phase in existing) {
       target.buildPhases.remove(phase);
     }
 
-    final phase = project.newObject<PBXShellScriptBuildPhase>(
-        (g, u) => PBXShellScriptBuildPhase(g, u));
-    phase.name = 'Firebase Setup';
-    phase.shellPath = '/bin/sh';
-    phase.shellScript = content;
-    phase.runOnlyForDeploymentPostprocessing = '0';
-    phase.outputPaths = [r'$(SRCROOT)/Runner/GoogleService-Info.plist'];
-    target.buildPhases.add(phase);
+    final phase = target.newShellScriptBuildPhase(_phaseName)
+      ..shellScript = content
+      ..outputPaths = [r'$(SRCROOT)/Runner/GoogleService-Info.plist'];
     target.buildPhases.move(phase, 0);
 
     await project.save();

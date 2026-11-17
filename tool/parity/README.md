@@ -55,6 +55,16 @@ that a difference never goes in unexplained.
 
 Whitelisted differences are still printed, with their reason.
 
+An entry with `only-comments: true` covers a changed file only if it differs
+from the golden in its `/* ... */` annotations and in nothing else, so that it
+cannot hide a real change in a `project.pbxproj`:
+
+```yaml
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  reason: dart_xcodeproj 0.4.0 annotates as Ruby's xcodeproj does (#513)
+```
+
 ## Tests
 
 The unit tests run with `flutter test`. The end-to-end one, which flavorizes
