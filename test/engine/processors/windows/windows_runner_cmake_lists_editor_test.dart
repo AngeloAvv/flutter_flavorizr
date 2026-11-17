@@ -262,7 +262,7 @@ void main() {
     test('skips the comments among the sources, whatever they end with', () {
       final source = _pristine(
         'add_executable(\${BINARY_NAME} WIN32\n'
-        '  # the sources (all of them)\n'
+        '  # the sources\n'
         '  "main.cpp"\n'
         '  "Runner.rc"\n'
         ')',
@@ -309,12 +309,8 @@ void main() {
       expect(_edit(patched), patched);
     });
 
-    test('ignores what looks like the call in a comment, and a marker that '
-        'is only part of a line', () {
-      final source =
-          '# add_executable(\${BINARY_NAME} WIN32\n'
-          '# see $_begin for more\n'
-          '${_pristine()}';
+    test('ignores a marker that is only part of a line', () {
+      final source = '# see $_begin for more\n${_pristine()}';
 
       expect(_edit(source), contains('${_region(_titles)}\n'));
     });
@@ -339,7 +335,6 @@ void main() {
           '  "my_main.cpp"\n'
           '  "main.cpp.in"\n'
           '  "Runner.rc.in"\n'
-          '  # was "./main.cpp"\n'
           '  "main.cpp"\n'
           '  \${CMAKE_CURRENT_SOURCE_DIR}/Runner.rc\n'
           ')';
@@ -381,13 +376,13 @@ void main() {
       }
     });
 
-    test('accepts later calls that add other sources, comment out the '
-        'entrypoints, or add them to another target', () {
+    test('accepts later calls that add other sources', () {
       for (final later in [
         'target_sources(\${BINARY_NAME} PRIVATE "extra.cpp" "domain.cpp")',
-        '# target_sources(\${BINARY_NAME} PRIVATE "main.cpp")',
-        'add_executable(other "main.cpp")',
         'target_sources(\${BINARY_NAME} PRIVATE\n  "extra.cpp"\n)',
+        'set(A "x # y")',
+        'set(A "a \\" b")',
+        'set(A "two\nlines")',
       ]) {
         final source = _pristine().replaceFirst(
           '\napply_standard_settings',
@@ -535,20 +530,6 @@ void main() {
       });
     });
 
-    test('accepts what looks like a bracket or a continuation but is not '
-        'one: in a comment, or a string with an escaped quote', () {
-      for (final extra in [
-        '# a [[ in a comment, and a backslash \\',
-        '# see [x] and \\"',
-        'set(A "a \\" b")',
-        'set(A "x # y")',
-      ]) {
-        final source = '$extra\n${_pristine()}';
-
-        expect(_edit(source), contains(_begin), reason: extra);
-      }
-    });
-
     test('builds with the defaults, and not with an empty icon, when the '
         'flavor is not one of the configured ones', () {
       final region = _edit(_pristine());
@@ -564,6 +545,33 @@ void main() {
 
     group('rejects what it cannot edit with an actionable error', () {
       final cases = <_Rejected>[
+        (
+          name: 'a quoted [[ is a mention of a bracket',
+          source: 'set(A "[[")\n${_pristine()}',
+          message: 'bracket',
+        ),
+        (
+          name: 'a [[ in a comment is a mention of a bracket',
+          source: '# see [[x\n${_pristine()}',
+          message: 'bracket',
+        ),
+        (
+          name: 'a later call has an escaped parenthesis before main.cpp',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\ntarget_sources(\${BINARY_NAME} PRIVATE\n  custom\\).cpp\n'
+                '  "main.cpp"\n)\napply_standard_settings',
+          ),
+          message: 'main.cpp',
+        ),
+        (
+          name: 'a comment among the sources has a parenthesis',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  # the sources (all)\n'
+            '  "main.cpp"\n  "Runner.rc"\n)',
+          ),
+          message: 'closing',
+        ),
         (
           name: 'the file has a bracket comment',
           source: '#[[ a comment\n)\n]]\n${_pristine()}',
@@ -593,9 +601,40 @@ void main() {
           message: 'continuation',
         ),
         (
-          name: 'a quoted argument goes over several lines',
-          source: 'set(A "x\ny")\n${_pristine()}',
-          message: 'quote',
+          name: 'a quoted argument over several lines holds the call',
+          source:
+              'set(A "x\nadd_executable(\${BINARY_NAME} WIN32\ny")\n${_pristine()}',
+          message: 'more than one',
+        ),
+        (
+          name: 'a comment that ends with a backslash',
+          source: '# a comment \\\n${_pristine()}',
+          message: 'continuation',
+        ),
+        (
+          name: 'the call is only in a comment',
+          source: '# add_executable(\${BINARY_NAME} WIN32\n${_pristine()}',
+          message: 'add_executable',
+        ),
+        (
+          name: 'another target is added, with main.cpp',
+          source: '${_pristine()}add_executable(other "main.cpp")\n',
+          message: 'add_executable',
+        ),
+        (
+          name: 'a later target_sources is commented out, and names main.cpp',
+          source: _pristine().replaceFirst(
+            '\napply_standard_settings',
+            '\n# target_sources(\${BINARY_NAME} PRIVATE "main.cpp")\napply_standard_settings',
+          ),
+          message: 'main.cpp',
+        ),
+        (
+          name: 'a comment among the sources names Runner.rc',
+          source: _pristine(
+            'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  # was ./Runner.rc\n  "Runner.rc"\n)',
+          ),
+          message: 'Runner.rc',
         ),
         (
           name: 'a later target_sources adds main.cpp',
@@ -657,42 +696,42 @@ void main() {
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "./main.cpp"\n  "Runner.rc"\n)',
           ),
-          message: './main.cpp',
+          message: 'main.cpp',
         ),
         (
           name: 'Runner.rc is also listed as an alias',
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "Runner.rc"\n  "./Runner.rc"\n)',
           ),
-          message: './Runner.rc',
+          message: 'Runner.rc',
         ),
         (
           name: 'main.cpp is listed with another case',
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "Main.cpp"\n  "Runner.rc"\n)',
           ),
-          message: 'Main.cpp',
+          message: 'main.cpp',
         ),
         (
           name: 'main.cpp is also listed in a folder',
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "sub/../main.cpp"\n  "Runner.rc"\n)',
           ),
-          message: 'sub/../main.cpp',
+          message: 'main.cpp',
         ),
         (
           name: 'main.cpp is also listed after the source dir with an alias',
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp"\n  "\${CMAKE_CURRENT_SOURCE_DIR}/./main.cpp"\n  "Runner.rc"\n)',
           ),
-          message: './main.cpp',
+          message: 'main.cpp',
         ),
         (
           name: 'two sources are on one line',
           source: _pristine(
             'add_executable(\${BINARY_NAME} WIN32\n  "main.cpp" "./main.cpp"\n  "Runner.rc"\n)',
           ),
-          message: './main.cpp',
+          message: 'main.cpp',
         ),
         (
           name: 'a source has a comment after it',

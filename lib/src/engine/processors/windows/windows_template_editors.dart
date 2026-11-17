@@ -23,7 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/engine/processors/windows/windows_source_scanner.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_mentions.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -38,132 +38,100 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 /// that was built, and is templated just the same. Everything else is written
 /// back byte for byte.
 ///
-/// Like in 2.x the places are found by what they say, not parsed: one that is in a
-/// comment (`//` or `/* */`, which the literals do not start) is skipped, and every other
-/// one is templated, the ones of `#if` branches included. **All** of them have
-/// to be written the way `flutter create` writes them, since a build may pick
-/// any: a file with one that is not (a raw or `u8` string, a macro, two
-/// literals, an escaped quote), or with none of one of them, is rejected with
-/// an [UnsupportedRunnerLayoutException] instead of guessed at. Block comments,
-/// strings and preprocessor directives are not looked at, so a `window.Create(`
-/// in a string is one that cannot be templated.
+/// The files are not parsed. A *place* is a line written the way `flutter
+/// create` writes it (see each editor), and every mention of the token it is
+/// about, found by a plain search of the raw text, has to be a place: see
+/// [WindowsMentions]. A file that has any other, in a comment, a string, an
+/// `#if` branch that is written differently or on a line with other code, is
+/// rejected with an [UnsupportedRunnerLayoutException] instead of guessed at,
+/// and so is one that has none. All the places are templated.
 abstract final class _Templater {
-  /// Swaps the group 2 of every match of [supported] in a line of code for
-  /// [value]: the part of the match before it, which is group 1, and the one
-  /// after it, which is group 3, stay.
-  ///
-  /// [candidate] finds every place that is [what], however it is written, and
-  /// [supported] (which has to start where it does) the ones that can be
-  /// templated. All of them have to be: a place that is not would keep the
-  /// title of the file for a build that picks it, so it is a rejection and the
-  /// others are not templated either. A place that is in a comment (see
-  /// [WindowsSourceScanner]) is skipped.
-  ///
-  /// Throws an [UnsupportedRunnerLayoutException] when a place cannot be
-  /// templated, and when there is none.
+  /// Swaps the group 2 of every match of [place] in [source] for [value] (the
+  /// part of the match before it is group 1 and the one after it group 3), when
+  /// there are as many of them as mentions of [mention].
   static String replace(
     String source,
-    RegExp candidate,
-    RegExp supported,
+    RegExp mention,
+    RegExp place,
     String value, {
     required String path,
     required String what,
     required String fix,
-    bool characterLiterals = true,
   }) {
-    final scan = WindowsSourceScanner.scan(
-      source,
-      path: path,
-      cpp: characterLiterals,
-    );
-    final inComment = scan.inComment;
+    final places = place.allMatches(source).length;
 
-    final templatable = {
-      for (final match in supported.allMatches(source)) match.start,
-    };
-    var found = false;
+    WindowsMentions.check(source, mention, places, path: path, what: what);
 
-    for (final match in candidate.allMatches(source)) {
-      if (inComment(match.start)) continue;
-
-      if (!templatable.contains(match.start)) {
-        final line = source
-            .substring(match.start)
-            .split(RegExp(r'\r?\n'))
-            .first;
-
-        throw UnsupportedRunnerLayoutException(
-          path,
-          reason: 'it has `${line.trim()}`, which is not a $what.',
-          fix: fix,
-        );
-      }
-
-      found = true;
-    }
-
-    if (!found) {
+    if (places == 0) {
       throw UnsupportedRunnerLayoutException(
         path,
-        reason: 'it has no $what.',
+        reason: 'it has no $what written the way `flutter create` writes it.',
         fix: fix,
       );
     }
 
     return source.replaceAllMapped(
-      supported,
-      (match) =>
-          inComment(match.start) ? match[0]! : '${match[1]}$value${match[3]}',
+      place,
+      (match) => '${match[1]}$value${match[3]}',
     );
   }
 }
 
 /// The template of `windows/runner/main.cpp`: the title of the window of
 /// `window.Create(L"...", origin, size)` is `@WINDOW_TITLE@`.
+///
+/// A place is a line that has only that call, with a plain title (no quote and
+/// no backslash, and a wide literal), after the optional `if (!` of `flutter
+/// create`. The name of the window has to be `window`, with `.` or `->`.
 abstract final class WindowsMainCppTemplateEditor {
-  static final RegExp _call = RegExp(r'\bwindow\s*(?:\.|->)\s*Create\b');
-  static final RegExp _create = RegExp(
-    r'(window\.Create\(L")([^"\\\r\n]*)(", origin, size\))',
+  static final RegExp _mention = RegExp(r'window\s*(?:\.|->)\s*Create');
+  static final RegExp _place = RegExp(
+    r'^([ \t]*(?:if[ \t]*\([ \t]*!)?[ \t]*window\.Create\(L")([^"\\\r\n]*)(", origin, size\))',
+    multiLine: true,
   );
 
   /// Returns the content of `main.cpp.in` for [source], the content of
   /// `main.cpp`.
-  static String template(String source) => _Templater.replace(
-    source,
-    _call,
-    _create,
-    '@WINDOW_TITLE@',
-    path: K.windowsMainCppPath,
-    what: '`window.Create(L"...", origin, size)` call with a plain string',
-    fix:
-        'Restore the call as `flutter create` writes it, with a title that has '
-        'no escaped characters.',
-  );
+  static String template(String source) {
+    WindowsMentions.checkText(source, path: K.windowsMainCppPath);
+
+    return _Templater.replace(
+      source,
+      _mention,
+      _place,
+      '@WINDOW_TITLE@',
+      path: K.windowsMainCppPath,
+      what: 'window.Create',
+      fix:
+          'Write the call as `flutter create` does, on a line of its own, '
+          'with a title that has no escaped characters.',
+    );
+  }
 }
 
 /// The template of `windows/runner/Runner.rc`: the icon of `IDI_APP_ICON` is
 /// `@RUNNER_APP_ICON@`, and the `FileDescription` and `ProductName` entries
 /// are `@WINDOW_TITLE@`.
+///
+/// A place is a line `IDI_APP_ICON ICON "resources\\<icon>"`, and a line
+/// `VALUE "<name>", "<title>" "\0"`.
 abstract final class WindowsRunnerRcTemplateEditor {
-  static final RegExp _iconCandidate = RegExp(
-    r'^[ \t]*IDI_APP_ICON\b',
-    multiLine: true,
-  );
   static final RegExp _icon = RegExp(
     r'^([ \t]*IDI_APP_ICON[ \t]+ICON[ \t]+"resources\\\\)([^"\\\r\n]+)(")',
     multiLine: true,
   );
-
-  static RegExp _entryCandidate(String name) =>
-      RegExp('^[ \\t]*VALUE[ \\t]+"$name"', multiLine: true);
-
-  static RegExp _entry(String name) => RegExp(
-    '^([ \\t]*VALUE "$name", ")([^"\\r\\n]*)(" "\\\\0")',
+  static final RegExp _codePage = RegExp(
+    r'^[ \t]*#[ \t]*pragma[ \t]+code_page[ \t]*\([ \t]*65001[ \t]*\)[ \t]*\r?$',
+    multiLine: true,
+  );
+  // What `flutter create` writes in the TEXTINCLUDE of the script.
+  static final RegExp _textInclude = RegExp(
+    r'''^[ \t]*"#include ""[^"\r\n]+\.h""\\r\\n"[ \t]*\r?$''',
     multiLine: true,
   );
 
-  static final RegExp _codePage = RegExp(
-    r'^[ \t]*#[ \t]*pragma[ \t]+code_page[ \t]*\([ \t]*65001[ \t]*\)',
+  static RegExp _entry(String name) => RegExp(
+    '^([ \\t]*VALUE "$name", ")([^"\\r\\n]*)(" "\\\\0")',
     multiLine: true,
   );
 
@@ -172,18 +140,28 @@ abstract final class WindowsRunnerRcTemplateEditor {
   ///
   /// [titles] are the titles of the windows of the flavors. The title is
   /// written in `Runner.rc` as it is, which is only right for a title that is
-  /// not ASCII if the file says `#pragma code_page(65001)`: it is rejected if
-  /// it does not, since the resource compiler would read the bytes of the title
-  /// in the code page of the machine. The file of `flutter create` has it.
+  /// not ASCII if the file says `#pragma code_page(65001)`, and says nothing
+  /// else about the code page: it is rejected if it does not.
   static String template(String source, {Iterable<String> titles = const []}) {
+    WindowsMentions.checkText(
+      source,
+      path: K.windowsRunnerRcPath,
+      cpp: false,
+      alsoRecognised: _textInclude,
+    );
+
     if (titles.any((title) => title.runes.any((rune) => rune > 0x7f))) {
-      final scan = WindowsSourceScanner.scan(
+      final directives = _codePage.allMatches(source).length;
+
+      WindowsMentions.check(
         source,
+        RegExp('code_page'),
+        directives,
         path: K.windowsRunnerRcPath,
-        cpp: false,
+        what: 'code_page',
       );
 
-      if (!_codePage.allMatches(source).any((m) => !scan.inComment(m.start))) {
+      if (directives != 1) {
         throw UnsupportedRunnerLayoutException(
           K.windowsRunnerRcPath,
           reason:
@@ -198,26 +176,24 @@ abstract final class WindowsRunnerRcTemplateEditor {
 
     final withIcon = _Templater.replace(
       source,
-      _iconCandidate,
+      RegExp('IDI_APP_ICON'),
       _icon,
       '@RUNNER_APP_ICON@',
       path: K.windowsRunnerRcPath,
-      characterLiterals: false,
-      what: r'`IDI_APP_ICON ICON "resources\\<icon>"` icon',
-      fix: 'Restore the icon as `flutter create` writes it.',
+      what: 'IDI_APP_ICON',
+      fix: r'Write it as `IDI_APP_ICON ICON "resources\\<icon>"`.',
     );
 
     return ['FileDescription', 'ProductName'].fold(
       withIcon,
       (text, name) => _Templater.replace(
         text,
-        _entryCandidate(name),
+        RegExp(name),
         _entry(name),
         '@WINDOW_TITLE@',
         path: K.windowsRunnerRcPath,
-        characterLiterals: false,
-        what: '`VALUE "$name", "..." "\\0"` entry',
-        fix: 'Restore the entry as `flutter create` writes it.',
+        what: name,
+        fix: 'Write it as `VALUE "$name", "..." "\\0"`.',
       ),
     );
   }

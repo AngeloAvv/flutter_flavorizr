@@ -227,60 +227,56 @@ change of the files they are made from. The icon of a flavor is still
 `windows/runner/resources/<flavor>.ico`, which `windows:icons` and
 `windows:dummyAssets` make.
 
-The editors do not parse C++, CMake or resource scripts: they read the lines
-`flutter create` writes, and **reject** what they would have to guess at. The run
-then fails, before anything is written, and says what to change.
+The editors do not parse C++, CMake or resource scripts, and do not try to know
+what is a comment, a string or a directive. They recognise a few **supported
+shapes**, lines written the way `flutter create` writes them, and they count:
+every mention of a token they act on, found by a plain search of the raw text
+(comments, strings and raw strings included), has to be one of the supported
+shapes. If there is any other, or none, the run fails, before anything is
+written, with `found N mentions of X but only M in a position flavorizr
+understands`. The price is that a file that mentions a token in a comment is
+rejected too: remove the mention, or the comment.
 
-*`windows/runner/CMakeLists.txt`* is read line by line. Supported:
-`add_executable(${BINARY_NAME} WIN32` alone on a line, once outside of the
-region, then the sources, then a line with only `)`; `main.cpp` and `Runner.rc`
-among the sources, each on a line of its own, as a name (quoted or not) or after
-`${CMAKE_CURRENT_SOURCE_DIR}/`; `#` comments; an old region before the call
-(moved after it). Rejected: any other way of writing the call (upper case, on
-one line, a closing `)` that is not alone, a second call); a source that names
-`main.cpp` or `Runner.rc` any other way (`./main.cpp`, `MAIN.CPP`,
-`sub/../main.cpp`, two names on a line, a comment after the name), where the
-names are whole words (`domain.cpp` is another file); a later
-`target_sources`, `set_property` or `set_target_properties` that names one of
-them (also for another target), since it would put the file of the source dir
-back in the target; bracket arguments and bracket comments (`[[ ... ]]`,
-`#[[ ... ]]`) anywhere outside the region; a line that ends with `\`; a quoted
-argument over several lines. A name that is in a variable is not seen.
+*`windows/runner/CMakeLists.txt`* is read line by line, outside of the region.
+Supported shapes: `add_executable(${BINARY_NAME} WIN32` alone on a line, the
+sources on the lines after it with no parenthesis in them, a line with only `)`;
+`main.cpp` and `Runner.rc` among the sources, each on a line of its own, as a
+name (quoted or not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`. Anything else that
+mentions `add_executable` (also in a comment, or for another target), `main.cpp`
+or `Runner.rc` (`./main.cpp`, `MAIN.CPP`, a later `target_sources`,
+`set_property` or `set_target_properties`, a comment, a string; whole words, any
+case, so `domain.cpp` is another file) is rejected, since a source that stays in
+the target next to the copy of the binary directory defines `wWinMain` twice. So
+are `[[` anywhere (bracket arguments and comments) and a line that ends with `\`.
+A name that is in a variable is not seen. An old 2.x region before the call is
+moved after it.
 
-*`main.cpp` and `Runner.rc`* are read by a small scanner that knows comments
-(`//`, also continued with a `\` at the end of the line, and `/* */`; they do not
-nest) and the literals they cannot start in (`"..."`, `'...'` and the prefixes
-`L`, `u`, `U` and `u8`, raw strings `R"delimiter(...)delimiter"`, the digit
-separator `1'000`, and `""` of a script), with LF, CRLF or both in a file.
-Rejected: a string, character, raw string or block comment that is not closed;
-a raw string whose delimiter is longer than 16 characters or has a space,
-parenthesis or `\`; a `\` at the end of a line anywhere but in a `//` comment (a
-continued string, macro or directive); digraphs (`<%`, `%>`, `<:`, `:>`, `%:`)
-in `main.cpp`; an `#include` that is not of a header (`.h`, `.hpp`, `.hh`,
-`.hxx`) named by a literal, since the file may be generated and hold what is
-looked for; NUL, a form feed, a vertical tab or a lone carriage return anywhere
-in any of the three files; a file that is not UTF-8 (a UTF-16 one that Visual
-Studio saved, for one). Trigraphs (`??/`) are not supported, because MSVC does
-not read them unless `/Zc:trigraphs` is set, which Flutter does not do. The
-scanner does not tell the branches of an `#if` apart: it is code.
-
-*What is templated.* The call `window.Create(...)` in `main.cpp`, the
-`IDI_APP_ICON` line in `Runner.rc` and its `FileDescription` and `ProductName`
-entries. **Every** one of them, whatever branch of an `#if` it is in, has to be
-written as `flutter create` writes it, or the file is rejected, since a build
-that picked that one would keep the old title: `window.Create(L"...", origin,
-size)` with a plain title (no quote or backslash, so no raw, `u8` or `u` string,
-macro or two literals either; `window` is looked for as `window.Create` and
-`window->Create`), `IDI_APP_ICON ICON "resources\\<name>"`, and
-`VALUE "FileDescription", "..." "\0"` and `VALUE "ProductName", "..." "\0"`
-with a plain string. A file with none of one of them is rejected too. Places in a
-comment are skipped; when all of them are plain, all of them are templated.
+*`main.cpp`* supported shape: a line that starts with `window.Create(L"...", origin,
+size)`, optionally after `if (!`, with a title without a quote or a backslash,
+as many as you like, in any branch of an `#if`. Every mention of
+`window . Create` (`.` or `->`) must be one of those. *`Runner.rc`* supported
+shapes: `IDI_APP_ICON ICON "resources\\<name>"`, `VALUE "FileDescription", "..."
+"\0"` and `VALUE "ProductName", "..." "\0"` lines, and every mention of
+`IDI_APP_ICON`, `FileDescription` and `ProductName` must be one of those. In
+both files: an `#include` that is not of a header (`.h`, `.hpp`, `.hh`, `.hxx`)
+by a literal on a line of its own (`resource.h`, `winres.h` and the `TEXTINCLUDE`
+string of the script are fine) is rejected, since the file it includes may hold
+the tokens; so is a `\` at the end of a line, anywhere (it joins lines), and in
+`main.cpp` the digraph `%:`. In all three files NUL, a form feed, a vertical tab
+and a lone carriage return are rejected, and so is a file that is not UTF-8 (a
+UTF-16 one that Visual Studio saved, for one). LF, CRLF or both are fine.
+Trigraphs (`??/`) are not supported, because MSVC does not read them unless
+`/Zc:trigraphs` is set, which Flutter does not do. A call that is written in
+another way, such as `if (alt) window.Create(...); else window.Create(...);` on
+one line, `bool ok = window.Create(...)`, or one with a macro for its title, is
+rejected, and so are comments and strings that mention a token.
 
 *Titles and flavor names.* The `app.name` of a flavor is encoded for each file
 it ends up in, so `"`, `\` and non-ASCII characters are fine in it (in
 `main.cpp` as `\"`, `\\` and universal character names; in `Runner.rc` as `""`
 and `\\`, which needs `#pragma code_page(65001)` in `Runner.rc` when the title is
-not ASCII, as `flutter create` writes it, and is rejected without it; and then
+not ASCII, as `flutter create` writes it: the file must have exactly one mention
+of `code_page`, which is that directive, or it is rejected; and then
 for CMake, which also protects a `$`). A control character in it, such as a line
 break, is rejected. A flavor name is the name of an icon file and goes into
 CMake and `Runner.rc`, so it has to be made of letters, digits, `_`, `-` and

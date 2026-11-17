@@ -42,6 +42,16 @@ Matcher _rejects(String path, Pattern message) => throwsA(
       ),
 );
 
+/// The line endings of every other line of [text] are CRLF.
+String _mixed(String text) {
+  final lines = text.split('\n');
+
+  return [
+    for (final (index, line) in lines.indexed)
+      index.isEven && index < lines.length - 1 ? '$line\r' : line,
+  ].join('\n');
+}
+
 void main() {
   group('WindowsMainCppTemplateEditor', () {
     final pristine = _read('main_cpp_title_processor_test/main.cpp');
@@ -68,149 +78,163 @@ void main() {
       expect(edit(template), template);
     });
 
-    test('changes nothing but the title: line endings, a missing last line '
-        'break and the rest of the file stay', () {
+    test('changes nothing but the title: line endings (LF, CRLF or both) and '
+        'a missing last line break stay', () {
       final crlf = pristine.replaceAll('\n', '\r\n').trimRight();
 
       expect(edit(crlf), template.replaceAll('\n', '\r\n').trimRight());
+      expect(edit(_mixed(pristine)), _mixed(template));
     });
 
-    test('templates every call that creates the window, in code', () {
-      final two =
+    test('templates every call, each on a line of its own, whatever branch of '
+        'an #if it is in', () {
+      const two =
           '#if A\n  window.Create(L"a", origin, size)\n#else\n'
-          '  window.Create(L"b", origin, size)\n#endif\n';
+          '  if (!window.Create(L"b", origin, size)) {\n#endif\n';
 
       expect(edit(two), two.replaceAll(RegExp('L"[ab]"'), 'L"@WINDOW_TITLE@"'));
     });
 
-    test('does not look at a call that cannot be templated if it is in a '
-        'comment', () {
-      final source = '// window.Create(L"a\\"b", origin, size)\n$pristine';
+    test('templates a call that is on a line of its own even where it is in a '
+        'comment, since it is the same as the others and does no harm', () {
+      const call = 'window.Create(L"a", origin, size);';
 
       expect(
-        edit(source),
-        '// window.Create(L"a\\"b", origin, size)\n$template',
+        edit('/*\n$call\n*/\n$pristine'),
+        '/*\nwindow.Create(L"@WINDOW_TITLE@", origin, size);\n*/\n$template',
       );
     });
 
-    test('does not look at a call in a comment', () {
-      final source = '// window.Create(L"old", origin, size)\n$pristine';
-
-      expect(edit(source), '// window.Create(L"old", origin, size)\n$template');
-    });
-
-    test('keeps a file that has both kinds of line endings as it is', () {
-      String mixed(String text) {
-        final lines = text.split('\n');
-
-        return [
-          for (final (index, line) in lines.indexed)
-            index.isEven && index < lines.length - 1 ? '$line\r' : line,
-        ].join('\n');
-      }
-
-      expect(edit(mixed(pristine)), mixed(template));
-    });
-
-    group('knows where the comments and the literals are', () {
-      final cases = {
-        'a title with // in it, then another call on the line':
-            'if (alt) window.Create(L"https://a", origin, size); '
-            'else window.Create(L"B", origin, size);',
-        'a title with /* in it, then another call':
-            'a(); window.Create(L"a/*b", origin, size); '
-            'window.Create(L"c", origin, size);',
-        'several calls on one line, and a comment after them':
-            'window.Create(L"a", origin, size); '
-            'window.Create(L"b", origin, size); '
-            '// window.Create(L"c", origin, size)',
-        'a call after a block comment on its line':
-            '/* old */ window.Create(L"a", origin, size);',
-        'a call after a comment that ends on its line':
-            '/* a\n   b */ window.Create(L"a", origin, size);',
-        'a call after a quote in a comment':
-            '// say "hi\nwindow.Create(L"a", origin, size);',
-        'a call after a character literal with a quote':
-            'char q = \'"\'; window.Create(L"a", origin, size);',
-        'a call after a string with an escaped quote and //':
-            r'puts("a\"//"); window.Create(L"a", origin, size);',
-        'a call after a raw string with // and a quote':
-            'auto r = R"x(//" )x"; window.Create(L"a", origin, size);',
-        'a call after a digit separator':
-            'int n = 1\'000; window.Create(L"a", origin, size);',
-      };
-
-      for (final MapEntry(key: name, value: source) in cases.entries) {
-        test(name, () {
-          final templated = edit(source);
-          final commented = source.contains('// window.Create') ? 1 : 0;
-
-          expect(
-            '@WINDOW_TITLE@'.allMatches(templated).length,
-            RegExp(r'window\.Create\(L"').allMatches(source).length - commented,
-            reason: templated,
-          );
-          expect(
-            templated.replaceAll('@WINDOW_TITLE@', ''),
-            isNot(contains('window.Create(L"a"')),
-            reason: templated,
-          );
-        });
-      }
-
-      test('leaves a call that is really commented as it is', () {
-        const commented =
-            'foo(); // window.Create(L"y", origin, size)\n'
-            '/* window.Create(L"z", origin, size)\n'
-            '   window.Create(L"w", origin, size) */\n';
-
-        expect(edit('$commented$pristine'), '$commented$template');
-      });
-
-      test('rejects a call that is in a string that has // before it', () {
-        expect(
-          () => edit('puts("//"); puts("window.Create(");\n'),
-          _rejects('windows/runner/main.cpp', 'window.Create'),
-        );
-      });
-    });
-
-    group('rejects what it cannot template with an actionable error', () {
-      final cases = {
-        'there is no call': 'int main() {}\n',
-        'the call is only commented out':
-            '// window.Create(L"old", origin, size)\n',
-        'the title has an escaped quote':
-            r'window.Create(L"My \"App\"", origin, size)',
-        'the arguments are not the ones of Flutter':
-            'window.Create(L"x", Point(1, 1), size)',
-        'the title is not a wide literal': 'window.Create("x", origin, size)',
-        'the title is a raw wide string':
-            'window.Create(LR"(x)", origin, size)',
-        'the title is a UTF-8 or UTF-16 literal':
-            'window.Create(u8"x", origin, size)',
-        'the title is a macro': 'window.Create(TITLE, origin, size)',
-        'the title is empty and then something':
-            'window.Create(L"" L"x", origin, size)',
-        'the title is two literals': 'window.Create(L"a" L"b", origin, size)',
-        'a call that is in a string': 'puts("window.Create(");\n',
-        'a call with a space before the parenthesis':
-            'window.Create (L"x", origin, size)',
-        'a call through a pointer': 'window->Create(L"x", origin, size)',
+    group('rejects anything that mentions what it edits, and is not what it '
+        'recognises, with an actionable error', () {
+      const call = 'window.Create(L"a", origin, size);';
+      final cases = <String, (String, Pattern)>{
+        'there is no call': ('int main() {}\n', 'window.Create'),
+        'the call is only in a line comment': ('// $call\n', 'window.Create'),
+        'a line comment before the call': (
+          '// $call\n$pristine',
+          'window.Create',
+        ),
+        'a block comment before the call': (
+          '/* $call */\n$pristine',
+          'window.Create',
+        ),
+        'a call after a block comment on its line': (
+          '/* old */ $call\n',
+          'window.Create',
+        ),
+        'a call after other code on its line': (
+          'int a; $call\n',
+          'window.Create',
+        ),
+        'two calls on one line': ('$call $call\n', 'window.Create'),
+        'a title with // and another call on the line': (
+          'if (alt) window.Create(L"https://a", origin, size); '
+              'else window.Create(L"B", origin, size);',
+          'window.Create',
+        ),
+        'a call after a character literal with a quote': (
+          'char q = \'"\'; $call\n',
+          'window.Create',
+        ),
+        'a call after a string with an escaped quote': (
+          r'puts("a\"//"); '
+              '$call\n',
+          'window.Create',
+        ),
+        'a call in a string': (
+          'puts("window.Create(");\n$pristine',
+          'window.Create',
+        ),
+        'a call in a raw string': (
+          'auto help = R"(window.Create(L"example", origin, size))";\n$pristine',
+          'window.Create',
+        ),
+        'the title has an escaped quote': (
+          r'window.Create(L"My \"App\"", origin, size)',
+          'window.Create',
+        ),
+        'the arguments are not the ones of Flutter': (
+          'window.Create(L"x", Point(1, 1), size)',
+          'window.Create',
+        ),
+        'the title is not a wide literal': (
+          'window.Create("x", origin, size)',
+          'window.Create',
+        ),
+        'the title is a raw wide string': (
+          'window.Create(LR"(x)", origin, size)',
+          'window.Create',
+        ),
+        'the title is a UTF-8 or UTF-16 literal': (
+          'window.Create(u8"x", origin, size)',
+          'window.Create',
+        ),
+        'the title is a macro': (
+          'window.Create(TITLE, origin, size)',
+          'window.Create',
+        ),
+        'the title is empty and then something': (
+          'window.Create(L"" L"x", origin, size)',
+          'window.Create',
+        ),
+        'the title is two literals': (
+          'window.Create(L"a" L"b", origin, size)',
+          'window.Create',
+        ),
+        'a space before the parenthesis': (
+          'window.Create (L"x", origin, size)',
+          'window.Create',
+        ),
+        'a call through a pointer': (
+          'window->Create(L"x", origin, size)',
+          'window.Create',
+        ),
         'one branch has a title that cannot be templated, the other a plain '
-                'one':
-            '#if ALT\n  window.Create(L"My \\"App\\"", origin, size);\n'
-            '#else\n  window.Create(L"Default", origin, size);\n#endif\n',
-        'the plain one comes first, the other one is a macro':
-            'window.Create(L"Default", origin, size);\n'
-            'window.Create(TITLE, origin, size);\n',
+            'one': (
+          '#if ALT\n  window.Create(L"My \\"App\\"", origin, size);\n'
+              '#else\n  window.Create(L"Default", origin, size);\n#endif\n',
+          'window.Create',
+        ),
+        'the plain one comes first, the other one is a macro': (
+          'window.Create(L"Default", origin, size);\n'
+              'window.Create(TITLE, origin, size);\n',
+          'window.Create',
+        ),
+        'an include after a comment': (
+          '/* generated */ #include "generated.inc"\n$pristine',
+          '#include',
+        ),
+        'an include of a source file': (
+          '#include "generated.inc"\n$pristine',
+          '#include',
+        ),
+        'an include through a macro': (
+          '#define H "a.h"\n#include H\n$pristine',
+          '#include',
+        ),
+        'an include in a comment': ('// #include "a.h"\n$pristine', '#include'),
+        'a digraph for #': ('%:include "a.inc"\n$pristine', 'digraph'),
+        'a line continuation in a macro': (
+          '#define A \\\n  1\n$pristine',
+          'continuation',
+        ),
+        'a line continuation in a comment': (
+          '// a \\\n$pristine',
+          'continuation',
+        ),
+        'a line continuation in a string, with CRLF': (
+          'a("x\\\r\ny");\n$pristine',
+          'continuation',
+        ),
       };
 
-      for (final MapEntry(key: name, value: source) in cases.entries) {
+      for (final MapEntry(key: name, value: (source, message))
+          in cases.entries) {
         test(name, () {
           expect(
             () => edit(source),
-            _rejects('windows/runner/main.cpp', 'window.Create'),
+            _rejects('windows/runner/main.cpp', message),
           );
         });
       }
@@ -248,66 +272,16 @@ void main() {
       expect(edit(built), template);
     });
 
-    group('a title that is not ASCII needs the UTF-8 code page', () {
-      const directive = '#pragma code_page(65001)';
-
-      test('is fine in a file that has the directive', () {
-        expect(pristine, contains(directive));
-        expect(edit(pristine, titles: ['Café', 'Apple']), template);
-      });
-
-      test('is rejected by a file that has no directive, or another one, or '
-          'one in a comment', () {
-        for (final source in [
-          pristine.replaceFirst(directive, ''),
-          pristine.replaceFirst(directive, '#pragma code_page(1252)'),
-          pristine.replaceFirst(directive, '// $directive'),
-          pristine.replaceFirst(directive, '/* $directive */'),
-        ]) {
-          expect(source, isNot(pristine));
-          expect(
-            () => edit(source, titles: ['Apple', 'Café']),
-            _rejects('windows/runner/Runner.rc', 'code_page(65001)'),
-          );
-        }
-      });
-
-      test('does not matter for ASCII titles', () {
-        expect(
-          edit(pristine.replaceFirst(directive, ''), titles: ['Apple']),
-          template.replaceFirst('$directive\n', '\n'),
-        );
-      });
-    });
-
     test('is the same for a template', () {
       expect(edit(template), template);
     });
 
-    test('changes nothing but those three values: line endings, a missing '
-        'last line break and the rest of the file stay', () {
+    test('changes nothing but those three values: line endings (LF, CRLF or '
+        'both) and a missing last line break stay', () {
       final crlf = pristine.replaceAll('\n', '\r\n').trimRight();
 
       expect(edit(crlf), template.replaceAll('\n', '\r\n').trimRight());
-    });
-
-    test('does not look at an icon or a version entry in a comment', () {
-      final source =
-          '// IDI_APP_ICON ICON "resources\\\\old.ico"\n'
-          '// VALUE "ProductName", "old" "\\0"\n$pristine';
-
-      expect(
-        edit(source),
-        '// IDI_APP_ICON ICON "resources\\\\old.ico"\n'
-        '// VALUE "ProductName", "old" "\\0"\n$template',
-      );
-    });
-
-    test('templates every icon and entry that is in the file', () {
-      final twice =
-          '$pristine\n${pristine.substring(pristine.indexOf('IDI_APP_ICON'))}';
-
-      expect('@RUNNER_APP_ICON@'.allMatches(edit(twice)), hasLength(2));
+      expect(edit(_mixed(pristine)), _mixed(template));
     });
 
     test('is not taken in by a // that is in a string of the entries before '
@@ -327,49 +301,122 @@ void main() {
       );
     });
 
-    test('does not look at an icon or an entry that is in a block comment', () {
-      const commented =
-          '/* a comment\n'
-          'IDI_APP_ICON ICON "bad"\n'
-          'VALUE "ProductName", TITLE "\\0"\n'
-          '*/\n';
+    test('templates every icon and entry that is in the file, when each is '
+        'one that it recognises', () {
+      final twice =
+          '$pristine\n${pristine.substring(pristine.indexOf('IDI_APP_ICON'))}';
 
-      expect(edit('$commented$pristine'), '$commented$template');
+      expect('@RUNNER_APP_ICON@'.allMatches(edit(twice)), hasLength(2));
     });
 
-    group('rejects what it cannot template with an actionable error', () {
-      final cases = {
-        'there is no icon': pristine.replaceFirst(
+    group('a title that is not ASCII needs one UTF-8 code page', () {
+      const directive = '#pragma code_page(65001)';
+
+      test('is fine in a file that has the directive', () {
+        expect(pristine, contains(directive));
+        expect(edit(pristine, titles: ['Café', 'Apple']), template);
+      });
+
+      test('is rejected by a file that has no directive, another one, one in '
+          'a comment, or another after it', () {
+        for (final source in [
+          pristine.replaceFirst(directive, ''),
+          pristine.replaceFirst(directive, '#pragma code_page(1252)'),
+          pristine.replaceFirst(directive, '// $directive'),
+          pristine.replaceFirst(directive, '/* $directive */'),
+          pristine.replaceFirst(
+            directive,
+            '$directive\n#pragma code_page(1252)',
+          ),
+          pristine.replaceFirst(directive, '$directive\n$directive'),
+        ]) {
+          expect(source, isNot(pristine));
+          expect(
+            () => edit(source, titles: ['Apple', 'Café']),
+            _rejects('windows/runner/Runner.rc', 'code_page'),
+          );
+        }
+      });
+
+      test('does not matter for ASCII titles', () {
+        expect(
+          edit(
+            pristine.replaceFirst(directive, '#pragma code_page(1252)'),
+            titles: ['Apple'],
+          ),
+          template.replaceFirst(directive, '#pragma code_page(1252)'),
+        );
+      });
+    });
+
+    group('rejects anything that mentions what it edits, and is not what it '
+        'recognises, with an actionable error', () {
+      final cases = <String, (String, Pattern)>{
+        'there is no icon': (
+          pristine.replaceFirst('IDI_APP_ICON', 'IDI_OTHER_ICON'),
           'IDI_APP_ICON',
-          'IDI_OTHER_ICON',
         ),
-        'the icon is not in the resources folder': pristine.replaceFirst(
-          r'"resources\\app_icon.ico"',
-          '"app.ico"',
+        'the icon is not in the resources folder': (
+          pristine.replaceFirst(r'"resources\\app_icon.ico"', '"app.ico"'),
+          'IDI_APP_ICON',
         ),
-        'there is no file description': pristine.replaceFirst(
-          '"FileDescription"',
-          '"Other"',
+        'there is no file description': (
+          pristine.replaceFirst('"FileDescription"', '"Other"'),
+          'FileDescription',
         ),
-        'there is no product name': pristine.replaceFirst(
-          '"ProductName"',
-          '"Other"',
+        'there is no product name': (
+          pristine.replaceFirst('"ProductName"', '"Other"'),
+          'ProductName',
         ),
-        'a second icon is not one that can be templated':
-            '$pristine\nIDI_APP_ICON ICON "app.ico"\n',
-        'a second icon has a path with slashes':
-            '$pristine\nIDI_APP_ICON ICON "resources/app_icon.ico"\n',
-        'a second file description is a macro':
-            '$pristine\n  VALUE "FileDescription", TITLE "\\0"\n',
-        'a second product name has more than a string':
-            '$pristine\n  VALUE "ProductName", "a" "b" "\\0"\n',
+        'a second icon is not one that can be templated': (
+          '$pristine\nIDI_APP_ICON ICON "app.ico"\n',
+          'IDI_APP_ICON',
+        ),
+        'a second icon has a path with slashes': (
+          '$pristine\nIDI_APP_ICON ICON "resources/app_icon.ico"\n',
+          'IDI_APP_ICON',
+        ),
+        'a second file description is a macro': (
+          '$pristine\n  VALUE "FileDescription", TITLE "\\0"\n',
+          'FileDescription',
+        ),
+        'a second product name has more than a string': (
+          '$pristine\n  VALUE "ProductName", "a" "b" "\\0"\n',
+          'ProductName',
+        ),
+        'an icon in a line comment': (
+          '// IDI_APP_ICON ICON "resources\\\\old.ico"\n$pristine',
+          'IDI_APP_ICON',
+        ),
+        'an entry in a line comment': (
+          '// VALUE "ProductName", "old" "\\0"\n$pristine',
+          'ProductName',
+        ),
+        'an icon and an entry in a block comment': (
+          '/* a comment\nIDI_APP_ICON ICON "bad"\nVALUE "ProductName", TITLE "\\0"\n*/\n$pristine',
+          'IDI_APP_ICON',
+        ),
+        'a mention in a string': (
+          'x "FileDescription"\n$pristine',
+          'FileDescription',
+        ),
+        'an include of a script': (
+          '#include "other.rc"\n$pristine',
+          '#include',
+        ),
+        'an include after a comment': (
+          '/* a */ #include "other.rc"\n$pristine',
+          '#include',
+        ),
+        'a line continuation': ('#define A \\\n 1\n$pristine', 'continuation'),
       };
 
-      for (final MapEntry(key: name, value: source) in cases.entries) {
+      for (final MapEntry(key: name, value: (source, message))
+          in cases.entries) {
         test(name, () {
           expect(
             () => edit(source),
-            _rejects('windows/runner/Runner.rc', RegExp('icon|entry')),
+            _rejects('windows/runner/Runner.rc', message),
           );
         });
       }

@@ -24,6 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/engine/processors/linux/marked_text.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_mentions.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_title_encoding.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -65,26 +66,25 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 /// else is written back byte for byte, and a region that is already there is
 /// regenerated where it is. See [MarkedText.upsert].
 ///
-/// The call is not parsed. It is recognised only when it is laid out as
-/// `flutter create` writes it, and anything else is rejected with an
+/// The file is not parsed. The call that adds the executable is recognised only
+/// when it is laid out as `flutter create` writes it, and the file is checked
+/// by counting (see [WindowsMentions]); anything else is rejected with an
 /// [UnsupportedRunnerLayoutException] instead of guessed at:
 ///
-/// * one line that is exactly `add_executable(${BINARY_NAME} WIN32` (in this
-///   case, and with nothing else on it), and only one of them outside of the
-///   regions;
-/// * the sources on the lines after it;
-/// * a line of its own that is only `)`, which closes it;
+/// * one line that is exactly `add_executable(${BINARY_NAME} WIN32`, and no
+///   other mention of `add_executable` outside of the regions, even in a
+///   comment;
+/// * the sources on the lines after it, with no parenthesis, and a line of its
+///   own that is only `)`, which closes it;
 /// * `main.cpp` and `Runner.rc` among the sources, each on a line of its own,
 ///   as a name (quoted or not) or after `${CMAKE_CURRENT_SOURCE_DIR}/`
 ///   (see [sourceSpellings]): they are the files the region replaces with the
-///   ones of the binary dir. A source that names one of them any other way
-///   (`./main.cpp`, `MAIN.CPP`, `sub/../main.cpp`) is rejected, since it would
-///   stay in the target next to the copy of the binary dir.
-///
-/// Comments and strings are not looked at: a line is recognised for what it is
-/// as a whole. After the call, no `target_sources`, `set_property` or
-/// `set_target_properties` may name `main.cpp` or `Runner.rc`, since it would
-/// put them back in the target (see [_checkLaterCalls]).
+///   ones of the binary dir, and **no other mention** of them is allowed
+///   anywhere outside of the regions (an alias such as `./main.cpp`, a later
+///   `target_sources`, a comment), since a source that stays in the target
+///   next to the copy of the binary dir defines `wWinMain` twice. The names are
+///   whole words, the case does not matter, and one in a variable is not seen;
+/// * no `[[` (a bracket argument or comment) and no line that ends with `\`.
 ///
 /// The title of each flavor is encoded for each file it ends up in, and the
 /// names of the flavors have to be plain: see [WindowsTitleEncoding].
@@ -96,7 +96,6 @@ abstract final class WindowsRunnerCMakeListsEditor {
   );
 
   static const String _callStart = r'add_executable(${BINARY_NAME} WIN32';
-  static final RegExp _commandStart = RegExp(r'^[A-Za-z_]\w*\s*\(');
 
   /// Returns [source] with the region up to date for [windowTitles], the title
   /// of the window of each flavor by name.
@@ -128,118 +127,6 @@ abstract final class WindowsRunnerCMakeListsEditor {
   static String ownedContent(String source) =>
       MarkedText.ownedContent(source, [marker]);
 
-  static final RegExp _bracket = RegExp(r'\[=*\[');
-  static final RegExp _quoted = RegExp(r'"(?:[^"\\]|\\.)*"');
-
-  /// Throws on what the editor reads line by line and cannot read that way:
-  /// a bracket argument or comment (`[[ ... ]]`, `#[[ ... ]]`, which may hold
-  /// parentheses and anything that looks like a command), a line that ends with
-  /// a `\` (which goes on with the next one) and a quoted argument that goes
-  /// over several lines. A line comment (`# ...`) is skipped, and what is in one
-  /// is not looked at. The file is only looked at outside of the region.
-  static void _checkPlain(List<TextLine> lines) {
-    UnsupportedRunnerLayoutException reject(String what, String fix) =>
-        UnsupportedRunnerLayoutException(
-          K.windowsRunnerCMakeListsPath,
-          reason: 'it has $what.',
-          fix: fix,
-        );
-
-    for (final line in lines) {
-      final text = line.text.trim();
-
-      if (text.startsWith('#') && !text.startsWith('#[')) continue;
-
-      if (_bracket.hasMatch(text)) {
-        throw reject(
-          'a bracket argument or comment (`[[ ... ]]`) on `$text`',
-          'Write it as a quoted argument or as `#` line comments.',
-        );
-      }
-
-      if (text.endsWith(r'\')) {
-        throw reject(
-          r'a line continuation (`\` at the end of a line) on `$text`',
-          'Join the lines.',
-        );
-      }
-
-      final code = text
-          .replaceAll(RegExp(r'\\.'), '')
-          .replaceAll(RegExp(r'"[^"]*"'), '')
-          .split('#')
-          .first;
-
-      if (code.contains('"')) {
-        throw reject(
-          'a quoted argument that goes over several lines, on `$text`',
-          'Close the quote on the line it starts on.',
-        );
-      }
-    }
-  }
-
-  /// The line that closes the call that adds the executable.
-  static TextLine _callEnd(MarkedText text) {
-    final outside = text.outside;
-
-    _checkPlain(outside);
-
-    final starts = outside
-        .where((line) => line.text.trim() == _callStart)
-        .toList(growable: false);
-
-    if (starts.isEmpty) {
-      throw UnsupportedRunnerLayoutException(
-        K.windowsRunnerCMakeListsPath,
-        reason:
-            'it has no call that adds the executable the way `flutter create` '
-            'writes it, with `add_executable(\${BINARY_NAME} WIN32` on a line '
-            'of its own.',
-        fix:
-            'Write the call like that, with the sources on the lines after '
-            'it.',
-      );
-    }
-
-    if (starts.length > 1) {
-      throw UnsupportedRunnerLayoutException(
-        K.windowsRunnerCMakeListsPath,
-        reason:
-            'it has more than one `add_executable(\${BINARY_NAME} WIN32`, and '
-            'flavorizr cannot tell which one is the app.',
-        fix: 'Leave one, or comment the others out.',
-      );
-    }
-
-    for (final line in outside.where(
-      (line) => line.index > starts.single.index,
-    )) {
-      final trimmed = line.text.trim();
-
-      if (trimmed == ')') {
-        _checkSources(outside, starts.single.index, line.index);
-        _checkLaterCalls(outside, line.index);
-
-        return line;
-      }
-
-      if (trimmed.startsWith('#')) continue;
-
-      // Another command, or a source that closes the call on its own line:
-      // the call is not laid out the way it has to be.
-      if (_commandStart.hasMatch(trimmed) || trimmed.endsWith(')')) break;
-    }
-
-    throw UnsupportedRunnerLayoutException(
-      K.windowsRunnerCMakeListsPath,
-      reason:
-          'the call that adds the executable has no closing `)` on a line of '
-          'its own.',
-      fix: 'Put the closing `)` of the call on a line of its own.',
-    );
-  }
-
   /// The files the region replaces with the ones of the binary dir.
   static const List<String> _entrypoints = ['main.cpp', 'Runner.rc'];
 
@@ -251,131 +138,114 @@ abstract final class WindowsRunnerCMakeListsEditor {
     '\${CMAKE_CURRENT_SOURCE_DIR}/$name',
   ];
 
-  /// Throws unless each of the files in [_entrypoints] is among the sources of
-  /// the call between the lines [start] and [end], in one of the ways of
-  /// [sourceSpellings], and no source names it in another one: an alias such as
-  /// `./main.cpp` would stay in the target next to the copy of the binary dir,
-  /// and both would define `wWinMain`.
-  ///
-  /// The sources are looked at as lines of text: a name is the whole of a word,
-  /// so `domain.cpp` and `main.cpp.in` are other files, and the case does not
-  /// matter, since the files of Windows are not case sensitive. A name that is
-  /// in a variable cannot be seen.
-  static RegExp _mention(String name) => RegExp(
-    '(?<![A-Za-z0-9_.-])${RegExp.escape(name)}(?![A-Za-z0-9_.-])',
-    caseSensitive: false,
-  );
+  static final RegExp _bracket = RegExp(r'\[=*\[');
 
-  static final RegExp _sourceCommand = RegExp(
-    r'^(?:target_sources|set_target_properties|set_property)\s*\(',
-    caseSensitive: false,
-  );
+  /// The line that closes the call that adds the executable, after checking the
+  /// file outside of the region (see [WindowsMentions]): every mention of
+  /// `add_executable`, of `main.cpp` and of `Runner.rc`, in a comment or a
+  /// string too, has to be the call, or one of its sources; there is no
+  /// bracket argument or comment (`[[`), no line that ends with a `\`, and
+  /// the lines of the call have no parenthesis but the one that closes it.
+  static TextLine _callEnd(MarkedText text) {
+    final lines = text.outside;
+    final code = lines.map((line) => line.text).join('\n');
+    UnsupportedRunnerLayoutException reject(String reason, String fix) =>
+        UnsupportedRunnerLayoutException(
+          K.windowsRunnerCMakeListsPath,
+          reason: reason,
+          fix: fix,
+        );
 
-  /// Throws when a call that is after the one that adds the executable puts
-  /// `main.cpp` or `Runner.rc` in the target again: `target_sources`, or
-  /// `set_property` and `set_target_properties`, whose argument names one of
-  /// them. The region removes them from the target right after the call, so a
-  /// later one would bring the file of the source dir back next to the copy of
-  /// the binary dir.
-  ///
-  /// The calls are looked at as lines of text, like the sources of the call
-  /// that adds the executable: a name is a whole word and the case does not
-  /// matter, a call is over when its parentheses are closed (what is in a
-  /// string or a comment does not count), and a call of another target is not
-  /// told from one of this: it is rejected too. A name that is in a variable
-  /// cannot be seen.
-  static void _checkLaterCalls(List<TextLine> lines, int end) {
-    List<String>? call;
-    var depth = 0;
-
-    void check(List<String> lines) {
-      for (final name in _entrypoints) {
-        if (lines.any(_mention(name).hasMatch)) {
-          throw UnsupportedRunnerLayoutException(
-            K.windowsRunnerCMakeListsPath,
-            reason:
-                'a later `${lines.first}` names `$name`, which would put it '
-                'back in the target after the region took it out, next to '
-                'the copy of the binary dir.',
-            fix:
-                'Remove `$name` from that call: the region adds the copy of '
-                'the binary dir to the target.',
-          );
-        }
-      }
+    if (lines.any((line) => line.text.trimRight().endsWith(r'\'))) {
+      throw reject(
+        r'it has a line continuation (`\` at the end of a line).',
+        'Join the lines.',
+      );
     }
 
-    for (final line in lines.where((line) => line.index > end)) {
-      final text = line.text.trim();
+    WindowsMentions.check(
+      code,
+      _bracket,
+      0,
+      path: K.windowsRunnerCMakeListsPath,
+      what: 'bracket `[[`',
+    );
 
-      if (text.isEmpty || text.startsWith('#')) continue;
+    final starts = lines.where((line) => line.text.trim() == _callStart);
 
-      if (call == null) {
-        if (!_sourceCommand.hasMatch(text)) continue;
+    WindowsMentions.check(
+      code,
+      RegExp('add_executable', caseSensitive: false),
+      starts.length,
+      path: K.windowsRunnerCMakeListsPath,
+      what: 'add_executable',
+    );
 
-        call = [];
-        depth = 0;
-      }
-
-      call.add(text);
-
-      final code = text.replaceAll(_quoted, '""').split('#').first;
-
-      depth += '('.allMatches(code).length - ')'.allMatches(code).length;
-
-      if (depth <= 0) {
-        check(call);
-        call = null;
-      }
+    if (starts.isEmpty) {
+      throw reject(
+        'it has no call that adds the executable the way `flutter create` '
+            'writes it, with `add_executable(\${BINARY_NAME} WIN32` on a line of '
+            'its own.',
+        'Write the call like that, with the sources on the lines after it.',
+      );
     }
 
-    if (call != null) check(call);
-  }
+    if (starts.length > 1) {
+      throw reject(
+        'it has more than one `add_executable(\${BINARY_NAME} WIN32`, and '
+            'flavorizr cannot tell which one is the app.',
+        'Leave one.',
+      );
+    }
 
-  static void _checkSources(List<TextLine> lines, int start, int end) {
-    final sources = [
-      for (final line in lines)
-        if (line.index > start && line.index < end) line.text.trim(),
-    ].where((text) => text.isNotEmpty && !text.startsWith('#')).toList();
+    final call = lines.skipWhile((line) => line != starts.single).skip(1);
+    final close = call.where((line) => line.text.trim() == ')').firstOrNull;
+    final sources = call.takeWhile((line) => line != close).toList();
+
+    if (close == null ||
+        sources.any((line) => RegExp(r'[()]').hasMatch(line.text))) {
+      throw reject(
+        'the call that adds the executable has no closing `)` on a line of its '
+            'own, or has a parenthesis in a source or a comment.',
+        'Put the closing `)` of the call on a line of its own, and no other '
+            'parenthesis in the call.',
+      );
+    }
 
     for (final name in _entrypoints) {
-      final mention = _mention(name);
       final accepted = {
         for (final spelling in sourceSpellings(name)) ...[
           spelling,
           '"$spelling"',
         ],
       };
-      final mentions = sources.where(mention.hasMatch).toList();
-      final other = mentions.where((text) => !accepted.contains(text));
+      final listed = sources.where(
+        (line) => accepted.contains(line.text.trim()),
+      );
+      final mention = RegExp(
+        '(?<![A-Za-z0-9_.-])${RegExp.escape(name)}(?![A-Za-z0-9_.-])',
+        caseSensitive: false,
+      );
 
-      if (other.isNotEmpty) {
-        throw UnsupportedRunnerLayoutException(
-          K.windowsRunnerCMakeListsPath,
-          reason:
-              'the call that adds the executable has `${other.first}`, which '
-              'is not one of the ways it can list `$name`, so the build could '
-              'not tell whether the copy of it made in the binary dir is the '
-              'only one in the target.',
-          fix:
-              'List `"$name"` on a line of its own among the sources of the '
-              'call, and no other way of naming it.',
+      if (listed.isEmpty && !mention.hasMatch(code)) {
+        throw reject(
+          'the call that adds the executable does not list `$name` the way '
+              '`flutter create` does, so the build could not be pointed at the '
+              'copy of it made in the binary dir.',
+          'List `"$name"` on a line of its own among the sources of the call.',
         );
       }
 
-      if (mentions.isEmpty) {
-        throw UnsupportedRunnerLayoutException(
-          K.windowsRunnerCMakeListsPath,
-          reason:
-              'the call that adds the executable does not list `$name` the '
-              'way `flutter create` does, so the build could not be pointed '
-              'at the copy of it made in the binary dir.',
-          fix:
-              'List `"$name"` on a line of its own among the sources of the '
-              'call.',
-        );
-      }
+      WindowsMentions.check(
+        code,
+        mention,
+        listed.length,
+        path: K.windowsRunnerCMakeListsPath,
+        what: name,
+      );
     }
+
+    return close;
   }
 
   static List<String> _body(Map<String, String> windowTitles) {
