@@ -66,6 +66,10 @@ class PlanExecutor {
   /// Applies [plan] to the project in [projectRoot], whose [paths] are copied
   /// to the shadow workspace the processors write to.
   ///
+  /// [previousObjects] are the UUIDs of the pbxproj objects the lock recorded,
+  /// by processor id and then by path of the project file: each processor reads
+  /// its own through `FlavorizrContext.previousObjectsOf`.
+  ///
   /// [resources] must hold every resource the plan requires. A resource a step
   /// requires and is missing, and an invalid [paths], throw before anything is
   /// applied.
@@ -82,6 +86,7 @@ class PlanExecutor {
     required CommitRun commit,
     Iterable<Resource<Object?>> resources = const [],
     Set<String> previousFlavors = const {},
+    Map<String, Map<String, Set<String>>> previousObjects = const {},
     Directory? tempParent,
   }) {
     final lifecycle = ResourceLifecycle(plan, resources);
@@ -97,6 +102,7 @@ class PlanExecutor {
           projectRoot: shadow.projectRoot,
           logger: logger,
           previousFlavors: previousFlavors,
+          previousObjects: previousObjects,
         );
         final completed = <String>[];
         String? currentId;

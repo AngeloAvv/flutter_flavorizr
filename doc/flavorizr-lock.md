@@ -33,8 +33,8 @@ processors:
   ios:xcodeproj:
     objects:
       ios/Runner.xcodeproj/project.pbxproj:
-        - 97C146E61CF9000F007C117D
-        - A1B2C3D4E5F60718293A4B5C
+        - 41CBCBB2C9EC2CFF0019D008
+        - C93DD37D645EA448590670D3
   ios:plist:
     keys:
       ios/Runner/Info.plist:
@@ -61,7 +61,7 @@ Each processor has these optional sections, left out when empty:
 | `files` | path to `{ownership, hash?}` | Whole files. `ownership` is `scaffold`, `managed` or `patched`. `hash` is the hash of the owned content (the whole file for `managed`, the owned parts for `patched`) and is present exactly for the hashed classes, so never for `scaffold`. |
 | `regions` | path to region id to hash | Marked regions of a shared file. |
 | `keys` | path to key to hash | Owned keys of a plist, manifest or XML file. |
-| `objects` | path to list of UUIDs | pbxproj object UUIDs, sorted. |
+| `objects` | path to list of UUIDs | UUIDs of the pbxproj objects flavorizr created, sorted. See [Owned objects](#owned-objects). |
 | `inputs` | output path to hash | Generated binaries such as icons: the hash of the *inputs* (source file hash plus options), never of the output, so bumping a library such as `image` creates no noise. |
 
 Notes:
@@ -76,13 +76,81 @@ Notes:
 * A UTF-8 byte order mark at the start of the file is tolerated on read.
 * **Known limitation, `project.pbxproj`.** The Xcode project of a platform is
   shared by every Darwin processor (`xcodeproj:ios`, `xcodeproj:macos`) and is
-  a `patched` file. Until the processors that own parts of it say which ones
-  (owned build settings, #515, and the UUIDs of the objects they create, #516),
-  no owned-content reader is registered for it and the whole file is hashed. An
-  edit anywhere in it, by Xcode, CocoaPods or Flutter, then reads as an edit of
-  what flavorizr owns, and the next run that changes the project asks about it
-  as a conflict. The reader is registered with
+  a `patched` file. The lock records the UUIDs of the objects flavorizr created
+  in it (see [Owned objects](#owned-objects)), which is enough to find and
+  remove them, but not to *hash* what flavorizr owns: a reader of the owned
+  content gets the file alone, and the file does not say which of its objects
+  are flavorizr's. Until the processors that own parts of it register a reader
+  (the owned build settings, #515), the whole file is hashed. An edit anywhere
+  in it, by Xcode, CocoaPods or Flutter, then reads as an edit of what
+  flavorizr owns, and the next run that changes the project asks about it as a
+  conflict. The reader is registered with
   `EngineResource(..., ownedContent: {path: reader})`.
+
+## Owned objects
+
+The objects a Darwin processor creates in `project.pbxproj` (the build
+configurations of a flavor, the file references of its xcconfig files, a build
+phase) are recorded in `objects`, by UUID, so that a later run can remove the
+ones that are no longer wanted: a flavor that was dropped, a phase that is not
+needed anymore.
+
+Their UUIDs are **deterministic**. Each object gets the first 24 hex characters
+of the MD5 of a seed that says what it is:
+
+```text
+flavorizr/<platform>/<target>/<flavor>/<kind>[/<detail>...]
+```
+
+| Segment | Meaning |
+| --- | --- |
+| `<platform>` | `ios` or `macos`. |
+| `<target>` | The name of the target the object belongs to (`Runner`), or `@project` for an object of the project itself. |
+| `<flavor>` | The name of the flavor, or `@all` for an object that does not belong to a flavor. |
+| `<kind>`, `<detail>` | What the object is, such as `buildConfiguration/Debug`. |
+
+So `flavorizr/ios/@project/dev/buildConfiguration/Debug` is always
+`C93DD37D645EA448590670D3`: two runs from scratch write the same
+`project.pbxproj`, and the diff of a run is only what changed. A segment holds
+no `/`, and `@` is reserved to the two markers.
+
+What the lock does with them:
+
+* **Only what flavorizr created is recorded.** An object that existed (from
+  Flutter, from the user, from 2.x) is used as it is, keeps its UUID, is not
+  recorded, and so is never removed, unless the processor knows it is
+  flavorizr's (say, a configuration 2.x created) and claims it: the lock then
+  records the UUID it has. UUIDs are never rewritten for the project
+  as a whole: that would break what refers to them from outside the file, such
+  as the `BlueprintIdentifier` of a scheme.
+* **A processor says what it owns on every run**, and what the lock records for
+  it is exactly that: an object it does not own anymore leaves the list, after
+  being removed from the project. A processor that tracked the project file and
+  said nothing about its objects keeps what the lock had, so that nothing it
+  owns is ever forgotten; one that owns none says so with an empty set. A file
+  the processor stops tracking takes its objects with it.
+* **The record of a file that a run did not write is kept**, with the objects
+  it had: when the user chose to keep their version of `project.pbxproj` in a
+  conflict, what the run created in memory is not in the file.
+* **Removal is by UUID, cascading.** Each object is removed with
+  `removeFromProject`, which also takes the references to it (its entry in a
+  configuration list or a build phase, the build files of a file reference), so
+  nothing is left dangling. An object the lock lists that is not in the project
+  anymore is just forgotten; the project object, its main group and its targets
+  are never removed, whatever the lock says, as the lock is a file that can be
+  edited or merged.
+* **The UUID is the identity.** If the lock is lost, the next run finds the
+  objects again by their UUID and records them again, with no change to the
+  project.
+
+The format does not change: `objects` is part of schema version 1 and stays
+optional, so `schemaVersion` is not bumped, and a lock without it reads as
+"nothing created yet".
+
+In code, `PbxprojSeed` and `OwnedObjects` (`lib/src/engine/darwin/`) are what a
+processor uses on top of the `xcodeproj:ios` / `xcodeproj:macos` resources:
+`ensure` creates or finds an object, `settle` removes the stale ones and tells
+the context what the processor owns.
 
 ## Determinism
 

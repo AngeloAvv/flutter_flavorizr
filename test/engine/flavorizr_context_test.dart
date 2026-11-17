@@ -39,14 +39,19 @@ void main() {
   late Directory projectRoot;
   late Flavorizr config;
 
-  FlavorizrContext buildContext({Set<String> previousFlavors = const {}}) =>
-      FlavorizrContext(
-        config: config,
-        root: root,
-        projectRoot: projectRoot,
-        logger: TestUtils.quietLogger(),
-        previousFlavors: previousFlavors,
-      );
+  FlavorizrContext buildContext({
+    Set<String> previousFlavors = const {},
+    String? processorId,
+    Map<String, Map<String, Set<String>>> previousObjects = const {},
+  }) => FlavorizrContext(
+    config: config,
+    root: root,
+    projectRoot: projectRoot,
+    logger: TestUtils.quietLogger(),
+    previousFlavors: previousFlavors,
+    processorId: processorId,
+    previousObjects: previousObjects,
+  );
 
   setUp(() {
     final temp = Directory.systemTemp.createTempSync('flavorizr_context_');
@@ -236,6 +241,113 @@ flavors:
               contains('answer'),
             ),
           ),
+        );
+      });
+    });
+
+    group('objects', () {
+      const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+
+      test('a processor reads the UUIDs the lock recorded for it', () {
+        final ctx = buildContext(
+          processorId: 'ios:buildTargets',
+          previousObjects: {
+            'ios:buildTargets': {
+              pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+            },
+            'ios:xcconfig': {
+              pbxproj: {'BBBBBBBBBBBBBBBBBBBBBBBB'},
+            },
+          },
+        );
+
+        expect(ctx.previousObjectsOf(pbxproj), {'AAAAAAAAAAAAAAAAAAAAAAAA'});
+        expect(ctx.previousObjectsOf('ios/Other.pbxproj'), isEmpty);
+      });
+
+      test('the paths of the lock are read in their canonical form', () {
+        final ctx = buildContext(
+          processorId: 'ios:buildTargets',
+          previousObjects: {
+            'ios:buildTargets': {
+              r'ios\Runner.xcodeproj\project.pbxproj': {
+                'AAAAAAAAAAAAAAAAAAAAAAAA',
+              },
+              '../escape/project.pbxproj': {'CCCCCCCCCCCCCCCCCCCCCCCC'},
+            },
+          },
+        );
+
+        expect(ctx.previousObjectsOf(pbxproj), {'AAAAAAAAAAAAAAAAAAAAAAAA'});
+        expect(ctx.previousObjectsOf('escape/project.pbxproj'), isEmpty);
+      });
+
+      test('what a processor owns is kept apart from the others', () {
+        final ctx = buildContext(processorId: 'ios:buildTargets');
+
+        ctx.ownObjects(pbxproj, ['BBBBBBBBBBBBBBBBBBBBBBBB']);
+        ctx.ownObjects(pbxproj, ['AAAAAAAAAAAAAAAAAAAAAAAA']);
+
+        expect(ctx.ownedObjects, {
+          'ios:buildTargets': {
+            pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA', 'BBBBBBBBBBBBBBBBBBBBBBBB'},
+          },
+        });
+      });
+
+      test('owning nothing is still said', () {
+        final ctx = buildContext(processorId: 'ios:buildTargets');
+
+        ctx.ownObjects(pbxproj, const []);
+
+        expect(ctx.ownedObjects, {
+          'ios:buildTargets': {pbxproj: <String>{}},
+        });
+      });
+
+      test('the engine hands the objects of a step back to the run', () {
+        final ctx = buildContext();
+
+        ctx.ownObjectsFor('ios:buildTargets', {
+          pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+        });
+
+        expect(ctx.ownedObjects, {
+          'ios:buildTargets': {
+            pbxproj: {'AAAAAAAAAAAAAAAAAAAAAAAA'},
+          },
+        });
+      });
+
+      test('only the context of a processor reads or owns objects', () {
+        final ctx = buildContext();
+
+        expect(() => ctx.previousObjectsOf(pbxproj), throwsStateError);
+        expect(() => ctx.ownObjects(pbxproj, const []), throwsStateError);
+      });
+
+      test('a path that leaves the project cannot be owned', () {
+        final ctx = buildContext(processorId: 'ios:buildTargets');
+
+        expect(
+          () => ctx.ownObjects('../outside.pbxproj', const []),
+          throwsArgumentError,
+        );
+        expect(ctx.ownedObjects, isEmpty);
+      });
+
+      test('the views are read only', () {
+        final ctx = buildContext(processorId: 'ios:buildTargets');
+        ctx.ownObjects(pbxproj, ['AAAAAAAAAAAAAAAAAAAAAAAA']);
+
+        expect(() => ctx.ownedObjects['x'] = {}, throwsUnsupportedError);
+        expect(
+          () => ctx.ownedObjects['ios:buildTargets']![pbxproj]!.add('X'),
+          throwsUnsupportedError,
+        );
+        expect(
+          () => ctx.previousObjectsOf(pbxproj).add('X'),
+          throwsUnsupportedError,
         );
       });
     });
