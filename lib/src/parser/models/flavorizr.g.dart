@@ -25,5 +25,6 @@ Flavorizr _$FlavorizrFromJson(Map json) {
         json['assetsUrl'] as String? ??
         'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip',
     ide: _ideListFromJson(json['ide']),
+    recipes: _recipesFromJson(json['recipes']),
   );
 }
