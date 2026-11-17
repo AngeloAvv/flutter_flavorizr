@@ -187,6 +187,10 @@ void main() {
       expect(project.logger.warnings, hasLength(1));
       expect(project.logger.warnings.single, contains('lib/flavors.dart'));
       expect(project.logger.warnings.single, contains('flavors.g.dart'));
+      // The main.dart of 2.x assigns F.appFlavor, which the generated F, a
+      // getter, does not allow: apply does not touch main.dart, so say so.
+      expect(project.logger.warnings.single, contains('F.appFlavor'));
+      expect(project.logger.warnings.single, contains('lib/main.dart'));
 
       project.write('lib/flavors.dart', "export 'flavors.g.dart';\n");
       project.logger.warnings.clear();
@@ -311,6 +315,28 @@ void main() {
       ]);
 
       expect(project.read('lib/app.dart'), contains('class App'));
+    });
+
+    test('--overwrite-scaffold also replaces flavors.dart, which the recipe '
+        'pulls in', () async {
+      await project.run(['apply', '--yes', 'flutter:scaffold']);
+      project.write('lib/flavors.dart', '// mine\n');
+
+      await project.run(['apply', '--yes', 'flutter:scaffold']);
+
+      expect(project.read('lib/flavors.dart'), '// mine\n');
+
+      await project.run([
+        'apply',
+        '--yes',
+        '--overwrite-scaffold',
+        'flutter:scaffold',
+      ]);
+
+      expect(
+        project.read('lib/flavors.dart'),
+        contains("export 'flavors.g.dart'"),
+      );
     });
 
     test('running only flutter:main brings what it needs', () async {

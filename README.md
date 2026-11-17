@@ -562,7 +562,9 @@ By default, when you do not specify a custom set of processors by appending the 
 Flutter_flavorizr writes two files in the lib folder:
 
 * `flavors.g.dart` holds the `Flavor` enum and the `F` class. It is generated from `flavorizr.yaml` and written again whenever the flavors change, so do not edit it.
-* `flavors.dart` exports `flavors.g.dart`. It is created once and never overwritten: it is yours, so this is the place to add your own code (a color palette per flavor, the URL of each environment, and so on).
+* `flavors.dart` exports `flavors.g.dart`. It is created once and an ordinary run never overwrites it: it is yours, so this is the place to add your own code (a color palette per flavor, the URL of each environment, and so on).
+
+> **Warning:** `--overwrite-scaffold` replaces `flavors.dart` (and every other scaffold file the run touches) with the stock one, and it does so also when you ask for `flutter:scaffold`, which pulls `flutter:flavors` in as a dependency. Commit your changes first, and look at the preview (`plan --overwrite-scaffold`) before you apply it.
 
 ```dart
 class F {
@@ -589,7 +591,7 @@ Flavorizr does not touch your `main.dart`, `app.dart` or `pages`. A new app can 
 flutter pub run flutter_flavorizr apply flutter:scaffold
 ```
 
-The recipe creates `lib/main.dart`, `lib/app.dart` and `lib/pages/my_home_page.dart`, which show how to use the getters above, and a file that exists is never overwritten. A new Flutter project already has a `lib/main.dart`: add `--overwrite-scaffold` to replace it (and any other file of the recipe that exists).
+The recipe creates `lib/main.dart`, `lib/app.dart` and `lib/pages/my_home_page.dart`, which show how to use the getters above, and a file that exists is not overwritten. A new Flutter project already has a `lib/main.dart`: add `--overwrite-scaffold` to replace it. The flag replaces every scaffold file of the run that exists, `lib/flavors.dart` included (the recipe runs `flutter:flavors` as a dependency), so use it on a fresh project, not on one with code of yours in those files.
 
 ## Third party services
 

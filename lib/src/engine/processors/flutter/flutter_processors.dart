@@ -94,15 +94,18 @@ class FlutterFlavorsProcessor extends FlavorizrProcessor {
       ctx.logger.warn(
         '[$id] `${K.flutterFlavorPath}` does not export '
         '`flavors.g.dart`, so it does not follow the flavors of '
-        'flavorizr.yaml anymore (flavorizr never overwrites it). If 2.x '
-        'generated it, delete it and run flavorizr again.',
+        'flavorizr.yaml anymore (a run keeps it as it is). If 2.x '
+        'generated it, delete it, remove the `F.appFlavor` assignment from '
+        '`${K.flutterMainPath}` (the generated `F` only has a getter, and a '
+        'run does not touch `main.dart`), and run flavorizr again.',
       );
     }
   }
 }
 
 /// Writes one starting file of a new app, which is the user's from then on:
-/// [Artifact.scaffold], so a file that exists is never overwritten.
+/// [Artifact.scaffold], so a file that exists is only replaced when the user
+/// asks for it (`--overwrite-scaffold`).
 abstract class _FlutterScaffoldProcessor extends FlavorizrProcessor {
   const _FlutterScaffoldProcessor();
 

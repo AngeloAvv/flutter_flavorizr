@@ -2,7 +2,8 @@
 //
 // flutter_flavorizr writes this file from flavorizr.yaml, and writes it again
 // whenever the flavors change. Put your own code in flavors.dart, which
-// exports this file and which flutter_flavorizr never overwrites.
+// exports this file and which a normal run of flutter_flavorizr never
+// overwrites.
 
 import 'package:flutter/services.dart' as services;
 

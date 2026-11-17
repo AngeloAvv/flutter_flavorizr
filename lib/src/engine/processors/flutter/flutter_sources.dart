@@ -62,7 +62,8 @@ String flavorsGeneratedSource(Flavorizr config) {
 //
 // flutter_flavorizr writes this file from flavorizr.yaml, and writes it again
 // whenever the flavors change. Put your own code in flavors.dart, which
-// exports this file and which flutter_flavorizr never overwrites.
+// exports this file and which a normal run of flutter_flavorizr never
+// overwrites.
 
 import 'package:flutter/services.dart' as services;
 
@@ -116,9 +117,9 @@ ${titles.join('\n')}
 
 /// `lib/flavors.dart`: the file of the user, created once.
 const String flavorsScaffoldSource = '''
-// This file is yours: flutter_flavorizr creates it once and never writes it
-// again. Add what you need around the flavors, such as colors or URLs by
-// flavor.
+// This file is yours: flutter_flavorizr creates it once and a normal run never
+// writes it again (apply --overwrite-scaffold does replace it). Add what you
+// need around the flavors, such as colors or URLs by flavor.
 //
 // The Flavor enum and F live in flavors.g.dart, which flutter_flavorizr
 // writes again whenever the flavors change.

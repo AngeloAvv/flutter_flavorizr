@@ -27,7 +27,7 @@ when it defines one, otherwise `all`.
 | --- | --- |
 | `-y`, `--yes` | Does not ask for confirmation, which is what a CI wants. |
 | `--on-conflict=keep\|overwrite` | What to do with a file edited by hand that the run would change. Without it a terminal asks for each file, and anything else fails. |
-| `--overwrite-scaffold` | Also replaces the scaffold files that exist, which a run never does otherwise (see below). |
+| `--overwrite-scaffold` | Also replaces the scaffold files that exist, which a run never does otherwise: all of them, `flavors.dart` included (see below). |
 | `-v`, `--verbose` | Prints what every processor does (every command has it). |
 
 ## Deprecated options
@@ -129,19 +129,27 @@ is not drift: only the part flavorizr owns is compared.
   `package:flutter/services.dart` (what `--flavor` sets), by the name the flavor
   has in `flavorizr.yaml`, so nothing has to initialize it.
 * `flavors.dart` exports `flavors.g.dart`. It is a **scaffold**: created when it
-  does not exist and never written again, so it is yours to extend. A project
-  that flavorized with 2.x keeps the `flavors.dart` it has, which holds the enum.
+  does not exist and kept as it is by every ordinary run, so it is yours to
+  extend. Only `--overwrite-scaffold` replaces it (see below). A project that
+  flavorized with 2.x keeps the `flavors.dart` it has, which holds the enum: the
+  run warns, and says to delete it and to remove the `F.appFlavor` assignment
+  of its `main.dart`, which the generated `F` does not allow.
 
 `flutter:app`, `flutter:pages` and `flutter:main` create `lib/app.dart`,
 `lib/pages/my_home_page.dart` and `lib/main.dart`, the files of a new app. They
 are scaffolds too, and they are **not** part of the `all` recipe: only the
 `flutter:scaffold` recipe (or the processors by name) runs them, and any file
-that already exists is left alone, so `apply` never modifies the `main.dart` of
-a project. The one of a project that was just created with `flutter create`
-exists, though: run `apply flutter:scaffold --overwrite-scaffold` to replace it,
-which previews the change like any other (`plan` takes the flag too, to show
-it without applying). The flag replaces every scaffold file
-the run touches, `flavors.dart` included.
+that already exists is left alone, so an ordinary `apply` never modifies the
+`main.dart` of a project. The one of a project that was just created with
+`flutter create` exists, though: run
+`apply flutter:scaffold --overwrite-scaffold` to replace it, which previews the
+change like any other (`plan` takes the flag too, to show it without applying).
+
+> **Warning:** the flag replaces **every** scaffold file of the run that
+> exists, not only the ones you named: `flutter:scaffold` pulls
+> `flutter:flavors` in as a dependency, so `lib/flavors.dart` is replaced too,
+> and so are an edited `app.dart` or page. `--yes` skips the confirmation. Use
+> it on a fresh project, or commit first.
 
 ## Processors that are not on the engine yet
 
