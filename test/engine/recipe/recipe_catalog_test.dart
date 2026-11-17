@@ -33,15 +33,28 @@ import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// What `all` runs: the default instruction set, which has no starting files
+/// of a new app.
+const _allIds = Processor.defaultInstructionSet;
+
 /// The processor ids that exist today.
-const _ids = Processor.defaultInstructionSet;
+final _ids = [
+  for (final id in _allIds) ...[
+    id,
+    if (id == 'flutter:flavors') ...[
+      'flutter:app',
+      'flutter:pages',
+      'flutter:main',
+    ],
+  ],
+];
 
 RecipeCatalog _catalog({
   Map<String, List<String>> recipes = const {},
   String? defaultRecipe,
-  Iterable<String> processorIds = _ids,
+  Iterable<String>? processorIds,
 }) => RecipeCatalog(
-  processorIds: processorIds,
+  processorIds: processorIds ?? _ids,
   recipes: recipes,
   defaultRecipe: defaultRecipe,
 );
@@ -58,10 +71,11 @@ void main() {
       ]);
     });
 
-    test('all expands to the whole legacy instruction set, in order', () {
+    test('all expands to the legacy instruction set, in order, but for the '
+        'files of a new app', () {
       final resolution = _catalog().resolve(['all']);
 
-      expect(resolution.processorIds, _ids);
+      expect(resolution.processorIds, _allIds);
     });
 
     test('cross-platform recipes group processors of several platforms', () {
@@ -75,12 +89,25 @@ void main() {
       ]);
       expect(catalog.resolve(['firebase']).processorIds, ['google:firebase']);
       expect(catalog.resolve(['ide']).processorIds, ['ide:config']);
-      expect(catalog.resolve(['flutter']).processorIds, [
-        'flutter:flavors',
+      expect(catalog.resolve(['flutter']).processorIds, ['flutter:flavors']);
+    });
+
+    test('flutter:scaffold is the starting files of a new app, and only it '
+        'runs them', () {
+      final catalog = _catalog();
+
+      expect(catalog.resolve(['flutter:scaffold']).processorIds, [
         'flutter:app',
         'flutter:pages',
         'flutter:main',
       ]);
+      for (final name in ['all', 'flutter']) {
+        expect(
+          catalog.resolve([name]).processorIds,
+          isNot(contains('flutter:main')),
+          reason: name,
+        );
+      }
     });
 
     test(
@@ -476,7 +503,7 @@ void main() {
         ], platformsWithoutFlavors: skipped);
 
         expect(resolution.processorIds, [
-          for (final id in _ids)
+          for (final id in _allIds)
             if (!skipped.contains(id.split(':').first)) id,
         ], reason: '$skipped');
       }
@@ -567,6 +594,7 @@ void main() {
         'linux',
         'windows',
         'flutter',
+        'flutter:scaffold',
         'icons',
         'firebase',
         'ide',
@@ -574,7 +602,7 @@ void main() {
         'zeta',
       ]);
       expect(listing.map((recipe) => recipe.builtIn), [
-        ...List.filled(10, true),
+        ...List.filled(11, true),
         false,
         false,
       ]);
@@ -606,7 +634,7 @@ void main() {
         expect(() => recipe.members.add('x'), throwsUnsupportedError);
         expect(() => recipe.expansion.add('x'), throwsUnsupportedError);
       }
-      expect(catalog.resolve(['all']).processorIds, _ids);
+      expect(catalog.resolve(['all']).processorIds, _allIds);
     });
 
     test('marks the recipe that runs without a target', () {
@@ -689,7 +717,7 @@ none
     test('no target runs all', () {
       final resolution = _catalog().resolve([]);
 
-      expect(resolution.processorIds, _ids);
+      expect(resolution.processorIds, _allIds);
     });
 
     test('no target runs the default recipe when the user defines one', () {

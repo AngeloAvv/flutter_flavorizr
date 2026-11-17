@@ -144,6 +144,7 @@ class FakeLegacy implements LegacyPipeline {
 /// The processors that run on the engine, which together are a full run of it:
 /// only a full run records the flavors in the lock.
 const engineTargets = [
+  'flutter:flavors',
   'android:androidManifest',
   'android:buildGradle',
   'android:icons',

@@ -74,7 +74,7 @@ void main() {
       expect(
         project.logger.lines,
         contains(
-          matches(RegExp(r'^Applied: \+1 ~2 -0, 0 conflicts \(\d+ ms\)$')),
+          matches(RegExp(r'^Applied: \+3 ~2 -0, 0 conflicts \(\d+ ms\)$')),
         ),
       );
       expect(project.logger.lines.last, 'Flavorization process finished');
@@ -87,8 +87,8 @@ void main() {
       expect(
         project.logger.lines,
         containsAll([
-          matches(RegExp(r'^Plan: \+1 ~2 -0, 0 conflicts ')),
-          matches(RegExp(r'^Status: \+1 ~2 -0, 0 conflicts ')),
+          matches(RegExp(r'^Plan: \+3 ~2 -0, 0 conflicts ')),
+          matches(RegExp(r'^Status: \+3 ~2 -0, 0 conflicts ')),
         ]),
       );
     });
@@ -176,7 +176,7 @@ void main() {
         contains(
           allOf(
             contains('Applied'),
-            contains('\x1B[32m+1\x1B[39m'),
+            contains('\x1B[32m+3\x1B[39m'),
             contains('\x1B[33m~2\x1B[39m'),
             contains('\x1B[31m-0\x1B[39m'),
           ),

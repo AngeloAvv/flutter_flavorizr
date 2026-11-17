@@ -167,6 +167,10 @@ abstract class Output implements StepObserver {
   /// `NO_COLOR` is set.
   Style get style => const Style.none();
 
+  /// The logger of a dry run: warnings and errors, which are told, and nothing
+  /// else, since a dry run has no processor to announce.
+  Logger get warningsLogger => _OutputLogger(this, warningsOnly: true);
+
   /// The logger of what the output does not print itself: the processors and
   /// the engine. It follows the rules of the mode.
   Logger get logger;
@@ -488,7 +492,13 @@ class _JsonOutput extends Output {
 class _OutputLogger extends Logger {
   final Output _output;
 
-  _OutputLogger(this._output) : super(theme: _output._base.theme);
+  /// Whether only warnings and errors get through, as in a dry run, which has
+  /// nothing to say about what it does but must not hide a warning.
+  final bool _warningsOnly;
+
+  _OutputLogger(this._output, {bool warningsOnly = false})
+    : _warningsOnly = warningsOnly,
+      super(theme: _output._base.theme);
 
   Logger get _base => _output._base;
 
@@ -508,7 +518,7 @@ class _OutputLogger extends Logger {
 
   @override
   void info(String? message, {LogStyle? style}) {
-    if (_output.isJson) return;
+    if (_output.isJson || _warningsOnly) return;
 
     _clear();
     _base.info(message, style: style);
@@ -516,7 +526,7 @@ class _OutputLogger extends Logger {
 
   @override
   void success(String? message, {LogStyle? style}) {
-    if (_output.isJson) return;
+    if (_output.isJson || _warningsOnly) return;
 
     _clear();
     _base.success(message, style: style);
@@ -525,14 +535,14 @@ class _OutputLogger extends Logger {
   // No `_clear()`: it only prints when verbose, and then nothing is drawn.
   @override
   void detail(String? message, {LogStyle? style}) {
-    if (_output.isJson) return;
+    if (_output.isJson || _warningsOnly) return;
 
     _base.detail(message, style: style);
   }
 
   @override
   void write(String? message) {
-    if (_output.isJson) return;
+    if (_output.isJson || _warningsOnly) return;
 
     _clear();
     _base.write(message);

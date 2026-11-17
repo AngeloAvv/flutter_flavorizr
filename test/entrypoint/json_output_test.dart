@@ -106,7 +106,7 @@ void main() {
           ),
         );
         expect(doc['summary'], {
-          'added': 1,
+          'added': 3,
           'modified': 2,
           'deleted': 0,
           'conflicts': 0,
@@ -125,16 +125,11 @@ void main() {
       });
 
       test('marks the processors that are not on the engine', () async {
-        await project.run([
-          'plan',
-          '--json',
-          ...engineTargets,
-          'flutter:flavors',
-        ]);
+        await project.run(['plan', '--json', ...engineTargets, 'ide:config']);
 
         expect((document()['processors'] as List).last, {
-          'id': 'flutter:flavors',
-          'platform': 'flutter',
+          'id': 'ide:config',
+          'platform': 'ide',
           'runsOn': 'legacy',
           'auto': false,
         });
@@ -360,21 +355,21 @@ void main() {
       });
 
       test('lists what a failed legacy step kept from running', () async {
-        project.legacy.failAt = 'flutter:flavors';
+        project.legacy.failAt = 'ide:config';
 
         final code = await project.run([
           'apply',
           '--json',
-          'flutter:flavors',
           'ide:config',
+          'google:firebase',
         ]);
         final steps = (document()['steps'] as List)
             .cast<Map<String, Object?>>();
 
         expect(code, ExitCodes.software);
         expect(steps.map((s) => '${s['id']} ${s['status']}'), [
-          'flutter:flavors failed',
-          'ide:config skipped',
+          'ide:config failed',
+          'google:firebase skipped',
         ]);
         expect(steps.last['durationMs'], isNull);
       });
@@ -390,12 +385,12 @@ void main() {
             'apply',
             '--json',
             'android:androidManifest',
-            'flutter:flavors',
+            'ide:config',
           ]);
 
           expect(
             (document()['steps'] as List).cast<Map<String, Object?>>().last,
-            {'id': 'flutter:flavors', 'status': 'skipped', 'durationMs': null},
+            {'id': 'ide:config', 'status': 'skipped', 'durationMs': null},
           );
         },
       );
@@ -405,14 +400,14 @@ void main() {
         project.write('android/app/flavorizr.gradle', '// mine\n');
         project.write('flavorizr.yaml', CliFixture.config(['apple', 'pear']));
         project.stdout.clear();
-        project.legacy.failAt = 'flutter:flavors';
+        project.legacy.failAt = 'ide:config';
 
         final code = await project.run([
           'apply',
           '--json',
           '--on-conflict=overwrite',
           ...engineTargets,
-          'flutter:flavors',
+          'ide:config',
         ]);
         final doc = document();
         final modified = changes(doc).where((c) => c['change'] == 'modified');
@@ -430,11 +425,11 @@ void main() {
             'apply',
             '--json',
             ...engineTargets,
-            'flutter:flavors',
+            'ide:config',
           ]);
 
           expect((document()['steps'] as List).last, {
-            'id': 'flutter:flavors',
+            'id': 'ide:config',
             'status': 'completed',
             'durationMs': 1,
           });
@@ -538,18 +533,13 @@ void main() {
         await project.run(['apply', '-y', ...engineTargets]);
         project.stdout.clear();
 
-        await project.run([
-          'status',
-          '--json',
-          ...engineTargets,
-          'flutter:flavors',
-        ]);
+        await project.run(['status', '--json', ...engineTargets, 'ide:config']);
 
-        expect(document()['notChecked'], ['flutter:flavors']);
+        expect(document()['notChecked'], ['ide:config']);
       });
 
       test('has nothing to check without a processor of the engine', () async {
-        final code = await project.run(['status', '--json', 'flutter:flavors']);
+        final code = await project.run(['status', '--json', 'ide:config']);
         final doc = document();
 
         expect(code, ExitCodes.ok);
@@ -576,9 +566,9 @@ void main() {
           processors.firstWhere((p) => p['id'] == 'android:icons'),
           containsPair('runsOn', 'engine'),
         );
-        expect(processors.firstWhere((p) => p['id'] == 'flutter:flavors'), {
-          'id': 'flutter:flavors',
-          'platform': 'flutter',
+        expect(processors.firstWhere((p) => p['id'] == 'ide:config'), {
+          'id': 'ide:config',
+          'platform': 'ide',
           'runsOn': 'legacy',
           'needs': <String>[],
           'after': <String>[],
