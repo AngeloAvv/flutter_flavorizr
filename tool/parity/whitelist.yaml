@@ -21,6 +21,22 @@
     label of the application and writes the rest of the file back byte for byte,
     where 2.6.0 serialized the whole document again. The two documents are
     equivalent, which android_differential_test checks.
+- path: linux/CMakeLists.txt
+  reason: >-
+    linux:cmake runs on the engine (#525), which touches only the marked region:
+    2.6.0 also added a blank line on each side of it, outside the markers.
+- path: linux/runner/CMakeLists.txt
+  reason: >-
+    linux:runnerCmake runs on the engine (#525), which touches only the marked
+    region: 2.6.0 also added a blank line on each side of it, outside the
+    markers.
+- path: linux/runner/my_application.cc
+  reason: >-
+    linux:myApplication runs on the engine (#525), where every edit is inside a
+    marked region. The `flutter create` template sets the title with two string
+    literals: 2.6.0 rewrote them to use a new `window_title` variable, outside
+    of the markers, which cannot be tracked or reverted. 3.0 leaves the two calls
+    alone and sets the title again from a region right after each one.
 - path: lib/flavors.dart
   reason: >-
     flutter:flavors on the engine (#510) makes flavors.dart a scaffold that

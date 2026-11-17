@@ -34,6 +34,12 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_processors.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
@@ -120,8 +126,9 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android and Flutter processors that
-  /// were ported run on the engine, every other 2.x instruction on the legacy
+  /// The registry of this version: the Android, Linux and Flutter processors
+  /// that were ported run on the engine, every other 2.x instruction on the
+  /// legacy
   /// pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
@@ -147,6 +154,27 @@ class ProcessorRegistry {
       const EngineProcessor(
         AndroidIconsProcessor(),
         paths: {'android/app/src'},
+      ),
+      EngineProcessor(
+        const LinuxCMakeListsPatchProcessor(),
+        paths: {K.linuxCMakeListsPath},
+        ownedContent: {
+          K.linuxCMakeListsPath: LinuxCMakeListsEditor.ownedContent,
+        },
+      ),
+      EngineProcessor(
+        const LinuxRunnerCMakeListsPatchProcessor(),
+        paths: {K.linuxRunnerCMakeListsPath},
+        ownedContent: {
+          K.linuxRunnerCMakeListsPath: LinuxRunnerCMakeListsEditor.ownedContent,
+        },
+      ),
+      EngineProcessor(
+        const LinuxMyApplicationPatchProcessor(),
+        paths: {K.linuxMyApplicationPath},
+        ownedContent: {
+          K.linuxMyApplicationPath: LinuxMyApplicationEditor.ownedContent,
+        },
       ),
       EngineProcessor(
         const FlutterFlavorsProcessor(),
