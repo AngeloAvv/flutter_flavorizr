@@ -36,6 +36,7 @@ import 'package:path/path.dart' as p;
 class RecordingLogger extends Logger {
   final List<String> lines = [];
   final List<String> errors = [];
+  final List<String> warnings = [];
 
   RecordingLogger() : super(level: Level.quiet);
 
@@ -52,8 +53,10 @@ class RecordingLogger extends Logger {
   }
 
   @override
-  void warn(String? message, {String tag = 'WARN', LogStyle? style}) =>
-      lines.add('$message');
+  void warn(String? message, {String tag = 'WARN', LogStyle? style}) {
+    lines.add('$message');
+    warnings.add('$message');
+  }
 
   @override
   void success(String? message, {LogStyle? style}) => lines.add('$message');

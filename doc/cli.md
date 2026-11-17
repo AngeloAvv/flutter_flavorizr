@@ -29,8 +29,28 @@ when it defines one, otherwise `all`.
 | `--on-conflict=keep\|overwrite` | What to do with a file edited by hand that the run would change. Without it a terminal asks for each file, and anything else fails. |
 | `-v`, `--verbose` | Prints what every processor does (every command has it). |
 
-`-f`/`--force` (the same as `--yes`) and `-p`/`--processors` (the same as the
-targets) are still accepted, undocumented, until they are deprecated.
+## Deprecated options
+
+The 2.x options still work, hidden from `--help`, and every use of them warns
+(on stderr, so the output and the exit code of the run do not change). Both are
+removed in **4.0**.
+
+| Option | Use instead |
+| --- | --- |
+| `-f`, `--force` | `--yes` |
+| `-p a,b,c`, `--processors a,b,c` | the targets after the command: `apply a b c` |
+
+* `-p` and the targets can be mixed: the run is the sum of both. An empty `-p`
+  (`-p ''`, a CI variable that is not set) runs what no `-p` runs, and warns.
+* The 2.x assets pipeline is gone, since the assets ship with the package
+  (#527): `assets:download`, `assets:extract` and `assets:clean` are skipped in
+  `-p` with a warning, and the rest runs. When `-p` names nothing else, nothing
+  runs (and not the default recipe), with exit code `0`.
+* `-p list` is the target `list`, which does not exist, and not the `list`
+  command: it exits with `64`.
+
+So a 2.x CI command such as `flutter pub run flutter_flavorizr -f -p
+assets:download,android:buildGradle` runs on 3.x with warnings only.
 
 ## Exit codes
 

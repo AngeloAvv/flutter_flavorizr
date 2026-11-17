@@ -93,6 +93,10 @@ class ParityRunner {
   final String flutter;
 
   /// The arguments of `flutter pub run flutter_flavorizr`.
+  ///
+  /// `-f` stays, and not `--yes`: 2.6.0 has no `--yes`, and both sides of the
+  /// comparison run the same command. On 3.x it is the deprecated alias, which
+  /// is how a 2.x CI keeps being exercised.
   static const flavorizrArgs = ['-f'];
 
   /// Identifies the fixture (the yaml and its files), so a golden is never

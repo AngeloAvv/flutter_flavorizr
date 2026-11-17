@@ -437,7 +437,7 @@ When you finished defining the flavorizr configuration, you can proceed by runni
 flutter pub run flutter_flavorizr
 ```
 
-You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma:
+You can also run flutter_flavorizr with a custom set of processors by appending the -p (or --processors) param followed by the processor names separated by comma. `-p` is deprecated and will be removed in 4.0: name the targets after the command instead (see [the command line](doc/cli.md)).
 
 ```terminal
 flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
@@ -446,13 +446,9 @@ flutter pub run flutter_flavorizr -p <processor_1>,<processor_2>
 Example
 
 ```terminal
-flutter pub run flutter_flavorizr -p assets:download
-flutter pub run flutter_flavorizr -p assets:download,assets:extract
+flutter pub run flutter_flavorizr apply android:buildGradle
+flutter pub run flutter_flavorizr apply android:buildGradle android:icons
 ```
-
-Keep in mind that the order of the processors is important. For example, if you want to run the assets:extract processor, you must run it after the assets:download processor.
-Also, some processors need assets to be downloaded before running. For example, the android:dummyAssets processor needs the assets:download processor to be run before.
-As a rule of thumb, you should always run both assets:download and assets:extract before running any other processor.
 
 If you want to run flutter_flavorizr in verbose mode, you can append the -v (or --verbose) param:
 
@@ -462,7 +458,7 @@ flutter pub run flutter_flavorizr -v
 
 This will print all the logs to the console, including the ones from the processors.
 
-If you want to skip the confirmation step, you can append the -y (or --yes) param. The 2.x -f (or --force) still works and does the same:
+If you want to skip the confirmation step, you can append the -y (or --yes) param. The 2.x -f (or --force) still works and does the same, with a warning, until 4.0:
 
 ```terminal
 flutter pub run flutter_flavorizr --yes

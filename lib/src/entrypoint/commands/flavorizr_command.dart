@@ -24,9 +24,11 @@
  */
 
 import 'package:args/command_runner.dart';
+import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/destructive_removal.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
+import 'package:flutter_flavorizr/src/entrypoint/deprecated_options.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/exception/configuration_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
@@ -89,11 +91,17 @@ abstract class FlavorizrCommand extends Command<int> {
   /// Runs the command and returns its exit code.
   Future<int> execute();
 
+  /// What to warn about the 2.x options of the command line, which are still
+  /// accepted: none by default.
+  List<String> get deprecations => const [];
+
   @override
   Future<int> run() async {
     if (argResults!['verbose'] == true) logger.level = Level.verbose;
 
     try {
+      deprecations.forEach(logger.warn);
+
       return await execute();
     } on CommandFailure catch (failure) {
       logger.err(failure.message);
@@ -159,20 +167,34 @@ abstract class TargetCommand extends FlavorizrCommand {
     );
   }
 
+  late final _processors = DeprecatedProcessors.parse(
+    argResults!['processors'] as List<String>,
+    commandName: name,
+    positional: argResults!.rest,
+  );
+
+  @override
+  List<String> get deprecations => _processors.warnings;
+
   /// The recipes and processors to run: the arguments, and the value of `-p`.
   /// None means the default recipe.
-  List<String> get targets => [
-    ...argResults!.rest,
-    ...(argResults!['processors'] as List<String>),
-  ];
+  List<String> get targets => [...argResults!.rest, ..._processors.targets];
 
   /// What to run for [targets] in [config].
   RunPlan resolve(Flavorizr config) {
-    final plan = resolveRunPlan(
-      registry: context.registry,
-      config: config,
-      targets: targets,
-    );
+    // `-p` with ids that are gone only: nothing, and not the default recipe.
+    final plan = targets.isEmpty && _processors.leavesNothing
+        ? RunPlan(
+            messages: const [],
+            engine: const ExecutionPlan([]),
+            legacy: const [],
+            paths: const {},
+          )
+        : resolveRunPlan(
+            registry: context.registry,
+            config: config,
+            targets: targets,
+          );
 
     for (final message in plan.messages) {
       logger.info(message);

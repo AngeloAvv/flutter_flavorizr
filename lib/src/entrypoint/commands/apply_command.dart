@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_policy.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/deprecated_options.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/plan_report.dart';
@@ -74,6 +75,12 @@ class ApplyCommand extends TargetCommand {
 
   @override
   String get invocation => '${runner!.executableName} apply [target...]';
+
+  @override
+  List<String> get deprecations => [
+    if (argResults!['force'] == true) forceWarning,
+    ...super.deprecations,
+  ];
 
   bool get _yes => argResults!['yes'] == true || argResults!['force'] == true;
 
