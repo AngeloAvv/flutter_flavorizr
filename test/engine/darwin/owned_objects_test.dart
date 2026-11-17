@@ -318,6 +318,118 @@ void main() {
     );
   });
 
+  group('an object several owners need', () {
+    PBXFileReference sharedReference(
+      OwnedObjects owned,
+      XcodeProject project,
+      String flavor,
+    ) => owned.ensure<PBXFileReference>(
+      (g, u) => PBXFileReference(g, u),
+      flavor: flavor,
+      kind: ['fileReference', 'Debug'],
+      existing: () => project.files
+          .where((file) => file.path == 'Flutter/shared.xcconfig')
+          .firstOrNull,
+      create: (file) {
+        file.path = 'Flutter/shared.xcconfig';
+        file.sourceTree = '<group>';
+        project.mainGroup.children.add(file);
+      },
+    );
+
+    test('is owned as long as the lock recorded it and one of them finds it, '
+        'whichever made it, and goes with the last', () async {
+      final first = await open();
+      final both = OwnedObjects.ios(contextOf(first));
+      final made = sharedReference(both, first, 'a');
+      final found = sharedReference(both, first, 'b');
+      both.settle();
+      await first.save();
+
+      expect(found, same(made));
+      expect(both.owned, {made.uuid});
+
+      final second = await open();
+      final onlyB = OwnedObjects.ios(contextOf(second, previous: both.owned));
+      sharedReference(onlyB, second, 'b');
+
+      expect(onlyB.settle(), isEmpty);
+      expect(onlyB.owned, {made.uuid});
+      await second.save();
+      expect(text(), contains('Flutter/shared.xcconfig'));
+
+      final third = await open();
+      final none = OwnedObjects.ios(contextOf(third, previous: onlyB.owned));
+
+      expect(none.settle(), [made.uuid]);
+      await third.save();
+      expect(text(), isNot(contains('Flutter/shared.xcconfig')));
+      expect(danglingUuids(text()), isEmpty);
+    });
+
+    test(
+      'is not owned when the lock did not record it, whoever finds it',
+      () async {
+        final first = await open();
+        final foreign =
+            first.newObject<PBXFileReference>((g, u) => PBXFileReference(g, u))
+              ..path = 'Flutter/shared.xcconfig'
+              ..sourceTree = '<group>';
+        first.mainGroup.children.add(foreign);
+        final owned = OwnedObjects.ios(
+          contextOf(first, previous: {'AAAAAAAAAAAAAAAAAAAAAAAA'}),
+        );
+
+        expect(sharedReference(owned, first, 'b'), same(foreign));
+        expect(owned.owned, isEmpty);
+      },
+    );
+
+    test('stays when the flavor that needs it is not the one that made it, '
+        'as when a flavor is renamed', () async {
+      final first = await open();
+      final before = OwnedObjects.ios(contextOf(first));
+      final made = sharedReference(before, first, 'old');
+      await first.save();
+
+      final second = await open();
+      final after = OwnedObjects.ios(contextOf(second, previous: before.owned));
+      final found = sharedReference(after, second, 'new');
+
+      expect(found.uuid, made.uuid);
+      expect(after.settle(), isEmpty);
+      expect(after.owned, {made.uuid});
+    });
+
+    test('is not kept by an owner that stops returning it', () async {
+      final first = await open();
+      final before = OwnedObjects.ios(contextOf(first));
+      final made = sharedReference(before, first, 'a');
+      await first.save();
+
+      final second = await open();
+      final after = OwnedObjects.ios(contextOf(second, previous: before.owned));
+
+      expect(after.settle(), [made.uuid]);
+      expect(second.objectsByUuid.containsKey(made.uuid), isFalse);
+    });
+
+    test('use owns what the lock recorded, or what it is told to', () async {
+      final project = await open();
+      final recorded = project.mainGroup.children.first;
+      final other = project.mainGroup.children.last;
+      final owned = OwnedObjects.ios(
+        contextOf(project, previous: {recorded.uuid}),
+      );
+
+      expect(owned.use(recorded), same(recorded));
+      expect(owned.use(other), same(other));
+      expect(owned.owned, {recorded.uuid});
+      expect(owned.use(other, claimExisting: true), same(other));
+      expect(owned.owned, {recorded.uuid, other.uuid});
+    });
+  });
+
   group('OwnedObjects.settle', () {
     test('removes what the lock recorded and the run does not want anymore, '
         'with no dangling reference', () async {

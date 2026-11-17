@@ -117,7 +117,7 @@ abstract final class DarwinBuildConfigurations {
           projectList.buildConfigurations.add(config);
         },
       );
-      projectConfig.baseConfigurationReference ??= xcconfig;
+      _follow(owned, projectConfig, xcconfig);
 
       final targetConfig = owned.ensure<XCBuildConfiguration>(
         (g, u) => XCBuildConfiguration(g, u),
@@ -132,7 +132,22 @@ abstract final class DarwinBuildConfigurations {
           targetList.buildConfigurations.add(config);
         },
       );
-      targetConfig.baseConfigurationReference ??= xcconfig;
+      _follow(owned, targetConfig, xcconfig);
+    }
+  }
+
+  /// The base configuration of an owned configuration is the xcconfig file of
+  /// its flavor, wherever it is now. The one of a configuration that existed is
+  /// only filled in.
+  static void _follow(
+    OwnedObjects owned,
+    XCBuildConfiguration config,
+    PBXFileReference xcconfig,
+  ) {
+    if (owned.owned.contains(config.uuid)) {
+      config.baseConfigurationReference = xcconfig;
+    } else {
+      config.baseConfigurationReference ??= xcconfig;
     }
   }
 
@@ -146,27 +161,38 @@ abstract final class DarwinBuildConfigurations {
     required bool claimExisting,
   }) {
     final project = owned.project;
-    final reference = owned.ensure<PBXFileReference>(
-      (g, u) => PBXFileReference(g, u),
-      flavor: flavor,
-      kind: ['fileReference', mode],
-      existing: () =>
-          project.files.where((file) => file.path == path).firstOrNull,
-      claimExisting: claimExisting,
-      create: (file) {
-        file.path = path;
-        file.sourceTree = '<group>';
-        file.lastKnownFileType = FileTypes.byExtension['.xcconfig'];
-        project.mainGroup.children.add(file);
-      },
-    );
+    final atPath = project.files.where((file) => file.path == path).firstOrNull;
+    final made =
+        project.objectsByUuid[owned.uuidOf(
+          flavor: flavor,
+          kind: ['fileReference', mode],
+        )];
+
+    // The file moved to a path that has a reference already: it is the one
+    // that is used, and the reference of flavorizr, which is not returned any
+    // more, goes (see `OwnedObjects.settle`).
+    final reference =
+        made is PBXFileReference && atPath != null && made != atPath
+        ? owned.use(atPath, claimExisting: claimExisting)
+        : owned.ensure<PBXFileReference>(
+            (g, u) => PBXFileReference(g, u),
+            flavor: flavor,
+            kind: ['fileReference', mode],
+            existing: () => atPath,
+            claimExisting: claimExisting,
+            create: (file) {
+              file.path = path;
+              file.sourceTree = '<group>';
+              file.lastKnownFileType = FileTypes.byExtension['.xcconfig'];
+              project.mainGroup.children.add(file);
+            },
+          );
 
     // An xcconfig file that moved: what flavorizr owns follows it.
     if (owned.owned.contains(reference.uuid)) reference.path = path;
 
     final resources = target.resourcesBuildPhase;
-
-    owned.ensure<PBXBuildFile>(
+    final buildFile = owned.ensure<PBXBuildFile>(
       (g, u) => PBXBuildFile(g, u),
       target: targetName,
       flavor: flavor,
@@ -178,6 +204,11 @@ abstract final class DarwinBuildConfigurations {
         resources.files.add(file);
       },
     );
+
+    if (owned.owned.contains(buildFile.uuid) &&
+        !identical(buildFile.fileRef, reference)) {
+      buildFile.fileRef = reference;
+    }
 
     return reference;
   }

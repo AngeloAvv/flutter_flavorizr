@@ -57,10 +57,10 @@ class _BuildTargetsProcessor extends FlavorizrProcessor {
 
   /// Where the xcconfig files are, and whether the objects that exist are
   /// owned.
-  final String Function() xcconfigDir;
+  final String Function(String flavor, String mode) xcconfigPath;
   final bool Function() claim;
 
-  const _BuildTargetsProcessor(this.wanted, this.xcconfigDir, this.claim);
+  const _BuildTargetsProcessor(this.wanted, this.xcconfigPath, this.claim);
 
   @override
   String get id => _processorId;
@@ -77,7 +77,7 @@ class _BuildTargetsProcessor extends FlavorizrProcessor {
         owned,
         flavor: flavor,
         buildSettings: settings,
-        xcconfigPath: (mode) => '${xcconfigDir()}/$flavor$mode.xcconfig',
+        xcconfigPath: (mode) => xcconfigPath(flavor, mode),
         claimExisting: claim(),
       );
     }
@@ -93,8 +93,13 @@ void main() {
   late String pristine;
   late String xcconfigDir;
   late bool claim;
+  late bool shared;
 
-  Future<int> run(CliFixture project, {String command = 'apply'}) {
+  Future<int> run(
+    CliFixture project, {
+    String command = 'apply',
+    List<String> extra = const [],
+  }) {
     final context = CliContext(
       projectRoot: project.root,
       logger: project.logger,
@@ -106,7 +111,9 @@ void main() {
           EngineProcessor(
             _BuildTargetsProcessor(
               () => wanted,
-              () => xcconfigDir,
+              (flavor, mode) => shared
+                  ? '$xcconfigDir/shared$mode.xcconfig'
+                  : '$xcconfigDir/$flavor$mode.xcconfig',
               () => claim,
             ),
             paths: const {},
@@ -121,7 +128,12 @@ void main() {
       ),
     );
 
-    return cli.run([command, '--yes', _processorId], context: context);
+    return cli.run([
+      command,
+      '--yes',
+      ...extra,
+      _processorId,
+    ], context: context);
   }
 
   CliFixture newProject() {
@@ -132,6 +144,11 @@ void main() {
   }
 
   Future<int> apply(CliFixture project) => run(project);
+
+  /// An apply after something else edited the project, which the lock, that
+  /// hashes the whole file, reads as a conflict to overwrite.
+  Future<int> applyOverEdit(CliFixture project) =>
+      run(project, extra: ['--on-conflict', 'overwrite']);
 
   Set<String> lockedObjects(CliFixture project) {
     final lock = LockCodec.decode(
@@ -168,6 +185,7 @@ void main() {
     fixtures = [];
     xcconfigDir = 'Flutter';
     claim = false;
+    shared = false;
     wanted = {
       'apple': {'FLAVOR': 'apple'},
       'banana': {'FLAVOR': 'banana'},
@@ -457,6 +475,145 @@ void main() {
       expect(RegExp(r'-(apple|banana)').hasMatch(after), isFalse);
       // The launch screens 2.x made too are not the business of this processor.
       expect(after, contains('appleLaunchScreen.storyboard'));
+    });
+
+    /// A project with a reference to the xcconfig of [flavor] and [mode] that
+    /// nobody owns and that no build phase holds.
+    Future<void> addForeignReference(CliFixture project, String path) async {
+      final bundle = p.join(project.root.path, XcodeprojResource.iosProject);
+      final source = await XcodeProject.open(bundle);
+
+      source.mainGroup.children.add(
+        source.newObject<PBXFileReference>((g, u) => PBXFileReference(g, u))
+          ..path = path
+          ..sourceTree = '<group>',
+      );
+      await source.save();
+    }
+
+    test('keep their build file and configurations on the xcconfig file '
+        'when it moves to another reference', () async {
+      wanted = {'apple': wanted['apple']!};
+      final project = newProject();
+      for (final mode in DarwinBuildConfigurations.modes) {
+        await addForeignReference(project, 'Flutter/apple$mode.xcconfig');
+      }
+      await apply(project);
+      final first = project.read(_pbxprojPath);
+      xcconfigDir = 'Flutter/flavors';
+
+      final code = await apply(project);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      final text = project.read(_pbxprojPath);
+      expect(danglingUuids(text), isEmpty);
+      expect(text, isNot(first));
+      final opened = await XcodeProject.open(
+        p.join(project.root.path, XcodeprojResource.iosProject),
+      );
+      final resources =
+          (opened.targets.first as PBXNativeTarget).resourcesBuildPhase;
+      for (final mode in DarwinBuildConfigurations.modes) {
+        final reference = opened.files.singleWhere(
+          (file) => file.path == 'Flutter/flavors/apple$mode.xcconfig',
+        );
+
+        expect(resources.buildFile(reference), isNotNull, reason: mode);
+        expect(
+          opened
+              .buildConfigurationList['$mode-apple']!
+              .baseConfigurationReference,
+          same(reference),
+          reason: mode,
+        );
+        expect(
+          (opened.targets.first as PBXNativeTarget)
+              .buildConfigurationList!['$mode-apple']!
+              .baseConfigurationReference,
+          same(reference),
+          reason: mode,
+        );
+      }
+      // The reference that was not flavorizr's is left where it is, alone.
+      expect(text, contains('path = Flutter/appleDebug.xcconfig;'));
+    });
+
+    test('use the reference that is at the new path of their xcconfig file '
+        'and let go of their own', () async {
+      wanted = {'apple': wanted['apple']!};
+      final project = newProject();
+      await apply(project);
+      final before = objectUuids(project.read(_pbxprojPath));
+      for (final mode in DarwinBuildConfigurations.modes) {
+        await addForeignReference(
+          project,
+          'Flutter/flavors/apple$mode.xcconfig',
+        );
+      }
+      xcconfigDir = 'Flutter/flavors';
+
+      final code = await applyOverEdit(project);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      final text = project.read(_pbxprojPath);
+      expect(danglingUuids(text), isEmpty);
+      for (final mode in DarwinBuildConfigurations.modes) {
+        expect(
+          RegExp(
+            'path = Flutter/flavors/apple$mode.xcconfig;',
+          ).allMatches(text),
+          hasLength(1),
+        );
+        expect(text, isNot(contains('path = Flutter/apple$mode.xcconfig;')));
+        expect(
+          lockedObjects(project),
+          isNot(contains(uuidOf('apple', mode, kind: 'fileReference'))),
+        );
+      }
+      expect(before.difference(objectUuids(text)), {
+        for (final mode in DarwinBuildConfigurations.modes)
+          uuidOf('apple', mode, kind: 'fileReference'),
+      });
+    });
+
+    test('share the xcconfig files of flavors that share a path, for as long '
+        'as one of them is wanted', () async {
+      shared = true;
+      final project = newProject();
+      await apply(project);
+      expect(danglingUuids(project.read(_pbxprojPath)), isEmpty);
+      expect(
+        RegExp(
+          r'path = Flutter/sharedDebug\.xcconfig;',
+        ).allMatches(project.read(_pbxprojPath)),
+        hasLength(1),
+      );
+
+      wanted = {'banana': wanted['banana']!};
+      expect(await apply(project), ExitCodes.ok, reason: project.logger.output);
+
+      var text = project.read(_pbxprojPath);
+      expect(danglingUuids(text), isEmpty);
+      expect(
+        RegExp(r'path = Flutter/sharedDebug\.xcconfig;').allMatches(text),
+        hasLength(1),
+      );
+      final opened = await XcodeProject.open(
+        p.join(project.root.path, XcodeprojResource.iosProject),
+      );
+      expect(
+        opened
+            .buildConfigurationList['Debug-banana']!
+            .baseConfigurationReference
+            ?.path,
+        'Flutter/sharedDebug.xcconfig',
+      );
+      expect(text, isNot(contains('Debug-apple')));
+
+      wanted = {};
+      expect(await apply(project), ExitCodes.ok, reason: project.logger.output);
+
+      expect(project.read(_pbxprojPath), pristine);
     });
 
     test('only add what a project 2.x flavorized lacks, and use the rest as it '

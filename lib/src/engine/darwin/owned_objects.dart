@@ -84,6 +84,21 @@ typedef ObjectFactory<T extends AbstractObject> =
 ///   with it (the entry in a configuration list, in a build phase, the build
 ///   files of a file reference), so nothing is left dangling.
 ///
+/// ## Objects several owners need
+///
+/// Ownership belongs to the **object**, not to the seed that made it. Flavors
+/// that share a file (the same xcconfig) share the one object: the first makes
+/// it, the others find it through `existing`. An owned object is kept by
+/// [settle] as long as **any** `ensure` of the run returns it, whether it found
+/// it by the UUID of its own seed or through `existing` (when the lock recorded
+/// it), and it is removed with the last that needed it. So a flavor can be
+/// dropped, or renamed, without the objects another one still needs going with
+/// it. An object that the consumer **stops** using although it is still there
+/// (the xcconfig moved to a file that already has a reference) is simply not
+/// returned any more: [settle] removes it. What another processor created is
+/// foreign to this one, as it is recorded under that processor: it is used as
+/// it is and the lock of the other decides when it goes.
+///
 /// ## What it cannot do for you
 ///
 /// `dart_xcodeproj` helpers that create objects on their own (`addResources`,
@@ -162,8 +177,8 @@ final class OwnedObjects {
   ///    returned as it is. Throws a [StateError] when it is not a [T];
   /// 2. [existing], if given, looks for an object the consumer recognises (a
   ///    configuration by name, a file by path). It is returned, **keeping its
-  ///    UUID**, and it is *not* owned, unless [claimExisting] is set: then it
-  ///    is owned, and the lock records the UUID it has;
+  ///    UUID**, and handled by [use]: owned when the lock recorded it or
+  ///    [claimExisting] is set, foreign (never removed) otherwise;
   /// 3. otherwise [factory] makes a new object with the UUID of the seed and
   ///    [create] fills it and wires it into the project. It is owned.
   ///
@@ -196,12 +211,10 @@ final class OwnedObjects {
       return found;
     }
 
-    final foreign = existing?.call();
+    final recognised = existing?.call();
 
-    if (foreign != null) {
-      if (claimExisting) _owned.add(foreign.uuid);
-
-      return foreign;
+    if (recognised != null) {
+      return use(recognised, claimExisting: claimExisting);
     }
 
     final object = project.newObject<T>(
@@ -219,6 +232,21 @@ final class OwnedObjects {
     }
 
     _owned.add(uuid);
+
+    return object;
+  }
+
+  /// Says that the run needs [object], which the consumer found on its own
+  /// (what [ensure] does with what `existing` returns), and returns it.
+  ///
+  /// It is owned, and so kept by [settle], when the lock recorded it as created
+  /// by this processor (whichever flavor made it) or when [claimExisting] is
+  /// set. Any other is foreign: it is used as it is and never removed.
+  T use<T extends AbstractObject>(T object, {bool claimExisting = false}) {
+    if (claimExisting ||
+        ctx.previousObjectsOf(artifact.path).contains(object.uuid)) {
+      _owned.add(object.uuid);
+    }
 
     return object;
   }

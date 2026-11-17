@@ -132,6 +132,13 @@ What the lock does with them:
 * **The record of a file that a run did not write is kept**, with the objects
   it had: when the user chose to keep their version of `project.pbxproj` in a
   conflict, what the run created in memory is not in the file.
+* **An object is owned, not its seed.** Flavors that share a file share the
+  object that stands for it: the first makes it, the others find it. It stays
+  as long as any flavor of the run still needs it, whichever one made it (a
+  flavor can be dropped or renamed without taking away what another needs), and
+  goes with the last. An object that was recorded for a processor and that the
+  run finds again is still owned by it, even when its seed is not the UUID it
+  has. What another processor recorded is foreign to this one.
 * **Removal is by UUID, cascading.** Each object is removed with
   `removeFromProject`, which also takes the references to it (its entry in a
   configuration list or a build phase, the build files of a file reference), so
