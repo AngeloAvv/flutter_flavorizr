@@ -469,19 +469,6 @@ final _supported = <_Case>[
     ],
   ),
   (
-    name: 'goes along with a mapping nested in a block',
-    source: ['if true', "  project 'Runner', {", ..._deeper, '  }', 'end'],
-    flavors: ['apple'],
-    expected: [
-      'if true',
-      "  project 'Runner', {",
-      ..._region(_flavorEntries(['apple'], indent: '    '), indent: '    '),
-      ..._deeper,
-      '  }',
-      'end',
-    ],
-  ),
-  (
     name: 'does not take a shift for a heredoc',
     source: _podfile(_defaults, before: ['flags = 1<<BITS']),
     flavors: ['apple'],
@@ -869,6 +856,204 @@ final _unsafe = <({String name, List<String> source, String reason})>[
   ),
 ];
 
+/// A layout that has [before] ahead of the mapping, which has to be read as it
+/// is in Ruby: the editor edits the mapping and leaves [before] alone.
+_Case _readable(String name, List<String> before) => (
+  name: name,
+  source: _podfile(_defaults, before: before),
+  flavors: ['apple'],
+  expected: _podfile([
+    ..._region(_flavorEntries(['apple'])),
+    ..._defaults,
+  ], before: before),
+);
+
+/// A Podfile that has [before] ahead of the mapping, and that is refused.
+({String name, List<String> source, String reason}) _refused(
+  String name,
+  List<String> before,
+  String reason,
+) => (name: name, source: _podfile(_defaults, before: before), reason: reason);
+
+// Heredocs with a delimiter of every shape Ruby takes, which hold lines that
+// look like the mapping: how each one opens, and its terminator.
+const _heredocs = <(String, String)>[
+  ("<<~'POD-TEXT'", 'POD-TEXT'),
+  ('<<~"a b"', 'a b'),
+  ("<<-'x.y'", '  x.y'),
+  ("<<~''", ''),
+  ("<<''", ''),
+  ("<<~'a#b'", 'a#b'),
+  (r"<<~'a\b'", r'a\b'),
+  ("<<~'é'", 'é'),
+  ('<<~ÉOS', 'ÉOS'),
+  ('<<~1OS', '1OS'),
+  ('<<~`CMD`', 'CMD'),
+];
+
+/// `%` literals the editor reads, closed on their line.
+const _percentsRead = [
+  '%w[a b]',
+  '%q(a b)',
+  '%i<a b>',
+  '%w[a [b] c]',
+  '%w{a {b} c}',
+];
+
+/// `%` literals the editor refuses, whatever their delimiters.
+const _percentsRefused = [
+  '%Q(a)',
+  '%W[a]',
+  '%I{a}',
+  '%r{a}',
+  '%s(a)',
+  '%x(a)',
+  '%(a)',
+  '%[a]',
+  '%w|a b|',
+  '%q!x!',
+  '%r!a!',
+];
+
+/// What opens a block before the mapping, and what is written after it.
+const _blocks = <String>[
+  'if true',
+  'unless false',
+  'begin',
+  'def helper',
+  "target 'Runner' do",
+  'lambda do',
+  'setup = -> {',
+  'items.each do |item|',
+  'case value',
+  'while running',
+  'until done',
+  'for item in items',
+  'class Helper',
+  'module Helpers',
+];
+
+final _lexicalSupported = <_Case>[
+  for (final (opener, terminator) in _heredocs)
+    _readable(
+      'goes through a heredoc opened with `$opener`, whose lines look like '
+      'the mapping',
+      ['t = $opener', "  project 'Runner', {", '  }', terminator],
+    ),
+  for (final literal in _percentsRead)
+    _readable('reads the literal `$literal` on one line', ['x = $literal']),
+  _readable('reads escapes, symbols and a simple interpolation in strings', [
+    r'''x = "say \"hi\" it's #{name} # not a comment"''',
+    r'''y = 'it\'s' + :'a b'.to_s''',
+  ]),
+  _readable('reads a backtick string with a quote in it', ['x = `echo it\'s`']),
+  _readable('reads a regular expression with an interpolated name', [
+    r'next if list.any? { |item| line =~ /^\s*#{item}/ }',
+  ]),
+  _readable('reads a regular expression and a division', [
+    'line.match(/FLUTTER_ROOT\\=(.*)/)',
+    "half = total / 2 # it's",
+  ]),
+  _readable('reads a ternary and a global variable', [
+    'x = ready ? "a" : \'b\'',
+    r'puts $stdout',
+  ]),
+  _readable('goes on after blocks that are closed', [
+    "if ENV['X']",
+    '  puts 1',
+    'end',
+    "target 'Pods' do",
+    "  pod 'x'",
+    'end',
+    'def helper; 1; end',
+    'items.each { |item| puts item }',
+    'items.each do |item|',
+    '  puts item',
+    'end',
+    'x = 1 if y',
+  ]),
+];
+
+final _lexicalUnsafe = <({String name, List<String> source, String reason})>[
+  _refused('a heredoc opened inside an interpolation', [
+    'x = "a #{<<~EOS} b"',
+    "project 'Runner', {",
+    '}',
+    'EOS',
+  ], 'interpolation'),
+  _refused('an interpolation with a quote in it', [
+    'x = "#{h["a"]}"',
+  ], 'interpolation'),
+  for (final literal in _percentsRefused)
+    _refused('the literal `$literal`', ['x = $literal'], '`%` literal'),
+  _refused('a character literal', ["x = ?'"], 'character literal'),
+  _refused('a character literal with a double quote', [
+    'x = ?"',
+  ], 'character literal'),
+  _refused('a character literal that is a #', ['x = ?#'], 'character literal'),
+  _refused('a global variable that is a quote', [
+    r"puts $'",
+  ], 'global variable'),
+  _refused('an interpolation that is not closed on its line', [
+    'x = "a #{b',
+  ], 'interpolation'),
+  _refused('an interpolation with a block in it', [
+    'x = "#{items.map { |item| item }}"',
+  ], 'interpolation'),
+  _refused('a global variable that is a double quote', [
+    r'puts $"',
+  ], 'global variable'),
+  _refused('a global variable that is a backtick', [
+    r'puts $`',
+  ], 'global variable'),
+  _refused('a regular expression with a quote', [
+    "x = line =~ /it's/",
+  ], 'regular expression'),
+  _refused('a regular expression with an interpolated expression', [
+    'x = line =~ /#{a + 1}/',
+  ], 'regular expression'),
+  _refused('a regular expression with a quote in an interpolation', [
+    "x = line =~ /#{a['b']}/",
+  ], 'regular expression'),
+  _refused('a regular expression with a #', [
+    'x = line =~ /a#b/',
+  ], 'regular expression'),
+  _refused('a regular expression that goes over several lines', [
+    'x = /a',
+  ], 'regular expression'),
+  for (final opener in _blocks)
+    (
+      name: 'a mapping inside `$opener`',
+      source: [opener, "  project 'Runner', {", ..._deeper, '  }', 'end'],
+      reason: 'block',
+    ),
+  (
+    name: 'a mapping after a semicolon',
+    source: ["x = 1; project 'Runner', {", ..._defaults, '}'],
+    reason: 'no line',
+  ),
+  (
+    name: 'a mapping written as a hash rocket',
+    source: ["project 'Runner' => {", ..._defaults, '}'],
+    reason: 'no line',
+  ),
+  (
+    name: 'a mapping call split over several lines',
+    source: ["project 'Runner',", '  {', ..._defaults, '  }'],
+    reason: 'no line',
+  ),
+  (
+    name: 'a mapping that is a Hash.new or a variable',
+    source: ["project 'Runner', Hash.new", "project 'Runner', mapping"],
+    reason: 'no line',
+  ),
+  (
+    name: 'an entry that continues on the next line',
+    source: ["project 'Runner', {", r"  'Debug' => \", '  :debug,', '}'],
+    reason: "'Debug' =>",
+  ),
+];
+
 /// [text] as the variants of a layout are told: LF, CRLF and no line break
 /// at the end.
 List<(String, String Function(String))> get _variants => [
@@ -882,7 +1067,7 @@ List<(String, String Function(String))> get _variants => [
 
 void main() {
   group('PodfileEditor.withFlavorMappings', () {
-    for (final layout in _supported) {
+    for (final layout in [..._supported, ..._lexicalSupported]) {
       group(layout.name, () {
         for (final (variant, change) in _variants) {
           test(variant, () {
@@ -987,7 +1172,7 @@ void main() {
       );
     });
 
-    for (final layout in _unsafe) {
+    for (final layout in [..._unsafe, ..._lexicalUnsafe]) {
       for (final (variant, change) in _variants) {
         test('refuses ${layout.name}, and says what to change ($variant)', () {
           expect(

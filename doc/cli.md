@@ -228,41 +228,75 @@ would warn about the duplicated key, and it is yours to delete.
 A project that has no Podfile yet is skipped, as in 2.x: Flutter or CocoaPods
 makes it the first time the project is built, and the next run patches it.
 
-flavorizr does not parse Ruby, so the mapping has to be written the way `flutter
-create` writes it, and a Podfile that is not like that is refused: the run fails
-with exit code `70`, before anything is written, and the message says what to
-change. What it needs:
+flavorizr does not parse Ruby, so the Podfile has to be written in a way it can
+read, and a Podfile that is not is refused: the run fails with exit code `70`,
+before anything is written, and the message says what to change. It reads a
+small set of Ruby constructs and refuses every other one that could hide the
+mapping line, so what is in the Podfile is never mistaken for it. Everything
+else (`target`, `post_install`, any other code) can be written in any way, and
+the line endings of the file (LF or CRLF), a byte order mark and a missing line
+break at the end of the file are kept.
+
+**The mapping** has to be
 
 * exactly one line `project 'Runner', {` (single or double quotes, indented or
-  not, nothing after the brace) that is code, which means not in a comment, a
-  heredoc or a `=begin` block, not after `__END__` and not on a line continued
-  with a backslash. A mapping on one line, with parentheses or with a comment
-  after the brace is refused;
+  not, nothing after the brace), that is code and is not inside a block. A
+  mapping on one line, with parentheses, with `=>`, split over several lines, a
+  second one, one that follows a `;` on its line, or one inside `if`, `unless`,
+  `begin`, `def`, `case`, `while`, `until`, `for`, `class`, `module`, `do`, a
+  lambda or any `{` that ends a line is refused. Blocks are found by counting
+  the lines that open one and the `end`s and `}`s that start a line, so a block
+  that is closed before the mapping is fine;
 * a mapping that goes on until a line with only `}` and has nothing but blank
   lines, comments and entries like `'Debug' => :debug,`, one on each line (any
   may have a comment after it). Another kind of line, such as a nested block, a
-  heredoc or two entries on one line, is refused. The entry right above the
-  region, or above the 2.x lines that become it, needs a comma, since the
-  entries of the region follow it and Ruby needs one between entries: the run is
-  refused otherwise, and flavorizr never adds the comma to your line. The last
-  entry of the mapping may have none when the region is not below it;
-* markers, when there are, that form a region in the mapping, and are not in a
-  heredoc, a `=begin` block, a continued line or after `__END__`.
+  heredoc, two entries on one line or an entry that goes on after a `\`, is
+  refused. The entry right above the region, or above the 2.x lines that become
+  it, needs a comma, since the entries of the region follow it and Ruby needs
+  one between entries: the run is refused otherwise, and flavorizr never adds
+  the comma to your line. The last entry of the mapping may have none when the
+  region is not below it;
+* markers, when there are, that form a region in the mapping, and are not in
+  something that is not code (see below).
 
-The rest of the Podfile (`target`, `post_install`, everything else) is not
-interpreted, so it can be written in any way, and the line endings of the file
-(LF or CRLF), a byte order mark and a missing line break at the end of the file
-are kept. flavorizr reads each line only to tell what is not code: the body of a
-heredoc (`<<~ID`, `<<-ID` or `<<ID`, with or without quotes around `ID`), which
-ends on a line that has only `ID` (indented by spaces or tabs for `<<~` and
-`<<-`, at the start of the line for `<<ID`, and with nothing after it, as in
-Ruby), a `=begin` block, which ends on a `=end` at the start of a line, what
-follows `__END__`, and a line that goes on after a backslash. Comments and the
-text of strings are not looked at, so a `<<WORD` there is not a heredoc. A
-string, or a `%q(...)`, `%w[...]`, `%i{...}`-like literal, that goes over several
-lines is refused, and so is a heredoc that is never closed, since flavorizr
-cannot tell what its text is. A character it cannot read, such as `?'`, or a
-regular expression with a quote in it, may be refused too.
+**What the Podfile may have, which flavorizr reads** (and does not look at what
+is in it, so a `project 'Runner', {` or a marker there is not the mapping):
+
+* comments, `#` outside a string, a `%` literal and a regular expression;
+* strings `'...'`, `"..."` and `` `...` `` that close on their line, with `\`
+  escapes, and a `#{...}` in a `"` or `` ` `` string whose body has no quote, `{`
+  or `<<`;
+* `%q`, `%w` and `%i` literals with a pair of brackets (`[]`, `()`, `{}`, `<>`),
+  nested or not, that close on their line;
+* regular expressions `/.../` that close on their line and have no quote,
+  backtick or `#` in them, but for an interpolated name (`/^\s*#{symbol}/`). A
+  `/` after a word, a `)`, a `]` or a `}` is a division;
+* heredocs `<<ID`, `<<-ID` and `<<~ID`, any number on a line, whose delimiter is
+  a name (letters, digits, `_` and non-ASCII characters) or any text in quotes
+  (`'`, `"` or `` ` ``, even empty, as in `<<~'POD-TEXT'`). The body ends on a
+  line that is the delimiter and nothing else, as in Ruby: at the start of the
+  line for `<<ID`, after spaces or tabs for `<<-ID` and `<<~ID`;
+* a `=begin` block, which ends on a `=end`, both at the start of a line;
+* everything after a line that is `__END__`;
+* a line that goes on after a `\` at its end.
+
+**What flavorizr refuses**, because it cannot tell it from code without parsing
+Ruby:
+
+* a string, a `%` literal, a regular expression or an interpolation that does
+  not close on its line, and a heredoc that is never closed;
+* a `#{...}` with a quote, a `{` or a heredoc in it;
+* a `%` literal that is not `%q`, `%w` or `%i` with a pair of brackets: `%Q`,
+  `%W`, `%I`, `%r`, `%s`, `%x`, `%(...)` and any with the same character on both
+  sides (`%w|a b|`, `%q!x!`);
+* a character literal that starts with a quote or `#` (`?'`, `?"`, `?#`) and
+  the global variables `$'`, `$"` and `` $` ``;
+* a regular expression with a quote, a backtick or a `#` in it that is not an
+  interpolated name.
+
+A marker in a heredoc, a `=begin` block, after `__END__` or on a continued line
+is refused too. A character it cannot read may make an unusual Podfile be
+refused, and that is on purpose: the message names the line.
 
 Every other instruction (`ios:*` and `macos:*` but the Podfile ones,
 `windows:*`, `google:firebase`, `huawei:agconnect`, `ide:config`,

@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_lexer.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/marked_text.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
@@ -82,23 +83,9 @@ import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 ///   not in text that is not code.
 ///
 /// Anything else in the Podfile (`target`, `post_install`, the rest) is not
-/// interpreted, so it can be written in any way. The editor reads each line
-/// only to tell what is not code, which is
-///
-/// * the body of a heredoc (`<<~ID`, `<<-ID` and `<<ID`, with the identifier
-///   quoted or not, several on one line), which ends on a line that is the
-///   identifier, and nothing else (nothing before it for `<<ID`, spaces or
-///   tabs for the other two), like Ruby;
-/// * a `=begin` block, which ends on a `=end` at the start of a line;
-/// * what follows a line that is `__END__`;
-/// * a line that goes on after a backslash at its end.
-///
-/// A comment (`#` outside a string), the text of a string and a `%w[...]`
-/// literal that closes on its line are not looked at, so a `<<WORD` in them is
-/// not a heredoc. A string, or a `%q(`, `%w[`, `%i{`-like literal, that goes over
-/// several lines is refused, and so is a heredoc that is never closed, since
-/// flavorizr cannot tell what its text is. Quote characters it cannot read, such
-/// as `?'`, or a regular expression with a quote in it, may be refused too.
+/// interpreted, so it can be written in any way. [LexedPodfile] reads each line
+/// only to tell what is code, and refuses the Ruby it cannot read: see it for
+/// the inventory of what is read and what is refused.
 abstract final class PodfileEditor {
   /// The markers of the region.
   static const RegionMarker marker = RegionMarker('flavorizr', comment: '#');
@@ -110,13 +97,6 @@ abstract final class PodfileEditor {
   static final RegExp _entry = RegExp(
     r"""^(['"])((?:\\.|(?!\1)[^\\])+)\1\s*=>\s*:\w+\s*(,?)\s*(?:#.*)?$""",
   );
-  static final RegExp _heredoc = RegExp(
-    r"""(?<!\w)<<([~-]?)(['"`]?)([A-Za-z_]\w*)\2""",
-  );
-  static final RegExp _percent = RegExp(r'(?<![\w)\]}])%[qQwWiI]?([\[({<])');
-  static final RegExp _blockStart = RegExp(r'^=begin(\s|$)');
-  static final RegExp _blockEnd = RegExp(r'^=end(\s|$)');
-  static final RegExp _indentation = RegExp(r'^[ \t]+');
 
   /// Returns [source], the content of the Podfile at [path], with the region up
   /// to date for [flavors], the names of the flavors of the platform.
@@ -129,7 +109,8 @@ abstract final class PodfileEditor {
     required String path,
   }) {
     final text = MarkedText(source, [marker]);
-    final nonCode = _nonCodeLines(text.lines, path);
+    final lexed = LexedPodfile.read(text.lines, path);
+    final nonCode = lexed.nonCode;
 
     for (final line in text.lines) {
       if (nonCode.contains(line.index) &&
@@ -159,7 +140,7 @@ abstract final class PodfileEditor {
       );
     }
 
-    final mapping = _mappingOf(text, outside, nonCode, path);
+    final mapping = _mappingOf(text, outside, lexed, path);
     final present = {for (final entry in mapping.entries) entry.key};
     final defaults = [
       for (final target in Target.values)
@@ -226,13 +207,14 @@ abstract final class PodfileEditor {
   static _Mapping _mappingOf(
     MarkedText text,
     List<TextLine> outside,
-    Set<int> nonCode,
+    LexedPodfile lexed,
     String path,
   ) {
     final outsideLines = {for (final line in outside) line.index};
     final openings = [
       for (final line in outside)
-        if (!nonCode.contains(line.index) && _opening.hasMatch(line.text)) line,
+        if (!lexed.nonCode.contains(line.index) && _opening.hasMatch(line.text))
+          line,
     ];
 
     if (openings.length != 1) {
@@ -249,6 +231,15 @@ abstract final class PodfileEditor {
     }
 
     final anchor = openings.single;
+
+    if (lexed.isInBlock(anchor.index)) {
+      throw _unsafe(
+        path,
+        'the mapping is inside a block (`if`, `unless`, `begin`, `def`, `do`, a '
+            'lambda...), where it may not run, or may be for something else.',
+        "Move `project 'Runner', {` out of it, to the top level of the Podfile.",
+      );
+    }
     final entries = <_Entry>[];
     TextLine? close;
 
@@ -330,174 +321,6 @@ abstract final class PodfileEditor {
 
     return "'$configuration' => :${target.darwinTarget},";
   }
-
-  /// The lines where code is not (see [PodfileEditor]): the bodies of heredocs,
-  /// `=begin` blocks, what follows `__END__` and the lines continued with a
-  /// backslash. A heredoc that is never closed, and a string or `%` literal that
-  /// goes over several lines, are refused.
-  static Set<int> _nonCodeLines(List<TextLine> lines, String path) {
-    final nonCode = <int>{};
-    final pending = <_Heredoc>[];
-    var block = false;
-    var ended = false;
-    var continued = false;
-
-    for (final line in lines) {
-      final text = line.text;
-
-      if (ended) {
-        nonCode.add(line.index);
-        continue;
-      }
-
-      if (block) {
-        nonCode.add(line.index);
-        block = !_blockEnd.hasMatch(text);
-        continue;
-      }
-
-      if (pending.isNotEmpty) {
-        nonCode.add(line.index);
-
-        final next = pending.first;
-
-        // `<<ID` ends on the identifier at the start of a line, and the other
-        // two after spaces or tabs. Nothing may follow it, as in Ruby.
-        if ((next.indented ? text.replaceFirst(_indentation, '') : text) ==
-            next.id) {
-          pending.removeAt(0);
-        }
-
-        continue;
-      }
-
-      if (continued) {
-        nonCode.add(line.index);
-      } else if (_blockStart.hasMatch(text)) {
-        nonCode.add(line.index);
-        block = true;
-        continue;
-      } else if (text == '__END__') {
-        nonCode.add(line.index);
-        ended = true;
-        continue;
-      }
-
-      final scan = _scan(text);
-
-      if (scan.open) {
-        throw _unsafe(
-          path,
-          'a string or a `%` literal that goes over several lines starts on '
-              '`${text.trim()}`, where flavorizr cannot tell its text from code.',
-          'Write it on one line, or as a heredoc.',
-        );
-      }
-
-      pending.addAll(scan.heredocs);
-      continued = scan.continues;
-    }
-
-    if (pending.isNotEmpty) {
-      throw _unsafe(
-        path,
-        'a heredoc (`<<${pending.first.id}`) is never closed.',
-        'Close it with a line that has only `${pending.first.id}`.',
-      );
-    }
-
-    return nonCode;
-  }
-
-  /// Reads one line of code: the heredocs it opens, whether it leaves a string
-  /// or a `%` literal open, and whether it goes on in the next line. A comment
-  /// and the text of a string or of a `%` literal that closes on the line are
-  /// skipped.
-  static ({List<_Heredoc> heredocs, bool open, bool continues}) _scan(
-    String text,
-  ) {
-    final heredocs = <_Heredoc>[];
-    String? quote;
-    var comment = false;
-    var i = 0;
-
-    while (i < text.length) {
-      final char = text[i];
-
-      if (quote != null) {
-        if (char == r'\') {
-          i += 2;
-          continue;
-        }
-
-        if (char == quote) quote = null;
-
-        i++;
-        continue;
-      }
-
-      if (char == '#') {
-        comment = true;
-        break;
-      }
-
-      final heredoc = char == '<' ? _heredoc.matchAsPrefix(text, i) : null;
-
-      if (heredoc != null) {
-        heredocs.add((id: heredoc[3]!, indented: heredoc[1]!.isNotEmpty));
-        i = heredoc.end;
-        continue;
-      }
-
-      final percent = char == '%' ? _percent.matchAsPrefix(text, i) : null;
-
-      if (percent != null) {
-        final end = _closing(text, percent.end, percent[1]!);
-
-        if (end == null) {
-          return (heredocs: heredocs, open: true, continues: false);
-        }
-
-        i = end;
-        continue;
-      }
-
-      if (char == "'" || char == '"' || char == '`') quote = char;
-
-      i++;
-    }
-
-    return (
-      heredocs: heredocs,
-      open: quote != null,
-      continues: !comment && quote == null && text.endsWith(r'\'),
-    );
-  }
-
-  /// Where the literal that opened with [open] ends in [text], which is read
-  /// from [from], or `null` when it does not on this line.
-  static int? _closing(String text, int from, String open) {
-    const pairs = {'[': ']', '(': ')', '{': '}', '<': '>'};
-    final close = pairs[open]!;
-    var depth = 1;
-    var i = from;
-
-    while (i < text.length) {
-      final char = text[i];
-
-      if (char == r'\') {
-        i += 2;
-        continue;
-      }
-
-      if (char == open) depth++;
-      if (char == close && --depth == 0) return i + 1;
-
-      i++;
-    }
-
-    return null;
-  }
 }
 
 /// The mapping of a Podfile: the line that opens it, the entries it has outside
@@ -513,7 +336,3 @@ final class _Mapping {
 /// An entry of the mapping: its line, the name of the configuration, and
 /// whether a comma ends it.
 typedef _Entry = ({TextLine line, String key, bool comma});
-
-/// A heredoc that was opened: the identifier that closes it, and whether that
-/// may be indented (`<<-` and `<<~`).
-typedef _Heredoc = ({String id, bool indented});
