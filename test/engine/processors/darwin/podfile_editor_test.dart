@@ -973,6 +973,12 @@ final _lexicalSupported = <_Case>[
     'x = ready ? "a" : \'b\'',
     r'puts $stdout',
   ]),
+  _readable('reads keyword symbols without opening blocks', [
+    'mode = :if',
+    'mode = :unless',
+    'mode = :begin',
+    'mode = :do',
+  ]),
   _readable('goes on after blocks that are closed', [
     "if ENV['X']",
     '  puts 1',

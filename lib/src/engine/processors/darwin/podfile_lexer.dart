@@ -103,8 +103,8 @@ final class LexedPodfile {
   static final RegExp _simple = RegExp(r'#\{[\w@.]+\}');
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
-    r'(?:^|[=(:,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b|'
-    r'(?:\bdo|\{)\s*(?:\|[^|]*\|)?\s*$',
+    r'(?:^|[=(,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b|'
+    r'(?:(?<![\w:.])do\b|\{)\s*(?:\|[^|]*\|)?\s*$',
   );
   static final RegExp _end = RegExp(r'(?<![\w:.])end\b(?![!?=:])');
   static const _pairs = {'[': ']', '(': ')', '{': '}', '<': '>'};
