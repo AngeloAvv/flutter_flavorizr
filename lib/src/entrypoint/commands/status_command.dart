@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2026 Angelo Cassano
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+
+/// `flavorizr status [target...]`: whether `flavorizr.yaml`, `flavorizr.lock`
+/// and the files of the project agree. It is meant for CI.
+class StatusCommand extends TargetCommand {
+  /// Creates the command.
+  StatusCommand(super.context);
+
+  @override
+  String get name => 'status';
+
+  @override
+  String get description =>
+      'Tells whether flavorizr.yaml, flavorizr.lock and the files of the '
+      'project agree, and exits with 1 when they drifted apart, so that a CI '
+      'can check it. Nothing is written.';
+
+  @override
+  String get invocation => '${runner!.executableName} status [target...]';
+
+  @override
+  Future<int> execute() async {
+    final config = loadConfig();
+    final plan = resolve(config);
+    final preview = await dryRun(plan, config);
+    final drift = <String>[];
+
+    if (preview != null) {
+      if (preview.previous == null) {
+        drift.add(
+          'flavorizr.lock does not exist: nothing is recorded as applied.',
+        );
+      }
+
+      if (!preview.reconciliation.flavors.isEmpty) {
+        drift.add(
+          'The flavors of flavorizr.yaml and of flavorizr.lock differ:\n'
+          '${preview.reconciliation.flavors.render()}',
+        );
+      }
+
+      final pending = preview.changes.where(
+        (c) => !preview.diff.conflicts.contains(c),
+      );
+      if (pending.isNotEmpty) {
+        drift.add(
+          'These files are not what flavorizr.yaml asks for:\n'
+          '${[for (final change in pending) '  ${change.describe()}'].join('\n')}',
+        );
+      }
+
+      if (preview.hasConflicts) {
+        drift.add(
+          'These files were edited by hand:\n'
+          '${[for (final change in preview.diff.conflicts) '  ${change.describe()}'].join('\n')}',
+        );
+      }
+    }
+
+    if (plan.legacy.isNotEmpty) {
+      logger.info(
+        'Not checked, since they are not on the engine yet: '
+        '${plan.legacy.map((step) => step.id).join(', ')}.',
+      );
+    }
+
+    if (drift.isEmpty) {
+      logger.success(
+        plan.legacy.isEmpty
+            ? 'In sync.'
+            : 'In sync, as far as the engine can tell: the processors above '
+                  'are not checked.',
+      );
+
+      return ExitCodes.ok;
+    }
+
+    drift.forEach(logger.info);
+    logger.err('The project drifted from flavorizr.yaml or flavorizr.lock.');
+
+    return ExitCodes.attention;
+  }
+}

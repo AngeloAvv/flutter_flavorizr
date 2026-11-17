@@ -462,11 +462,25 @@ flutter pub run flutter_flavorizr -v
 
 This will print all the logs to the console, including the ones from the processors.
 
-If you want to skip the confirmation step, you can append the -f (or --force) param:
+If you want to skip the confirmation step, you can append the -y (or --yes) param. The 2.x -f (or --force) still works and does the same:
 
 ```terminal
-flutter pub run flutter_flavorizr -f
+flutter pub run flutter_flavorizr --yes
 ```
+
+### Commands
+
+`flutter_flavorizr` has more commands than the one that applies the flavors. With no command, `apply` runs.
+
+```terminal
+flutter pub run flutter_flavorizr plan      # what would change, without writing anything
+flutter pub run flutter_flavorizr apply     # plan, confirm, apply (the default)
+flutter pub run flutter_flavorizr status    # does the project match flavorizr.yaml? Exits with 1 if not
+flutter pub run flutter_flavorizr list      # recipes and processors
+flutter pub run flutter_flavorizr doctor    # Groovy or Kotlin, Xcode project, Pods, Flutter version
+```
+
+Every command has `--help`, and every one ends with an exit code a CI can rely on. See [doc/cli.md](doc/cli.md) for the options, the exit codes and the processors that do not run on the new engine yet.
 
 ## Run your flavors
 

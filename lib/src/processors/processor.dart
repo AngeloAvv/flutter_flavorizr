@@ -188,30 +188,35 @@ class Processor extends AbstractProcessor<void> {
 
     if (confirm) {
       for (String instruction in instructions) {
-        final progress = logger.progress(instruction);
-
-        progress.update('[$instruction] Executing');
-
-        try {
-          final create = _availableProcessors[instruction];
-          if (create == null) {
-            throw UnknownProcessorException(instruction);
-          }
-
-          await create().execute();
-        } on Object {
-          // The first failure aborts the run: nothing is executed after it.
-          progress.fail('[$instruction] An error has occurred');
-          rethrow;
-        }
-
-        progress.complete('[$instruction] Completed');
+        await executeInstruction(instruction);
       }
 
       logger.success('Flavorization process finished');
     } else {
       logger.info('Flavorization process cancelled');
     }
+  }
+
+  /// Runs the single [instruction], which aborts the whole run when it fails.
+  Future<void> executeInstruction(String instruction) async {
+    final progress = logger.progress(instruction);
+
+    progress.update('[$instruction] Executing');
+
+    try {
+      final create = _availableProcessors[instruction];
+      if (create == null) {
+        throw UnknownProcessorException(instruction);
+      }
+
+      await create().execute();
+    } on Object {
+      // The first failure aborts the run: nothing is executed after it.
+      progress.fail('[$instruction] An error has occurred');
+      rethrow;
+    }
+
+    progress.complete('[$instruction] Completed');
   }
 
   static Map<String, AbstractProcessor<void> Function()>

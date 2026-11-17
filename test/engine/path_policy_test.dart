@@ -42,7 +42,12 @@ void main() {
 
   group('Path policy', () {
     test('no source of the package reads the working directory', () {
+      // The entrypoint is the one place that may: it is where the project the
+      // user runs flavorizr in, which is the working directory, is told, and
+      // where the 2.x processors, which still read it, are guarded.
+      final entrypoint = p.join('lib', 'src', 'entrypoint');
       final offenders = sources('lib')
+          .where((file) => !p.isWithin(entrypoint, file.path))
           .where(
             (file) => file.readAsStringSync().contains('Directory.current'),
           )

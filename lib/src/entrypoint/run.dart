@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Angelo Cassano
+ * Copyright (c) 2026 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -26,53 +26,94 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_flavorizr/src/processors/processor.dart';
+import 'package:args/command_runner.dart';
+import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/apply_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/doctor_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/list_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/plan_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/status_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:mason_logger/mason_logger.dart';
 
-/// A common entry point to parse command line arguments and execute the process
+/// A common entry point to parse command line arguments and execute the
+/// command.
 ///
-/// Ends the process with a non-zero exit code when the configuration cannot be
-/// parsed or when an instruction fails: the run stops at the first failure.
+/// Ends the process with the exit code of the command when it is not `0`: see
+/// [ExitCodes]. With no command, `apply` runs.
 Future<void> execute(List<String> args) async {
-  final argParser = ArgParser()
-    ..addFlag('force', abbr: 'f')
-    ..addMultiOption(
-      'processors',
-      abbr: 'p',
-      allowed: Processor.defaultInstructionSet,
-      splitCommas: true,
-    )
-    ..addFlag('verbose', abbr: 'v');
+  final code = await run(args, context: CliContext.standard(logger: Logger()));
 
-  final results = argParser.parse(args);
-  final force = results['force'] as bool? ?? false;
-  final argProcessors = results['processors'];
-  final level = results['verbose'] == true ? Level.verbose : Level.info;
+  if (code != ExitCodes.ok) exit(code);
+}
 
-  final logger = Logger(level: level);
-
-  const parser = Parser(pubspecPath: 'pubspec', flavorizrPath: 'flavorizr');
-
-  late Flavorizr flavorizr;
-  try {
-    flavorizr = parser.parse();
-  } catch (error) {
-    logger.err(error.toString());
-    exit(65);
-  }
-
-  if (argProcessors.isNotEmpty) {
-    flavorizr.instructions = argProcessors;
-  }
-
-  final processor = Processor(flavorizr, force: force, logger: logger);
+/// Runs the command named by [args] in [context], and returns its exit code.
+///
+/// The command may be anywhere in [args], and `apply` runs when there is none.
+Future<int> run(List<String> args, {required CliContext context}) async {
+  final runner = _Runner(context);
 
   try {
-    await processor.execute();
-  } catch (error) {
-    logger.err(error.toString());
-    exit(ExitCode.software.code);
+    return await runner.run(_withCommand(args, runner.commands.keys)) ??
+        ExitCodes.ok;
+  } on UsageException catch (error) {
+    context.logger.err(error.message);
+    context.logger.info('\n${error.usage}');
+
+    return ExitCodes.usage;
+  } on ArgParserException catch (error) {
+    context.logger.err(error.message);
+
+    return ExitCodes.usage;
   }
+}
+
+/// The options that take a value, wherever they are used.
+const _optionsWithValue = {'-p', '--processors', '--on-conflict'};
+
+/// [args] with the command first, which is where the runner wants it, and
+/// `apply` when none was given. `--help` alone is the help of the tool.
+List<String> _withCommand(List<String> args, Iterable<String> commands) {
+  var index = -1;
+
+  for (var i = 0; i < args.length && index == -1; i++) {
+    // What follows an option that takes a value is its value, not a command.
+    final isValue = i > 0 && _optionsWithValue.contains(args[i - 1]);
+
+    if (!isValue && commands.contains(args[i])) index = i;
+  }
+
+  if (index > 0) {
+    return [args[index], ...args.take(index), ...args.skip(index + 1)];
+  }
+
+  final asksForHelp = args.contains('--help') || args.contains('-h');
+
+  return index == -1 && !asksForHelp ? ['apply', ...args] : args;
+}
+
+class _Runner extends CommandRunner<int> {
+  final CliContext _context;
+
+  _Runner(this._context)
+    : super(
+        'flutter_flavorizr',
+        'Creates the flavors of a Flutter app: Android, iOS, macOS, Linux and '
+            'Windows.\nWith no command, apply runs.',
+      ) {
+    <FlavorizrCommand>[
+      ApplyCommand(_context),
+      PlanCommand(_context),
+      StatusCommand(_context),
+      ListCommand(_context),
+      DoctorCommand(_context),
+    ].forEach(addCommand);
+  }
+
+  @override
+  String? get usageFooter => exitCodesHelp;
+
+  @override
+  void printUsage() => _context.logger.info(usage);
 }

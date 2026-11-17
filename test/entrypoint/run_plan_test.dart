@@ -1,0 +1,220 @@
+/*
+ * Copyright (c) 2026 Angelo Cassano
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
+import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
+import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'cli_fixture.dart';
+
+void main() {
+  final registry = ProcessorRegistry.standard();
+
+  RunPlan resolve(String yaml, [List<String> targets = const []]) =>
+      resolveRunPlan(
+        registry: registry,
+        config: Flavorizr.parse(yaml),
+        targets: targets,
+      );
+
+  List<String> engine(RunPlan plan) => [
+    for (final step in plan.engine.steps)
+      '${step.processor.id}${step.auto ? ' (auto)' : ''}',
+  ];
+
+  final android = CliFixture.config(['apple']);
+
+  test('splits a recipe between the engine and the legacy pipeline', () {
+    final plan = resolve(android, ['android']);
+
+    expect(engine(plan), [
+      'android:androidManifest',
+      'android:flavorizrGradle',
+      'android:buildGradle',
+      'android:icons',
+    ]);
+    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
+  });
+
+  test('pulls in what a processor depends on, and says so', () {
+    final plan = resolve(android, ['android:buildGradle']);
+
+    expect(engine(plan), [
+      'android:flavorizrGradle (auto)',
+      'android:buildGradle',
+    ]);
+    expect(plan.legacy, isEmpty);
+  });
+
+  test('the default is the `all` recipe', () {
+    final plan = resolve(android);
+
+    expect(engine(plan), hasLength(4));
+    expect(plan.legacy.map((step) => step.id), [
+      'assets:download',
+      'assets:extract',
+      'android:dummyAssets',
+      'flutter:flavors',
+      'flutter:app',
+      'flutter:pages',
+      'flutter:main',
+      'google:firebase',
+      'huawei:agconnect',
+      'assets:clean',
+      'ide:config',
+    ]);
+  });
+
+  test('leaves out the platforms without flavors, with a message', () {
+    final plan = resolve(android, ['android', 'ios']);
+
+    expect(plan.messages, [
+      'Skipping "ios": no flavors are configured for ios.',
+    ]);
+    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
+  });
+
+  test('the instructions of the configuration are used without targets', () {
+    final plan = resolve(
+      '$android'
+      'instructions:\n  - android:flavorizrGradle\n  - flutter:flavors\n',
+    );
+
+    expect(engine(plan), ['android:flavorizrGradle']);
+    expect(plan.legacy.map((step) => step.id), ['flutter:flavors']);
+  });
+
+  test('a target wins over the instructions', () {
+    final plan = resolve('${android}instructions:\n  - flutter:flavors\n', [
+      'android:icons',
+    ]);
+
+    expect(engine(plan), ['android:icons']);
+    expect(plan.legacy, isEmpty);
+  });
+
+  test('the recipes of the configuration are targets', () {
+    final yaml = '${android}recipes:\n  ci: [android:icons, flutter:flavors]\n';
+
+    final plan = resolve(yaml, ['ci']);
+
+    expect(engine(plan), ['android:icons']);
+    expect(plan.legacy.map((step) => step.id), ['flutter:flavors']);
+  });
+
+  test('the default recipe of the configuration runs without targets', () {
+    final yaml = '${android}recipes:\n  ci: [android:icons]\n  default: ci\n';
+
+    final plan = resolve(yaml);
+
+    expect(engine(plan), ['android:icons']);
+    expect(plan.legacy, isEmpty);
+  });
+
+  test('an unknown target says what it looks like', () {
+    expect(
+      () => resolve(android, ['andriod']),
+      throwsA(
+        isA<UnknownTargetException>().having(
+          (e) => e.suggestion,
+          'suggestion',
+          'android',
+        ),
+      ),
+    );
+  });
+
+  test('the shadow workspace holds what the processors work on', () {
+    final plan = resolve(android, ['android:buildGradle']);
+
+    expect(plan.paths, {
+      'android/app/flavorizr.gradle',
+      'android/app/flavorizr.gradle.kts',
+      'android/app/build.gradle',
+      'android/app/build.gradle.kts',
+    });
+  });
+
+  group('dummy assets', () {
+    final icons = '''
+flavors:
+  apple:
+    app:
+      name: Apple
+      icon: assets/apple.png
+    android:
+      applicationId: com.example.apple
+  banana:
+    app:
+      name: Banana
+    android:
+      applicationId: com.example.banana
+  cherry:
+    app:
+      name: Cherry
+    android:
+      applicationId: com.example.cherry
+      adaptiveIcon:
+        foreground: assets/f.png
+        background: assets/b.png
+''';
+
+    Iterable<String> dummyFlavors(RunPlan plan) => plan.legacy
+        .singleWhere((step) => step.id == 'android:dummyAssets')
+        .config
+        .androidFlavors
+        .keys;
+
+    test('are not made for the flavors whose icon the engine renders', () {
+      final plan = resolve(icons, ['android']);
+
+      expect(dummyFlavors(plan), ['banana', 'cherry']);
+    });
+
+    test('are made for every flavor when the engine does not do the icons', () {
+      final plan = resolve(icons, [
+        'android:flavorizrGradle',
+        'android:dummyAssets',
+      ]);
+
+      expect(dummyFlavors(plan), ['apple', 'banana', 'cherry']);
+    });
+
+    test('do not change what the other instructions read', () {
+      final plan = resolve(icons, ['android', 'flutter:flavors']);
+
+      expect(
+        plan.legacy
+            .singleWhere((step) => step.id == 'flutter:flavors')
+            .config
+            .flavors
+            .keys,
+        ['apple', 'banana', 'cherry'],
+      );
+    });
+  });
+}
