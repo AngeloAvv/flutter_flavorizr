@@ -45,6 +45,13 @@ class ApplyCommand extends TargetCommand {
         help: 'Does not ask for confirmation, which is what a CI wants.',
       )
       ..addFlag(
+        'overwrite-scaffold',
+        negatable: false,
+        help:
+            'Also replaces the scaffold files that exist, such as the lib/main.dart '
+            'of a new app, which a run never overwrites otherwise.',
+      )
+      ..addFlag(
         'force',
         abbr: 'f',
         negatable: false,
@@ -113,6 +120,7 @@ class ApplyCommand extends TargetCommand {
           _ => null,
         },
         yes: _yes,
+        overwriteScaffold: argResults!['overwrite-scaffold'] == true,
       );
 
       if (!run.report.succeeded) return run.report.exitCode;

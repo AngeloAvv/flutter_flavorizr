@@ -34,7 +34,15 @@ import 'package:flutter_flavorizr/src/entrypoint/plan_report.dart';
 /// so the project and its lock are never touched.
 class PlanCommand extends TargetCommand {
   /// Creates the command.
-  PlanCommand(super.context);
+  PlanCommand(super.context) {
+    argParser.addFlag(
+      'overwrite-scaffold',
+      negatable: false,
+      help:
+          'Shows what apply --overwrite-scaffold would do to the scaffold '
+          'files that exist.',
+    );
+  }
 
   @override
   String get name => 'plan';
@@ -57,7 +65,11 @@ class PlanCommand extends TargetCommand {
 
     logger.info(renderRunPlan(plan));
 
-    final preview = await dryRun(plan, config);
+    final preview = await dryRun(
+      plan,
+      config,
+      overwriteScaffold: argResults!['overwrite-scaffold'] == true,
+    );
 
     if (preview == null) return ExitCodes.ok;
 

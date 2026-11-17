@@ -64,7 +64,7 @@ void main() {
       expect(project.logger.output, contains('+ android/app/flavorizr.gradle'));
       expect(project.logger.output, contains('~ android/app/build.gradle'));
       expect(project.logger.output, contains('+ apple (added)'));
-      expect(project.logger.output, contains('1 to add, 2 to change'));
+      expect(project.logger.output, contains('3 to add, 2 to change'));
     });
 
     test('shows what a dropped flavor takes away', () async {
@@ -89,9 +89,9 @@ void main() {
     });
 
     test('names the processors that are not on the engine', () async {
-      await project.run(['plan', ...engineTargets, 'flutter:flavors']);
+      await project.run(['plan', ...engineTargets, 'google:firebase']);
 
-      expect(project.logger.output, contains('flutter:flavors'));
+      expect(project.logger.output, contains('google:firebase'));
       expect(project.logger.output, contains('not on the engine yet'));
       expect(project.legacy.ran, isEmpty);
     });

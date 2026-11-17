@@ -25,8 +25,8 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The configurations of the repository that CI feeds to a run. Since a run
@@ -38,6 +38,8 @@ const _configurations = [
 ];
 
 void main() {
+  final registry = ProcessorRegistry.standard();
+
   for (final path in _configurations) {
     test('$path only lists instructions that are processors', () {
       final config = Flavorizr.parse(File(path).readAsStringSync());
@@ -45,8 +47,7 @@ void main() {
 
       expect(
         instructions.where(
-          (instruction) =>
-              !Processor.defaultInstructionSet.contains(instruction),
+          (instruction) => !registry.ids.contains(instruction),
         ),
         isEmpty,
       );

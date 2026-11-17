@@ -25,10 +25,10 @@ processors:
         ownership: patched
   flutter:flavors:
     files:
-      lib/flavors.dart:
+      lib/flavors.g.dart:
         hash: sha256:c3d9f1
         ownership: managed
-      lib/main.dart:
+      lib/flavors.dart:
         ownership: scaffold
   ios:xcodeproj:
     objects:

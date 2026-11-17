@@ -40,7 +40,10 @@ jobs:
         if: ${{ inputs.flavorize }}
         working-directory: ${{ inputs.working-directory }}
         shell: bash
-        run: flutter pub run flutter_flavorizr --yes
+        # `flutter create` leaves its counter app in lib/main.dart, which a run
+        # never overwrites: --overwrite-scaffold replaces it, with the app
+        # that reads the flavor through F.
+        run: flutter pub run flutter_flavorizr --yes --overwrite-scaffold
       - name: Set up JDK 17
         if: ${{ inputs.platform == 'android' }}
         uses: actions/setup-java@v6
