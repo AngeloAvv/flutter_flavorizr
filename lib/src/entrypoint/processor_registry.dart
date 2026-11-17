@@ -34,6 +34,9 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/engine/resource.dart';
+import 'package:flutter_flavorizr/src/engine/resource_key.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -62,6 +65,21 @@ final class EngineProcessor {
   });
 }
 
+/// A shared resource of the engine, with what the CLI has to know about it and
+/// the resource cannot tell.
+final class EngineResource {
+  /// The resource.
+  final Resource<Object?> resource;
+
+  /// The files and folders of the project it reads or writes, relative to it.
+  /// They join the shadow workspace of every run that has a processor that
+  /// requires the resource, so that a processor needs no path of it.
+  final Set<String> paths;
+
+  /// Registers [resource], which works on [paths].
+  const EngineResource(this.resource, {this.paths = const {}});
+}
+
 /// Every processor flavorizr knows, and where each one runs.
 ///
 /// A processor either runs on the engine, which previews its changes in a
@@ -73,13 +91,16 @@ final class EngineProcessor {
 class ProcessorRegistry {
   final Map<String, EngineProcessor> _engine;
   final Set<String> _legacyIds;
+  final Map<ResourceKey<Object?>, EngineResource> _resources;
 
-  /// Creates a registry of [engine] processors and the legacy processors named
-  /// by [legacyIds].
+  /// Creates a registry of [engine] processors, the legacy processors named by
+  /// [legacyIds] and the shared [resources] the engine processors may require.
   ProcessorRegistry({
     Iterable<EngineProcessor> engine = const [],
     Iterable<String> legacyIds = const [],
-  }) : _engine = {for (final entry in engine) entry.processor.id: entry},
+    Iterable<EngineResource> resources = const [],
+  }) : _resources = {for (final entry in resources) entry.resource.key: entry},
+       _engine = {for (final entry in engine) entry.processor.id: entry},
        _legacyIds = {
          for (final id in legacyIds)
            if (!engine.any((entry) => entry.processor.id == id)) id,
@@ -113,6 +134,16 @@ class ProcessorRegistry {
         paths: {'android/app/src'},
       ),
     ],
+    resources: [
+      EngineResource(
+        XcodeprojResource.ios(),
+        paths: const {XcodeprojResource.iosProject},
+      ),
+      EngineResource(
+        XcodeprojResource.macos(),
+        paths: const {XcodeprojResource.macosProject},
+      ),
+    ],
     legacyIds: Processor.defaultInstructionSet,
   );
 
@@ -120,6 +151,11 @@ class ProcessorRegistry {
   Map<String, FlavorizrProcessor> get engineProcessors => {
     for (final entry in _engine.entries) entry.key: entry.value.processor,
   };
+
+  /// The shared resources the processors that run on the engine may require.
+  List<Resource<Object?>> get resources => [
+    for (final entry in _resources.values) entry.resource,
+  ];
 
   /// The ids of the processors that run on the engine.
   Set<String> get engineIds => Set.unmodifiable(_engine.keys);
@@ -134,8 +170,14 @@ class ProcessorRegistry {
   bool isEngine(String id) => _engine.containsKey(id);
 
   /// The paths the shadow workspace of a run of [processors] is made of.
+  ///
+  /// They are the paths of the processors and the ones of the resources the
+  /// processors require.
   Set<String> pathsOf(Iterable<FlavorizrProcessor> processors) => {
-    for (final processor in processors) ..._engine[processor.id]!.paths,
+    for (final processor in processors) ...{
+      ..._engine[processor.id]!.paths,
+      for (final key in processor.requires) ...?_resources[key]?.paths,
+    },
   };
 
   /// Hashes the part of a file that [artifact] owns: what the lock records and

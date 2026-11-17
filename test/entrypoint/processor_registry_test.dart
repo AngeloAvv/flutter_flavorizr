@@ -26,6 +26,10 @@
 import 'dart:convert';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/resource_key.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +43,21 @@ String _manifestWith(String label, {String extra = ''}) =>
 
 List<int> _bytes(String text) => utf8.encode(text);
 
+class _Consumer extends FlavorizrProcessor {
+  @override
+  final String id;
+
+  final ResourceKey<Object?>? key;
+
+  const _Consumer(this.id, this.key);
+
+  @override
+  Set<ResourceKey<Object?>> get requires => {?key};
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {}
+}
+
 void main() {
   final registry = ProcessorRegistry.standard();
 
@@ -50,6 +69,41 @@ void main() {
         'android:buildGradle',
         'android:icons',
       });
+    });
+
+    test('registers the shared Xcode projects of both platforms', () {
+      expect(registry.resources.map((resource) => resource.key), {
+        XcodeprojResource.iosKey,
+        XcodeprojResource.macosKey,
+      });
+    });
+
+    test('adds the project of a resource to the paths of its consumers', () {
+      final custom = ProcessorRegistry(
+        engine: [
+          const EngineProcessor(
+            _Consumer('test:ios', XcodeprojResource.iosKey),
+            paths: {'a'},
+          ),
+          const EngineProcessor(_Consumer('test:none', null), paths: {'b'}),
+        ],
+        resources: [
+          EngineResource(
+            XcodeprojResource.ios(),
+            paths: {XcodeprojResource.iosProject},
+          ),
+          EngineResource(
+            XcodeprojResource.macos(),
+            paths: {XcodeprojResource.macosProject},
+          ),
+        ],
+      );
+
+      expect(custom.pathsOf([custom.engineProcessors['test:ios']!]), {
+        'a',
+        XcodeprojResource.iosProject,
+      });
+      expect(custom.pathsOf([custom.engineProcessors['test:none']!]), {'b'});
     });
 
     test('keeps every other 2.x instruction on the legacy pipeline', () {
