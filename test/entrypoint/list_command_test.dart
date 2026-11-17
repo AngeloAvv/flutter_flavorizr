@@ -53,7 +53,7 @@ void main() {
           ['apple'],
           extra: '''
 recipes:
-  ci: [android, "flutter:flavors"]
+  ci: [android, "google:firebase"]
   default: ci
 ''',
         ),
@@ -65,7 +65,7 @@ recipes:
       expect(project.logger.output, contains('ci (default)'));
       expect(
         project.logger.output,
-        contains('contains: android, flutter:flavors'),
+        contains('contains: android, google:firebase'),
       );
       expect(project.logger.output, contains('all (built-in)\n'));
     });
@@ -75,7 +75,7 @@ recipes:
 
       expect(project.logger.output, contains('android:icons [engine]'));
       expect(project.logger.output, contains('android:dummyAssets [legacy]'));
-      expect(project.logger.output, contains('flutter:flavors [legacy]'));
+      expect(project.logger.output, contains('google:firebase [legacy]'));
       expect(project.logger.output, contains('ios:podfile [legacy]'));
     });
 

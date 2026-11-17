@@ -151,41 +151,38 @@ void main() {
       final code = await project.run([
         'status',
         ...engineTargets,
-        'flutter:flavors',
+        'google:firebase',
       ]);
 
       expect(code, ExitCodes.ok);
       expect(project.logger.output, contains('Not checked'));
       expect(project.logger.output, contains('as far as the engine can tell'));
-      expect(project.logger.output, contains('flutter:flavors'));
+      expect(project.logger.output, contains('google:firebase'));
     });
 
     group('when no processor of the engine is selected', () {
       test('does not claim the project is in sync', () async {
-        final code = await project.run(['status', 'flutter:flavors']);
+        final code = await project.run(['status', 'google:firebase']);
 
         expect(code, ExitCodes.ok);
         expect(project.logger.output, contains('Nothing to check'));
         expect(project.logger.output, isNot(contains('In sync')));
       });
 
-      test('a missing lock is not drift: nothing would ever write it', () async {
-        // Only a run of the engine writes the lock, so a project with no
-        // Android flavors never has one: calling that drift would be a failure
-        // `apply` cannot fix.
-        final iosOnly = CliFixture(android: false);
-        addTearDown(iosOnly.dispose);
-        iosOnly.write(
-          'flavorizr.yaml',
-          'flavors:\n  apple:\n    app:\n      name: Apple\n'
-              '    ios:\n      bundleId: com.example.apple\n',
-        );
-
-        expect(await iosOnly.run(['apply', '--yes']), ExitCodes.ok);
-        expect(iosOnly.exists('flavorizr.lock'), isFalse);
-        expect(await iosOnly.run(['status']), ExitCodes.ok);
-        expect(iosOnly.logger.output, contains('Nothing to check'));
-      });
+      test(
+        'a missing lock is not drift: nothing would ever write it',
+        () async {
+          // Only a run of the engine writes the lock, so a selection with none
+          // of its processors never has one: calling that drift would be a
+          // failure `apply` cannot fix.
+          expect(project.exists('flavorizr.lock'), isFalse);
+          expect(
+            await project.run(['status', 'google:firebase']),
+            ExitCodes.ok,
+          );
+          expect(project.logger.output, contains('Nothing to check'));
+        },
+      );
     });
 
     test('is 70 when a processor fails', () async {

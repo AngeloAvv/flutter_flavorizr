@@ -31,6 +31,10 @@ const String allRecipeName = 'all';
 /// name.
 const String defaultRecipeName = 'default';
 
+/// The name of the recipe that scaffolds the starting files of a new app
+/// (`main.dart`, `app.dart` and `pages/`), which no other recipe runs.
+const String flutterScaffoldRecipeName = 'flutter:scaffold';
+
 /// The platforms that have a recipe of their own, and whose processors are
 /// skipped when the project has no flavors for them.
 ///
@@ -110,12 +114,10 @@ const Map<String, List<String>> builtInRecipes = {
     'windows:dummyAssets',
     'windows:icons',
   ],
-  'flutter': [
-    'flutter:flavors',
-    'flutter:app',
-    'flutter:pages',
-    'flutter:main',
-  ],
+  'flutter': ['flutter:flavors'],
+  // The starting files of a new app. They are not part of `all`: they are the
+  // user's once they exist, and a project that has an app does not need them.
+  flutterScaffoldRecipeName: ['flutter:app', 'flutter:pages', 'flutter:main'],
   'icons': ['android:icons', 'ios:icons', 'macos:icons', 'windows:icons'],
   'firebase': ['google:firebase'],
   'ide': ['ide:config'],

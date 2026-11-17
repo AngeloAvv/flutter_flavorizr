@@ -33,6 +33,7 @@ import 'cli_fixture.dart';
 /// The processors that run on the engine, so that no run needs the legacy
 /// pipeline: the `android` recipe also holds `android:dummyAssets`, which does.
 const engine = [
+  'flutter:flavors',
   'android:androidManifest',
   'android:buildGradle',
   'android:icons',
@@ -321,34 +322,35 @@ void main() {
           'apply',
           '--yes',
           'android:flavorizrGradle',
-          'flutter:flavors',
+          'google:firebase',
           'ide:config',
         ]);
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
-        expect(project.legacy.ids, ['flutter:flavors', 'ide:config']);
+        expect(project.legacy.ids, ['google:firebase', 'ide:config']);
       });
 
       test('are asked to keep the files the engine generated', () async {
-        await project.run(['apply', '--yes', ...engine, 'flutter:flavors']);
+        await project.run(['apply', '--yes', ...engine, 'google:firebase']);
 
         expect(project.legacy.preserved.single, {
           'android/app/flavorizr.gradle',
+          'lib/flavors.g.dart',
         });
       });
 
       test('are named in the plan, with what that means', () async {
-        await project.run(['apply', '--yes', 'flutter:flavors']);
+        await project.run(['apply', '--yes', 'google:firebase']);
 
         expect(project.logger.output, contains('not on the engine yet'));
-        expect(project.logger.output, contains('flutter:flavors'));
+        expect(project.logger.output, contains('google:firebase'));
       });
 
       test('alone, still ask for confirmation', () async {
         project.answer = false;
 
-        await project.run(['apply', 'flutter:flavors']);
+        await project.run(['apply', 'google:firebase']);
 
         expect(project.questions, hasLength(1));
         expect(project.legacy.ran, isEmpty);
@@ -361,7 +363,7 @@ void main() {
           'apply',
           '--yes',
           'android:flavorizrGradle',
-          'flutter:flavors',
+          'google:firebase',
         ]);
 
         expect(code, ExitCodes.software);
@@ -379,7 +381,7 @@ void main() {
           'apply',
           '--yes',
           'android:flavorizrGradle',
-          'flutter:flavors',
+          'google:firebase',
         ]);
 
         expect(code, ExitCodes.software);
@@ -395,7 +397,7 @@ void main() {
           'apply',
           '--yes',
           'android:androidManifest',
-          'flutter:flavors',
+          'google:firebase',
         ]);
 
         expect(code, ExitCodes.software);

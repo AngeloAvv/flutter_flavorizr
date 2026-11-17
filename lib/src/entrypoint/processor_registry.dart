@@ -34,6 +34,9 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_processors.dart';
+import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
+import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
@@ -106,8 +109,9 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android processors that were ported run
-  /// on the engine, every other 2.x instruction on the legacy pipeline.
+  /// The registry of this version: the Android and Flutter processors that
+  /// were ported run on the engine, every other 2.x instruction on the legacy
+  /// pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
       EngineProcessor(
@@ -133,6 +137,16 @@ class ProcessorRegistry {
         AndroidIconsProcessor(),
         paths: {'android/app/src'},
       ),
+      EngineProcessor(
+        const FlutterFlavorsProcessor(),
+        paths: {K.flutterFlavorsGeneratedPath, K.flutterFlavorPath},
+      ),
+      EngineProcessor(
+        const FlutterPagesProcessor(),
+        paths: {K.flutterMainPagePath},
+      ),
+      EngineProcessor(const FlutterAppProcessor(), paths: {K.flutterAppPath}),
+      EngineProcessor(const FlutterMainProcessor(), paths: {K.flutterMainPath}),
     ],
     resources: [
       EngineResource(
@@ -159,6 +173,17 @@ class ProcessorRegistry {
 
   /// The ids of the processors that run on the engine.
   Set<String> get engineIds => Set.unmodifiable(_engine.keys);
+
+  /// The ids of the processors a full run covers: the ones of the engine that
+  /// the `all` recipe reaches.
+  ///
+  /// The lock records the flavors a run applied only when it is a full run. A
+  /// processor that is not part of `all`, such as the ones of `flutter:scaffold`
+  /// (a project is not expected to run them every time), must not stop a run of
+  /// everything else from being one.
+  Set<String> get fullRunIds => RecipeCatalog(
+    processorIds: ids,
+  ).resolve([allRecipeName]).processorIds.where(isEngine).toSet();
 
   /// The ids of the processors that still run on the legacy pipeline.
   Set<String> get legacyIds => Set.unmodifiable(_legacyIds);
