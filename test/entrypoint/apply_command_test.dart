@@ -234,7 +234,7 @@ void main() {
         expect(code, ExitCodes.software);
         expect(project.snapshot(), before);
         expect(project.exists('android/app/flavorizr.gradle'), isFalse);
-      });
+      }, skip: Platform.isWindows ? 'needs POSIX permissions' : false);
 
       test('that cannot be replaced is a partial application', () async {
         Directory(project.abs('flavorizr.lock')).createSync();
