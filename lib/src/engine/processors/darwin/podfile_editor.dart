@@ -71,21 +71,34 @@ import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 /// safely with an [UnsafePodfileException]. It needs
 ///
 /// * exactly one line `project 'Runner', {` (or with double quotes), with
-///   nothing after the brace, outside of comments, heredocs and `=begin` blocks;
+///   nothing after the brace, that is code: not in a comment, a heredoc, a
+///   `=begin` block, after `__END__` or on a line continued with `\`;
 /// * a mapping that goes on until a line with only `}`, and has nothing but
 ///   blank lines, comments and entries like `'Debug' => :debug,`, one on each
-///   line (the last one may have no comma, any may have a comment after it);
+///   line. Any may have a comment after it, and the last one may have no comma,
+///   but not the one right above the region (or above the 2.x lines that become
+///   it), which its entries would follow;
 /// * markers, when there are any, that form a region in the mapping, and are
-///   not in a heredoc or a `=begin` block.
+///   not in text that is not code.
 ///
 /// Anything else in the Podfile (`target`, `post_install`, the rest) is not
-/// interpreted, so it can be written in any way. The editor only skips the
-/// bodies of heredocs (`<<~EOS`, `<<-EOS`, `<<EOS`) and `=begin` blocks when it
-/// looks for the mapping line and the markers, and a `<<WORD` that is not
-/// preceded by a word character is taken for a heredoc even when it is not one
-/// (a `<<` after a space in a comment at the end of a line, for instance), so
-/// that one with no closing line is refused. A string that goes over several
-/// lines is not told from code.
+/// interpreted, so it can be written in any way. The editor reads each line
+/// only to tell what is not code, which is
+///
+/// * the body of a heredoc (`<<~ID`, `<<-ID` and `<<ID`, with the identifier
+///   quoted or not, several on one line), which ends on a line that is the
+///   identifier, and nothing else (nothing before it for `<<ID`, spaces or
+///   tabs for the other two), like Ruby;
+/// * a `=begin` block, which ends on a `=end` at the start of a line;
+/// * what follows a line that is `__END__`;
+/// * a line that goes on after a backslash at its end.
+///
+/// A comment (`#` outside a string), the text of a string and a `%w[...]`
+/// literal that closes on its line are not looked at, so a `<<WORD` in them is
+/// not a heredoc. A string, or a `%q(`, `%w[`, `%i{`-like literal, that goes over
+/// several lines is refused, and so is a heredoc that is never closed, since
+/// flavorizr cannot tell what its text is. Quote characters it cannot read, such
+/// as `?'`, or a regular expression with a quote in it, may be refused too.
 abstract final class PodfileEditor {
   /// The markers of the region.
   static const RegionMarker marker = RegionMarker('flavorizr', comment: '#');
@@ -95,11 +108,15 @@ abstract final class PodfileEditor {
     r"""^\s*project\s+(['"])Runner\1\s*,\s*\{\s*$""",
   );
   static final RegExp _entry = RegExp(
-    r"""^(['"])((?:\\.|(?!\1)[^\\])+)\1\s*=>\s*:\w+\s*,?\s*(?:#.*)?$""",
+    r"""^(['"])((?:\\.|(?!\1)[^\\])+)\1\s*=>\s*:\w+\s*(,?)\s*(?:#.*)?$""",
   );
   static final RegExp _heredoc = RegExp(
     r"""(?<!\w)<<([~-]?)(['"`]?)([A-Za-z_]\w*)\2""",
   );
+  static final RegExp _percent = RegExp(r'(?<![\w)\]}])%[qQwWiI]?([\[({<])');
+  static final RegExp _blockStart = RegExp(r'^=begin(\s|$)');
+  static final RegExp _blockEnd = RegExp(r'^=end(\s|$)');
+  static final RegExp _indentation = RegExp(r'^[ \t]+');
 
   /// Returns [source], the content of the Podfile at [path], with the region up
   /// to date for [flavors], the names of the flavors of the platform.
@@ -120,7 +137,8 @@ abstract final class PodfileEditor {
               line.text.trim() == marker.end)) {
         throw _unsafe(
           path,
-          'a flavorizr marker is inside a heredoc or a block comment, where it '
+          'a flavorizr marker is inside a heredoc, a block comment, a line '
+              'continued with a backslash or what follows `__END__`, where it '
               'cannot be told from text.',
           'Move the marker lines out of it, or remove them.',
         );
@@ -142,7 +160,7 @@ abstract final class PodfileEditor {
     }
 
     final mapping = _mappingOf(text, outside, nonCode, path);
-    final present = {for (final (_, key) in mapping.entries) key};
+    final present = {for (final entry in mapping.entries) entry.key};
     final defaults = [
       for (final target in Target.values)
         if (!present.contains(target.name.capitalize)) _entryOf(target, null),
@@ -153,10 +171,12 @@ abstract final class PodfileEditor {
     ];
     final body = [...defaults, ...mappings];
 
-    if (mapping.hasRegion) {
-      return body.isEmpty
-          ? text.remove(marker)
-          : text.upsert(marker, body, anchor: (lines) => mapping.anchor);
+    if (mapping.regionStart case final start?) {
+      if (body.isEmpty) return text.remove(marker);
+
+      _checkSeparated(mapping, start, path);
+
+      return text.upsert(marker, body, anchor: (lines) => mapping.anchor);
     }
 
     if (mappings.isEmpty) return source;
@@ -164,10 +184,13 @@ abstract final class PodfileEditor {
     // What 2.x wrote: the lines that are what the region holds, no more.
     final written = mappings.toSet();
     final adopted = [
-      for (final (line, _) in mapping.entries)
-        if (written.contains(line.text.trim())) line,
+      for (final entry in mapping.entries)
+        if (written.contains(entry.line.text.trim())) entry.line,
     ];
     final first = adopted.firstOrNull;
+
+    if (first != null) _checkSeparated(mapping, first.index, path);
+
     final edited = MarkedText(
       adopted.reversed.fold(
         source,
@@ -182,7 +205,7 @@ abstract final class PodfileEditor {
       body,
       anchor: (lines) => lines.where((line) => line.index == after).first,
       indentation:
-          (first ?? mapping.entries.firstOrNull?.$1)?.indentation ??
+          (first ?? mapping.entries.firstOrNull?.line)?.indentation ??
           '${mapping.anchor.indentation}  ',
     );
   }
@@ -226,7 +249,7 @@ abstract final class PodfileEditor {
     }
 
     final anchor = openings.single;
-    final entries = <(TextLine, String)>[];
+    final entries = <_Entry>[];
     TextLine? close;
 
     for (final line in text.lines.skip(anchor.index + 1)) {
@@ -253,7 +276,7 @@ abstract final class PodfileEditor {
         );
       }
 
-      entries.add((line, entry[2]!));
+      entries.add((line: line, key: entry[2]!, comma: entry[3]!.isNotEmpty));
     }
 
     if (close == null) {
@@ -264,13 +287,12 @@ abstract final class PodfileEditor {
       );
     }
 
-    final region = text.lines.where(
-      (line) => !outsideLines.contains(line.index),
-    );
+    final region = [
+      for (final line in text.lines)
+        if (!outsideLines.contains(line.index)) line.index,
+    ];
 
-    if (region.any(
-      (line) => line.index < anchor.index || line.index > close!.index,
-    )) {
+    if (region.any((index) => index < anchor.index || index > close!.index)) {
       throw _unsafe(
         path,
         'the flavorizr region is outside of the mapping.',
@@ -278,7 +300,25 @@ abstract final class PodfileEditor {
       );
     }
 
-    return _Mapping(anchor, entries, hasRegion: region.isNotEmpty);
+    return _Mapping(anchor, entries, regionStart: region.firstOrNull);
+  }
+
+  /// Fails unless the entry right above the line [at], where the entries of the
+  /// region are going to be, ends with a comma: Ruby needs one between entries,
+  /// and the line of the user is not something to add it to.
+  static void _checkSeparated(_Mapping mapping, int at, String path) {
+    final above = mapping.entries
+        .where((entry) => entry.line.index < at)
+        .lastOrNull;
+
+    if (above == null || above.comma) return;
+
+    throw _unsafe(
+      path,
+      'the entry `${above.line.text.trim()}` has no comma, and the entries of '
+          'the region would follow it.',
+      'Put a comma after it.',
+    );
   }
 
   /// The mapping of [target] for [flavor], or the default one without it.
@@ -291,35 +331,71 @@ abstract final class PodfileEditor {
     return "'$configuration' => :${target.darwinTarget},";
   }
 
-  /// The lines where code is not: the bodies of heredocs, and `=begin` blocks.
-  /// A heredoc that is never closed is refused.
+  /// The lines where code is not (see [PodfileEditor]): the bodies of heredocs,
+  /// `=begin` blocks, what follows `__END__` and the lines continued with a
+  /// backslash. A heredoc that is never closed, and a string or `%` literal that
+  /// goes over several lines, are refused.
   static Set<int> _nonCodeLines(List<TextLine> lines, String path) {
     final nonCode = <int>{};
-    final pending = <({String id, bool indented})>[];
+    final pending = <_Heredoc>[];
     var block = false;
+    var ended = false;
+    var continued = false;
 
     for (final line in lines) {
       final text = line.text;
 
+      if (ended) {
+        nonCode.add(line.index);
+        continue;
+      }
+
       if (block) {
         nonCode.add(line.index);
-        block = !text.startsWith('=end');
-      } else if (pending.isNotEmpty) {
+        block = !_blockEnd.hasMatch(text);
+        continue;
+      }
+
+      if (pending.isNotEmpty) {
         nonCode.add(line.index);
 
         final next = pending.first;
 
-        if ((next.indented ? text.trim() : text) == next.id) {
+        // `<<ID` ends on the identifier at the start of a line, and the other
+        // two after spaces or tabs. Nothing may follow it, as in Ruby.
+        if ((next.indented ? text.replaceFirst(_indentation, '') : text) ==
+            next.id) {
           pending.removeAt(0);
         }
-      } else if (text.startsWith('=begin')) {
+
+        continue;
+      }
+
+      if (continued) {
+        nonCode.add(line.index);
+      } else if (_blockStart.hasMatch(text)) {
         nonCode.add(line.index);
         block = true;
-      } else if (!text.trimLeft().startsWith('#')) {
-        for (final match in _heredoc.allMatches(text)) {
-          pending.add((id: match[3]!, indented: match[1]!.isNotEmpty));
-        }
+        continue;
+      } else if (text == '__END__') {
+        nonCode.add(line.index);
+        ended = true;
+        continue;
       }
+
+      final scan = _scan(text);
+
+      if (scan.open) {
+        throw _unsafe(
+          path,
+          'a string or a `%` literal that goes over several lines starts on '
+              '`${text.trim()}`, where flavorizr cannot tell its text from code.',
+          'Write it on one line, or as a heredoc.',
+        );
+      }
+
+      pending.addAll(scan.heredocs);
+      continued = scan.continues;
     }
 
     if (pending.isNotEmpty) {
@@ -332,15 +408,112 @@ abstract final class PodfileEditor {
 
     return nonCode;
   }
+
+  /// Reads one line of code: the heredocs it opens, whether it leaves a string
+  /// or a `%` literal open, and whether it goes on in the next line. A comment
+  /// and the text of a string or of a `%` literal that closes on the line are
+  /// skipped.
+  static ({List<_Heredoc> heredocs, bool open, bool continues}) _scan(
+    String text,
+  ) {
+    final heredocs = <_Heredoc>[];
+    String? quote;
+    var comment = false;
+    var i = 0;
+
+    while (i < text.length) {
+      final char = text[i];
+
+      if (quote != null) {
+        if (char == r'\') {
+          i += 2;
+          continue;
+        }
+
+        if (char == quote) quote = null;
+
+        i++;
+        continue;
+      }
+
+      if (char == '#') {
+        comment = true;
+        break;
+      }
+
+      final heredoc = char == '<' ? _heredoc.matchAsPrefix(text, i) : null;
+
+      if (heredoc != null) {
+        heredocs.add((id: heredoc[3]!, indented: heredoc[1]!.isNotEmpty));
+        i = heredoc.end;
+        continue;
+      }
+
+      final percent = char == '%' ? _percent.matchAsPrefix(text, i) : null;
+
+      if (percent != null) {
+        final end = _closing(text, percent.end, percent[1]!);
+
+        if (end == null) {
+          return (heredocs: heredocs, open: true, continues: false);
+        }
+
+        i = end;
+        continue;
+      }
+
+      if (char == "'" || char == '"' || char == '`') quote = char;
+
+      i++;
+    }
+
+    return (
+      heredocs: heredocs,
+      open: quote != null,
+      continues: !comment && quote == null && text.endsWith(r'\'),
+    );
+  }
+
+  /// Where the literal that opened with [open] ends in [text], which is read
+  /// from [from], or `null` when it does not on this line.
+  static int? _closing(String text, int from, String open) {
+    const pairs = {'[': ']', '(': ')', '{': '}', '<': '>'};
+    final close = pairs[open]!;
+    var depth = 1;
+    var i = from;
+
+    while (i < text.length) {
+      final char = text[i];
+
+      if (char == r'\') {
+        i += 2;
+        continue;
+      }
+
+      if (char == open) depth++;
+      if (char == close && --depth == 0) return i + 1;
+
+      i++;
+    }
+
+    return null;
+  }
 }
 
 /// The mapping of a Podfile: the line that opens it, the entries it has outside
-/// of the region, with the name of the configuration of each one, and whether
-/// the region is in it.
+/// of the region, and where the region starts, if it is in it.
 final class _Mapping {
   final TextLine anchor;
-  final List<(TextLine, String)> entries;
-  final bool hasRegion;
+  final List<_Entry> entries;
+  final int? regionStart;
 
-  const _Mapping(this.anchor, this.entries, {required this.hasRegion});
+  const _Mapping(this.anchor, this.entries, {required this.regionStart});
 }
+
+/// An entry of the mapping: its line, the name of the configuration, and
+/// whether a comma ends it.
+typedef _Entry = ({TextLine line, String key, bool comma});
+
+/// A heredoc that was opened: the identifier that closes it, and whether that
+/// may be indented (`<<-` and `<<~`).
+typedef _Heredoc = ({String id, bool indented});

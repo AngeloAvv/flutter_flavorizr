@@ -234,25 +234,35 @@ with exit code `70`, before anything is written, and the message says what to
 change. What it needs:
 
 * exactly one line `project 'Runner', {` (single or double quotes, indented or
-  not, nothing after the brace), outside of comments, heredocs and `=begin`
-  blocks. A mapping on one line, with parentheses or with a comment after the
-  brace is refused;
+  not, nothing after the brace) that is code, which means not in a comment, a
+  heredoc or a `=begin` block, not after `__END__` and not on a line continued
+  with a backslash. A mapping on one line, with parentheses or with a comment
+  after the brace is refused;
 * a mapping that goes on until a line with only `}` and has nothing but blank
-  lines, comments and entries like `'Debug' => :debug,`, one on each line (the
-  last one may have no comma, and any may have a comment after it). Another kind
-  of line, such as a nested block, a heredoc or two entries on one line, is
-  refused;
+  lines, comments and entries like `'Debug' => :debug,`, one on each line (any
+  may have a comment after it). Another kind of line, such as a nested block, a
+  heredoc or two entries on one line, is refused. The entry right above the
+  region, or above the 2.x lines that become it, needs a comma, since the
+  entries of the region follow it and Ruby needs one between entries: the run is
+  refused otherwise, and flavorizr never adds the comma to your line. The last
+  entry of the mapping may have none when the region is not below it;
 * markers, when there are, that form a region in the mapping, and are not in a
-  heredoc or a `=begin` block.
+  heredoc, a `=begin` block, a continued line or after `__END__`.
 
 The rest of the Podfile (`target`, `post_install`, everything else) is not
 interpreted, so it can be written in any way, and the line endings of the file
 (LF or CRLF), a byte order mark and a missing line break at the end of the file
-are kept. Only the bodies of heredocs and `=begin` blocks are skipped when
-looking for the mapping line and the markers, and a `<<WORD` that follows a
-space is taken for a heredoc: when nothing closes it, as in a comment at the end
-of a line (`x = 1 # shifts <<EOS`), the Podfile is refused too. A string that goes
-over several lines is not told from code.
+are kept. flavorizr reads each line only to tell what is not code: the body of a
+heredoc (`<<~ID`, `<<-ID` or `<<ID`, with or without quotes around `ID`), which
+ends on a line that has only `ID` (indented by spaces or tabs for `<<~` and
+`<<-`, at the start of the line for `<<ID`, and with nothing after it, as in
+Ruby), a `=begin` block, which ends on a `=end` at the start of a line, what
+follows `__END__`, and a line that goes on after a backslash. Comments and the
+text of strings are not looked at, so a `<<WORD` there is not a heredoc. A
+string, or a `%q(...)`, `%w[...]`, `%i{...}`-like literal, that goes over several
+lines is refused, and so is a heredoc that is never closed, since flavorizr
+cannot tell what its text is. A character it cannot read, such as `?'`, or a
+regular expression with a quote in it, may be refused too.
 
 Every other instruction (`ios:*` and `macos:*` but the Podfile ones,
 `windows:*`, `google:firebase`, `huawei:agconnect`, `ide:config`,

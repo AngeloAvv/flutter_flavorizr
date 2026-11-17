@@ -52,6 +52,37 @@ const _tabbed = [
   "\t'Release' => :release,",
 ];
 
+final _decoy = ["project 'Runner', {", "  'Debug' => :debug,", '}'];
+
+// A trailing space keeps `  EOS ` from ending the heredoc, and an indented
+// terminator does not end a plain one.
+const _spaced = ['t = <<~EOS', '  EOS ', "  project 'Runner', {", '  }', 'EOS'];
+const _plain = ['t = <<EOS', '  EOS', "project 'Runner', {", '}', 'EOS'];
+const _dashed = ['t = <<-EOS', '  body', '  EOS'];
+const _quoted = [
+  "a = <<'EOS'",
+  "  project 'Runner', {",
+  'EOS',
+  'b = <<"TWO"',
+  "project 'Runner', {",
+  'TWO',
+];
+const _lookalikes = [
+  'note = "see <<EOS"',
+  '# also <<EOS',
+  'flag = 1 # shifts <<EOS',
+];
+const _block = [
+  '=begin',
+  '  =end',
+  '=ending',
+  "project 'Runner', {",
+  '}',
+  '=end',
+];
+const _continued = [r'total = 1 + \\', "  project 'Runner', {", '  }'];
+const _literals = ["# don't", 'list = %w[a b]', "quote = \"it's\" # it's"];
+
 /// The mappings of [flavors], the way flavorizr writes them.
 List<String> _flavorEntries(Iterable<String> flavors, {String indent = '  '}) =>
     [
@@ -500,6 +531,166 @@ final _supported = <_Case>[
     ]),
   ),
   (
+    name:
+        'regenerates a region in the middle of the mapping, after an entry '
+        'with a comma',
+    source: _podfile([
+      "  'Debug' => :debug,",
+      ..._region(_flavorEntries(['apple'])),
+      "  'Profile' => :release,",
+      "  'Release' => :release,",
+    ]),
+    flavors: ['apple', 'banana'],
+    expected: _podfile([
+      "  'Debug' => :debug,",
+      ..._region(_flavorEntries(['apple', 'banana'])),
+      "  'Profile' => :release,",
+      "  'Release' => :release,",
+    ]),
+  ),
+  (
+    name: 'regenerates a region that is the last thing in the mapping',
+    source: _podfile([
+      ..._defaults,
+      ..._region(_flavorEntries(['apple'])),
+    ]),
+    flavors: ['apple', 'banana'],
+    expected: _podfile([
+      ..._defaults,
+      ..._region(_flavorEntries(['apple', 'banana'])),
+    ]),
+  ),
+  (
+    name:
+        'removes a region that follows an entry without a comma, since '
+        'nothing is written after that entry',
+    source: _podfile([
+      "  'Debug' => :debug,",
+      "  'Profile' => :release,",
+      "  'Release' => :release",
+      ..._region(_flavorEntries(['apple'])),
+    ]),
+    flavors: [],
+    expected: _podfile([
+      "  'Debug' => :debug,",
+      "  'Profile' => :release,",
+      "  'Release' => :release",
+    ]),
+  ),
+  (
+    name:
+        'ends a <<~ heredoc only on its terminator, which has no trailing '
+        'space, so what is in the body is not the mapping',
+    source: _podfile(_defaults, before: _spaced),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _spaced),
+  ),
+  (
+    name: 'ends a plain heredoc only on a terminator that is not indented',
+    source: _podfile(_defaults, before: _plain),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _plain),
+  ),
+  (
+    name:
+        'ends a <<- heredoc on an indented terminator, and the code that '
+        'follows is code',
+    source: _podfile(_defaults, before: _dashed),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _dashed),
+  ),
+  (
+    name: 'goes through heredocs with a quoted identifier',
+    source: _podfile(_defaults, before: _quoted),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _quoted),
+  ),
+  (
+    name: 'does not take for a heredoc a `<<WORD` in a string or a comment',
+    source: _podfile(_defaults, before: _lookalikes),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _lookalikes),
+  ),
+  (
+    name: 'does not look for the mapping after __END__',
+    source: [..._podfile(_defaults), '__END__', ..._decoy],
+    flavors: ['apple'],
+    expected: [
+      ..._podfile([
+        ..._region(_flavorEntries(['apple'])),
+        ..._defaults,
+      ]),
+      '__END__',
+      ..._decoy,
+    ],
+  ),
+  (
+    name:
+        'ends a block comment only on a =end at the start of a line, and '
+        'only on =end itself',
+    source: _podfile(_defaults, before: _block),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _block),
+  ),
+  (
+    name:
+        'does not look for the mapping on a line that continues another '
+        'one with a backslash',
+    source: _podfile(_defaults, before: _continued),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _continued),
+  ),
+  (
+    name: 'reads strings, %w literals and comments on one line',
+    source: _podfile(_defaults, before: _literals),
+    flavors: ['apple'],
+    expected: _podfile([
+      ..._region(_flavorEntries(['apple'])),
+      ..._defaults,
+    ], before: _literals),
+  ),
+  (
+    name:
+        'regenerates a region after an entry that has a comma and a comment, '
+        'with a comment line between them',
+    source: _podfile([
+      "  'Debug' => :debug, # for debugging",
+      '  # the flavors',
+      ..._region(_flavorEntries(['apple'])),
+      "  'Profile' => :release,",
+      "  'Release' => :release,",
+    ]),
+    flavors: ['apple', 'banana'],
+    expected: _podfile([
+      "  'Debug' => :debug, # for debugging",
+      '  # the flavors',
+      ..._region(_flavorEntries(['apple', 'banana'])),
+      "  'Profile' => :release,",
+      "  'Release' => :release,",
+    ]),
+  ),
+  (
     name: 'drops a second region, which the first one replaces',
     source: _podfile([
       ..._region(_flavorEntries(['apple'])),
@@ -622,11 +813,54 @@ final _unsafe = <({String name, List<String> source, String reason})>[
     reason: 'heredoc',
   ),
   (
+    name: 'a marker on a line that continues another one with a backslash',
+    source: _podfile(_defaults, before: [r'x = 1 + \', '  $_begin']),
+    reason: 'heredoc',
+  ),
+  (
+    name: 'a marker after __END__',
+    source: [..._podfile(_defaults), '__END__', _begin, _end],
+    reason: 'heredoc',
+  ),
+  (
+    name: 'a string that goes over several lines',
+    source: _podfile(_defaults, before: ['text = "first', 'second"']),
+    reason: 'several lines',
+  ),
+  (
+    name: 'a %w literal that goes over several lines',
+    source: _podfile(_defaults, before: ['list = %w[a', 'b]']),
+    reason: 'several lines',
+  ),
+  (
     name:
-        'a `<<WORD` after a space at the end of a line, which cannot be told '
-        'from a heredoc',
-    source: _podfile(_defaults, before: ['name = :x # shifts <<EOS']),
-    reason: 'EOS',
+        'an entry without a comma right above the region, which would be '
+        'followed by its entries',
+    source: _podfile([
+      "  'Debug' => :debug,",
+      "  'Profile' => :release",
+      ..._region(_flavorEntries(['apple'])),
+    ]),
+    reason: 'comma',
+  ),
+  (
+    name:
+        'an entry without a comma right above the lines of 2.x that would '
+        'become the region',
+    source: _podfile([
+      "  'Debug' => :debug",
+      ..._flavorEntries(['apple']),
+    ]),
+    reason: 'comma',
+  ),
+  (
+    name: 'an entry whose only comma is in its comment, above the region',
+    source: _podfile([
+      "  'Debug' => :debug # one, two",
+      '  # the flavors',
+      ..._region(_flavorEntries(['apple'])),
+    ]),
+    reason: 'comma',
   ),
   (
     name: 'a heredoc that is never closed',
