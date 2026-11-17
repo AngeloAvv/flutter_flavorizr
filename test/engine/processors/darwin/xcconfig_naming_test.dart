@@ -93,6 +93,15 @@ const _names = <String, bool>{
   '': false,
 };
 
+/// The UUID of the entry that puts [file] in the Resources phase.
+String _entryOf(XcodeProject project, PBXFileReference file) => project
+    .nativeTargets
+    .first
+    .resourcesBuildPhase
+    .files
+    .singleWhere((entry) => entry.fileRef == file)
+    .uuid;
+
 void main() {
   group('the name of a flavor', () {
     for (final MapEntry(key: name, value: valid) in _names.entries) {
@@ -286,6 +295,13 @@ void main() {
       final other = project.files.singleWhere(
         (file) => file.path == 'Other/appleDebug.xcconfig',
       );
+
+      // What is hashed is the flavor's (or the check would be about nothing).
+      final apple = project.files.singleWhere(
+        (file) => file.path == 'Flutter/appleDebug.xcconfig',
+      );
+      expect(before, contains(apple.uuid));
+      expect(before, contains(_entryOf(project, apple)));
 
       // Not hashed: neither the reference nor the entry nor its listing.
       expect(before, isNot(contains(other.uuid)));

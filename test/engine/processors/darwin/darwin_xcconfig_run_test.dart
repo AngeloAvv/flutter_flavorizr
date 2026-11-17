@@ -456,6 +456,9 @@ void main() {
         );
       }
       await apply();
+      for (final pbxproj in [_iosPbxproj, _macosPbxproj]) {
+        expect(project.read(pbxproj), contains('dates'), reason: pbxproj);
+      }
 
       project.write('flavorizr.yaml', _config(['citrus']));
       final code = await apply();
@@ -537,6 +540,8 @@ void main() {
     test('takes them out for the flavors that flavorizr.yaml has not anymore, '
         'which no lock tells apart from the ones of the user', () async {
       project.write('flavorizr.yaml', _config(['citrus']));
+      expect(_xcconfigResources(await open(_iosProject)), hasLength(6));
+      expect(_xcconfigResources(await open(_macosProject)), hasLength(6));
 
       final code = await apply();
 

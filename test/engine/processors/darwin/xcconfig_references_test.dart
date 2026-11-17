@@ -334,6 +334,10 @@ void main() {
       resource(target('Runner'), first);
       resource(target('Runner'), first);
       resource(target('Runner'), second);
+      expect(
+        _xcconfigResources(project),
+        contains('Flutter/zebraDebug.xcconfig'),
+      );
 
       removeXcconfigsFromResources(project);
 
@@ -418,6 +422,11 @@ void main() {
           reference('Flutter/zebraDebug.xcconfig'),
         );
         target('RunnerTests').resourcesBuildPhase.files.add(entry);
+        expect(target('Runner').resourcesBuildPhase.files, contains(entry));
+        expect(
+          target('RunnerTests').resourcesBuildPhase.files,
+          contains(entry),
+        );
 
         removeXcconfigsFromResources(project);
 
@@ -444,7 +453,16 @@ void main() {
   });
 
   group('what the lock hashes of a project', () {
-    String id(String letter) => letter * 24;
+    /// A distinct UUID for each [letter]: 24 hexadecimal digits, as the project
+    /// writes them. A fixture that is not one is skipped by what reads the
+    /// project, and a test about it passes without classifying anything.
+    String id(String letter) {
+      final uuid = letter.codeUnitAt(0).toRadixString(16).toUpperCase() * 12;
+
+      expect(uuid, matches(RegExp(r'^[0-9A-F]{24}$')));
+
+      return uuid;
+    }
 
     /// The definition of a file reference, on a line of its own, as the project
     /// writes it.
@@ -601,6 +619,7 @@ void main() {
         line('Flutter/appleDebug.xcconfig'),
       ].join('\n');
 
+      expect(xcconfigReferencesOwnedContent(source('1510')), isNotEmpty);
       expect(
         xcconfigReferencesOwnedContent(source('1510')),
         xcconfigReferencesOwnedContent(source('1600')),
@@ -621,6 +640,7 @@ void main() {
     test('are the same with Windows line endings', () {
       final lines = [line('Flutter/appleDebug.xcconfig'), other];
 
+      expect(xcconfigReferencesOwnedContent(lines.join('\n')), isNotEmpty);
       expect(
         xcconfigReferencesOwnedContent(lines.join('\r\n')),
         xcconfigReferencesOwnedContent(lines.join('\n')),
