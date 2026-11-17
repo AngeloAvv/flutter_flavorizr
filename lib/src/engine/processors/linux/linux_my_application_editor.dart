@@ -162,12 +162,8 @@ abstract final class LinuxMyApplicationEditor {
     final headerBar = _statements(text, code, _headerBarSetter);
     final window = _statements(text, code, _windowSetter);
 
-    for (final (statement, setter) in [
-      ...variable.map((site) => (site, false)),
-      ...headerBar.map((site) => (site, true)),
-      ...window.map((site) => (site, true)),
-    ]) {
-      _check(source, code, statement, setter: setter);
+    for (final site in [...variable, ...headerBar, ...window]) {
+      _check(source, code, site);
     }
 
     // A region follows one statement, so a title that is set by several is
@@ -189,23 +185,22 @@ abstract final class LinuxMyApplicationEditor {
     // The variable gets a region when something reads it: a declaration that
     // nothing uses would take assignments no setter reads, and the flavor would
     // silently have no effect.
-    final declared = {
-      for (final site in variable)
-        for (
-          var i = _lineOf(text.lines, site.start);
-          i <= _lineOf(text.lines, site.end - 1);
-          i++
-        )
-          i,
-    };
+    var rest = code;
+
+    for (final site in variable) {
+      rest = rest.replaceRange(
+        site.start,
+        site.end,
+        ' ' * (site.end - site.start),
+      );
+    }
+
     final read =
         variable.isNotEmpty &&
         text.outside.any(
-          (line) =>
-              !declared.contains(line.index) &&
-              _windowTitleWord.hasMatch(
-                code.substring(line.start, line.contentEnd),
-              ),
+          (line) => _windowTitleWord.hasMatch(
+            rest.substring(line.start, line.contentEnd),
+          ),
         );
 
     if (!read && headerBar.isEmpty && window.isEmpty) {
@@ -228,6 +223,14 @@ abstract final class LinuxMyApplicationEditor {
       }
     }
 
+    // The region repeats the call it follows: with the cast, or without it.
+    final receiver =
+        window.isNotEmpty &&
+            source
+                .substring(window.first.start, window.first.end)
+                .contains('GTK_WINDOW')
+        ? 'GTK_WINDOW(window)'
+        : 'window';
     var patched = source;
 
     for (final (marker, pattern, wanted, statement) in [
@@ -247,7 +250,7 @@ abstract final class LinuxMyApplicationEditor {
         windowMarker,
         _windowSetter,
         window.isNotEmpty,
-        (String title) => 'gtk_window_set_title(window, "$title");',
+        (String title) => 'gtk_window_set_title($receiver, "$title");',
       ),
     ]) {
       // An edit moves what follows it, so the anchor is found again.
@@ -361,16 +364,12 @@ abstract final class LinuxMyApplicationEditor {
   /// without braces to say so. Nothing but a comment that ends on its line may
   /// follow it, so that what is inserted after the line is after the
   /// statement, and outside of the comment.
-  static void _check(
-    String source,
-    String code,
-    _Site statement, {
-    required bool setter,
-  }) {
+  static void _check(String source, String code, _Site statement) {
     final text = source.substring(statement.start, statement.end);
     final before = code.substring(0, statement.start).trimRight();
 
-    if (setter &&
+    // A declaration has a type in front of it, which a setter has not.
+    if (statement.prefix.isEmpty &&
         before.isNotEmpty &&
         !';{}'.contains(before[before.length - 1])) {
       throw UnsafeTitleSetterException(text);

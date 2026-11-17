@@ -440,4 +440,94 @@ void main() {
       );
     }
   });
+
+  group('LinuxMyApplicationEditor form of the call in the region of the '
+      'window', () {
+    String windowRegion(String patched) => RegExp(
+      r'BEGIN plain_window_title[\s\S]*?END plain_window_title',
+    ).firstMatch(patched)![0]!;
+
+    const cast = '    gtk_window_set_title(GTK_WINDOW(window), "example");\n';
+
+    test('a setter that casts the window gets a region that casts it', () {
+      for (final setter in [
+        cast,
+        '    gtk_window_set_title( GTK_WINDOW (window) , "example");\n',
+      ]) {
+        final source = _pristine.replaceFirst(_call, setter);
+
+        final patched = LinuxMyApplicationEditor.withWindowTitles(
+          source,
+          _titles,
+        );
+
+        expect(
+          windowRegion(patched),
+          allOf(
+            contains('gtk_window_set_title(GTK_WINDOW(window), "Apple App");'),
+            contains('gtk_window_set_title(GTK_WINDOW(window), "Banana App");'),
+            isNot(contains('gtk_window_set_title(window,')),
+          ),
+          reason: setter,
+        );
+        expect(
+          LinuxMyApplicationEditor.withWindowTitles(patched, _titles),
+          patched,
+        );
+      }
+    });
+
+    test('a setter that does not cast it keeps the region 2.x wrote, byte for '
+        'byte', () {
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        _pristine,
+        _titles,
+      );
+
+      expect(
+        windowRegion(patched),
+        allOf(
+          contains('gtk_window_set_title(window, "Apple App");'),
+          isNot(contains('GTK_WINDOW')),
+        ),
+      );
+    });
+
+    test('a window that is a GtkWidget* is cast in the region too', () {
+      final source = _pristine
+          .replaceFirst('GtkWindow* window', 'GtkWidget* window')
+          .replaceFirst(_call, cast);
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(
+        source,
+        _titles,
+      );
+
+      expect(source, contains('GtkWidget* window'));
+      expect(
+        windowRegion(patched),
+        contains('gtk_window_set_title(GTK_WINDOW(window), "Apple App");'),
+      );
+    });
+
+    test('a region that was written without the cast follows a setter that '
+        'has it', () {
+      final flavorized = LinuxMyApplicationEditor.withWindowTitles(
+        _pristine,
+        _titles,
+      );
+      final cased = flavorized.replaceFirst(_call, cast);
+
+      final patched = LinuxMyApplicationEditor.withWindowTitles(cased, _titles);
+
+      expect(
+        windowRegion(patched),
+        contains('gtk_window_set_title(GTK_WINDOW(window), "Apple App");'),
+      );
+      expect(
+        LinuxMyApplicationEditor.withWindowTitles(patched, _titles),
+        patched,
+      );
+    });
+  });
 }
