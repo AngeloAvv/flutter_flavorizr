@@ -53,7 +53,9 @@ String? _join(List<Object>? segments) {
         if (path.isNotEmpty) path.write('.');
 
         path.write(
-          RegExp(r'^[^.\[\]"\s]+$').hasMatch(segment) ? segment : '"$segment"',
+          RegExp(r'^[^.\[\]"\\\s]+$').hasMatch(segment)
+              ? segment
+              : '"${_escape(segment)}"',
         );
     }
   }
@@ -63,18 +65,41 @@ String? _join(List<Object>? segments) {
 
 /// The path of the map that holds [target], a key or a map, which is how the
 /// errors of a map are told: `flavors.apple` for `flavors.apple.bundle_id`.
-String? configContainerPathOf(YamlNode root, YamlNode target) {
+///
+/// A [key] is the key of a map, even when it is itself a map: the path is then
+/// the one of the map it is a key of.
+String? configContainerPathOf(
+  YamlNode root,
+  YamlNode target, {
+  bool key = false,
+}) {
   final segments = configPathSegmentsOf(root, target);
 
   if (segments == null) return null;
 
   return _join(
-    target is YamlMap ? segments : segments.take(segments.length - 1).toList(),
+    target is YamlMap && !key
+        ? segments
+        : segments.take(segments.length - 1).toList(),
   );
 }
 
-List<Object>? _find(YamlNode node, YamlNode target, List<Object> path) {
+String _escape(String key) =>
+    key.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+
+List<Object>? _find(
+  YamlNode node,
+  YamlNode target,
+  List<Object> path, [
+  Set<YamlNode>? seen,
+]) {
   if (identical(node, target)) return path;
+
+  // An alias is the very same node: it is looked into once, at the place it
+  // is met first, or a document of aliases of aliases would take forever.
+  final visited = seen ?? Set<YamlNode>.identity();
+
+  if (!visited.add(node)) return null;
 
   if (node is YamlMap) {
     for (final entry in node.nodes.entries) {
@@ -83,13 +108,13 @@ List<Object>? _find(YamlNode node, YamlNode target, List<Object> path) {
 
       if (identical(key, target)) return [...path, name];
 
-      final found = _find(entry.value, target, [...path, name]);
+      final found = _find(entry.value, target, [...path, name], visited);
 
       if (found != null) return found;
     }
   } else if (node is YamlList) {
     for (final (index, item) in node.nodes.indexed) {
-      final found = _find(item, target, [...path, index]);
+      final found = _find(item, target, [...path, index], visited);
 
       if (found != null) return found;
     }

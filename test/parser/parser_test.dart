@@ -209,6 +209,22 @@ void main() {
       fail('Should have thrown InvalidConfigurationException');
     }
 
+    test('names the map of a key that is itself a map', () {
+      expect(
+        invalid('map_key').toString(),
+        contains('of `flavors.apple.ios.buildSettings` must be text'),
+      );
+    });
+
+    test('does not read the sections of a pubspec that are not its own', () {
+      final flavorizr = const Parser(
+        pubspecPath: 'test_resources/parser/parser_test/unrelated_keys/pubspec',
+        flavorizrPath: 'test_resources/non_existent',
+      ).parse();
+
+      expect(flavorizr.flavors.keys, ['apple']);
+    });
+
     test('says where a YAML syntax error is', () {
       expect(
         invalid('syntax_error').toString(),

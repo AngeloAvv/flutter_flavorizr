@@ -73,6 +73,37 @@ void main() {
       expect(configPathOf(odd, inner), '"apple.[0]".ok');
     });
 
+    test('escapes the quotes of a key, so that two keys never read as one', () {
+      final one = loadYamlNode('"a.x\\".\\"b.y": 1\n') as YamlMap;
+      final two = loadYamlNode('"a.x":\n  "b.y": 1\n') as YamlMap;
+
+      expect(
+        configPathOf(one, one.nodes.keys.single as YamlNode),
+        r'"a.x\".\"b.y"',
+      );
+      expect(
+        configPathOf(
+          two,
+          (two.nodes['a.x'] as YamlMap).nodes.keys.single as YamlNode,
+        ),
+        '"a.x"."b.y"',
+      );
+    });
+
+    test('looks into an alias once', () {
+      final aliased =
+          loadYamlNode('''
+a: &list [1, 2]
+b: [*list, *list]
+c: &deep [*list, *list]
+d: [*deep, *deep, *deep]
+e: target
+''')
+              as YamlMap;
+
+      expect(configPathOf(aliased, aliased.nodes['e']!), 'e');
+    });
+
     test('is null for a node of another document', () {
       expect(configPathOf(root, loadYamlNode('other: 1')), isNull);
     });

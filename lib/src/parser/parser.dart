@@ -103,13 +103,30 @@ class Parser {
   /// Fails on a key that is not text, wherever it is below the configuration:
   /// the decoders compare keys as strings, and a number or a list that is a key
   /// would only be met as an error about a type, with no word about where.
-  void _checkKeys(YamlMap root, YamlNode node, String file) {
+  void _checkKeys(
+    YamlMap root,
+    YamlNode node,
+    String file, [
+    Set<YamlNode>? seen,
+  ]) {
+    // An alias is the very same node: it is checked once.
+    final visited = seen ?? Set<YamlNode>.identity();
+
+    if (!visited.add(node)) return;
+
     if (node is YamlMap) {
       for (final entry in node.nodes.entries) {
         final key = entry.key as YamlNode;
 
+        // The sections of a pubspec that are not flavorizr's are not read.
+        if (identical(node, root) &&
+            !_isFlavorizrFile(file) &&
+            !(key is YamlScalar && key.value == 'flavorizr')) {
+          continue;
+        }
+
         if (key is! YamlScalar || key.value is! String) {
-          final path = configContainerPathOf(root, key);
+          final path = configContainerPathOf(root, key, key: true);
 
           throw InvalidConfigurationException(
             'The key `${key is YamlScalar ? key.value : key}` of '
@@ -119,18 +136,11 @@ class Parser {
           );
         }
 
-        // The sections of a pubspec that are not flavorizr's are not read.
-        if (node == root &&
-            !_isFlavorizrFile(file) &&
-            key.value != 'flavorizr') {
-          continue;
-        }
-
-        _checkKeys(root, entry.value, file);
+        _checkKeys(root, entry.value, file, visited);
       }
     } else if (node is YamlList) {
       for (final item in node.nodes) {
-        _checkKeys(root, item, file);
+        _checkKeys(root, item, file, visited);
       }
     }
   }
