@@ -40,8 +40,8 @@ part 'flavorizr.g.dart';
   checked: true,
   disallowUnrecognizedKeys: true,
 )
-class Flavorizr {
-  final App? app;
+class FlavorizrConfig {
+  final AppDefaults? app;
 
   @JsonKey(required: true)
   final Map<String, Flavor> flavors;
@@ -98,7 +98,7 @@ class Flavorizr {
   @JsonKey(includeFromJson: false)
   late Map<String, Flavor> macosFirebaseFlavors;
 
-  Flavorizr({
+  FlavorizrConfig({
     this.app,
     required this.flavors,
     required this.assetsUrl,
@@ -122,12 +122,12 @@ class Flavorizr {
          (_, flavor) => flavor.macos?.firebase != null,
        );
 
-  factory Flavorizr.fromJson(Map json) => _$FlavorizrFromJson(json)
+  factory FlavorizrConfig.fromJson(Map json) => _$FlavorizrConfigFromJson(json)
     ..flavorFingerprints = fingerprintFlavors(json)
     ..defaultRecipe = _defaultRecipeFromJson(json['recipes']);
 
-  factory Flavorizr.parse(String yaml) =>
-      checkedYamlDecode(yaml, (o) => Flavorizr.fromJson(o ?? {}));
+  factory FlavorizrConfig.parse(String yaml) =>
+      checkedYamlDecode(yaml, (o) => FlavorizrConfig.fromJson(o ?? {}));
 
   bool get androidFlavorsAvailable => androidFlavors.isNotEmpty;
 

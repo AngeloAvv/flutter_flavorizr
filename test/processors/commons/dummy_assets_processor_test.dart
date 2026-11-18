@@ -41,7 +41,7 @@ class _TestDummyAssetsConfig extends OS with DummyAssetsMixin {
 }
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   setUp(() {

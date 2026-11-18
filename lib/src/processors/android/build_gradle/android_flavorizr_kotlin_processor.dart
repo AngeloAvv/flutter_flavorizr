@@ -72,7 +72,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
 
   void _appendFlavorsDimension(StringBuffer buffer) {
     final flavorDimension =
-        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+        config.app?.android?.flavorDimensions ?? AndroidDefaults.kFlavorDimensionValue;
 
     buffer.writeln('    flavorDimensions("$flavorDimension")');
     buffer.writeln();
@@ -80,7 +80,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
 
   void _appendFlavors(StringBuffer buffer) {
     final flavorDimension =
-        config.app?.android?.flavorDimensions ?? Android.kFlavorDimensionValue;
+        config.app?.android?.flavorDimensions ?? AndroidDefaults.kFlavorDimensionValue;
 
     buffer.writeln('    productFlavors {');
 

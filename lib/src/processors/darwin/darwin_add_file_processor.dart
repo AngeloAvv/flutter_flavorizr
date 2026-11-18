@@ -38,7 +38,7 @@ class DarwinAddFileProcessor extends AbstractProcessor<void> {
     this.projectPath,
     this.filePath, {
     this.groupName,
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   }) : super(config, logger: logger);
 

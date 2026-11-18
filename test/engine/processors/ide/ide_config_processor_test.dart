@@ -42,7 +42,7 @@ void main() {
 
   FlavorizrContext contextFor(String yaml, {Set<String> previous = const {}}) =>
       FlavorizrContext(
-        config: Flavorizr.parse(yaml),
+        config: FlavorizrConfig.parse(yaml),
         root: root,
         projectRoot: root,
         logger: TestUtils.quietLogger(),

@@ -36,7 +36,7 @@ import 'package:sprintf/sprintf.dart';
 import '../../../test_utils.dart';
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
   late Directory originalDir;
 

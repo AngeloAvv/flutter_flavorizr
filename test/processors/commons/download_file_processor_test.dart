@@ -31,7 +31,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../test_utils.dart';
 
-Flavorizr _configDownloadingFrom(String url) => Flavorizr.parse('''
+FlavorizrConfig _configDownloadingFrom(String url) => FlavorizrConfig.parse('''
 assetsUrl: $url
 flavors:
   apple:

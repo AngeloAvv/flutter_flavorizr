@@ -130,7 +130,7 @@ void main() {
         processors,
         requested: requested ?? processors.map((p) => p.id),
       ),
-      config: Flavorizr.parse(_config(flavors)),
+      config: FlavorizrConfig.parse(_config(flavors)),
       projectRoot: project,
       paths: [
         'android/app/flavorizr.gradle',

@@ -65,7 +65,7 @@ final class RunPlan {
 }
 
 /// The platforms [config] has no flavors for, which are left out of a run.
-Set<String> platformsWithoutFlavors(Flavorizr config) => {
+Set<String> platformsWithoutFlavors(FlavorizrConfig config) => {
   if (!config.androidFlavorsAvailable) 'android',
   if (!config.iosFlavorsAvailable) 'ios',
   if (!config.macosFlavorsAvailable) 'macos',
@@ -83,7 +83,7 @@ Set<String> platformsWithoutFlavors(Flavorizr config) => {
 /// has to cover. Neither are the ones that have nothing to make for the
 /// configuration: `ide:config` with no `ide`, and the Firebase ones with no
 /// Firebase configuration on their platform.
-Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
+Set<String> engineIdsFor(ProcessorRegistry registry, FlavorizrConfig config) {
   final skipped = platformsWithoutFlavors(config);
 
   // These have nothing to write for a configuration that does not ask for
@@ -117,7 +117,7 @@ Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
 /// a recipe that is not valid.
 RunPlan resolveRunPlan({
   required ProcessorRegistry registry,
-  required Flavorizr config,
+  required FlavorizrConfig config,
   List<String> targets = const [],
 }) {
   final catalog = RecipeCatalog(

@@ -53,7 +53,7 @@ void main() {
     XcodeProject project, {
     Set<String> previous = const {},
   }) => FlavorizrContext(
-    config: Flavorizr.parse(
+    config: FlavorizrConfig.parse(
       'flavors:\n  dev:\n    app:\n      name: dev\n'
       '    ios:\n      bundleId: com.example.dev\n',
     ),

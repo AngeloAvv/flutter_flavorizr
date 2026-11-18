@@ -45,7 +45,7 @@ class _StubStringProcessor extends StringProcessor {
 }
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   setUp(() {

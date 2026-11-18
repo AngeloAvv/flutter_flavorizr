@@ -37,7 +37,7 @@ void main() {
   RunPlan resolve(String yaml, [List<String> targets = const []]) =>
       resolveRunPlan(
         registry: registry,
-        config: Flavorizr.parse(yaml),
+        config: FlavorizrConfig.parse(yaml),
         targets: targets,
       );
 
@@ -239,7 +239,7 @@ flavors:
 
     test('are not what a full run of a project with no linux flavors has to '
         'cover, and are what one with them has to', () {
-      final config = Flavorizr.parse(android);
+      final config = FlavorizrConfig.parse(android);
 
       expect(engineIdsFor(registry, config), {
         'android:androidManifest',
@@ -248,7 +248,7 @@ flavors:
         'android:icons',
         'flutter:flavors',
       });
-      expect(engineIdsFor(registry, Flavorizr.parse(linux)), {
+      expect(engineIdsFor(registry, FlavorizrConfig.parse(linux)), {
         'linux:cmake',
         'linux:runnerCmake',
         'linux:myApplication',
@@ -297,10 +297,10 @@ flavors:
     test('are not what a full run of a project with no windows flavors has '
         'to cover, and are what one with them has to', () {
       expect(
-        engineIdsFor(registry, Flavorizr.parse(android)),
+        engineIdsFor(registry, FlavorizrConfig.parse(android)),
         isNot(contains('windows:cmake')),
       );
-      expect(engineIdsFor(registry, Flavorizr.parse(windows)), {
+      expect(engineIdsFor(registry, FlavorizrConfig.parse(windows)), {
         'windows:mainCppTemplate',
         'windows:runnerRcTemplate',
         'windows:cmake',

@@ -35,7 +35,7 @@ import '../../../test_utils.dart';
 
 typedef _Render =
     String Function(
-      Flavorizr config,
+      FlavorizrConfig config,
       String flavorName,
       Flavor flavor,
       Target target,

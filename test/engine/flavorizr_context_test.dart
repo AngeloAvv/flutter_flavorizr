@@ -37,7 +37,7 @@ import '../test_utils.dart';
 void main() {
   late Directory root;
   late Directory projectRoot;
-  late Flavorizr config;
+  late FlavorizrConfig config;
 
   FlavorizrContext buildContext({
     Set<String> previousFlavors = const {},
@@ -59,7 +59,7 @@ void main() {
 
     root = Directory(p.join(temp.path, 'shadow'))..createSync();
     projectRoot = Directory(p.join(temp.path, 'project'))..createSync();
-    config = Flavorizr.parse('''
+    config = FlavorizrConfig.parse('''
 assetsUrl: https://example.com/assets.zip
 flavors:
   apple:

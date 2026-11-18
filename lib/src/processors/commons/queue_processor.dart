@@ -31,7 +31,7 @@ class QueueProcessor extends AbstractProcessor {
 
   QueueProcessor(
     this.processors, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required super.logger,
   }) : super(config);
 

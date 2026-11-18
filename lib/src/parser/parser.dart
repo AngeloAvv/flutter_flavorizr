@@ -47,7 +47,7 @@ class Parser {
 
   const Parser({required this.pubspecPath, required this.flavorizrPath});
 
-  Flavorizr parse() {
+  FlavorizrConfig parse() {
     assert(flavorizrPath.isNotEmpty || pubspecPath.isNotEmpty);
 
     final validFileNames = [flavorizrPath, pubspecPath]
@@ -94,7 +94,7 @@ class Parser {
 
     try {
       return isFlavorizrFile
-          ? Flavorizr.fromJson(root)
+          ? FlavorizrConfig.fromJson(root)
           : Pubspec.fromJson(root).flavorizr;
     } on CheckedFromJsonException catch (e) {
       throw _translate(toParsedYamlException(e), root, configFileName);

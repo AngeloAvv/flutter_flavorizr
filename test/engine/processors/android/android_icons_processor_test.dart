@@ -74,7 +74,7 @@ void main() {
 
   FlavorizrContext contextFor(String yaml, {Directory? workspace}) =>
       FlavorizrContext(
-        config: Flavorizr.parse(yaml),
+        config: FlavorizrConfig.parse(yaml),
         root: workspace ?? root,
         projectRoot: projectRoot,
         logger: TestUtils.quietLogger(),

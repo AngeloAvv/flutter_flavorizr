@@ -66,7 +66,7 @@ FlavorizrContext _context(
       : XcodeprojResource.iosArtifact;
 
   return FlavorizrContext(
-    config: Flavorizr.parse(
+    config: FlavorizrConfig.parse(
       'flavors:\n  dev:\n    app:\n      name: dev\n'
       '    ios:\n      bundleId: com.example.dev\n',
     ),

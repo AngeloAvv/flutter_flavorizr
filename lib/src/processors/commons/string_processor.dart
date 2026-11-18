@@ -32,7 +32,7 @@ abstract class StringProcessor extends AbstractProcessor<String> {
 
   StringProcessor({
     this.input,
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   }) : super(config, logger: logger);
 

@@ -46,7 +46,7 @@ void main() {
   late Directory legacy;
   late Directory engine;
 
-  final config = Flavorizr.parse(
+  final config = FlavorizrConfig.parse(
     'flavors:\n  apple:\n    app:\n      name: apple\n'
     '    ios:\n      bundleId: com.example.apple\n',
   );

@@ -34,7 +34,7 @@ class CopyFolderProcessor extends AbstractProcessor<void> {
   CopyFolderProcessor(
     this.source,
     this.destination, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required super.logger,
   }) : super(config);
 

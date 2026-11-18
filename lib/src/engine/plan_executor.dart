@@ -100,7 +100,7 @@ class PlanExecutor {
   /// [observer].
   Future<ExecutionReport> execute(
     ExecutionPlan plan, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Directory projectRoot,
     required Iterable<String> paths,
     required CommitRun commit,

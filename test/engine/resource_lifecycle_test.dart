@@ -126,7 +126,7 @@ void main() {
   setUp(() {
     events = [];
     ctx = FlavorizrContext(
-      config: Flavorizr.parse('''
+      config: FlavorizrConfig.parse('''
 flavors:
   apple:
     app:

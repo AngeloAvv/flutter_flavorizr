@@ -95,7 +95,7 @@ void main() {
   late Directory projectRoot;
 
   FlavorizrContext contextFor(String yaml) => FlavorizrContext(
-    config: Flavorizr.parse(yaml),
+    config: FlavorizrConfig.parse(yaml),
     root: root,
     projectRoot: projectRoot,
     logger: TestUtils.quietLogger(),

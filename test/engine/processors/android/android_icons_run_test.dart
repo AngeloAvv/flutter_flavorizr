@@ -62,7 +62,7 @@ void main() {
 
     final report = await PlanExecutor(logger: TestUtils.quietLogger()).execute(
       resolveExecutionPlan(processors, requested: ['android:icons']),
-      config: Flavorizr.parse(config),
+      config: FlavorizrConfig.parse(config),
       projectRoot: project,
       // The icons are written below `src`: the caller whitelists it.
       paths: ['android/app/src'],

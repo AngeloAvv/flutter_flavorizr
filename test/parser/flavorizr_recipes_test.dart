@@ -48,14 +48,14 @@ $extra''';
 void main() {
   group('recipes', () {
     test('are absent by default', () {
-      final config = Flavorizr.parse(_config());
+      final config = FlavorizrConfig.parse(_config());
 
       expect(config.recipes, isNull);
       expect(config.defaultRecipe, isNull);
     });
 
     test('are read as lists of processor ids and recipes', () {
-      final config = Flavorizr.parse(
+      final config = FlavorizrConfig.parse(
         _config(
           extra: '''
 recipes:
@@ -75,7 +75,7 @@ recipes:
     });
 
     test('a `default` that is a name picks the recipe to run by default', () {
-      final config = Flavorizr.parse(
+      final config = FlavorizrConfig.parse(
         _config(
           extra: '''
 recipes:
@@ -92,7 +92,7 @@ recipes:
     });
 
     test('a `default` that is a list is a recipe like any other', () {
-      final config = Flavorizr.parse(
+      final config = FlavorizrConfig.parse(
         _config(extra: 'recipes:\n  default: [android]\n'),
       );
 
@@ -115,7 +115,7 @@ recipes:
 
     test('a recipe that is not a list of names is a format error', () {
       expect(
-        () => Flavorizr.parse(_config(extra: 'recipes:\n  ci: android\n')),
+        () => FlavorizrConfig.parse(_config(extra: 'recipes:\n  ci: android\n')),
         throwsA(anything),
       );
     });
@@ -123,7 +123,7 @@ recipes:
 
   group('flavor fingerprints', () {
     test('there is one per flavor and it is a sha256', () {
-      final config = Flavorizr.parse(_config());
+      final config = FlavorizrConfig.parse(_config());
 
       expect(config.flavorFingerprints.keys, ['apple', 'banana']);
       expect(
@@ -134,22 +134,22 @@ recipes:
 
     test('the same configuration always has the same fingerprints', () {
       expect(
-        Flavorizr.parse(_config()).flavorFingerprints,
-        Flavorizr.parse(_config()).flavorFingerprints,
+        FlavorizrConfig.parse(_config()).flavorFingerprints,
+        FlavorizrConfig.parse(_config()).flavorFingerprints,
       );
     });
 
     test('a change to a flavor changes its fingerprint and no other', () {
-      final before = Flavorizr.parse(_config()).flavorFingerprints;
-      final after = Flavorizr.parse(_config(name: 'Pear')).flavorFingerprints;
+      final before = FlavorizrConfig.parse(_config()).flavorFingerprints;
+      final after = FlavorizrConfig.parse(_config(name: 'Pear')).flavorFingerprints;
 
       expect(after['apple'], isNot(before['apple']));
       expect(after['banana'], before['banana']);
     });
 
     test('a change of the shared `app` section changes every flavor', () {
-      final before = Flavorizr.parse(_config()).flavorFingerprints;
-      final after = Flavorizr.parse(
+      final before = FlavorizrConfig.parse(_config()).flavorFingerprints;
+      final after = FlavorizrConfig.parse(
         _config().replaceFirst('"tier"', '"kind"'),
       ).flavorFingerprints;
 
@@ -158,11 +158,11 @@ recipes:
     });
 
     test('the order of the keys does not matter', () {
-      final a = Flavorizr.parse(
+      final a = FlavorizrConfig.parse(
         'flavors:\n  x:\n    app:\n      name: X\n    android:\n'
         '      applicationId: a.b\n',
       );
-      final b = Flavorizr.parse(
+      final b = FlavorizrConfig.parse(
         'flavors:\n  x:\n    android:\n      applicationId: a.b\n'
         '    app:\n      name: X\n',
       );

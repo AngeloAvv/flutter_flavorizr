@@ -93,7 +93,7 @@ void main() {
     );
     write(
       'lib/flavors.g.dart',
-      flavorsGeneratedSource(Flavorizr.parse(_config)),
+      flavorsGeneratedSource(FlavorizrConfig.parse(_config)),
     );
     write('lib/flavors.dart', flavorsScaffoldSource);
     write('bin/check.dart', _check);

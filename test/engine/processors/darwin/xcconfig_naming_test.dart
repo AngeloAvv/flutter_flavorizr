@@ -142,7 +142,7 @@ void main() {
     late String bundle;
 
     FlavorizrContext context(XcodeProject project) => FlavorizrContext(
-      config: Flavorizr.parse(
+      config: FlavorizrConfig.parse(
         'flavors:\n  dev:\n    app:\n      name: dev\n'
         '    ios:\n      bundleId: com.example.dev\n',
       ),

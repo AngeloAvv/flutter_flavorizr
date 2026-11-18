@@ -52,7 +52,7 @@ class _RecordingProcessor extends AbstractProcessor<void> {
 }
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   setUp(() {

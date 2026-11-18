@@ -221,7 +221,7 @@ class Processor extends AbstractProcessor<void> {
   }
 
   static Map<String, AbstractProcessor<void> Function()>
-  _initAvailableProcessors(Flavorizr flavorizr, {required Logger logger}) {
+  _initAvailableProcessors(FlavorizrConfig flavorizr, {required Logger logger}) {
     return {
       // Commons
       'assets:download': () => DownloadFileProcessor(

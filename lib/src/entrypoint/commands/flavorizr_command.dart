@@ -146,7 +146,7 @@ abstract class FlavorizrCommand extends Command<int> {
   ///
   /// A configuration that exists and cannot be used is not absent: it fails
   /// like [loadConfig] does.
-  Flavorizr? loadConfigIfPresent() {
+  FlavorizrConfig? loadConfigIfPresent() {
     try {
       return loadConfig();
     } on CommandFailure catch (failure) {
@@ -166,7 +166,7 @@ abstract class FlavorizrCommand extends Command<int> {
   /// `flavorizr` section of `pubspec.yaml`.
   ///
   /// Fails with the exit code of a configuration that cannot be used.
-  Flavorizr loadConfig() {
+  FlavorizrConfig loadConfig() {
     final parser = Parser(
       pubspecPath: p.join(context.projectRoot.path, 'pubspec'),
       flavorizrPath: p.join(context.projectRoot.path, 'flavorizr'),
@@ -208,7 +208,7 @@ abstract class TargetCommand extends FlavorizrCommand {
   List<String> get targets => [...argResults!.rest, ..._processors.targets];
 
   /// What to run for [targets] in [config].
-  RunPlan resolve(Flavorizr config) {
+  RunPlan resolve(FlavorizrConfig config) {
     // `-p` with ids that are gone only: nothing, and not the default recipe.
     final plan = targets.isEmpty && _processors.leavesNothing
         ? RunPlan(
@@ -238,7 +238,7 @@ abstract class TargetCommand extends FlavorizrCommand {
   /// It is meant to run before anything is done, whatever the targets: it
   /// compares the configuration with the lock, and nothing is written. See
   /// [checkRemoval].
-  Future<void> checkNothingIsDropped(Flavorizr config) async => checkRemoval(
+  Future<void> checkNothingIsDropped(FlavorizrConfig config) async => checkRemoval(
     previous: await LockStore(
       context.projectRoot,
       runningVersion: context.version,
@@ -257,7 +257,7 @@ abstract class TargetCommand extends FlavorizrCommand {
   /// none. Fails when one of them does.
   Future<EnginePreview?> dryRun(
     RunPlan plan,
-    Flavorizr config, {
+    FlavorizrConfig config, {
     bool overwriteScaffold = false,
   }) async {
     if (plan.engine.steps.isEmpty) return null;

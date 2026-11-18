@@ -36,7 +36,7 @@ class TestUtils {
 
   static Logger quietLogger() => Logger(level: Level.quiet);
 
-  static Flavorizr parseFlavorizr(
+  static FlavorizrConfig parseFlavorizr(
     String pubspecPath, {
     String flavorizrPath = 'test_resources/non_existent',
   }) {

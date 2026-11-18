@@ -37,7 +37,7 @@ import '../test_utils.dart';
 import 'cli_fixture.dart';
 
 void main() {
-  final config = Flavorizr.parse(CliFixture.config(['apple']));
+  final config = FlavorizrConfig.parse(CliFixture.config(['apple']));
 
   test('refuses to run on a project that is not the working directory', () {
     final elsewhere = Directory.systemTemp.createTempSync('flavorizr_legacy_');

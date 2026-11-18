@@ -38,7 +38,7 @@ class ShellProcessor extends AbstractProcessor<void> {
     this._path,
     this._args, {
     String? workingDirectory,
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   })  : _workingDirectory = workingDirectory,
         super(config, logger: logger);

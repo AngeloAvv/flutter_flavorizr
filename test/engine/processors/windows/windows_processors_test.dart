@@ -267,7 +267,7 @@ void main() {
     const processor = WindowsRunnerRcTemplateProcessor();
     final pristine = _resource('runner_rc_content_processor_test/Runner.rc');
     FlavorizrContext contextOf(String title) => FlavorizrContext(
-      config: Flavorizr.parse(
+      config: FlavorizrConfig.parse(
         'flavors:\n  apple:\n    app:\n      name: "$title"\n    windows: {}\n',
       ),
       root: root,
