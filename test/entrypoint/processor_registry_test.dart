@@ -62,8 +62,8 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   group('ProcessorRegistry', () {
-    test('runs the ported Android, Linux, Windows, Flutter and xcconfig '
-        'processors on the engine', () {
+    test('runs the ported Android, Linux, Windows, Flutter, xcconfig and '
+        'Info.plist processors on the engine', () {
       expect(registry.engineIds, {
         'android:androidManifest',
         'android:flavorizrGradle',
@@ -78,6 +78,8 @@ void main() {
         'ios:xcconfig',
         'macos:xcconfig',
         'macos:configs',
+        'ios:plist',
+        'macos:plist',
         'flutter:flavors',
         'flutter:pages',
         'flutter:app',
@@ -137,6 +139,8 @@ void main() {
           'ios:xcconfig',
           'macos:xcconfig',
           'macos:configs',
+          'ios:plist',
+          'macos:plist',
           'flutter:flavors',
         });
       },

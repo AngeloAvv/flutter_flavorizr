@@ -41,10 +41,12 @@ const _macosProject = 'macos/Runner.xcodeproj';
 const _iosPbxproj = '$_iosProject/project.pbxproj';
 const _macosPbxproj = '$_macosProject/project.pbxproj';
 
-/// The processors of this slice, with the Flutter one, which makes the run a
+/// The processors of this slice, with the plist and Flutter ones, which makes the run a
 /// full one of what a project with no Android, Linux or Windows flavors has.
 const _targets = [
   'flutter:flavors',
+  'ios:plist',
+  'macos:plist',
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
@@ -81,6 +83,19 @@ List<String> _xcconfigResources(XcodeProject project) => [
           file.path!,
 ];
 
+/// The `Info.plist` of the platforms, as `flutter create` writes them.
+void _writePlists(CliFixture project) {
+  for (final (platform, plist) in [
+    ('ios', 'IosInfoPlistOriginal.plist'),
+    ('macos', 'MacosInfoPlistOriginal.plist'),
+  ]) {
+    project.write(
+      '$platform/Runner/Info.plist',
+      File('test_resources/darwin/info_plist_test/$plist').readAsStringSync(),
+    );
+  }
+}
+
 void main() {
   late CliFixture project;
 
@@ -93,6 +108,7 @@ void main() {
   setUp(() {
     project = CliFixture(android: false);
     project.write('flavorizr.yaml', _config(['citrus', 'dates']));
+    _writePlists(project);
     for (final platform in ['ios', 'macos']) {
       project.write(
         '$platform/Runner.xcodeproj/project.pbxproj',
@@ -326,6 +342,7 @@ void main() {
         final other = CliFixture(android: false);
         addTearDown(other.dispose);
         other.write('flavorizr.yaml', _config(['citrus', 'dates']));
+        _writePlists(other);
         for (final platform in ['ios', 'macos']) {
           other.write(
             '$platform/Runner.xcodeproj/project.pbxproj',
@@ -449,6 +466,7 @@ void main() {
       final fresh = CliFixture(android: false);
       addTearDown(fresh.dispose);
       fresh.write('flavorizr.yaml', _config(['citrus']));
+      _writePlists(fresh);
       for (final platform in ['ios', 'macos']) {
         fresh.write(
           '$platform/Runner.xcodeproj/project.pbxproj',

@@ -34,6 +34,8 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
@@ -132,8 +134,8 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android, Linux, Windows, Flutter and
-  /// xcconfig processors that were ported run on the engine, every other 2.x
+  /// The registry of this version: the Android, Linux, Windows, Flutter,
+  /// xcconfig and Info.plist processors that were ported run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
@@ -168,6 +170,16 @@ class ProcessorRegistry {
       EngineProcessor(
         const MacosConfigsProcessor(),
         paths: {K.macOSConfigsPath},
+      ),
+      EngineProcessor(
+        const IosInfoPlistPatchProcessor(),
+        paths: {K.iOSPListPath},
+        ownedContent: {K.iOSPListPath: InfoPlistEditor.iosOwnedContent},
+      ),
+      EngineProcessor(
+        const MacosInfoPlistPatchProcessor(),
+        paths: {K.macOSPlistPath},
+        ownedContent: {K.macOSPlistPath: InfoPlistEditor.macosOwnedContent},
       ),
       EngineProcessor(
         const LinuxCMakeListsPatchProcessor(),
