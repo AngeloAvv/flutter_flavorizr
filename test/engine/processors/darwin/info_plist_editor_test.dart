@@ -249,6 +249,30 @@ void main() {
       );
     });
 
+    test('does not take a value from a second dictionary for a key left '
+        'without one', () {
+      expect(
+        () => InfoPlistEditor.withStrings(
+          '<plist version="1.0"><dict><key>CFBundleName</key></dict>'
+          '<dict><string>old</string></dict></plist>',
+          {'CFBundleName': 'x'},
+        ),
+        throwsA(isA<MalformedResourceException>()),
+      );
+    });
+
+    test('reads a self-closing key as the empty key', () {
+      expect(
+        InfoPlistEditor.readStrings(
+          _plist(
+            '<key/><string>old</string>\n<key>A</key><string>a</string>\n',
+          ),
+          ['', 'A'],
+        ),
+        {'': 'old', 'A': 'a'},
+      );
+    });
+
     test('escapes a value that has characters of the markup', () {
       final patched = InfoPlistEditor.withStrings(
         _plist('<key>A</key><string/>\n<key>B</key><string>b</string>\n'),

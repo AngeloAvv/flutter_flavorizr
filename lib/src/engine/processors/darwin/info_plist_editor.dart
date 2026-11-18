@@ -179,8 +179,14 @@ abstract final class InfoPlistEditor {
               entries[key] = const _Entry.unreadable();
             }
 
-            keyText = StringBuffer();
-            key = null;
+            if (event.isSelfClosing) {
+              // A self-closing key has no end event: its name is empty.
+              keyText = null;
+              key = '';
+            } else {
+              keyText = StringBuffer();
+              key = null;
+            }
           } else if (key != null) {
             final owner = key;
             key = null;
@@ -220,6 +226,10 @@ abstract final class InfoPlistEditor {
         if (path.isNotEmpty) path.removeLast();
 
         final parent = path.join('/');
+
+        // Whatever follows the first top level dictionary is not the plist: a
+        // key left without a value must not take one from a later dictionary.
+        if (parent == 'plist' && event.name == 'dict' && foundDict) break;
 
         if (parent == 'plist/dict' && event.name == 'key' && keyText != null) {
           key = keyText.toString();
