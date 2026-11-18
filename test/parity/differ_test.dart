@@ -166,6 +166,24 @@ void main() {
       });
     }
 
+    test('does not take a Profile case of another flavor', () {
+      const golden0 =
+          'if [ "\$CONFIGURATION" == "Debug-apple" ] || '
+          '[ "\$CONFIGURATION" == "Release-apple" ]; then\n';
+      const actual0 =
+          'if [ "\$CONFIGURATION" == "Debug-apple" ] || '
+          '[ "\$CONFIGURATION" == "Profile-banana" ] || '
+          '[ "\$CONFIGURATION" == "Release-apple" ]; then\n';
+
+      write(golden, 'ios/firebaseScript.sh', golden0);
+      write(actual, 'ios/firebaseScript.sh', actual0);
+
+      expect(
+        compareTrees(golden, actual, whitelist: whitelist).isClean,
+        isFalse,
+      );
+    });
+
     test('does not take another change of the script', () {
       write(golden, 'ios/firebaseScript.sh', script(['apple'], profile: false));
       write(

@@ -89,7 +89,7 @@
   only-comments: true
   drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
   moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )| \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-[\w./-]+\\" \]'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]'
   reason: >-
     dart_xcodeproj 0.4.0 (#513) prints only the annotations of its object model,
     as Ruby's xcodeproj does, where 0.3.0 guessed them from the shape of the
@@ -114,7 +114,7 @@
   only-comments: true
   drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
   moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )| \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-[\w./-]+\\" \]'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]'
   reason: >-
     Same as ios/Runner.xcodeproj/project.pbxproj: the comments are the ones
     Ruby's xcodeproj writes (#513), and macos:configs on the engine (#518) does
@@ -129,13 +129,13 @@
     2.6.0 read `instructions` (#535): `fixtures/flavorizr.3.yaml` lists the same
     processors under the new key.
 - path: ios/firebaseScript.sh
-  ignore: ' \|\| \[ "\$CONFIGURATION" == "Profile-[\w./-]+" \]'
+  ignore: '(?<=== "Debug-([\w./-]+)" \]) \|\| \[ "\$CONFIGURATION" == "Profile-\1" \]'
   reason: >-
     ios:firebase on the engine (#521) copies the configuration for the Profile
     build configurations too, where 2.6.0 only did for Debug and Release, and
     kept whatever configuration was there in a Profile build. The rest of the
     script is the golden one.
 - path: macos/firebaseScript.sh
-  ignore: ' \|\| \[ "\$CONFIGURATION" == "Profile-[\w./-]+" \]'
+  ignore: '(?<=== "Debug-([\w./-]+)" \]) \|\| \[ "\$CONFIGURATION" == "Profile-\1" \]'
   reason: >-
     Same as ios/firebaseScript.sh, for macos:firebase.
