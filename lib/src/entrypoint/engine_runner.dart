@@ -157,6 +157,7 @@ Future<EngineRun> runEngine(
     projectRoot: context.projectRoot,
     paths: plan.paths,
     resources: registry.resources,
+    selected: plan.selected,
     previousFlavors: previous?.flavorNames ?? const {},
     previousObjects: {
       for (final MapEntry(key: id, value: lock)

@@ -62,33 +62,32 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   group('ProcessorRegistry', () {
-    test(
-      'runs the ported Android, Linux, Windows, Flutter, xcconfig and Podfile '
-      'processors on the engine',
-      () {
-        expect(registry.engineIds, {
-          'android:androidManifest',
-          'android:flavorizrGradle',
-          'android:buildGradle',
-          'android:icons',
-          'linux:cmake',
-          'linux:runnerCmake',
-          'linux:myApplication',
-          'windows:mainCppTemplate',
-          'windows:runnerRcTemplate',
-          'windows:cmake',
-          'ios:xcconfig',
-          'macos:xcconfig',
-          'macos:configs',
-          'ios:podfile',
-          'macos:podfile',
-          'flutter:flavors',
-          'flutter:pages',
-          'flutter:app',
-          'flutter:main',
-        });
-      },
-    );
+    test('runs the ported Android, Linux, Windows, Flutter, xcconfig, Podfile '
+        'and Info.plist processors on the engine', () {
+      expect(registry.engineIds, {
+        'android:androidManifest',
+        'android:flavorizrGradle',
+        'android:buildGradle',
+        'android:icons',
+        'linux:cmake',
+        'linux:runnerCmake',
+        'linux:myApplication',
+        'windows:mainCppTemplate',
+        'windows:runnerRcTemplate',
+        'windows:cmake',
+        'ios:xcconfig',
+        'macos:xcconfig',
+        'macos:configs',
+        'ios:podfile',
+        'macos:podfile',
+        'ios:plist',
+        'macos:plist',
+        'flutter:flavors',
+        'flutter:pages',
+        'flutter:app',
+        'flutter:main',
+      });
+    });
 
     test('registers the shared Xcode projects of both platforms', () {
       expect(registry.resources.map((resource) => resource.key), {
@@ -144,6 +143,8 @@ void main() {
           'macos:configs',
           'ios:podfile',
           'macos:podfile',
+          'ios:plist',
+          'macos:plist',
           'flutter:flavors',
         });
       },

@@ -44,6 +44,8 @@ const _macosPbxproj = '$_macosProject/project.pbxproj';
 /// The processors of a full run of a project with only Apple flavors.
 const _targets = [
   'flutter:flavors',
+  'ios:plist',
+  'macos:plist',
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
@@ -82,6 +84,19 @@ List<String> _xcconfigResources(XcodeProject project) => [
           file.path!,
 ];
 
+/// The `Info.plist` of the platforms, as `flutter create` writes them.
+void _writePlists(CliFixture project) {
+  for (final (platform, plist) in [
+    ('ios', 'IosInfoPlistOriginal.plist'),
+    ('macos', 'MacosInfoPlistOriginal.plist'),
+  ]) {
+    project.write(
+      '$platform/Runner/Info.plist',
+      File('test_resources/darwin/info_plist_test/$plist').readAsStringSync(),
+    );
+  }
+}
+
 void main() {
   late CliFixture project;
 
@@ -94,6 +109,7 @@ void main() {
   setUp(() {
     project = CliFixture(android: false);
     project.write('flavorizr.yaml', _config(['citrus', 'dates']));
+    _writePlists(project);
     for (final platform in ['ios', 'macos']) {
       project.write(
         '$platform/Runner.xcodeproj/project.pbxproj',
@@ -327,6 +343,7 @@ void main() {
         final other = CliFixture(android: false);
         addTearDown(other.dispose);
         other.write('flavorizr.yaml', _config(['citrus', 'dates']));
+        _writePlists(other);
         for (final platform in ['ios', 'macos']) {
           other.write(
             '$platform/Runner.xcodeproj/project.pbxproj',
@@ -450,6 +467,7 @@ void main() {
       final fresh = CliFixture(android: false);
       addTearDown(fresh.dispose);
       fresh.write('flavorizr.yaml', _config(['citrus']));
+      _writePlists(fresh);
       for (final platform in ['ios', 'macos']) {
         fresh.write(
           '$platform/Runner.xcodeproj/project.pbxproj',

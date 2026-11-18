@@ -37,6 +37,8 @@ const _paths = [_ios, _macos];
 /// What a full run of a project with only iOS and macOS flavors covers.
 const _fullRun = [
   'flutter:flavors',
+  'ios:plist',
+  'macos:plist',
   'ios:podfile',
   'macos:podfile',
   'ios:xcconfig',
@@ -81,6 +83,15 @@ void main() {
     project.write('flavorizr.yaml', _config(['apple', 'banana']));
     for (final path in _paths) {
       project.write(path, _pristine);
+    }
+    for (final (platform, plist) in [
+      ('ios', 'IosInfoPlistOriginal.plist'),
+      ('macos', 'MacosInfoPlistOriginal.plist'),
+    ]) {
+      project.write(
+        '$platform/Runner/Info.plist',
+        File('test_resources/darwin/info_plist_test/$plist').readAsStringSync(),
+      );
     }
     for (final platform in ['ios', 'macos']) {
       final path = '$platform/Runner.xcodeproj/project.pbxproj';

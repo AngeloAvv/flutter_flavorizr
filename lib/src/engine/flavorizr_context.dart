@@ -69,6 +69,15 @@ class FlavorizrContext {
   /// It is what [previousObjectsOf] and [ownObjects] speak for.
   final String? processorId;
 
+  /// The ids of every processor the run was asked for, the ones that run on
+  /// the legacy pipeline too.
+  ///
+  /// A processor that depends on a step it does not run itself, such as the
+  /// launch screen the plist points to, reads it here and not in the
+  /// configuration: the instructions of the file are not what a run does when
+  /// it is given targets, or none.
+  final Set<String> selected;
+
   final Map<ResourceKey<Object?>, Object?> _resources;
   final List<Artifact> _tracked = [];
   final Map<String, List<Artifact>> _trackedBy = {};
@@ -90,7 +99,9 @@ class FlavorizrContext {
     Map<ResourceKey<Object?>, Object?> resources = const {},
     this.processorId,
     Map<String, Map<String, Set<String>>> previousObjects = const {},
-  }) : _resources = Map.of(resources),
+    Set<String> selected = const {},
+  }) : selected = Set.unmodifiable(selected),
+       _resources = Map.of(resources),
        _previousObjects = _canonicalObjects(previousObjects),
        root = Directory(p.normalize(root.absolute.path)),
        projectRoot = Directory(p.normalize(projectRoot.absolute.path)),

@@ -145,7 +145,7 @@ flavorizr:
 | ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
 | ios:dummyAssets         | iOS           | Generates some default icons for your custom flavors                    |
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
-| ios:plist               | iOS           | Updates the info.plist file                                             |
+| ios:plist               | iOS           | Sets the bundle name keys of Info.plist in place, keeping its format    |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
 | macos:podfile           | macOS         | Maps the build configurations of each flavor in the Podfile             |
 | macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
@@ -154,7 +154,7 @@ flavorizr:
 | macos:schema            | macOS         | Creates a set of schemas for each flavor                                |
 | macos:dummyAssets       | macOS         | Generates some default icons for your custom flavors                    |
 | macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
-| macos:plist             | macOS         | Updates the info.plist file                                             |
+| macos:plist             | macOS         | Sets the bundle name keys of Info.plist in place, keeping its format    |
 | linux:cmake             | Linux         | Sets the application ID for each flavor in CMakeLists.txt               |
 | linux:runnerCmake       | Linux         | Forwards FLUTTER_APP_FLAVOR into runner/CMakeLists.txt so it's available to native code |
 | linux:myApplication     | Linux         | Sets the window title for each flavor in my_application.cc              |
