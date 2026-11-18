@@ -8,4 +8,5 @@ flavorizr:
       app:
         name: "Apple"
       android:
+        applicationId: "com.example.apple"
         applicationID: "com.example.apple"

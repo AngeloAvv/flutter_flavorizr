@@ -40,7 +40,10 @@ String? didYouMean(String unknown, Iterable<String> known) {
   }
 
   String? best;
-  var bestDistance = (unknown.length / 3).ceil().clamp(1, 3) + 1;
+  // At most a third of the key, rounded up, between one and three edits: the
+  // length is the one of the key without its separators and case, which is what
+  // is compared.
+  var bestDistance = (wanted.length / 3).ceil().clamp(1, 3) + 1;
 
   for (final key in known) {
     final distance = _distance(wanted, normalize(key));

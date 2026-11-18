@@ -11,6 +11,8 @@ AdaptiveIcon _$AdaptiveIconFromJson(Map json) =>
       $checkKeys(
         json,
         allowedKeys: const ['foreground', 'background', 'monochrome'],
+        requiredKeys: const ['foreground', 'background'],
+        disallowNullValues: const ['foreground', 'background'],
       );
       final val = AdaptiveIcon(
         foreground: $checkedConvert('foreground', (v) => v as String),

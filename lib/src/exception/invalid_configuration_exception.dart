@@ -80,12 +80,13 @@ class UnknownFieldsException extends InvalidConfigurationException {
           'did you mean `${suggestions[field]}` instead of `$field`?',
     ];
 
+    final withoutHint = fields.any((field) => suggestions[field] == null);
+
     return [
       'Unknown $noun $unknown in $where',
-      if (hints.isNotEmpty)
-        ': ${hints.join(' ')}'
-      else
-        '. The known keys are: ${allowedKeys.join(', ')}.',
+      if (hints.isNotEmpty) ': ${hints.join(' ')}',
+      if (withoutHint)
+        '${hints.isEmpty ? '.' : ''} The known keys are: ${allowedKeys.join(', ')}.',
     ].join();
   }
 }

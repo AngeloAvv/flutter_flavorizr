@@ -165,8 +165,23 @@ void main() {
       expect(error.fields, ['applicationID']);
       expect(error.path, 'flavorizr.flavors.apple.android');
       expect(error.suggestions, {'applicationID': 'applicationId'});
-      expect(error.location, 'pubspec.yaml:11:9');
+      // The typo is the second key of its map: its own line, not the map's.
+      expect(error.location, 'pubspec.yaml:12:9');
     });
+
+    test(
+      'lists the known keys too when some of the keys have no suggestion',
+      () {
+        final error = unknown('unknown_nested', file: 'flavorizr_fixed');
+
+        expect(error.fields, ['nme', 'other']);
+        expect(
+          error.toString(),
+          contains('did you mean `name` instead of `nme`?'),
+        );
+        expect(error.toString(), contains('The known keys are:'));
+      },
+    );
 
     test('lists the known keys when none is close', () {
       final error = unknown('unknown_far');
@@ -175,6 +190,49 @@ void main() {
       expect(error.path, 'flavors.apple.app');
       expect(error.toString(), contains('The known keys are:'));
       expect(error.toString(), contains('name'));
+    });
+  });
+
+  group('a configuration that is not usable', () {
+    InvalidConfigurationException invalid(String dir) {
+      final parser = Parser(
+        pubspecPath: 'test_resources/non_existent',
+        flavorizrPath: 'test_resources/parser/parser_test/$dir/flavorizr',
+      );
+
+      try {
+        parser.parse();
+      } on InvalidConfigurationException catch (e) {
+        return e;
+      }
+
+      fail('Should have thrown InvalidConfigurationException');
+    }
+
+    test('names a key that is not text and where it is', () {
+      final error = invalid('non_string_key');
+
+      expect(
+        error.toString(),
+        'flavorizr.yaml:8:9: The key `42` of `flavors.apple.ios.buildSettings` '
+        'must be text',
+      );
+    });
+
+    test('says which map the missing fields of the adaptive icon are from', () {
+      final parser = Parser(
+        pubspecPath: 'test_resources/non_existent',
+        flavorizrPath:
+            'test_resources/parser/parser_test/adaptive_icon_missing/flavorizr',
+      );
+
+      try {
+        parser.parse();
+        fail('Should have thrown MissingRequiredFieldsException');
+      } on MissingRequiredFieldsException catch (e) {
+        expect(e.fields, ['foreground']);
+        expect(e.path, 'flavors.apple.android.adaptiveIcon');
+      }
     });
   });
 }

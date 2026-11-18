@@ -9,8 +9,13 @@ part 'adaptive_icon.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class AdaptiveIcon {
+  @JsonKey(required: true, disallowNullValue: true)
   final String foreground;
+
+  @JsonKey(required: true, disallowNullValue: true)
   final String background;
+
+
   final String? monochrome;
 
   const AdaptiveIcon({

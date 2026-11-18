@@ -66,6 +66,13 @@ void main() {
       expect(configPathOf(root, second), 'flavors.apple.ios.includes[1]');
     });
 
+    test('quotes a key with punctuation, so that it reads as written', () {
+      final odd = loadYamlNode('"apple.[0]":\n  ok: 1\n') as YamlMap;
+      final inner = (odd.nodes['apple.[0]'] as YamlMap).nodes['ok']!;
+
+      expect(configPathOf(odd, inner), '"apple.[0]".ok');
+    });
+
     test('is null for a node of another document', () {
       expect(configPathOf(root, loadYamlNode('other: 1')), isNull);
     });

@@ -234,8 +234,10 @@ flavorizr.yaml:6:7: Unknown key `bundle_id` in `flavors.apple.ios`: did you mean
 
 When no known key is close, it lists the ones that map accepts. A key that is
 missing says which map it is missing from, as in
-`The following fields were missing in `flavors.apple`: [app]`. Every command
-that reads the configuration fails with exit code 65 and writes nothing.
+`The following fields were missing in `flavors.apple`: [app]`. The commands
+that reads the configuration (`plan`, `apply`, `status` and `list`) fails with
+exit code 65 and writes nothing, and `doctor` reports it as a failed check. A
+key that is not text, such as `42:`, is refused too, with where it is.
 
 ## Processors that are not on the engine yet
 

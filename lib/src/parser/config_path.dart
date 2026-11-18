@@ -28,19 +28,38 @@ import 'package:yaml/yaml.dart';
 /// The path of [target] in the document [root], as a user reads it in the file:
 /// `flavors.apple.ios.bundleId`, with the position in a list in brackets.
 ///
-/// The nodes are told apart by where they start and by their type, so [target]
-/// may come from another load of the same text. `null` when it is not found.
+/// [target] has to be a node of [root] itself, not of another load of the same
+/// text. `null` when it is not found.
 String? configPathOf(YamlNode root, YamlNode target) =>
     _join(configPathSegmentsOf(root, target));
 
 /// The segments of [configPathOf]: the keys, and the positions in a list as
-/// `[0]`.
-List<String>? configPathSegmentsOf(YamlNode root, YamlNode target) =>
+/// integers.
+List<Object>? configPathSegmentsOf(YamlNode root, YamlNode target) =>
     _find(root, target, const []);
 
-/// Joins [segments] as [configPathOf] does.
-String? _join(List<String>? segments) =>
-    segments?.join('.').replaceAll('.[', '[');
+/// Joins [segments]: a key after a dot, with quotes when it has a character
+/// that would make the path ambiguous, and a position in brackets.
+String? _join(List<Object>? segments) {
+  if (segments == null) return null;
+
+  final path = StringBuffer();
+
+  for (final segment in segments) {
+    switch (segment) {
+      case int():
+        path.write('[$segment]');
+      case String():
+        if (path.isNotEmpty) path.write('.');
+
+        path.write(
+          RegExp(r'^[^.\[\]"\s]+$').hasMatch(segment) ? segment : '"$segment"',
+        );
+    }
+  }
+
+  return path.toString();
+}
 
 /// The path of the map that holds [target], a key or a map, which is how the
 /// errors of a map are told: `flavors.apple` for `flavors.apple.bundle_id`.
@@ -54,15 +73,15 @@ String? configContainerPathOf(YamlNode root, YamlNode target) {
   );
 }
 
-List<String>? _find(YamlNode node, YamlNode target, List<String> path) {
-  if (_same(node, target)) return path;
+List<Object>? _find(YamlNode node, YamlNode target, List<Object> path) {
+  if (identical(node, target)) return path;
 
   if (node is YamlMap) {
     for (final entry in node.nodes.entries) {
       final key = entry.key as YamlNode;
-      final name = '${(key as YamlScalar).value}';
+      final name = key is YamlScalar ? '${key.value}' : key.toString();
 
-      if (_same(key, target)) return [...path, name];
+      if (identical(key, target)) return [...path, name];
 
       final found = _find(entry.value, target, [...path, name]);
 
@@ -70,7 +89,7 @@ List<String>? _find(YamlNode node, YamlNode target, List<String> path) {
     }
   } else if (node is YamlList) {
     for (final (index, item) in node.nodes.indexed) {
-      final found = _find(item, target, [...path, '[$index]']);
+      final found = _find(item, target, [...path, index]);
 
       if (found != null) return found;
     }
@@ -78,8 +97,3 @@ List<String>? _find(YamlNode node, YamlNode target, List<String> path) {
 
   return null;
 }
-
-bool _same(YamlNode a, YamlNode b) =>
-    a.runtimeType == b.runtimeType &&
-    a.span.start.offset == b.span.start.offset &&
-    a.span.end.offset == b.span.end.offset;

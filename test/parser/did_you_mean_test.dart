@@ -49,6 +49,8 @@ void main() {
         expect(didYouMean('zzzzzzzz', known), isNull);
         expect(didYouMean('flavor', known), isNull);
         expect(didYouMean('x', const []), isNull);
+        // The length that counts is the one without the separators.
+        expect(didYouMean('q________', const ['app']), isNull);
       },
     );
   });

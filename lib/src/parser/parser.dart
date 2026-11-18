@@ -68,33 +68,88 @@ class Parser {
 
     final file = File(configFileName);
     final yaml = file.readAsStringSync();
+    final isFlavorizrFile = configFileName.contains(flavorizrPath);
+
+    // The document is loaded once, and decoded as it is: an error then holds
+    // the very nodes of this tree, which tells where it is.
+    final YamlNode root;
 
     try {
-      if (configFileName.contains(flavorizrPath)) {
-        return Flavorizr.parse(yaml);
-      } else {
-        return Pubspec.parse(yaml).flavorizr;
-      }
-    } on ParsedYamlException catch (e) {
-      throw _translate(e, yaml, configFileName);
+      root = loadYamlNode(yaml, sourceUrl: Uri.file(configFileName));
+    } on YamlException catch (e) {
+      throw InvalidConfigurationException(
+        ParsedYamlException.fromYamlException(e).formattedMessage ?? e.message,
+      );
+    }
+
+    if (root is! YamlMap) {
+      throw InvalidConfigurationException(
+        'The configuration must be a map of keys',
+        location: _location(configFileName, root),
+      );
+    }
+
+    _checkKeys(root, root, configFileName);
+
+    try {
+      return isFlavorizrFile
+          ? Flavorizr.fromJson(root)
+          : Pubspec.fromJson(root).flavorizr;
+    } on CheckedFromJsonException catch (e) {
+      throw _translate(toParsedYamlException(e), root, configFileName);
     }
   }
+
+  /// Fails on a key that is not text, wherever it is below the configuration:
+  /// the decoders compare keys as strings, and a number or a list that is a key
+  /// would only be met as an error about a type, with no word about where.
+  void _checkKeys(YamlMap root, YamlNode node, String file) {
+    if (node is YamlMap) {
+      for (final entry in node.nodes.entries) {
+        final key = entry.key as YamlNode;
+
+        if (key is! YamlScalar || key.value is! String) {
+          final path = configContainerPathOf(root, key);
+
+          throw InvalidConfigurationException(
+            'The key `${key is YamlScalar ? key.value : key}` of '
+            '${path == null || path.isEmpty ? 'the configuration' : '`$path`'} '
+            'must be text',
+            location: _location(file, key),
+          );
+        }
+
+        // The sections of a pubspec that are not flavorizr's are not read.
+        if (node == root &&
+            !_isFlavorizrFile(file) &&
+            key.value != 'flavorizr') {
+          continue;
+        }
+
+        _checkKeys(root, entry.value, file);
+      }
+    } else if (node is YamlList) {
+      for (final item in node.nodes) {
+        _checkKeys(root, item, file);
+      }
+    }
+  }
+
+  bool _isFlavorizrFile(String file) => file.contains(flavorizrPath);
+
+  static String _location(String file, YamlNode node) =>
+      '${p.basename(file)}:${node.span.start.line + 1}:'
+      '${node.span.start.column + 1}';
 
   /// What a [ParsedYamlException] says, in the words of the configuration: the
   /// path of the map it is about, where it is in the file and, for a key that is
   /// not known, the one that was most likely meant.
-  Exception _translate(ParsedYamlException error, String yaml, String file) {
+  Exception _translate(ParsedYamlException error, YamlNode root, String file) {
     final node = error.yamlNode;
     final inner = error.innerError;
     final cause = inner is CheckedFromJsonException ? inner.innerError : inner;
-    final root = _tryLoad(yaml);
-    final location = node == null
-        ? null
-        : '${p.basename(file)}:${node.span.start.line + 1}:'
-              '${node.span.start.column + 1}';
-    final path = node == null || root == null
-        ? ''
-        : configContainerPathOf(root, node) ?? '';
+    final location = node == null ? null : _location(file, node);
+    final path = node == null ? '' : configContainerPathOf(root, node) ?? '';
 
     return switch (cause) {
       UnrecognizedKeysException(:final unrecognizedKeys, :final allowedKeys) =>
@@ -120,13 +175,5 @@ class Parser {
         error.formattedMessage ?? error.message,
       ),
     };
-  }
-
-  static YamlNode? _tryLoad(String yaml) {
-    try {
-      return loadYamlNode(yaml);
-    } on YamlException {
-      return null;
-    }
   }
 }

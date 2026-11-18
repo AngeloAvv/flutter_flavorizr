@@ -1,0 +1,8 @@
+flavors:
+  apple:
+    app:
+      name: "Apple"
+    android:
+      applicationId: "com.example.apple"
+      adaptiveIcon:
+        background: bg.png
