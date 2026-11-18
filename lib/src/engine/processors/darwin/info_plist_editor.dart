@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
+
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:xml/xml.dart';
 import 'package:xml/xml_events.dart';
@@ -74,7 +76,9 @@ abstract final class InfoPlistEditor {
     for (final MapEntry(:key, value: wanted) in values.entries) {
       final entry = entries[key];
 
-      if (entry == null) throw MalformedResourceException(source);
+      if (entry == null || !entry.readable) {
+        throw MalformedResourceException(source);
+      }
       if (entry.value == wanted) continue;
 
       edits.add(_Edit(entry, wanted));
@@ -106,7 +110,7 @@ abstract final class InfoPlistEditor {
 
     return {
       for (final key in keys)
-        if (entries[key] != null) key: entries[key]!.value,
+        if (entries[key]?.readable ?? false) key: entries[key]!.value,
     };
   }
 
@@ -136,8 +140,10 @@ abstract final class InfoPlistEditor {
   static String macosOwnedContent(String source) =>
       _render(readStrings(source, [bundleName]));
 
-  static String _render(Map<String, String> values) =>
-      values.entries.map((entry) => '${entry.key}=${entry.value}').join('\n');
+  /// The owned [values] as structured data, so that no value can pass for
+  /// another entry. They are in the order of the keys flavorizr asks for, never
+  /// the one of the plist: reordering the plist is not drift.
+  static String _render(Map<String, String> values) => jsonEncode(values);
 
   /// The `<string>` values of the top level `<dict>` of [source], by key. The
   /// first of a key that is repeated is the one that counts, as in 2.x.
@@ -147,6 +153,8 @@ abstract final class InfoPlistEditor {
     XmlDocument.parse(source);
 
     final entries = <String, _Entry>{};
+    // The keys whose value was met, whatever it is: the first one counts.
+    final claimed = <String>{};
     final path = <String>[];
     var foundDict = false;
     String? key;
@@ -167,21 +175,30 @@ abstract final class InfoPlistEditor {
           if (event.name == 'key') {
             keyText = StringBuffer();
             key = null;
-          } else if (key != null && event.name == 'string') {
-            if (event.isSelfClosing) {
-              entries.putIfAbsent(
-                key,
-                () => _Entry('', event.start!, event.stop!, selfClosing: true),
-              );
-              key = null;
-            } else {
-              pending = _Entry('', event.stop!, event.stop!, key: key);
+          } else if (key != null) {
+            final owner = key;
+            key = null;
+
+            // The first occurrence of a key counts, even when it is not a
+            // plain string: a repeated key is never edited instead of it.
+            final first = claimed.add(owner);
+
+            if (event.name != 'string') {
+              if (first) entries[owner] = const _Entry.unreadable();
+            } else if (event.isSelfClosing) {
+              if (first) {
+                entries[owner] = _Entry(
+                  '',
+                  event.start!,
+                  event.stop!,
+                  selfClosing: true,
+                );
+              }
+            } else if (first) {
+              pending = _Entry('', event.stop!, event.stop!, key: owner);
               valueText = StringBuffer();
               unreadable = false;
             }
-          } else {
-            // A value that is not a string: its key is not owned.
-            key = null;
           }
         } else if (pending != null || valueText != null) {
           // An element inside of a `<string>`: not a plain text value.
@@ -204,12 +221,9 @@ abstract final class InfoPlistEditor {
         } else if (parent == 'plist/dict' &&
             event.name == 'string' &&
             pending != null) {
-          if (!unreadable) {
-            entries.putIfAbsent(
-              pending.key!,
-              () => _Entry(valueText.toString(), pending!.start, event.start!),
-            );
-          }
+          entries[pending.key!] = unreadable
+              ? const _Entry.unreadable()
+              : _Entry(valueText.toString(), pending.start, event.start!);
 
           pending = null;
           valueText = null;
@@ -233,7 +247,10 @@ abstract final class InfoPlistEditor {
         continue;
       }
 
-      if (valueText != null && event is XmlCommentEvent) unreadable = true;
+      if (valueText != null &&
+          (event is XmlCommentEvent || event is XmlProcessingEvent)) {
+        unreadable = true;
+      }
     }
 
     if (!foundDict) throw MalformedResourceException(source);
@@ -253,13 +270,26 @@ final class _Entry {
   final String? key;
   final bool selfClosing;
 
+  /// Whether the value is a plain text `<string>` that can be read and edited.
+  final bool readable;
+
+  /// An entry whose value is not a plain text `<string>`: it is the one of the
+  /// key, so it is neither read nor edited, and nothing is edited in its place.
+  const _Entry.unreadable()
+    : value = '',
+      start = 0,
+      end = 0,
+      key = null,
+      selfClosing = false,
+      readable = false;
+
   const _Entry(
     this.value,
     this.start,
     this.end, {
     this.key,
     this.selfClosing = false,
-  });
+  }) : readable = true;
 }
 
 /// The replacement of an [entry] with a new [value].
@@ -269,6 +299,12 @@ final class _Edit {
 
   const _Edit(this.entry, this.value);
 
-  String get replacement =>
-      entry.selfClosing ? '<string>$value</string>' : value;
+  String get replacement {
+    final text = value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+
+    return entry.selfClosing ? '<string>$text</string>' : text;
+  }
 }

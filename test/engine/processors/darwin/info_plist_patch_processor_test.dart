@@ -152,13 +152,21 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync('real');
 
+      final working = File(K.iOSPListPath);
+      final workingBefore = working.existsSync()
+          ? working.readAsBytesSync()
+          : null;
+
       await processor.apply(context());
 
       expect(
         File(p.join(projectRoot.path, K.iOSPListPath)).readAsStringSync(),
         'real',
       );
-      expect(File(K.iOSPListPath).existsSync(), isFalse);
+      expect(
+        working.existsSync() ? working.readAsBytesSync() : null,
+        workingBefore,
+      );
     });
 
     test(
@@ -175,12 +183,23 @@ void main() {
 
         await processor.apply(context());
 
-        final bytes = plist(K.iOSPListPath).readAsBytesSync();
-        final text = utf8.decode(bytes.sublist(3));
-
-        expect(bytes.take(3), [0xef, 0xbb, 0xbf]);
-        expect(text.replaceAll('\r\n', ''), isNot(contains('\n')));
-        expect(text, contains(r'<string>$(BUNDLE_NAME)</string>'));
+        expect(plist(K.iOSPListPath).readAsBytesSync(), [
+          0xef,
+          0xbb,
+          0xbf,
+          ...utf8.encode(
+            _ios
+                .replaceFirst(
+                  '<string>Example</string>',
+                  r'<string>$(BUNDLE_DISPLAY_NAME)</string>',
+                )
+                .replaceFirst(
+                  '<string>example</string>',
+                  r'<string>$(BUNDLE_NAME)</string>',
+                )
+                .replaceAll('\n', '\r\n'),
+          ),
+        ]);
       },
     );
 

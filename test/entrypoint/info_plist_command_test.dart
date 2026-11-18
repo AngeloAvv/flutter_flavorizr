@@ -25,6 +25,8 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -63,19 +65,6 @@ String _config(Iterable<String> flavors) =>
       bundleId: "com.example.$flavor"
 '''].join()}';
 
-/// The lines of [after] that are not the ones of [before], which has as many.
-List<String> _changedLines(String before, String after) {
-  final old = before.split('\n');
-  final now = after.split('\n');
-
-  expect(now, hasLength(old.length));
-
-  return [
-    for (var i = 0; i < old.length; i++)
-      if (old[i] != now[i]) now[i],
-  ];
-}
-
 void main() {
   late CliFixture project;
 
@@ -111,24 +100,44 @@ void main() {
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.legacy.ran, isEmpty);
-      expect(_changedLines(_iosPristine, project.read(_ios)), [
-        r'	<string>$(BUNDLE_DISPLAY_NAME)</string>',
-        r'	<string>$(BUNDLE_NAME)</string>',
-      ]);
-      expect(_changedLines(_macosPristine, project.read(_macos)), [
-        r'	<string>$(BUNDLE_NAME)</string>',
-      ]);
+      expect(
+        project.read(_ios),
+        _iosPristine
+            .replaceFirst(
+              '<key>CFBundleDisplayName</key>\n\t<string>Example</string>',
+              r'<key>CFBundleDisplayName</key>'
+                  '\n\t'
+                  r'<string>$(BUNDLE_DISPLAY_NAME)</string>',
+            )
+            .replaceFirst(
+              '<key>CFBundleName</key>\n\t<string>example</string>',
+              r'<key>CFBundleName</key>'
+                  '\n\t'
+                  r'<string>$(BUNDLE_NAME)</string>',
+            ),
+      );
+      expect(
+        project.read(_macos),
+        _macosPristine.replaceFirst(
+          '<key>CFBundleName</key>\n\t<string>\$(PRODUCT_NAME)</string>',
+          r'<key>CFBundleName</key>'
+              '\n\t'
+              r'<string>$(BUNDLE_NAME)</string>',
+        ),
+      );
     });
 
     test('apply records the plists as patched in the lock', () async {
       await project.run(['apply', '--yes', ..._run]);
 
-      final lock = project.read('flavorizr.lock');
+      final lock = (await LockStore(
+        project.root,
+        runningVersion: '3.0.0',
+      ).read())!;
 
-      for (final path in _paths) {
-        expect(lock, contains('$path:'));
+      for (final (id, path) in [('ios:plist', _ios), ('macos:plist', _macos)]) {
+        expect(lock.processors[id]!.files[path]!.ownership, Ownership.patched);
       }
-      expect(lock, contains('ownership: patched'));
     });
 
     test('an idempotent re-run produces an empty diff', () async {
@@ -157,7 +166,11 @@ void main() {
       await project.run(['apply', '--yes', ..._run]);
       project.write(
         _ios,
-        '<!-- mine -->\n${project.read(_ios).replaceFirst('<false/>', '<true/>').replaceAll('\t', '    ')}',
+        project
+            .read(_ios)
+            .replaceFirst('<false/>', '<true/>')
+            .replaceAll('\t', '    ')
+            .replaceFirst('<dict>\n', '<dict>\n<!-- mine -->\n'),
       );
       final edited = project.snapshot();
 

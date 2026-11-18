@@ -54,8 +54,8 @@ void main() {
         ..._owned,
         'UILaunchStoryboardName': r'$(ASSET_PREFIX)LaunchScreen',
       });
-      final before = _ios.split('\n');
-      final after = patched.split('\n');
+      final before = _ios.split(RegExp(r'\r?\n'));
+      final after = patched.split(RegExp(r'\r?\n'));
 
       expect(after, hasLength(before.length));
 
@@ -204,6 +204,51 @@ void main() {
       }
     });
 
+    test('refuses a processing instruction inside a value', () {
+      expect(
+        () => InfoPlistEditor.withStrings(
+          _plist('<key>CFBundleName</key><string>a<?note keep?></string>\n'),
+          {'CFBundleName': 'x'},
+        ),
+        throwsA(isA<MalformedResourceException>()),
+      );
+    });
+
+    test('never edits a repeated key in place of a first one it cannot '
+        'read', () {
+      for (final first in [
+        '<true/>',
+        '<string>a<b/>c</string>',
+        '<array><string>x</string></array>',
+      ]) {
+        expect(
+          () => InfoPlistEditor.withStrings(
+            _plist(
+              '<key>CFBundleName</key>$first\n'
+              '<key>CFBundleName</key><string>two</string>\n',
+            ),
+            {'CFBundleName': 'x'},
+          ),
+          throwsA(isA<MalformedResourceException>()),
+          reason: first,
+        );
+      }
+    });
+
+    test('escapes a value that has characters of the markup', () {
+      final patched = InfoPlistEditor.withStrings(
+        _plist('<key>A</key><string/>\n<key>B</key><string>b</string>\n'),
+        {'A': 'x < y & z', 'B': '<q>'},
+      );
+
+      expect(XmlDocument.parse(patched), isNotNull);
+      expect(InfoPlistEditor.readStrings(patched, ['A', 'B']), {
+        'A': 'x < y & z',
+        'B': '<q>',
+      });
+      expect(patched, contains('<string>x &lt; y &amp; z</string>'));
+    });
+
     test('refuses a document that is not well formed', () {
       expect(
         () => InfoPlistEditor.withStrings('<plist><dict>', _owned),
@@ -216,7 +261,7 @@ void main() {
     test('is the name and the display name of an iOS plist', () {
       expect(
         InfoPlistEditor.iosOwnedContent(_ios),
-        'CFBundleName=example\nCFBundleDisplayName=Example',
+        '{"CFBundleName":"example","CFBundleDisplayName":"Example"}',
       );
     });
 
@@ -227,11 +272,26 @@ void main() {
 
       expect(
         InfoPlistEditor.iosOwnedContent(patched),
-        contains(r'UILaunchStoryboardName=$(ASSET_PREFIX)LaunchScreen'),
+        contains(r'"UILaunchStoryboardName":"$(ASSET_PREFIX)LaunchScreen"'),
       );
       expect(
         InfoPlistEditor.iosOwnedContent(_ios),
         isNot(contains('UILaunchStoryboardName')),
+      );
+    });
+
+    test('cannot be told from another plist by moving text between '
+        'entries', () {
+      final moved = _ios
+          .replaceFirst(
+            '<string>Example</string>',
+            '<string>Example\nCFBundleName=example</string>',
+          )
+          .replaceFirst('<string>example</string>', '<string>x</string>');
+
+      expect(
+        InfoPlistEditor.iosOwnedContent(moved),
+        isNot(InfoPlistEditor.iosOwnedContent(_ios)),
       );
     });
 
@@ -257,7 +317,7 @@ void main() {
     test('is the name of a macOS plist', () {
       expect(
         InfoPlistEditor.macosOwnedContent(_macos),
-        r'CFBundleName=$(PRODUCT_NAME)',
+        r'{"CFBundleName":"$(PRODUCT_NAME)"}',
       );
     });
   });
