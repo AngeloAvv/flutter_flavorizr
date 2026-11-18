@@ -29,7 +29,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'macos.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class MacOS with BuildSettingsMixin {
   @JsonKey(disallowNullValue: true, defaultValue: [])
   final List<Include> includes;
@@ -42,5 +47,5 @@ class MacOS with BuildSettingsMixin {
     this.buildSettings.addAll(buildSettings);
   }
 
-  factory MacOS.fromJson(Map<String, dynamic> json) => _$MacOSFromJson(json);
+  factory MacOS.fromJson(Map json) => _$MacOSFromJson(json);
 }

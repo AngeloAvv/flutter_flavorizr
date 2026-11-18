@@ -6,7 +6,14 @@ part of 'pubspec.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Pubspec _$PubspecFromJson(Map json) {
-  $checkKeys(json, requiredKeys: const ['flavorizr']);
-  return Pubspec(flavorizr: Flavorizr.fromJson(json['flavorizr'] as Map));
-}
+Pubspec _$PubspecFromJson(Map json) =>
+    $checkedCreate('Pubspec', json, ($checkedConvert) {
+      $checkKeys(json, requiredKeys: const ['flavorizr']);
+      final val = Pubspec(
+        flavorizr: $checkedConvert(
+          'flavorizr',
+          (v) => Flavorizr.fromJson(v as Map),
+        ),
+      );
+      return val;
+    });

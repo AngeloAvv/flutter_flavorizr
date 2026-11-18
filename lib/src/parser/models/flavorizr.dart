@@ -34,7 +34,12 @@ import 'flavors/flavor.dart';
 
 part 'flavorizr.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Flavorizr {
   final App? app;
 

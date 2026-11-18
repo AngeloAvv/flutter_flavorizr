@@ -1,0 +1,9 @@
+name: app
+42: not ours
+? [a, b]
+: also not ours
+flavorizr:
+  flavors:
+    apple:
+      app:
+        name: "Apple"

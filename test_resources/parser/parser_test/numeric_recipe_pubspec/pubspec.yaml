@@ -1,0 +1,8 @@
+name: app
+flavorizr:
+  flavors:
+    apple:
+      app:
+        name: "Apple"
+  recipes:
+    42: [android:icons]

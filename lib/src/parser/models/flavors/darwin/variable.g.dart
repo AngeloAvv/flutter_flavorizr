@@ -6,17 +6,23 @@ part of 'variable.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Variable _$VariableFromJson(Map json) {
-  $checkKeys(
-    json,
-    requiredKeys: const ['value'],
-    disallowNullValues: const ['target', 'value'],
-  );
-  return Variable(
-    value: json['value'] as String,
-    target: $enumDecodeNullable(_$TargetEnumMap, json['target']),
-  );
-}
+Variable _$VariableFromJson(Map json) =>
+    $checkedCreate('Variable', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        allowedKeys: const ['target', 'value'],
+        requiredKeys: const ['value'],
+        disallowNullValues: const ['target', 'value'],
+      );
+      final val = Variable(
+        value: $checkedConvert('value', (v) => v as String),
+        target: $checkedConvert(
+          'target',
+          (v) => $enumDecodeNullable(_$TargetEnumMap, v),
+        ),
+      );
+      return val;
+    });
 
 const _$TargetEnumMap = {
   Target.debug: 'debug',

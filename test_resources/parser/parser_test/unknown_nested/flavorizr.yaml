@@ -1,0 +1,11 @@
+app:
+  ios:
+    buildSettigns:
+      DEVELOPMENT_TEAM: "ABC"
+flavors:
+  apple:
+    app:
+      nme: "Apple"
+      other: 1
+    android:
+      applicationId: "com.example.apple"

@@ -1,0 +1,8 @@
+flavors:
+  apple:
+    app:
+      name: "Apple"
+    ios:
+      bundleId: "com.example.apple"
+      buildSettings:
+        42: ignored

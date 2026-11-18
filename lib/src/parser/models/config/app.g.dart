@@ -6,17 +6,25 @@ part of 'app.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-App _$AppFromJson(Map json) {
-  $checkKeys(json, disallowNullValues: const ['android', 'ios']);
-  return App(
-    android: json['android'] == null
-        ? null
-        : Android.fromJson(Map<String, dynamic>.from(json['android'] as Map)),
-    ios: json['ios'] == null
-        ? null
-        : IOS.fromJson(Map<String, dynamic>.from(json['ios'] as Map)),
-    macos: json['macos'] == null
-        ? null
-        : MacOS.fromJson(Map<String, dynamic>.from(json['macos'] as Map)),
+App _$AppFromJson(Map json) => $checkedCreate('App', json, ($checkedConvert) {
+  $checkKeys(
+    json,
+    allowedKeys: const ['android', 'ios', 'macos'],
+    disallowNullValues: const ['android', 'ios'],
   );
-}
+  final val = App(
+    android: $checkedConvert(
+      'android',
+      (v) => v == null ? null : Android.fromJson(v as Map),
+    ),
+    ios: $checkedConvert(
+      'ios',
+      (v) => v == null ? null : IOS.fromJson(v as Map),
+    ),
+    macos: $checkedConvert(
+      'macos',
+      (v) => v == null ? null : MacOS.fromJson(v as Map),
+    ),
+  );
+  return val;
+});

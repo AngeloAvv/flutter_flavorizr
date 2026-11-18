@@ -1,0 +1,7 @@
+flavors:
+  apple:
+    app:
+      nme: "Apple"
+      other: 1
+    android:
+      applicationId: "com.example.apple"

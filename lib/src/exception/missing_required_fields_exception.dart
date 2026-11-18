@@ -26,9 +26,18 @@
 class MissingRequiredFieldsException implements Exception {
   final List<String> fields;
 
-  MissingRequiredFieldsException(this.fields);
+  /// The path of the map the fields are missing from, such as
+  /// `flavors.apple`, empty for the top level.
+  final String path;
+
+  /// Where that map is, as `file:line:column`.
+  final String? location;
+
+  MissingRequiredFieldsException(this.fields, {this.path = '', this.location});
 
   @override
   String toString() =>
-      'The following fields were missing: $fields. Read the docs for further details';
+      '${location == null ? '' : '$location: '}'
+      'The following fields were missing${path.isEmpty ? '' : ' in `$path`'}: '
+      '$fields. Read the docs for further details';
 }

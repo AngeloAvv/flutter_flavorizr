@@ -6,11 +6,16 @@ part of 'app.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-App _$AppFromJson(Map json) {
+App _$AppFromJson(Map json) => $checkedCreate('App', json, ($checkedConvert) {
   $checkKeys(
     json,
+    allowedKeys: const ['name', 'icon'],
     requiredKeys: const ['name'],
     disallowNullValues: const ['name', 'icon'],
   );
-  return App(name: json['name'] as String, icon: json['icon'] as String?);
-}
+  final val = App(
+    name: $checkedConvert('name', (v) => v as String),
+    icon: $checkedConvert('icon', (v) => v as String?),
+  );
+  return val;
+});

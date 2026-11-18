@@ -26,9 +26,19 @@
 class NullFieldsException implements Exception {
   final List<String> fields;
 
-  NullFieldsException(this.fields);
+  /// The path of the map the fields are in, such as `flavors.apple`, empty for
+  /// the top level.
+  final String path;
+
+  /// Where that map is, as `file:line:column`.
+  final String? location;
+
+  NullFieldsException(this.fields, {this.path = '', this.location});
 
   @override
   String toString() =>
-      'The following fields are null or undefined: $fields. Read the docs for further details';
+      '${location == null ? '' : '$location: '}'
+      'The following fields are null or undefined'
+      '${path.isEmpty ? '' : ' in `$path`'}: '
+      '$fields. Read the docs for further details';
 }

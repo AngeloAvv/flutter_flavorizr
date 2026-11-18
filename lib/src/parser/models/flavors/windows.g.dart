@@ -6,10 +6,19 @@ part of 'windows.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Windows _$WindowsFromJson(Map json) {
-  $checkKeys(json, disallowNullValues: const ['icon']);
-  return Windows(
-    generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
-    icon: json['icon'] as String?,
-  );
-}
+Windows _$WindowsFromJson(Map json) =>
+    $checkedCreate('Windows', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        allowedKeys: const ['generateDummyAssets', 'icon'],
+        disallowNullValues: const ['icon'],
+      );
+      final val = Windows(
+        generateDummyAssets: $checkedConvert(
+          'generateDummyAssets',
+          (v) => v as bool? ?? true,
+        ),
+        icon: $checkedConvert('icon', (v) => v as String?),
+      );
+      return val;
+    });

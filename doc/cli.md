@@ -220,6 +220,25 @@ owned only while it has the value flavorizr gives it
 Flutter wrote is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
+## Configuration errors
+
+A key that flavorizr does not know fails the run, wherever it is in
+`flavorizr.yaml` or in the `flavorizr` section of `pubspec.yaml`, instead of
+being ignored: a typo is far more likely than a key that is meant to do
+nothing. The error says where the key is and, when one is close, which one was
+meant:
+
+```
+flavorizr.yaml:6:7: Unknown key `bundle_id` in `flavors.apple.ios`: did you mean `bundleId` instead of `bundle_id`?
+```
+
+When no known key is close, it lists the ones that map accepts. A key that is
+missing says which map it is missing from, as in
+`The following fields were missing in `flavors.apple`: [app]`. The commands
+that reads the configuration (`plan`, `apply`, `status` and `list`) fails with
+exit code 65 and writes nothing, and `doctor` reports it as a failed check. A
+key that is not text, such as `42:`, is refused too, with where it is.
+
 ## Processors that are not on the engine yet
 
 The engine runs the processors that were ported to it, which today are the

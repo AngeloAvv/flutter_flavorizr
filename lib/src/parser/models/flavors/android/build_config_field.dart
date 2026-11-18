@@ -2,7 +2,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'build_config_field.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class BuildConfigField {
   @JsonKey(required: true, disallowNullValue: true)
   final String type;
@@ -30,11 +35,8 @@ class BuildConfigField {
     return "\"$value\"";
   }
 
-  const BuildConfigField({
-    required this.type,
-    required this.value,
-  });
+  const BuildConfigField({required this.type, required this.value});
 
-  factory BuildConfigField.fromJson(Map<String, dynamic> json) =>
+  factory BuildConfigField.fromJson(Map json) =>
       _$BuildConfigFieldFromJson(json);
 }

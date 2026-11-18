@@ -29,7 +29,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'android.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Android {
   static const kFlavorDimensionValue = 'flavor-type';
 
@@ -48,6 +53,5 @@ class Android {
     this.buildConfigFields = const {},
   });
 
-  factory Android.fromJson(Map<String, dynamic> json) =>
-      _$AndroidFromJson(json);
+  factory Android.fromJson(Map json) => _$AndroidFromJson(json);
 }

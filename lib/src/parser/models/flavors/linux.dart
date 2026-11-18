@@ -27,12 +27,17 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'linux.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Linux {
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
 
   const Linux({required this.applicationId});
 
-  factory Linux.fromJson(Map<String, dynamic> json) => _$LinuxFromJson(json);
+  factory Linux.fromJson(Map json) => _$LinuxFromJson(json);
 }

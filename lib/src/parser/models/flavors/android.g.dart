@@ -6,58 +6,73 @@ part of 'android.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Android _$AndroidFromJson(Map json) {
-  $checkKeys(
-    json,
-    requiredKeys: const ['applicationId'],
-    disallowNullValues: const [
-      'icon',
-      'firebase',
-      'applicationId',
-      'customConfig',
-      'resValues',
-      'buildConfigFields',
-      'agconnect',
-      'adaptiveIcon',
-    ],
-  );
-  return Android(
-    applicationId: json['applicationId'] as String,
-    customConfig:
-        (json['customConfig'] as Map?)?.map(
-          (k, e) => MapEntry(k as String, e),
-        ) ??
-        {},
-    resValues:
-        (json['resValues'] as Map?)?.map(
-          (k, e) => MapEntry(
-            k as String,
-            ResValue.fromJson(Map<String, dynamic>.from(e as Map)),
-          ),
-        ) ??
-        {},
-    buildConfigFields:
-        (json['buildConfigFields'] as Map?)?.map(
-          (k, e) => MapEntry(
-            k as String,
-            BuildConfigField.fromJson(Map<String, dynamic>.from(e as Map)),
-          ),
-        ) ??
-        {},
-    agconnect: json['agconnect'] == null
-        ? null
-        : AGConnect.fromJson(
-            Map<String, dynamic>.from(json['agconnect'] as Map),
-          ),
-    generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
-    firebase: json['firebase'] == null
-        ? null
-        : Firebase.fromJson(Map<String, dynamic>.from(json['firebase'] as Map)),
-    icon: json['icon'] as String?,
-    adaptiveIcon: json['adaptiveIcon'] == null
-        ? null
-        : AdaptiveIcon.fromJson(
-            Map<String, dynamic>.from(json['adaptiveIcon'] as Map),
-          ),
-  );
-}
+Android _$AndroidFromJson(Map json) =>
+    $checkedCreate('Android', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        allowedKeys: const [
+          'generateDummyAssets',
+          'icon',
+          'firebase',
+          'applicationId',
+          'customConfig',
+          'resValues',
+          'buildConfigFields',
+          'agconnect',
+          'adaptiveIcon',
+        ],
+        requiredKeys: const ['applicationId'],
+        disallowNullValues: const [
+          'icon',
+          'firebase',
+          'applicationId',
+          'customConfig',
+          'resValues',
+          'buildConfigFields',
+          'agconnect',
+          'adaptiveIcon',
+        ],
+      );
+      final val = Android(
+        applicationId: $checkedConvert('applicationId', (v) => v as String),
+        customConfig: $checkedConvert(
+          'customConfig',
+          (v) => (v as Map?)?.map((k, e) => MapEntry(k as String, e)) ?? {},
+        ),
+        resValues: $checkedConvert(
+          'resValues',
+          (v) =>
+              (v as Map?)?.map(
+                (k, e) => MapEntry(k as String, ResValue.fromJson(e as Map)),
+              ) ??
+              {},
+        ),
+        buildConfigFields: $checkedConvert(
+          'buildConfigFields',
+          (v) =>
+              (v as Map?)?.map(
+                (k, e) =>
+                    MapEntry(k as String, BuildConfigField.fromJson(e as Map)),
+              ) ??
+              {},
+        ),
+        agconnect: $checkedConvert(
+          'agconnect',
+          (v) => v == null ? null : AGConnect.fromJson(v as Map),
+        ),
+        generateDummyAssets: $checkedConvert(
+          'generateDummyAssets',
+          (v) => v as bool? ?? true,
+        ),
+        firebase: $checkedConvert(
+          'firebase',
+          (v) => v == null ? null : Firebase.fromJson(v as Map),
+        ),
+        icon: $checkedConvert('icon', (v) => v as String?),
+        adaptiveIcon: $checkedConvert(
+          'adaptiveIcon',
+          (v) => v == null ? null : AdaptiveIcon.fromJson(v as Map),
+        ),
+      );
+      return val;
+    });

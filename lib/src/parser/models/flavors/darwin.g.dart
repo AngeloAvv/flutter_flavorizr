@@ -6,42 +6,59 @@ part of 'darwin.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Darwin _$DarwinFromJson(Map json) {
-  $checkKeys(
-    json,
-    requiredKeys: const ['bundleId'],
-    disallowNullValues: const [
-      'icon',
-      'firebase',
-      'bundleId',
-      'variables',
-      'includes',
-    ],
-  );
-  return Darwin(
-    bundleId: json['bundleId'] as String,
-    variables:
-        (json['variables'] as Map?)?.map(
-          (k, e) => MapEntry(
-            k as String,
-            Variable.fromJson(Map<String, dynamic>.from(e as Map)),
-          ),
-        ) ??
-        {},
-    includes:
-        (json['includes'] as List<dynamic>?)
-            ?.map((e) => Include.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList() ??
-        [],
-    buildSettings:
-        (json['buildSettings'] as Map?)?.map(
-          (k, e) => MapEntry(k as String, e),
-        ) ??
-        {},
-    generateDummyAssets: json['generateDummyAssets'] as bool? ?? true,
-    firebase: json['firebase'] == null
-        ? null
-        : Firebase.fromJson(Map<String, dynamic>.from(json['firebase'] as Map)),
-    icon: json['icon'] as String?,
-  );
-}
+Darwin _$DarwinFromJson(Map json) =>
+    $checkedCreate('Darwin', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        allowedKeys: const [
+          'buildSettings',
+          'generateDummyAssets',
+          'icon',
+          'firebase',
+          'bundleId',
+          'variables',
+          'includes',
+        ],
+        requiredKeys: const ['bundleId'],
+        disallowNullValues: const [
+          'icon',
+          'firebase',
+          'bundleId',
+          'variables',
+          'includes',
+        ],
+      );
+      final val = Darwin(
+        bundleId: $checkedConvert('bundleId', (v) => v as String),
+        variables: $checkedConvert(
+          'variables',
+          (v) =>
+              (v as Map?)?.map(
+                (k, e) => MapEntry(k as String, Variable.fromJson(e as Map)),
+              ) ??
+              {},
+        ),
+        includes: $checkedConvert(
+          'includes',
+          (v) =>
+              (v as List<dynamic>?)
+                  ?.map((e) => Include.fromJson(e as Map))
+                  .toList() ??
+              [],
+        ),
+        buildSettings: $checkedConvert(
+          'buildSettings',
+          (v) => (v as Map?)?.map((k, e) => MapEntry(k as String, e)) ?? {},
+        ),
+        generateDummyAssets: $checkedConvert(
+          'generateDummyAssets',
+          (v) => v as bool? ?? true,
+        ),
+        firebase: $checkedConvert(
+          'firebase',
+          (v) => v == null ? null : Firebase.fromJson(v as Map),
+        ),
+        icon: $checkedConvert('icon', (v) => v as String?),
+      );
+      return val;
+    });

@@ -2,7 +2,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'res_value.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class ResValue {
   @JsonKey(required: true, disallowNullValue: true)
   final String type;
@@ -10,13 +15,9 @@ class ResValue {
   @JsonKey(required: true, disallowNullValue: true)
   final String value;
 
-  const ResValue({
-    required this.type,
-    required this.value,
-  });
+  const ResValue({required this.type, required this.value});
 
   String get wrappedValue => value.replaceAll('\'', '\\\\\'');
 
-  factory ResValue.fromJson(Map<String, dynamic> json) =>
-      _$ResValueFromJson(json);
+  factory ResValue.fromJson(Map json) => _$ResValueFromJson(json);
 }
