@@ -89,6 +89,35 @@ void main() {
       expect(script, contains('== "Profile-plain"'));
     });
 
+    test('copies the configuration of a flavor whose name is a command, and '
+        'runs nothing', () async {
+      final dir = Directory.systemTemp.createTempSync('firebase_run_');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      const flavor = r"qa's$(touch pwned)";
+      File(
+        '${dir.path}/script.sh',
+      ).writeAsStringSync(firebaseScriptSource([flavor, 'plain']));
+      Directory('${dir.path}/Runner/$flavor').createSync(recursive: true);
+      File(
+        '${dir.path}/Runner/$flavor/GoogleService-Info.plist',
+      ).writeAsStringSync('the one');
+
+      final result = await Process.run(
+        'sh',
+        ['script.sh'],
+        workingDirectory: dir.path,
+        environment: {'CONFIGURATION': 'Profile-$flavor'},
+      );
+
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+      expect(
+        File('${dir.path}/Runner/GoogleService-Info.plist').readAsStringSync(),
+        'the one',
+      );
+      expect(File('${dir.path}/pwned').existsSync(), isFalse);
+      expect(File('${dir.path}/Runner/pwned').existsSync(), isFalse);
+    }, skip: Platform.isWindows ? 'no sh' : false);
+
     test('is a script the shell reads, whatever the names', () async {
       final dir = Directory.systemTemp.createTempSync('firebase_script_');
       addTearDown(() => dir.deleteSync(recursive: true));

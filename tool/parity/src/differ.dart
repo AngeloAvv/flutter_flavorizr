@@ -199,8 +199,8 @@ class Whitelist {
       final (kept: keptRight, moved: movedRight) = _split(right, moved);
 
       if (!const ListEquality<String>().equals(
-        _essence(movedLeft),
-        _essence(movedRight),
+        _essence(left, moved),
+        _essence(right, moved),
       )) {
         return false;
       }
@@ -220,27 +220,105 @@ class Whitelist {
         : left == right;
   }
 
-  static ({String kept, List<String> moved}) _split(
-    String content,
-    RegExp moved,
-  ) {
+  static ({String kept, List<int> moved}) _split(String content, RegExp moved) {
     final kept = <String>[];
-    final away = <String>[];
+    final away = <int>[];
 
-    for (final line in content.split('\n')) {
-      (moved.hasMatch(line) ? away : kept).add(line);
+    for (final (index, line) in content.split('\n').indexed) {
+      if (moved.hasMatch(line)) {
+        away.add(index);
+      } else {
+        kept.add(line);
+      }
     }
 
     return (kept: kept.join('\n'), moved: away);
   }
 
-  /// What [lines] say, in an order that is not theirs: no UUID, no annotation.
-  static List<String> _essence(List<String> lines) => [
-    for (final line in lines)
-      _withoutComments(
-        line,
-      ).replaceAll(RegExp(r'\b[0-9A-F]{24}(?:[0-9A-F]{8})?\b'), 'UUID').trim(),
-  ]..sort();
+  static final _uuid = RegExp(r'\b[0-9A-F]{24}(?:[0-9A-F]{8})?\b');
+  static final _objectStart = RegExp(
+    r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)? = \{\s*$',
+  );
+  static final _definition = RegExp(
+    r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)? = \{isa = (\w+);(.*)\};\s*$',
+  );
+  static final _listing = RegExp(
+    r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)?,\s*$',
+  );
+  static final _listStart = RegExp(r'^\s*(\w+) = \(\s*$');
+  static final _path = RegExp(r'\bpath = (?:"([^"]*)"|([^;"\s]+));');
+  static final _fileRef = RegExp(
+    r'\bfileRef = ([0-9A-F]{24}(?:[0-9A-F]{8})?)\b',
+  );
+
+  /// What the lines of [content] that match [moved] say, without where they
+  /// are: no UUID and no annotation, but what each one refers to and the list
+  /// of the object it is in. A build file says which file it builds, a listed
+  /// entry the kind of object that lists it and what it lists. The result is
+  /// sorted, so that a list may have them in another order.
+  static List<String> _essence(String content, RegExp moved) {
+    final lines = content.split('\n');
+    final pathOf = <String, String>{};
+    final buildFileOf = <String, String>{};
+
+    for (final line in lines) {
+      final definition = _definition.firstMatch(line);
+
+      if (definition == null) continue;
+
+      final uuid = definition.group(1)!;
+      final body = definition.group(3)!;
+
+      switch (definition.group(2)) {
+        case 'PBXFileReference':
+          final path = _path.firstMatch(body);
+
+          pathOf[uuid] = path?.group(1) ?? path?.group(2) ?? '?';
+        case 'PBXBuildFile':
+          buildFileOf[uuid] = _fileRef.firstMatch(body)?.group(1) ?? '?';
+      }
+    }
+
+    String named(String uuid) {
+      final reference = buildFileOf[uuid];
+
+      return reference != null
+          ? 'build of ${pathOf[reference] ?? '?'}'
+          : 'file ${pathOf[uuid] ?? '?'}';
+    }
+
+    String owner(int index) {
+      String? list;
+
+      for (var at = index - 1; at >= 0; at--) {
+        list ??= _listStart.firstMatch(lines[at])?.group(1);
+
+        if (_objectStart.hasMatch(lines[at])) {
+          for (var next = at + 1; next < lines.length; next++) {
+            final isa = RegExp(r'\bisa = (\w+);').firstMatch(lines[next]);
+
+            if (isa != null) return '${isa.group(1)}.$list';
+          }
+        }
+      }
+
+      return '?';
+    }
+
+    return [
+      for (final (index, line) in lines.indexed)
+        if (moved.hasMatch(line))
+          if (_definition.firstMatch(line) case final definition?)
+            switch (definition.group(2)) {
+              'PBXBuildFile' => 'PBXBuildFile ${named(definition.group(1)!)}',
+              _ => _withoutComments(line).replaceAll(_uuid, 'UUID').trim(),
+            }
+          else if (_listing.firstMatch(line) case final listing?)
+            '${owner(index)} lists ${named(listing.group(1)!)}'
+          else
+            _withoutComments(line).replaceAll(_uuid, 'UUID').trim(),
+    ]..sort();
+  }
 
   /// [content] without its `/* ... */` annotations, and the space before each.
   /// A quoted value is copied as it is, escapes included, as the ASCII plist

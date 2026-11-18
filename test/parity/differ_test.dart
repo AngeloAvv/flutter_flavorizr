@@ -141,58 +141,124 @@ void main() {
     final whitelist = Whitelist.parse(r'''
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  moved: '^\s*\w{24} /\* Moved(?: in Resources)? \*/(?: = \{isa = \w+;.*\};|,)$'
+  moved: '^\s*\w{24} /\* M(?: in Resources)? \*/(?: = \{isa = \w+;.*\};|,)$'
   reason: It is in another place
 ''');
     const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
-    const definition =
-        'AAAAAAAAAAAAAAAAAAAAAAAA /* Moved */ = {isa = PBXFileReference; path = m; };';
-    const listing = 'AAAAAAAAAAAAAAAAAAAAAAAA /* Moved */,';
-    const other = 'BBBBBBBBBBBBBBBBBBBBBBBB /* Other */,';
+    const m = 'AAAAAAAAAAAAAAAAAAAAAAAA';
+    const mBuild = 'BBBBBBBBBBBBBBBBBBBBBBBB';
+    const other = 'CCCCCCCCCCCCCCCCCCCCCCCC';
+    const otherBuild = 'DDDDDDDDDDDDDDDDDDDDDDDD';
+    const phase = 'EEEEEEEEEEEEEEEEEEEEEEEE';
+
+    /// A project with a Resources phase that lists [entries] and a Sources
+    /// phase that lists [sources].
+    String project({
+      List<String> entries = const [],
+      List<String> sources = const [],
+      String path = 'm',
+      String buildOf = m,
+      bool reference = true,
+      bool build = true,
+    }) =>
+        '''
+/* Begin PBXBuildFile section */
+${build ? '\t\t$mBuild /* M in Resources */ = {isa = PBXBuildFile; fileRef = $buildOf; };\n' : ''}\t\t$otherBuild /* Other in Resources */ = {isa = PBXBuildFile; fileRef = $other; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+${reference ? '\t\t$m /* M */ = {isa = PBXFileReference; path = $path; sourceTree = "<group>"; };\n' : ''}\t\t$other /* Other */ = {isa = PBXFileReference; path = o; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+/* Begin PBXResourcesBuildPhase section */
+\t\t$phase /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+${entries.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
+\t\t};
+/* End PBXResourcesBuildPhase section */
+/* Begin PBXSourcesBuildPhase section */
+\t\tFFFFFFFFFFFFFFFFFFFFFFFF /* Sources */ = {
+\t\t\tisa = PBXSourcesBuildPhase;
+\t\t\tfiles = (
+${sources.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
+\t\t};
+/* End PBXSourcesBuildPhase section */
+''';
+
+    const mEntry = '$mBuild /* M in Resources */';
+    const otherEntry = '$otherBuild /* Other in Resources */';
+
+    bool clean(String before, String after) {
+      write(golden, pbxproj, before);
+      write(actual, pbxproj, after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
 
     test('compares both without what moved, which is the same in both', () {
-      write(golden, pbxproj, '\t\t$other\n\t\t$definition\n\t\t$listing\n');
-      write(actual, pbxproj, '\t\t$definition\n\t\t$listing\n\t\t$other\n');
-
-      final report = compareTrees(golden, actual, whitelist: whitelist);
-
-      expect(report.isClean, isTrue);
-      expect(report.differences.single.reason, 'It is in another place');
-    });
-
-    test('does not hide what is gone', () {
-      write(golden, pbxproj, '\t\t$other\n\t\t$definition\n\t\t$listing\n');
-      write(actual, pbxproj, '\t\t$other\n');
-
-      final report = compareTrees(golden, actual, whitelist: whitelist);
-
-      expect(report.isClean, isFalse);
-    });
-
-    test('does not hide what changed', () {
-      write(golden, pbxproj, '\t\t$other\n\t\t$definition\n');
-      write(
-        actual,
-        pbxproj,
-        '\t\t$other\n\t\t${definition.replaceAll('path = m', 'path = n')}\n',
+      expect(
+        clean(
+          project(entries: [otherEntry, mEntry]),
+          project(entries: [mEntry, otherEntry]),
+        ),
+        isTrue,
       );
+    });
 
-      final report = compareTrees(golden, actual, whitelist: whitelist);
+    test('does not hide a reference that is gone', () {
+      expect(
+        clean(
+          project(entries: [otherEntry, mEntry]),
+          project(entries: [otherEntry], reference: false, build: false),
+        ),
+        isFalse,
+      );
+    });
 
-      expect(report.isClean, isFalse);
+    test('does not hide an entry that is gone from its phase', () {
+      expect(
+        clean(
+          project(entries: [otherEntry, mEntry]),
+          project(entries: [otherEntry]),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide a reference that changed', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry], path: 'n'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide a build file that points to another file', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry], buildOf: other),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide an entry that is in another phase', () {
+      expect(
+        clean(project(entries: [mEntry]), project(sources: [mEntry])),
+        isFalse,
+      );
     });
 
     test('does not hide anything else', () {
-      write(golden, pbxproj, '\t\t$other\n\t\t$listing\n');
-      write(
-        actual,
-        pbxproj,
-        '\t\t$listing\n\t\tCCCCCCCCCCCCCCCCCCCCCCCC /* Different */,\n',
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry]).replaceAll('path = o', 'path = x'),
+        ),
+        isFalse,
       );
-
-      final report = compareTrees(golden, actual, whitelist: whitelist);
-
-      expect(report.isClean, isFalse);
     });
   });
 
