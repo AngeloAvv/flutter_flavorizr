@@ -1,0 +1,11 @@
+name: app
+x-settings: &settings
+  42: c
+flavorizr:
+  flavors:
+    apple:
+      app:
+        name: "Apple"
+      ios:
+        bundleId: "com.example.apple"
+        buildSettings: *settings

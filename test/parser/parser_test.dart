@@ -209,6 +209,34 @@ void main() {
       fail('Should have thrown InvalidConfigurationException');
     }
 
+    test('still takes a number for the name of a recipe', () {
+      final flavorizr = const Parser(
+        pubspecPath: 'test_resources/non_existent',
+        flavorizrPath:
+            'test_resources/parser/parser_test/numeric_recipe/flavorizr',
+      ).parse();
+
+      expect(flavorizr.recipes?.keys, ['42']);
+    });
+
+    test('names the map where an aliased map is used, not where it is '
+        'defined', () {
+      try {
+        const Parser(
+          pubspecPath: 'test_resources/parser/parser_test/aliased_map/pubspec',
+          flavorizrPath: 'test_resources/non_existent',
+        ).parse();
+        fail('Should have thrown InvalidConfigurationException');
+      } on InvalidConfigurationException catch (e) {
+        expect(
+          e.toString(),
+          contains(
+            'of `flavorizr.flavors.apple.ios.buildSettings` must be text',
+          ),
+        );
+      }
+    });
+
     test('names the map of a key that is itself a map', () {
       expect(
         invalid('map_key').toString(),
@@ -245,7 +273,7 @@ void main() {
       expect(
         error.toString(),
         'flavorizr.yaml:8:9: The key `42` of `flavors.apple.ios.buildSettings` '
-        'must be text',
+        'must be text: quote it to make it so',
       );
     });
 

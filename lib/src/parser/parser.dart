@@ -89,7 +89,7 @@ class Parser {
       );
     }
 
-    _checkKeys(root, root, configFileName);
+    _checkKeys(root, root, configFileName, visited: Set<YamlNode>.identity());
 
     try {
       return isFlavorizrFile
@@ -106,12 +106,12 @@ class Parser {
   void _checkKeys(
     YamlMap root,
     YamlNode node,
-    String file, [
-    Set<YamlNode>? seen,
-  ]) {
+    String file, {
+    required Set<YamlNode> visited,
+    List<Object> path = const [],
+    bool lenient = false,
+  }) {
     // An alias is the very same node: it is checked once.
-    final visited = seen ?? Set<YamlNode>.identity();
-
     if (!visited.add(node)) return;
 
     if (node is YamlMap) {
@@ -125,22 +125,38 @@ class Parser {
           continue;
         }
 
-        if (key is! YamlScalar || key.value is! String) {
-          final path = configContainerPathOf(root, key, key: true);
+        // The names of the recipes are converted to text by whoever reads them,
+        // so `42` is the recipe `'42'`, as it has always been.
+        final isText = key is YamlScalar && key.value is String;
+        final isName = key is YamlScalar && key.value is num && lenient;
 
+        if (!isText && !isName) {
           throw InvalidConfigurationException(
             'The key `${key is YamlScalar ? key.value : key}` of '
-            '${path == null || path.isEmpty ? 'the configuration' : '`$path`'} '
-            'must be text',
+            '${path.isEmpty ? 'the configuration' : '`${joinConfigPath(path)}`'} '
+            'must be text: quote it to make it so',
             location: _location(file, key),
           );
         }
 
-        _checkKeys(root, entry.value, file, visited);
+        final name = '${key.value}';
+        final recipes =
+            _isFlavorizrFile(file) &&
+            identical(node, root) &&
+            key.value == 'recipes';
+
+        _checkKeys(
+          root,
+          entry.value,
+          file,
+          visited: visited,
+          path: [...path, name],
+          lenient: recipes,
+        );
       }
     } else if (node is YamlList) {
-      for (final item in node.nodes) {
-        _checkKeys(root, item, file, visited);
+      for (final (index, item) in node.nodes.indexed) {
+        _checkKeys(root, item, file, visited: visited, path: [...path, index]);
       }
     }
   }

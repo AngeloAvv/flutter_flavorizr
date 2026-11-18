@@ -38,6 +38,9 @@ String? configPathOf(YamlNode root, YamlNode target) =>
 List<Object>? configPathSegmentsOf(YamlNode root, YamlNode target) =>
     _find(root, target, const []);
 
+/// The path made of [segments], as [configPathOf] spells it.
+String joinConfigPath(List<Object> segments) => _join(segments)!;
+
 /// Joins [segments]: a key after a dot, with quotes when it has a character
 /// that would make the path ambiguous, and a position in brackets.
 String? _join(List<Object>? segments) {

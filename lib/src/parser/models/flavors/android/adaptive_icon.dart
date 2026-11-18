@@ -15,7 +15,6 @@ class AdaptiveIcon {
   @JsonKey(required: true, disallowNullValue: true)
   final String background;
 
-
   final String? monochrome;
 
   const AdaptiveIcon({
