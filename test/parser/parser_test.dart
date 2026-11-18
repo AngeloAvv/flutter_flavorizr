@@ -219,6 +219,16 @@ void main() {
       expect(flavorizr.recipes?.keys, ['42']);
     });
 
+    test('takes a number for the name of a recipe in a pubspec too', () {
+      final flavorizr = const Parser(
+        pubspecPath:
+            'test_resources/parser/parser_test/numeric_recipe_pubspec/pubspec',
+        flavorizrPath: 'test_resources/non_existent',
+      ).parse();
+
+      expect(flavorizr.recipes?.keys, ['42']);
+    });
+
     test('names the map where an aliased map is used, not where it is '
         'defined', () {
       try {

@@ -141,9 +141,10 @@ class Parser {
 
         final name = '${key.value}';
         final recipes =
-            _isFlavorizrFile(file) &&
-            identical(node, root) &&
-            key.value == 'recipes';
+            key.value == 'recipes' &&
+            (_isFlavorizrFile(file)
+                ? path.isEmpty
+                : path.length == 1 && path.first == 'flavorizr');
 
         _checkKeys(
           root,
