@@ -49,6 +49,36 @@ void main() {
   });
 
   group('MarkedText.upsert', () {
+    test('inserts the region with the indentation it is told, instead of the '
+        'one of the anchor', () {
+      final text = MarkedText('a\nanchor\nb\n', [_marker]);
+
+      expect(
+        text.upsert(
+          _marker,
+          ['x'],
+          anchor: (lines) => _after(lines, 'anchor'),
+          indentation: '    ',
+        ),
+        'a\nanchor\n    $_begin\n    x\n    $_end\nb\n',
+      );
+    });
+
+    test('keeps the indentation of a region that is there, whatever it is '
+        'told', () {
+      final text = MarkedText('a\n  $_begin\n  old\n  $_end\nb\n', [_marker]);
+
+      expect(
+        text.upsert(
+          _marker,
+          ['new'],
+          anchor: (lines) => null,
+          indentation: '        ',
+        ),
+        'a\n  $_begin\n  new\n  $_end\nb\n',
+      );
+    });
+
     test('inserts the region after the anchor, with its indentation', () {
       final text = MarkedText('a\n  anchor\nb\n', [_marker]);
 

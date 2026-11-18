@@ -41,13 +41,14 @@ const _macosProject = 'macos/Runner.xcodeproj';
 const _iosPbxproj = '$_iosProject/project.pbxproj';
 const _macosPbxproj = '$_macosProject/project.pbxproj';
 
-/// The processors of this slice, with the Flutter one, which makes the run a
-/// full one of what a project with no Android, Linux or Windows flavors has.
+/// The processors of a full run of a project with only Apple flavors.
 const _targets = [
   'flutter:flavors',
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
+  'ios:podfile',
+  'macos:podfile',
 ];
 
 String _config(Iterable<String> flavors, {String ios = ''}) =>
