@@ -34,6 +34,11 @@ import 'tree.dart';
 
 /// Where flavorizr comes from: a pub.dev version (`2.6.0`) or the path of a
 /// checkout.
+///
+/// A version is a 2.x reference and runs the 2.x fixture; 3.x is the checkout,
+/// which runs the fixture in the words of 3.x (see
+/// [ParityRunner.fixtureFor3x]). A 3.x published on pub.dev is not supported:
+/// it would be given the 2.x fixture, which it rejects.
 class FlavorizrSource {
   const FlavorizrSource(this.spec);
 
