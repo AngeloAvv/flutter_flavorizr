@@ -150,11 +150,16 @@ void main() {
       });
 
       test('marks the processors that are not on the engine', () async {
-        await project.run(['plan', '--json', ...engineTargets, 'ide:config']);
+        await project.run([
+          'plan',
+          '--json',
+          ...engineTargets,
+          'huawei:agconnect',
+        ]);
 
         expect((document()['processors'] as List).last, {
-          'id': 'ide:config',
-          'platform': 'ide',
+          'id': 'huawei:agconnect',
+          'platform': 'huawei',
           'runsOn': 'legacy',
           'auto': false,
         });
@@ -419,12 +424,12 @@ void main() {
       });
 
       test('lists what a failed legacy step kept from running', () async {
-        project.legacy.failAt = 'ide:config';
+        project.legacy.failAt = 'huawei:agconnect';
 
         final code = await project.run([
           'apply',
           '--json',
-          'ide:config',
+          'huawei:agconnect',
           'google:firebase',
         ]);
         final steps = (document()['steps'] as List)
@@ -432,7 +437,7 @@ void main() {
 
         expect(code, ExitCodes.software);
         expect(steps.map((s) => '${s['id']} ${s['status']}'), [
-          'ide:config failed',
+          'huawei:agconnect failed',
           'google:firebase skipped',
         ]);
         expect(steps.last['durationMs'], isNull);
@@ -449,12 +454,12 @@ void main() {
             'apply',
             '--json',
             'android:androidManifest',
-            'ide:config',
+            'huawei:agconnect',
           ]);
 
           expect(
             (document()['steps'] as List).cast<Map<String, Object?>>().last,
-            {'id': 'ide:config', 'status': 'skipped', 'durationMs': null},
+            {'id': 'huawei:agconnect', 'status': 'skipped', 'durationMs': null},
           );
         },
       );
@@ -464,14 +469,14 @@ void main() {
         project.write('android/app/flavorizr.gradle', '// mine\n');
         project.write('flavorizr.yaml', CliFixture.config(['apple', 'pear']));
         project.stdout.clear();
-        project.legacy.failAt = 'ide:config';
+        project.legacy.failAt = 'huawei:agconnect';
 
         final code = await project.run([
           'apply',
           '--json',
           '--on-conflict=overwrite',
           ...engineTargets,
-          'ide:config',
+          'huawei:agconnect',
         ]);
         final doc = document();
         final modified = changes(doc).where((c) => c['change'] == 'modified');
@@ -489,11 +494,11 @@ void main() {
             'apply',
             '--json',
             ...engineTargets,
-            'ide:config',
+            'huawei:agconnect',
           ]);
 
           expect((document()['steps'] as List).last, {
-            'id': 'ide:config',
+            'id': 'huawei:agconnect',
             'status': 'completed',
             'durationMs': 1,
           });
@@ -597,13 +602,22 @@ void main() {
         await project.run(['apply', '-y', ...engineTargets]);
         project.stdout.clear();
 
-        await project.run(['status', '--json', ...engineTargets, 'ide:config']);
+        await project.run([
+          'status',
+          '--json',
+          ...engineTargets,
+          'huawei:agconnect',
+        ]);
 
-        expect(document()['notChecked'], ['ide:config']);
+        expect(document()['notChecked'], ['huawei:agconnect']);
       });
 
       test('has nothing to check without a processor of the engine', () async {
-        final code = await project.run(['status', '--json', 'ide:config']);
+        final code = await project.run([
+          'status',
+          '--json',
+          'huawei:agconnect',
+        ]);
         final doc = document();
 
         expect(code, ExitCodes.ok);
@@ -630,9 +644,9 @@ void main() {
           processors.firstWhere((p) => p['id'] == 'android:icons'),
           containsPair('runsOn', 'engine'),
         );
-        expect(processors.firstWhere((p) => p['id'] == 'ide:config'), {
-          'id': 'ide:config',
-          'platform': 'ide',
+        expect(processors.firstWhere((p) => p['id'] == 'huawei:agconnect'), {
+          'id': 'huawei:agconnect',
+          'platform': 'huawei',
           'runsOn': 'legacy',
           'needs': <String>[],
           'after': <String>[],

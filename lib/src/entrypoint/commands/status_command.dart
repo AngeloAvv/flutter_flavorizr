@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
@@ -72,8 +73,14 @@ class StatusCommand extends TargetCommand {
         );
       }
 
+      // A local file, such as the run configurations of an IDE, is written again
+      // silently on every run: it is never drift, a fresh clone has none.
       final pending = preview.changes
-          .where((c) => !preview.diff.conflicts.contains(c))
+          .where(
+            (c) =>
+                !preview.diff.conflicts.contains(c) &&
+                c.ownership != Ownership.local,
+          )
           .toList();
       if (pending.isNotEmpty) {
         drift.add(

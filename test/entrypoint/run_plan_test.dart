@@ -73,7 +73,8 @@ void main() {
   test('the default is the `all` recipe', () {
     final plan = resolve(android);
 
-    expect(engine(plan), hasLength(5));
+    expect(engine(plan), hasLength(6));
+    expect(engine(plan), contains('ide:config'));
     expect(plan.legacy.map((step) => step.id), [
       'assets:download',
       'assets:extract',
@@ -81,7 +82,6 @@ void main() {
       'google:firebase',
       'huawei:agconnect',
       'assets:clean',
-      'ide:config',
     ]);
   });
 

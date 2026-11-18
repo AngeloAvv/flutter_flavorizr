@@ -218,6 +218,25 @@ owned only while it has the value flavorizr gives it
 Flutter wrote is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
+## The run configurations of the IDEs
+
+`ide:config` writes what `ide` asks for. Everything it writes is *local*: the
+IDEs write to it, and git ignores `.idea/`, so it is written again silently on
+every run, is never recorded in `flavorizr.lock`, and is never a conflict or
+drift (`status` does not mention it, and a fresh clone without `.idea/` is in
+sync).
+
+* `idea`: `.idea/runConfigurations/<flavor>.xml`, one file for each flavor,
+  written whole. The file of a flavor you drop is removed, and the other files
+  of the folder are yours.
+* `vscode`: `.vscode/launch.json` is created when there is none. When it exists
+  only the entries named after a flavor (`<flavor> Debug`, `<flavor> Profile`
+  and `<flavor> Release`) are added, replaced or, for a flavor you drop,
+  removed. The file is JSONC, as VS Code's own template is: the comments, the
+  trailing commas, the layout and your entries stay as they are. A file that
+  cannot be read is left alone, with a warning that prints the entries to add
+  by hand.
+
 ## Configuration errors
 
 A key that flavorizr does not know fails the run, wherever it is in
@@ -246,8 +265,8 @@ Android ones (`android:androidManifest`, `android:flavorizrGradle`,
 (`windows:mainCppTemplate`, `windows:runnerRcTemplate` and `windows:cmake`), the Flutter ones
 (`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`), the
 xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
-`macos:configs`) the Podfile ones (`ios:podfile` and `macos:podfile`) and the `Info.plist`
-ones (`ios:plist` and `macos:plist`). For these a run is previewed, checked
+`macos:configs`) the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
+ones (`ios:plist` and `macos:plist`) and the one of the IDEs (`ide:config`). For these a run is previewed, checked
 against the lock, written atomically and recorded in `flavorizr.lock`.
 
 The Linux processors patch files that belong to you, so they only ever touch the

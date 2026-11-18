@@ -86,6 +86,7 @@ void main() {
         'flutter:pages',
         'flutter:app',
         'flutter:main',
+        'ide:config',
       });
     });
 
@@ -146,6 +147,7 @@ void main() {
           'ios:plist',
           'macos:plist',
           'flutter:flavors',
+          'ide:config',
         });
       },
     );

@@ -323,12 +323,12 @@ void main() {
           '--yes',
           'android:flavorizrGradle',
           'google:firebase',
-          'ide:config',
+          'huawei:agconnect',
         ]);
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
-        expect(project.legacy.ids, ['google:firebase', 'ide:config']);
+        expect(project.legacy.ids, ['google:firebase', 'huawei:agconnect']);
       });
 
       test('are asked to keep the files the engine generated', () async {
