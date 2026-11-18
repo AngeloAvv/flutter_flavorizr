@@ -283,7 +283,8 @@ break at the end of the file are kept.
   second one, one that follows a `;` on its line, or one inside `if`, `unless`,
   `begin`, `def`, `case`, `while`, `until`, `for`, `class`, `module`, `do`, a
   lambda or any `{` that ends a line is refused. Blocks are found by counting
-  the lines that open one and the `end`s and `}`s that start a line, so a block
+  each opening keyword (including `do` with a body on its line), closing `end`
+  keywords and `}`s that start a line, so a block
   that is closed before the mapping is fine;
 * a mapping that goes on until a line with only `}` and has nothing but blank
   lines, comments and entries like `'Debug' => :debug,`, one on each line (any

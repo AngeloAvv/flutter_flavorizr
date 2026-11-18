@@ -696,6 +696,21 @@ final _supported = <_Case>[
 /// to change.
 final _unsafe = <({String name, List<String> source, String reason})>[
   (
+    name: 'a do header with an inline body before the mapping',
+    source: ['items.each do |item| puts item', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
+    name: 'two conditional openers with only one closed before the mapping',
+    source: ['if true; if true', 'end', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
+    name: 'a single-quoted interpolation hiding a mapping',
+    source: ['note = "#{ \'}"', ..._decoy, '#\' }"'],
+    reason: 'interpolation',
+  ),
+  (
     name: 'an assignment-form conditional around the mapping',
     source: ['settings = if enabled', ..._decoy, 'end'],
     reason: 'inside a block',
@@ -993,6 +1008,11 @@ final _lexicalSupported = <_Case>[
     'end',
     'x = 1 if y',
     'settings = value if enabled',
+    'while ready do',
+    '  puts 1',
+    'end',
+    'items.each do |item| puts item; end',
+    'if true; if true; end; end',
     'settings = if enabled',
     '  mode = :end',
     'end',

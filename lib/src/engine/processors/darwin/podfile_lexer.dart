@@ -71,8 +71,8 @@ import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
 ///   an interpolation of a name;
 /// * the mapping line inside a block (`if`, `unless`, `begin`, `def`, `case`,
 ///   `while`, `until`, `for`, `class`, `module`, `do`, a lambda or any `{` that
-///   ends a line), which [isInBlock] finds by counting the lines that open a
-///   block (including assignment-form expressions), closing `end` keywords
+///   ends a line), which [isInBlock] finds by counting each opener
+///   (including assignment-form expressions), closing `end` keywords
 ///   (not symbols or method names), and `}`s at the start of a line.
 ///
 /// What is **not** looked at is everything else, which is why it can be written
@@ -104,7 +104,7 @@ final class LexedPodfile {
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
     r'(?:^|[=(,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b|'
-    r'(?:(?<![\w:.])do\b|\{)\s*(?:\|[^|]*\|)?\s*$',
+    r'(?<![\w:.])do\b|\{\s*(?:\|[^|]*\|)?\s*$',
   );
   static final RegExp _end = RegExp(r'(?<![\w:.])end\b(?![!?=:])');
   static const _pairs = {'[': ']', '(': ')', '{': '}', '<': '>'};
@@ -181,7 +181,18 @@ final class LexedPodfile {
           _end.allMatches(code).length +
           (code.trimLeft().startsWith('}') ? 1 : 0);
 
-      depth += (_opens.hasMatch(code) ? 1 : 0) - closes;
+      final opens = _opens.allMatches(code).where((match) {
+        if (match.group(0) != 'do') return true;
+
+        // A loop's optional `do` belongs to its header, not a second block.
+        final statement = code.substring(
+          code.lastIndexOf(';', match.start) + 1,
+          match.start,
+        );
+        return !RegExp(r'^\s*(?:while|until|for)\b').hasMatch(statement);
+      }).length;
+
+      depth += opens - closes;
       if (depth < 0) depth = 0;
     }
 
@@ -212,7 +223,7 @@ final class LexedPodfile {
           final end = text.indexOf('}', i);
 
           if (end < 0 ||
-              RegExp(r'''["`{]|<<''').hasMatch(text.substring(i + 2, end))) {
+              RegExp(r'''["'`{]|<<''').hasMatch(text.substring(i + 2, end))) {
             _refuse(
               path,
               'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `{` '
