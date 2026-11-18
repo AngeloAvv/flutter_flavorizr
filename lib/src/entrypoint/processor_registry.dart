@@ -36,6 +36,8 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
@@ -135,7 +137,8 @@ class ProcessorRegistry {
        };
 
   /// The registry of this version: the Android, Linux, Windows, Flutter,
-  /// xcconfig and Info.plist processors that were ported run on the engine, every other 2.x
+  /// xcconfig, Podfile and Info.plist processors that were ported run on the
+  /// engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
@@ -220,6 +223,16 @@ class ProcessorRegistry {
           K.windowsRunnerCMakeListsPath:
               WindowsRunnerCMakeListsEditor.ownedContent,
         },
+      ),
+      EngineProcessor(
+        const IosPodfilePatchProcessor(),
+        paths: {K.iOSPodfilePath},
+        ownedContent: {K.iOSPodfilePath: PodfileEditor.ownedContent},
+      ),
+      EngineProcessor(
+        const MacosPodfilePatchProcessor(),
+        paths: {K.macOSPodfilePath},
+        ownedContent: {K.macOSPodfilePath: PodfileEditor.ownedContent},
       ),
       EngineProcessor(
         const FlutterFlavorsProcessor(),

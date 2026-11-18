@@ -139,7 +139,7 @@ flavorizr:
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
 | huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
 | ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
-| ios:podfile             | iOS           | Updates the Pods-Runner path for each flavor                            |
+| ios:podfile             | iOS           | Maps the build configurations of each flavor in the Podfile             |
 | ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
 | ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
@@ -147,7 +147,7 @@ flavorizr:
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Sets the bundle name keys of Info.plist in place, keeping its format    |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
-| macos:podfile           | macOS         | Updates the Pods-Runner path for each flavor                            |
+| macos:podfile           | macOS         | Maps the build configurations of each flavor in the Podfile             |
 | macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:buildTargets      | macOS         | Creates a set of build targets for each flavor and build configuration  |

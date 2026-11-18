@@ -44,6 +44,8 @@ const _run = [
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
+  'ios:podfile',
+  'macos:podfile',
 ];
 
 final String _iosPristine = File(
@@ -72,6 +74,14 @@ void main() {
     project.write('flavorizr.yaml', _config(['apple', 'banana']));
     project.write(_ios, _iosPristine);
     project.write(_macos, _macosPristine);
+    for (final platform in ['ios', 'macos']) {
+      project.write(
+        '$platform/Podfile',
+        File(
+          'test_resources/darwin/podfile_test/PodfileOriginal',
+        ).readAsStringSync(),
+      );
+    }
     for (final platform in ['ios', 'macos']) {
       final path = '$platform/Runner.xcodeproj/project.pbxproj';
       project.write(path, File('example/$path').readAsStringSync());

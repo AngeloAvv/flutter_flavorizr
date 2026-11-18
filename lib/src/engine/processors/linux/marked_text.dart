@@ -162,8 +162,9 @@ final class MarkedText {
   ///   indentation, and the other ones are dropped. The region stays where the
   ///   user left it.
   /// * Absent: a new region is inserted right after the line [anchor] picks
-  ///   among the lines [outside], with its indentation. Nothing else is added:
-  ///   not even a blank line goes outside of the markers.
+  ///   among the lines [outside], with the indentation of that line, or with
+  ///   [indentation] when it is given. Nothing else is added: not even a blank
+  ///   line goes outside of the markers.
   ///
   /// Throws a [MalformedResourceException] when the markers do not form
   /// regions, and when there is no region and [anchor] returns `null`.
@@ -171,6 +172,7 @@ final class MarkedText {
     RegionMarker marker,
     List<String> body, {
     required TextLine? Function(List<TextLine> outside) anchor,
+    String? indentation,
   }) {
     final regions = _regions([marker]);
 
@@ -179,7 +181,10 @@ final class MarkedText {
 
       if (line == null) throw MalformedResourceException(source);
 
-      return _insert(line, _block(marker, body, line.indentation));
+      return _insert(
+        line,
+        _block(marker, body, indentation ?? line.indentation),
+      );
     }
 
     final first = regions.first;
@@ -199,12 +204,11 @@ final class MarkedText {
       return source;
     }
 
-    final indentation = lines[first.first].indentation;
     final edits = <(int, int, String)>[
       (
         lines[first.first].start,
         lines[first.last].contentEnd,
-        _block(marker, body, indentation).join(eol),
+        _block(marker, body, lines[first.first].indentation).join(eol),
       ),
       for (final region in regions.skip(1))
         (lines[region.first].start, lines[region.last].end, ''),
