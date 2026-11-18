@@ -293,11 +293,19 @@ class Whitelist {
       for (var at = index - 1; at >= 0; at--) {
         list ??= _listStart.firstMatch(lines[at])?.group(1);
 
-        if (_objectStart.hasMatch(lines[at])) {
+        final start = _objectStart.firstMatch(lines[at]);
+
+        if (start != null) {
           for (var next = at + 1; next < lines.length; next++) {
             final isa = RegExp(r'\bisa = (\w+);').firstMatch(lines[next]);
 
-            if (isa != null) return '${isa.group(1)}.$list';
+            // The UUID tells which one: the names of the objects that hold the
+            // moved ones come from their place in the project, which is the
+            // same in both files (it is how two phases of a kind are told
+            // apart).
+            if (isa != null) {
+              return '${isa.group(1)}.$list in ${start.group(1)}';
+            }
           }
         }
       }

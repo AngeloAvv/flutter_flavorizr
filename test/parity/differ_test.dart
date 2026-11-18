@@ -199,6 +199,7 @@ void main() {
     /// phase that lists [sources].
     String project({
       List<String> entries = const [],
+      List<String> testEntries = const [],
       List<String> sources = const [],
       String path = 'm',
       String buildOf = m,
@@ -217,6 +218,11 @@ ${reference ? '\t\t$m /* M */ = {isa = PBXFileReference; path = $path; sourceTre
 \t\t\tisa = PBXResourcesBuildPhase;
 \t\t\tfiles = (
 ${entries.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
+\t\t};
+\t\t111111111111111111111111 /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+${testEntries.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
 \t\t};
 /* End PBXResourcesBuildPhase section */
 /* Begin PBXSourcesBuildPhase section */
@@ -300,6 +306,16 @@ ${sources.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
         isFalse,
       );
     });
+
+    test(
+      'does not hide an entry that is in another phase of the same kind',
+      () {
+        expect(
+          clean(project(entries: [mEntry]), project(testEntries: [mEntry])),
+          isFalse,
+        );
+      },
+    );
 
     test('does not hide an entry that is in another phase', () {
       expect(
