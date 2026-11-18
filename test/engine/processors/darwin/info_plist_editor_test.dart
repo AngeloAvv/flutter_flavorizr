@@ -261,6 +261,18 @@ void main() {
       );
     });
 
+    test('does not take the keys of a second dictionary when the first is '
+        'empty', () {
+      expect(
+        () => InfoPlistEditor.withStrings(
+          '<plist version="1.0"><dict/><dict><key>CFBundleName</key>'
+          '<string>old</string></dict></plist>',
+          {'CFBundleName': 'x'},
+        ),
+        throwsA(isA<MalformedResourceException>()),
+      );
+    });
+
     test('reads a self-closing key as the empty key', () {
       expect(
         InfoPlistEditor.readStrings(

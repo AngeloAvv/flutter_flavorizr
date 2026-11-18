@@ -169,6 +169,9 @@ abstract final class InfoPlistEditor {
 
         if (parent == 'plist' && event.name == 'dict' && !foundDict) {
           foundDict = true;
+
+          // An empty first dictionary is all there is: a later one is not it.
+          if (event.isSelfClosing) break;
         }
 
         if (parent == 'plist/dict' && foundDict) {

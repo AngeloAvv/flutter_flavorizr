@@ -257,7 +257,9 @@ void main() {
 
       final code = await project.run(['apply', '--yes', ..._run]);
 
-      expect(code, isNot(ExitCodes.ok));
+      expect(code, ExitCodes.software, reason: project.logger.output);
+      expect(project.logger.output, contains('ios:plist'));
+      expect(project.logger.output, contains('malformed'));
       expect(project.snapshot(), before);
     });
   });
