@@ -696,6 +696,21 @@ final _supported = <_Case>[
 /// to change.
 final _unsafe = <({String name, List<String> source, String reason})>[
   (
+    name: 'a nested do after the loop delimiter',
+    source: ['while false do [1].each do |item|', 'end', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
+    name: 'a do block after a closed loop on the same line',
+    source: ['while false; end; items.each do |item|', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
+    name: 'a comment hiding an interpolation terminator',
+    source: ['note = "#{ # }"', 'nil }', ..._decoy, '#"'],
+    reason: 'interpolation',
+  ),
+  (
     name: 'a do header with an inline body before the mapping',
     source: ['items.each do |item| puts item', ..._decoy, 'end'],
     reason: 'inside a block',
@@ -989,6 +1004,7 @@ final _lexicalSupported = <_Case>[
     r'puts $stdout',
   ]),
   _readable('reads keyword symbols without opening blocks', [
+    'settings = {do: true}',
     'mode = :if',
     'mode = :unless',
     'mode = :begin',
@@ -1009,6 +1025,9 @@ final _lexicalSupported = <_Case>[
     'x = 1 if y',
     'settings = value if enabled',
     'while ready do',
+    '  puts 1',
+    'end',
+    'result = while false do',
     '  puts 1',
     'end',
     'items.each do |item| puts item; end',

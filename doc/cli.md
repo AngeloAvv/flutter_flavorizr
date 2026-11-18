@@ -326,7 +326,7 @@ Ruby:
 
 * a string, a `%` literal, a regular expression or an interpolation that does
   not close on its line, and a heredoc that is never closed;
-* a `#{...}` with a quote, a `{` or a heredoc in it;
+* a `#{...}` with a quote, a `#`, a `{` or a heredoc in it;
 * a `%` literal that is not `%q`, `%w` or `%i` with a pair of brackets: `%Q`,
   `%W`, `%I`, `%r`, `%s`, `%x`, `%(...)` and any with the same character on both
   sides (`%w|a b|`, `%q!x!`);

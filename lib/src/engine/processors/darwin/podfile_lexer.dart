@@ -41,7 +41,7 @@ import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
 /// * comments: `#` outside a string, a `%` literal and a regular expression;
 /// * strings, `'...'`, `"..."` and `` `...` `` (symbols like `:'a b'` too), that
 ///   close on their line, with `\` escapes, and a `#{...}` in a `"` or `` ` ``
-///   string whose body has no quote, `{` or `<<`;
+///   string whose body has no quote, `#`, `{` or `<<`;
 /// * `%q`, `%w` and `%i` literals with a bracket pair (`[]`, `()`, `{}`, `<>`),
 ///   nested or not, that close on their line;
 /// * regular expressions `/.../` with no quote, backtick or `#` in them (but
@@ -61,7 +61,7 @@ import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
 ///
 /// * a string, a `%` literal, a regular expression or an interpolation that
 ///   does not close on its line, and a heredoc that is never closed;
-/// * a `#{...}` with a quote, a `{` or a heredoc in it;
+/// * a `#{...}` with a quote, a `#`, a `{` or a heredoc in it;
 /// * a `%` literal that is not `%q`, `%w` or `%i` with a bracket pair: `%Q`,
 ///   `%W`, `%I`, `%r`, `%s`, `%x`, `%(...)`, and any with the same character on
 ///   both sides (`%w|a b|`, `%q!x!`);
@@ -104,8 +104,9 @@ final class LexedPodfile {
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
     r'(?:^|[=(,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b|'
-    r'(?<![\w:.])do\b|\{\s*(?:\|[^|]*\|)?\s*$',
+    r'(?<![\w:.])do\b(?![!?=:])|\{\s*(?:\|[^|]*\|)?\s*$',
   );
+  static final RegExp _loopOpener = RegExp(r'\b(?:while|until|for)$');
   static final RegExp _end = RegExp(r'(?<![\w:.])end\b(?![!?=:])');
   static const _pairs = {'[': ']', '(': ')', '{': '}', '<': '>'};
 
@@ -181,16 +182,26 @@ final class LexedPodfile {
           _end.allMatches(code).length +
           (code.trimLeft().startsWith('}') ? 1 : 0);
 
-      final opens = _opens.allMatches(code).where((match) {
-        if (match.group(0) != 'do') return true;
-
-        // A loop's optional `do` belongs to its header, not a second block.
-        final statement = code.substring(
-          code.lastIndexOf(';', match.start) + 1,
-          match.start,
-        );
-        return !RegExp(r'^\s*(?:while|until|for)\b').hasMatch(statement);
-      }).length;
+      var opens = 0;
+      var loopDelimiters = 0;
+      var previousEnd = 0;
+      for (final match in _opens.allMatches(code)) {
+        final token = match.group(0)!;
+        final between = code.substring(previousEnd, match.start);
+        if (between.contains(';') ||
+            _end.hasMatch(between) ||
+            token.startsWith(';')) {
+          loopDelimiters = 0;
+        }
+        previousEnd = match.end;
+        if (token == 'do' && loopDelimiters > 0) {
+          // Only the first `do` belongs to this loop, not later nested blocks.
+          loopDelimiters--;
+        } else {
+          opens++;
+          if (_loopOpener.hasMatch(token)) loopDelimiters++;
+        }
+      }
 
       depth += opens - closes;
       if (depth < 0) depth = 0;
@@ -223,10 +234,10 @@ final class LexedPodfile {
           final end = text.indexOf('}', i);
 
           if (end < 0 ||
-              RegExp(r'''["'`{]|<<''').hasMatch(text.substring(i + 2, end))) {
+              RegExp(r'''["'`{#]|<<''').hasMatch(text.substring(i + 2, end))) {
             _refuse(
               path,
-              'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `{` '
+              'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `#`, a `{` '
                   'or a heredoc in it, or is not closed on its line.',
               'Compute the value on a line of its own, and use it in the string.',
             );
