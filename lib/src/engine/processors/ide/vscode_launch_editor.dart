@@ -339,7 +339,7 @@ abstract final class VsCodeLaunchEditor {
     ];
 
     for (final item in deleted) {
-      edits.add(_deletion(source, item));
+      edits.addAll(_deletion(source, item));
     }
 
     _restoreCommas(source, configurations, survivors, deleted, added, edits);
@@ -415,10 +415,21 @@ abstract final class VsCodeLaunchEditor {
 
   /// The edit that removes [item]: its line when it has the line to itself,
   /// with the comma that follows it.
-  static _Edit _deletion(String source, _Json item) {
+  static List<_Edit> _deletion(String source, _Json item) {
     var start = item.start;
     var end = item.commaAt != null ? item.commaAt! + 1 : item.end;
     final ownLine = _startsLine(source, item.start);
+
+    // A comment between the item and its comma is not the item's: the two are
+    // removed apart, and the comment stays.
+    final comma = item.commaAt;
+
+    if (comma != null && source.substring(item.end, comma).trim().isNotEmpty) {
+      return [
+        _Edit(ownLine ? _lineStart(source, item.start) : start, item.end, ''),
+        _Edit(comma, comma + 1, ''),
+      ];
+    }
 
     if (ownLine) start = _lineStart(source, item.start);
 
@@ -437,7 +448,7 @@ abstract final class VsCodeLaunchEditor {
       end = tail;
     }
 
-    return _Edit(start, end, '');
+    return [_Edit(start, end, '')];
   }
 
   /// Keeps the commas of the list valid: the last item that is left has one
@@ -534,14 +545,26 @@ abstract final class VsCodeLaunchEditor {
 
     return _apply(source, [
       if (last == null)
-        _Edit(root.start + 1, root.end - 1, '\n$indent$text\n')
+        // Whatever is in the object, a comment included, stays.
+        if (source.substring(root.start + 1, root.end - 1).trim().isEmpty)
+          _Edit(root.start + 1, root.end - 1, '\n$indent$text\n')
+        else
+          _Edit(root.start + 1, root.start + 1, '\n$indent$text')
       else
         _Edit(last.end, last.end, ',\n$indent$text'),
     ]);
   }
 
   static String _apply(String source, List<_Edit> edits) {
-    final ordered = [...edits]..sort((a, b) => b.start.compareTo(a.start));
+    // From the end of the text to its start. Edits that start at the same
+    // offset run the longer one first: a removal must not eat what an
+    // insertion that starts there has just written.
+    final ordered = [...edits]
+      ..sort((a, b) {
+        final byStart = b.start.compareTo(a.start);
+
+        return byStart != 0 ? byStart : b.end.compareTo(a.end);
+      });
     var result = source;
 
     for (final edit in ordered) {

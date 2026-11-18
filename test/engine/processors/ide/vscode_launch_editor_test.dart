@@ -202,6 +202,38 @@ void main() {
       expect(edited, isNot(contains('   \n')));
     });
 
+    test('keeps a comment between a removed entry and its comma', () {
+      final edited = VsCodeLaunchEditor.edit(
+        '{"configurations":[{"name":"old"} /* keep this */,{"name":"mine"}]}',
+        [],
+        remove: {'old'},
+      );
+
+      expect(edited, contains('/* keep this */'));
+      expect(_names(edited), ['mine']);
+    });
+
+    test('keeps a comment in an object that has no member', () {
+      final edited = VsCodeLaunchEditor.edit('{ /* keep this */ }', [
+        _entry('a'),
+      ]);
+
+      expect(edited, contains('/* keep this */'));
+      expect(jsonDecode(edited.replaceAll('/* keep this */', '')), {
+        'configurations': [_entry('a')],
+      });
+    });
+
+    test('replaces every entry of a compact list', () {
+      final edited = VsCodeLaunchEditor.edit(
+        '{"configurations":[{"name":"old"}]}',
+        [_entry('new')],
+        remove: {'old'},
+      );
+
+      expect(_names(edited), ['new']);
+    });
+
     test('adds to a list that holds only a comment', () {
       final edited = VsCodeLaunchEditor.edit(
         '{"configurations": [ // nothing yet\n ]}',
