@@ -696,6 +696,21 @@ final _supported = <_Case>[
 /// to change.
 final _unsafe = <({String name, List<String> source, String reason})>[
   (
+    name: 'a percent literal hiding an interpolation terminator',
+    source: ['note = "#{ %q(}"#) }', ..._decoy, '#"'],
+    reason: 'interpolation',
+  ),
+  (
+    name: 'a do block inside a parenthesized loop condition',
+    source: ['while ([1].any? do |item|', 'false', 'end)', ..._decoy, 'end'],
+    reason: 'loop header',
+  ),
+  (
+    name: 'a parenthesized loop condition with multiple expressions',
+    source: ['while (false; false) do', 'end', ..._decoy],
+    reason: 'loop header',
+  ),
+  (
     name: 'a nested do after the loop delimiter',
     source: ['while false do [1].each do |item|', 'end', ..._decoy, 'end'],
     reason: 'inside a block',
@@ -1005,6 +1020,7 @@ final _lexicalSupported = <_Case>[
   ]),
   _readable('reads keyword symbols without opening blocks', [
     'settings = {do: true}',
+    'settings = {enabled: true, if: false, unless: false, while: false}',
     'mode = :if',
     'mode = :unless',
     'mode = :begin',
