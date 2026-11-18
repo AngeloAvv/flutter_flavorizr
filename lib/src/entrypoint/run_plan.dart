@@ -80,13 +80,18 @@ Set<String> platformsWithoutFlavors(Flavorizr config) => {
 /// A run that covers all of them is a *full* run, the only one that records the
 /// flavors in the lock (see `updateLock`). A project that has no Linux flavors
 /// can never run the Linux processors, so they are not part of what a full run
-/// has to cover.
+/// has to cover. Neither is `ide:config` for a configuration with no `ide`.
 Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
   final skipped = platformsWithoutFlavors(config);
 
+  // `ide:config` has nothing to write for a configuration that names no IDE.
+  final hasIde = config.ide?.isNotEmpty ?? false;
+
   return {
     for (final id in registry.fullRunIds)
-      if (!skipped.contains(id.split(':').first)) id,
+      if (!skipped.contains(id.split(':').first) &&
+          (hasIde || id != 'ide:config'))
+        id,
   };
 }
 

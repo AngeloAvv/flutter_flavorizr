@@ -40,6 +40,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.da
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
+import 'package:flutter_flavorizr/src/engine/processors/ide/ide_config_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
@@ -136,7 +137,7 @@ class ProcessorRegistry {
            if (!engine.any((entry) => entry.processor.id == id)) id,
        };
 
-  /// The registry of this version: the Android, Linux, Windows, Flutter,
+  /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
   /// xcconfig, Podfile and Info.plist processors that were ported run on the
   /// engine, every other 2.x
   /// instruction on the legacy pipeline.
@@ -244,6 +245,12 @@ class ProcessorRegistry {
       ),
       EngineProcessor(const FlutterAppProcessor(), paths: {K.flutterAppPath}),
       EngineProcessor(const FlutterMainProcessor(), paths: {K.flutterMainPath}),
+      // The run configurations of the IDEs are local: the IDEs write to them,
+      // and git ignores `.idea/`.
+      EngineProcessor(
+        const IdeConfigProcessor(),
+        paths: {K.ideaLaunchpath, K.vsCodeLaunchPath},
+      ),
     ],
     resources: [
       // The part of the projects the lock hashes is the one the processors
