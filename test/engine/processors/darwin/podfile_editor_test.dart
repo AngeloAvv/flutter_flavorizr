@@ -744,13 +744,36 @@ final _unsafe = <({String name, List<String> source, String reason})>[
   ),
   (
     name: 'a loop opener on a continued line',
-    source: [r'result = \\', 'while false', 'end', ..._decoy],
+    source: ['result = \\', 'while false', 'end', ..._decoy],
     reason: 'loop header',
   ),
   (
     name: 'a loop header with parentheses after then',
     source: ['if ENV["X"] then while (false)', 'end', 'end', ..._decoy],
     reason: 'loop header',
+  ),
+  (
+    name: 'a symbol that looks like a loop delimiter',
+    source: [
+      'while :do && \\',
+      '([1].any? do |item|',
+      'false',
+      'end)',
+      ..._decoy,
+      'end',
+    ],
+    reason: 'loop header',
+  ),
+  (
+    name: 'a block opened on a continued line of a loop body',
+    source: [
+      'while false do \\',
+      '[1].each do |item|',
+      'end',
+      ..._decoy,
+      'end',
+    ],
+    reason: 'inside a block',
   ),
   (
     name: 'a nested do after the loop delimiter',
@@ -1047,6 +1070,10 @@ final _lexicalSupported = <_Case>[
   _readable('reads escapes, symbols and a simple interpolation in strings', [
     r'''x = "say \"hi\" it's #{name} # not a comment"''',
     r'''y = 'it\'s' + :'a b'.to_s''',
+  ]),
+  _readable('reads then and else as symbols, not as separators', [
+    'mode = :then while false',
+    'mode = :else until true',
   ]),
   _readable('reads a continuation in the body of a loop', [
     'while false do puts \\',

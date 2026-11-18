@@ -103,7 +103,7 @@ final class LexedPodfile {
   static final RegExp _simple = RegExp(r'#\{[\w@.]+\}');
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
-    r'(?:^|[=(,;]|\b(?:then|else)\b)\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b(?![!?=]|:(?!:))|'
+    r'(?:^|[=(,;]|(?<![\w:.@$])(?:then|else)\b(?![!?=]))\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b(?![!?=]|:(?!:))|'
     r'(?<![\w:.])do\b(?![!?=:])|\{\s*(?:\|[^|]*\|)?\s*$',
   );
   static final RegExp _loopOpener = RegExp(r'\b(?:while|until|for)$');
@@ -158,7 +158,7 @@ final class LexedPodfile {
           // the body, which is read as any other line.
           final headerOpen = !scan.code
               .substring(opener.end)
-              .contains(RegExp(r'\bdo\b|;'));
+              .contains(RegExp(r'(?<![\w:.])do\b|;'));
 
           if (startsContinued || (scan.continues && headerOpen)) {
             _refuse(
@@ -203,7 +203,7 @@ final class LexedPodfile {
     for (final line in _lines.take(position)) {
       final code = _code[line.index];
 
-      if (code == null || nonCode.contains(line.index)) continue;
+      if (code == null) continue;
 
       final closes =
           _end.allMatches(code).length +
