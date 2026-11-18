@@ -86,6 +86,23 @@ Future<void> main(List<String> arguments) async {
     exit(64);
   }
 
+  try {
+    await _e2e(platform, checkout);
+  } on _Failure catch (failure) {
+    // Out of the `finally` of `_e2e`: the workspace is gone by now.
+    stderr.writeln('e2e: ${failure.message}');
+    exit(1);
+  }
+}
+
+/// A step that did not do what it should.
+class _Failure implements Exception {
+  final String message;
+
+  _Failure(this.message);
+}
+
+Future<void> _e2e(String platform, Directory checkout) async {
   final workspace = Directory.systemTemp.createTempSync('flavorizr_e2e_');
 
   try {
@@ -139,10 +156,7 @@ Future<void> main(List<String> arguments) async {
 
 void _step(String name) => stdout.writeln('\n=== $name');
 
-Never _fail(String message) {
-  stderr.writeln('e2e: $message');
-  exit(1);
-}
+Never _fail(String message) => throw _Failure(message);
 
 /// Runs [executable] in [directory], showing its output, and fails when it does.
 Future<void> _run(
