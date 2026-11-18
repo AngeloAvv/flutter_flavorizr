@@ -1,0 +1,38 @@
+name: End to end
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+
+jobs:
+  e2e:
+    runs-on: ${{ (inputs.platform == 'android' || inputs.platform == 'linux') && 'ubuntu-latest' || (inputs.platform == 'windows' && 'windows-latest') || 'macos-latest' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Flutter
+        uses: ./.github/actions/setup
+      - name: Set up JDK
+        if: ${{ inputs.platform == 'android' }}
+        uses: actions/setup-java@v6
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - name: Setup Android SDK
+        if: ${{ inputs.platform == 'android' }}
+        uses: android-actions/setup-android@v4
+      - name: Install Linux build dependencies
+        if: ${{ inputs.platform == 'linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev clang cmake
+      # flutter create, apply, plan (nothing to do), remove a flavor, apply,
+      # plan (nothing to do), build the flavor that is left.
+      - name: Flavorize, remove a flavor and build
+        shell: bash
+        env:
+          PLATFORM: ${{ inputs.platform }}
+        run: dart run tool/e2e.dart "$PLATFORM"

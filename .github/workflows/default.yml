@@ -14,45 +14,33 @@ concurrency:
 
 jobs:
   test:
-    name: Testing
+    name: Test and analyze
     uses: ./.github/workflows/test.yml
-
-  analyze:
-    name: Testing
-    uses: ./.github/workflows/analyze.yml
 
   parity:
     name: Golden parity
     needs:
       - test
-      - analyze
     uses: ./.github/workflows/parity.yml
 
-  build:
-    name: Build (${{ matrix.platform }}|${{ matrix.working-directory }}|${{ matrix.flavor }}|flavorize:${{ matrix.flavorize }})
+  # Flavorizes a project that `flutter create` makes, once for each platform,
+  # and checks that a second run has nothing to do, that a flavor that is
+  # removed goes away and that the flavor that is left builds.
+  e2e:
+    name: End to end (${{ matrix.platform }})
     needs:
       - test
-      - analyze
     strategy:
       fail-fast: false
       matrix:
-        flavor: [ apple, banana ]
         platform: [ android, ios, macos, linux, windows ]
-        working-directory: [ blank, example ]
-        include:
-          - flavorize: false
-          - flavorize: true
-            working-directory: blank
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/e2e.yml
     with:
-      flavor: ${{ matrix.flavor }}
-      flavorize: ${{ matrix.flavorize }}
       platform: ${{ matrix.platform }}
-      working-directory: ${{ matrix.working-directory }}
 
   release:
     needs:
-      - build
+      - e2e
     name: Release
     uses: ./.github/workflows/release.yml
 
@@ -65,7 +53,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [test, analyze, parity, build]
+    needs: [test, parity, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Fail unless every required job succeeded
