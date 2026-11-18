@@ -46,7 +46,7 @@ import 'package:path/path.dart' as p;
 /// paths of `K` are ever valid on their own.
 class FlavorizrContext {
   /// The resolved configuration of the run.
-  final Flavorizr config;
+  final FlavorizrConfig config;
 
   /// The shadow workspace, where processors write.
   final Directory root;

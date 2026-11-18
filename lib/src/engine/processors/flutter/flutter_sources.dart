@@ -44,7 +44,7 @@ String dartStringContent(String text) => text
 /// `flavorizr.yaml`, exactly as it was written. The members of the enum are
 /// lower-cased, as Dart code expects, so comparing their names with
 /// `appFlavor` (what 2.x did) never matched a flavor named `Apple`.
-String flavorsGeneratedSource(Flavorizr config) {
+String flavorsGeneratedSource(FlavorizrConfig config) {
   final flavors = config.flavors;
   final names = dartStringContent(flavors.keys.join(', '));
   final members = [

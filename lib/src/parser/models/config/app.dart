@@ -37,16 +37,16 @@ part 'app.g.dart';
   checked: true,
   disallowUnrecognizedKeys: true,
 )
-class App {
+class AppDefaults {
   @JsonKey(required: false, disallowNullValue: true)
-  final Android? android;
+  final AndroidDefaults? android;
 
   @JsonKey(required: false, disallowNullValue: true)
   final IOS? ios;
 
   final MacOS? macos;
 
-  const App({this.android, this.ios, this.macos});
+  const AppDefaults({this.android, this.ios, this.macos});
 
-  factory App.fromJson(Map json) => _$AppFromJson(json);
+  factory AppDefaults.fromJson(Map json) => _$AppDefaultsFromJson(json);
 }

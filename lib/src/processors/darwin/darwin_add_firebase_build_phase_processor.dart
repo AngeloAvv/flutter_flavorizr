@@ -39,7 +39,7 @@ class DarwinAddFirebaseBuildPhaseProcessor extends AbstractProcessor<void> {
   const DarwinAddFirebaseBuildPhaseProcessor(
     this.projectPath,
     this.scriptFilePath, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   }) : super(config, logger: logger);
 

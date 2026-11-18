@@ -245,7 +245,7 @@ abstract class _AppleFirebaseProcessor extends FlavorizrProcessor {
   OwnedObjects owned(FlavorizrContext ctx);
 
   /// The flavors that have a Firebase configuration, with where it is.
-  Map<String, String> sources(Flavorizr config);
+  Map<String, String> sources(FlavorizrConfig config);
 
   @override
   Set<ResourceKey<Object?>> get requires => {projectKey};
@@ -375,7 +375,7 @@ class IosFirebaseProcessor extends _AppleFirebaseProcessor {
   OwnedObjects owned(FlavorizrContext ctx) => OwnedObjects.ios(ctx);
 
   @override
-  Map<String, String> sources(Flavorizr config) => {
+  Map<String, String> sources(FlavorizrConfig config) => {
     for (final MapEntry(key: flavor, value: Flavor(:ios))
         in config.iosFirebaseFlavors.entries)
       flavor: ios!.firebase!.config,
@@ -409,7 +409,7 @@ class MacosFirebaseProcessor extends _AppleFirebaseProcessor {
   OwnedObjects owned(FlavorizrContext ctx) => OwnedObjects.macos(ctx);
 
   @override
-  Map<String, String> sources(Flavorizr config) => {
+  Map<String, String> sources(FlavorizrConfig config) => {
     for (final MapEntry(key: flavor, value: Flavor(:macos))
         in config.macosFirebaseFlavors.entries)
       flavor: macos!.firebase!.config,

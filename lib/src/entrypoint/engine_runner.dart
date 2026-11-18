@@ -132,7 +132,7 @@ final class EngineRun {
 /// resolve or a lock that cannot be read, is thrown: see `ExitCodes.of`.
 Future<EngineRun> runEngine(
   CliContext context, {
-  required Flavorizr config,
+  required FlavorizrConfig config,
   required RunPlan plan,
   required Logger logger,
   StepObserver? observer,

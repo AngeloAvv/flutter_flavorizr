@@ -41,7 +41,7 @@ class DarwinAddBuildConfigurationProcessor extends AbstractProcessor<void> {
     this.flavorName,
     this.mode,
     this.buildSettings, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   }) : super(config, logger: logger);
 

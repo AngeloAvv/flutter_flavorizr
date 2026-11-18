@@ -12,7 +12,7 @@ Pubspec _$PubspecFromJson(Map json) =>
       final val = Pubspec(
         flavorizr: $checkedConvert(
           'flavorizr',
-          (v) => Flavorizr.fromJson(v as Map),
+          (v) => FlavorizrConfig.fromJson(v as Map),
         ),
       );
       return val;

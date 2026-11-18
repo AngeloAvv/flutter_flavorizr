@@ -34,7 +34,7 @@ import 'package:xml/xml.dart';
 import '../../test_utils.dart';
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   setUp(() {

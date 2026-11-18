@@ -45,7 +45,7 @@ void main() {
     test(
       '$path only lists instructions that are processors in its default recipe',
       () {
-        final config = Flavorizr.parse(File(path).readAsStringSync());
+        final config = FlavorizrConfig.parse(File(path).readAsStringSync());
         final instructions = config.recipes?['default'] ?? const <String>[];
 
         expect(

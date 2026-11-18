@@ -60,11 +60,11 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
   String get folder;
 
   /// The flavors of the platform.
-  Map<String, Flavor> flavors(Flavorizr config);
+  Map<String, Flavor> flavors(FlavorizrConfig config);
 
   /// The text of the file of [flavorName] for [target].
   String render(
-    Flavorizr config,
+    FlavorizrConfig config,
     String flavorName,
     Flavor flavor,
     Target target,
@@ -133,11 +133,11 @@ class IosXcconfigProcessor extends _XcconfigProcessor {
   String get folder => K.iOSFlutterPath;
 
   @override
-  Map<String, Flavor> flavors(Flavorizr config) => config.iosFlavors;
+  Map<String, Flavor> flavors(FlavorizrConfig config) => config.iosFlavors;
 
   @override
   String render(
-    Flavorizr config,
+    FlavorizrConfig config,
     String flavorName,
     Flavor flavor,
     Target target,
@@ -178,11 +178,11 @@ class MacosXcconfigProcessor extends _XcconfigProcessor {
   String get folder => K.macOSFlutterPath;
 
   @override
-  Map<String, Flavor> flavors(Flavorizr config) => config.macosFlavors;
+  Map<String, Flavor> flavors(FlavorizrConfig config) => config.macosFlavors;
 
   @override
   String render(
-    Flavorizr config,
+    FlavorizrConfig config,
     String flavorName,
     Flavor flavor,
     Target target,
@@ -217,11 +217,11 @@ class MacosConfigsProcessor extends _XcconfigProcessor {
   String get folder => K.macOSConfigsPath;
 
   @override
-  Map<String, Flavor> flavors(Flavorizr config) => config.macosFlavors;
+  Map<String, Flavor> flavors(FlavorizrConfig config) => config.macosFlavors;
 
   @override
   String render(
-    Flavorizr config,
+    FlavorizrConfig config,
     String flavorName,
     Flavor flavor,
     Target target,

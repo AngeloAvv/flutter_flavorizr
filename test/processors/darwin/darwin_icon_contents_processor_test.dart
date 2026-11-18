@@ -38,7 +38,7 @@ import 'package:mason_logger/mason_logger.dart';
 void main() {
   late List<DarwinIcon> icons;
 
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   setUp(() {

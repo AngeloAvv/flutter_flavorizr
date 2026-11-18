@@ -56,7 +56,7 @@ void main() {
   test(
     'Windows.fromJson honors an explicit icon and generateDummyAssets override',
     () {
-      final flavorizr = Flavorizr.parse('''
+      final flavorizr = FlavorizrConfig.parse('''
 flavors:
   apple:
     app:

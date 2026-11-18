@@ -112,7 +112,7 @@ void main() {
   Future<ExecutionReport> run(List<FlavorizrProcessor> processors) {
     return PlanExecutor(logger: TestUtils.quietLogger()).execute(
       resolveExecutionPlan(processors, requested: processors.map((p) => p.id)),
-      config: Flavorizr.parse(
+      config: FlavorizrConfig.parse(
         'flavors:\n  apple:\n    app:\n      name: apple\n'
         '    ios:\n      bundleId: com.example.apple\n',
       ),
@@ -397,7 +397,7 @@ void main() {
               ],
               requested: ['test:first', 'test:later'],
             ),
-            config: Flavorizr.parse(
+            config: FlavorizrConfig.parse(
               'flavors:\n  apple:\n    app:\n      name: apple\n'
               '    ios:\n      bundleId: com.example.apple\n',
             ),
@@ -499,7 +499,7 @@ void main() {
                 ],
                 requested: ['test:ios'],
               ),
-              config: Flavorizr.parse(
+              config: FlavorizrConfig.parse(
                 'flavors:\n  apple:\n    app:\n      name: apple\n'
                 '    ios:\n      bundleId: com.example.apple\n',
               ),
@@ -571,7 +571,7 @@ void main() {
                 ],
                 requested: ['test:ios'],
               ),
-              config: Flavorizr.parse(
+              config: FlavorizrConfig.parse(
                 'flavors:\n  apple:\n    app:\n      name: apple\n'
                 '    ios:\n      bundleId: com.example.apple\n',
               ),

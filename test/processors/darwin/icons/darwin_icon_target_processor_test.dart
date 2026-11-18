@@ -48,7 +48,7 @@ class _TestDarwinIconTargetProcessor extends DarwinIconTargetProcessor {
 }
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   final sourceFixture = p.absolute(

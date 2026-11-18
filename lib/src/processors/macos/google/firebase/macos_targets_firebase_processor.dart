@@ -92,7 +92,7 @@ class MacOSTargetsFirebaseProcessor extends QueueProcessor {
   @override
   String toString() => 'IOSTargetsFirebaseProcessor';
 
-  static Map<String, Flavor> _filteredFlavors(Flavorizr config) =>
+  static Map<String, Flavor> _filteredFlavors(FlavorizrConfig config) =>
       config.macosFlavors
           .where((flavorName, flavor) => flavor.macos?.firebase != null);
 }

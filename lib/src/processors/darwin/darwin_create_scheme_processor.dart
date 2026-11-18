@@ -40,7 +40,7 @@ class DarwinCreateSchemeProcessor extends AbstractProcessor<void> {
   const DarwinCreateSchemeProcessor(
     this.projectPath,
     this.schemeName, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   }) : super(config, logger: logger);
 

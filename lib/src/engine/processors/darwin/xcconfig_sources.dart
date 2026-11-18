@@ -48,7 +48,7 @@ String xcconfigName(String flavorName, Target target) =>
 /// writing it back would turn `#include?` into `#include`, sort the keys and
 /// drop whatever is not a setting.
 String iosXcconfigSource(
-  Flavorizr config,
+  FlavorizrConfig config,
   String flavorName,
   Flavor flavor,
   Target target,
@@ -70,7 +70,7 @@ String iosXcconfigSource(
 /// of iOS, without variables, which `Runner/Configs` holds on macOS (see
 /// [macosConfigsXcconfigSource]).
 String macosFlutterXcconfigSource(
-  Flavorizr config,
+  FlavorizrConfig config,
   String flavorName,
   Flavor flavor,
   Target target,
@@ -90,7 +90,7 @@ String macosFlutterXcconfigSource(
 /// The text of `macos/Runner/Configs/<flavor><Target>.xcconfig`: the one of
 /// Flutter and the warnings, then the variables.
 String macosConfigsXcconfigSource(
-  Flavorizr config,
+  FlavorizrConfig config,
   String flavorName,
   Flavor flavor,
   Target target,

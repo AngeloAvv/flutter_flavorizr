@@ -35,7 +35,7 @@ part 'android.g.dart';
   checked: true,
   disallowUnrecognizedKeys: true,
 )
-class Android {
+class AndroidDefaults {
   static const kFlavorDimensionValue = 'flavor-type';
 
   @JsonKey(defaultValue: 'flavor-type')
@@ -47,11 +47,11 @@ class Android {
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, BuildConfigField> buildConfigFields;
 
-  const Android({
+  const AndroidDefaults({
     this.flavorDimensions = kFlavorDimensionValue,
     this.resValues = const {},
     this.buildConfigFields = const {},
   });
 
-  factory Android.fromJson(Map json) => _$AndroidFromJson(json);
+  factory AndroidDefaults.fromJson(Map json) => _$AndroidDefaultsFromJson(json);
 }

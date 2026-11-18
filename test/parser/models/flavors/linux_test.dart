@@ -58,7 +58,7 @@ void main() {
 
   test('Linux.fromJson throws when applicationId is missing', () {
     expect(
-      () => Flavorizr.parse('''
+      () => FlavorizrConfig.parse('''
 flavors:
   apple:
     app:

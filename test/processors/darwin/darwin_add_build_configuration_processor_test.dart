@@ -33,7 +33,7 @@ import 'package:mason_logger/mason_logger.dart';
 import '../../test_utils.dart';
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
 
   const exampleProjectPath = 'example/ios/Runner.xcodeproj';

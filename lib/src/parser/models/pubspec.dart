@@ -32,7 +32,7 @@ part 'pubspec.g.dart';
 @JsonSerializable(anyMap: true, createToJson: false, checked: true)
 class Pubspec {
   @JsonKey(required: true)
-  final Flavorizr flavorizr;
+  final FlavorizrConfig flavorizr;
 
   const Pubspec({required this.flavorizr});
 

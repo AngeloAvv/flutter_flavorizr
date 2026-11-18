@@ -37,7 +37,7 @@ final class LegacyStep {
   final String id;
 
   /// The configuration the instruction reads.
-  final Flavorizr config;
+  final FlavorizrConfig config;
 
   /// Creates a step.
   const LegacyStep(this.id, this.config);

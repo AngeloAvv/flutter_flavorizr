@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 abstract class AbstractProcessor<T> {
-  final Flavorizr config;
+  final FlavorizrConfig config;
   final Logger logger;
 
   const AbstractProcessor(this.config, {required this.logger});

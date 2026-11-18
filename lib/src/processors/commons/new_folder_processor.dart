@@ -35,7 +35,7 @@ class NewFolderProcessor extends AbstractProcessor {
 
   NewFolderProcessor(
     this.path, {
-    required Flavorizr config,
+    required FlavorizrConfig config,
     required Logger logger,
   }) : super(config, logger: logger);
 

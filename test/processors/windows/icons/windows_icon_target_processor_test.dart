@@ -35,7 +35,7 @@ import 'package:path/path.dart' as p;
 import '../../../test_utils.dart';
 
 void main() {
-  late Flavorizr flavorizr;
+  late FlavorizrConfig flavorizr;
   late Logger logger;
   late Directory originalDir;
 

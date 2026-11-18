@@ -135,7 +135,7 @@ class DoctorCommand extends FlavorizrCommand {
           'pubspec.yaml not found: run flavorizr from the root of the project',
         );
 
-  (Flavorizr?, Check) _config() {
+  (FlavorizrConfig?, Check) _config() {
     try {
       final config = loadConfig();
       final names = config.flavors.keys.join(', ');
@@ -174,7 +174,7 @@ class DoctorCommand extends FlavorizrCommand {
     }
   }
 
-  List<Check> _android(Flavorizr? config) {
+  List<Check> _android(FlavorizrConfig? config) {
     final configured = config?.androidFlavorsAvailable ?? false;
     final groovy = _exists(K.androidBuildLegacyPath);
     final kotlin = _exists(K.androidBuildKotlinPath);

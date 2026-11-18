@@ -6,18 +6,18 @@ part of 'flavorizr.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Flavorizr _$FlavorizrFromJson(Map json) => $checkedCreate('Flavorizr', json, (
-  $checkedConvert,
-) {
+FlavorizrConfig _$FlavorizrConfigFromJson(
+  Map json,
+) => $checkedCreate('FlavorizrConfig', json, ($checkedConvert) {
   $checkKeys(
     json,
     allowedKeys: const ['app', 'flavors', 'assetsUrl', 'ide', 'recipes'],
     requiredKeys: const ['flavors'],
   );
-  final val = Flavorizr(
+  final val = FlavorizrConfig(
     app: $checkedConvert(
       'app',
-      (v) => v == null ? null : App.fromJson(v as Map),
+      (v) => v == null ? null : AppDefaults.fromJson(v as Map),
     ),
     flavors: $checkedConvert(
       'flavors',

@@ -150,7 +150,7 @@ flavors:
   };
 
   Future<void> runLegacy(String yaml) async {
-    final config = Flavorizr.parse(yaml);
+    final config = FlavorizrConfig.parse(yaml);
 
     Directory.current = legacyProject;
     try {
@@ -165,7 +165,7 @@ flavors:
 
   Future<FlavorizrContext> runPorted(String yaml) async {
     final ctx = FlavorizrContext(
-      config: Flavorizr.parse(yaml),
+      config: FlavorizrConfig.parse(yaml),
       root: workspace,
       projectRoot: portedProject,
       logger: TestUtils.quietLogger(),
