@@ -1,0 +1,11 @@
+name: app
+dependencies:
+  flutter:
+    sdk: flutter
+flavorizr:
+  flavors:
+    apple:
+      app:
+        name: "Apple"
+      android:
+        applicationID: "com.example.apple"

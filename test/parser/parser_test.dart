@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.dart';
 import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
 import 'package:flutter_flavorizr/src/exception/null_fields_exception.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
@@ -76,7 +77,10 @@ void main() {
       } catch (e) {
         expect(e, isA<MissingRequiredFieldsException>());
         expect((e as MissingRequiredFieldsException).fields, contains('app'));
+        expect(e.path, 'flavors.apple');
         expect(e.toString(), contains('app'));
+        expect(e.toString(), contains('flavorizr.yaml:3:5'));
+        expect(e.toString(), contains('`flavors.apple`'));
       }
     },
   );
@@ -96,8 +100,81 @@ void main() {
       } catch (e) {
         expect(e, isA<NullFieldsException>());
         expect((e as NullFieldsException).fields, contains('app'));
+        expect(e.path, 'flavors.apple');
         expect(e.toString(), contains('app'));
       }
     },
   );
+
+  group('a key that is not known', () {
+    UnknownFieldsException unknown(String dir, {String file = 'flavorizr'}) {
+      final parser = Parser(
+        pubspecPath: 'test_resources/parser/parser_test/$dir/pubspec',
+        flavorizrPath: 'test_resources/parser/parser_test/$dir/$file',
+      );
+
+      try {
+        parser.parse();
+      } on UnknownFieldsException catch (e) {
+        return e;
+      }
+
+      fail('Should have thrown UnknownFieldsException');
+    }
+
+    test('names the key, where it is and the one that was meant', () {
+      // A user wrote `bundle_id` for `bundleId` (#437).
+      final error = unknown('unknown_key');
+
+      expect(error.fields, ['bundle_id']);
+      expect(error.path, 'flavors.apple.ios');
+      expect(error.suggestions, {'bundle_id': 'bundleId'});
+      expect(error.location, 'flavorizr.yaml:6:7');
+      expect(
+        error.toString(),
+        'flavorizr.yaml:6:7: Unknown key `bundle_id` in `flavors.apple.ios`: '
+        'did you mean `bundleId` instead of `bundle_id`?',
+      );
+    });
+
+    test('is found in a map at any depth, every one of them', () {
+      // `app.ios.buildSettigns` comes first in the file.
+      final error = unknown('unknown_nested');
+
+      expect(error.fields, ['buildSettigns']);
+      expect(error.path, 'app.ios');
+      expect(error.suggestions, {'buildSettigns': 'buildSettings'});
+    });
+
+    test('is found in a flavor too, with more than one in a map', () {
+      final error = unknown('unknown_nested', file: 'flavorizr_fixed');
+
+      expect(error.fields, ['nme', 'other']);
+      expect(error.path, 'flavors.apple.app');
+      expect(error.suggestions, {'nme': 'name'});
+      expect(
+        error.toString(),
+        contains('did you mean `name` instead of `nme`?'),
+      );
+    });
+
+    test('is found in the flavorizr section of the pubspec, whatever else '
+        'the pubspec has', () {
+      final error = unknown('unknown_pubspec', file: 'non_existent');
+
+      expect(error.fields, ['applicationID']);
+      expect(error.path, 'flavorizr.flavors.apple.android');
+      expect(error.suggestions, {'applicationID': 'applicationId'});
+      expect(error.location, 'pubspec.yaml:11:9');
+    });
+
+    test('lists the known keys when none is close', () {
+      final error = unknown('unknown_far');
+
+      expect(error.suggestions, isEmpty);
+      expect(error.path, 'flavors.apple.app');
+      expect(error.toString(), contains('The known keys are:'));
+      expect(error.toString(), contains('name'));
+    });
+  });
 }

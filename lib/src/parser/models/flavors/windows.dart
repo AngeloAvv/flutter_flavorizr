@@ -30,16 +30,17 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'windows.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Windows extends OS with IconMixin, DummyAssetsMixin {
-  Windows({
-    bool generateDummyAssets = true,
-    String? icon,
-  }) {
+  Windows({bool generateDummyAssets = true, String? icon}) {
     this.generateDummyAssets = generateDummyAssets;
     this.icon = icon;
   }
 
-  factory Windows.fromJson(Map<String, dynamic> json) =>
-      _$WindowsFromJson(json);
+  factory Windows.fromJson(Map json) => _$WindowsFromJson(json);
 }

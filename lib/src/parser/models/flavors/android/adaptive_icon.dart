@@ -2,7 +2,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'adaptive_icon.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class AdaptiveIcon {
   final String foreground;
   final String background;
@@ -14,6 +19,5 @@ class AdaptiveIcon {
     this.monochrome,
   });
 
-  factory AdaptiveIcon.fromJson(Map<String, dynamic> json) =>
-      _$AdaptiveIconFromJson(json);
+  factory AdaptiveIcon.fromJson(Map json) => _$AdaptiveIconFromJson(json);
 }

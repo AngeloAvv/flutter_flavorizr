@@ -27,13 +27,17 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'agconnect.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class AGConnect {
   @JsonKey(required: true, disallowNullValue: true)
   final String config;
 
   const AGConnect({required this.config});
 
-  factory AGConnect.fromJson(Map<String, dynamic> json) =>
-      _$AGConnectFromJson(json);
+  factory AGConnect.fromJson(Map json) => _$AGConnectFromJson(json);
 }

@@ -26,12 +26,18 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/exception/configuration_not_found_exception.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.dart';
 import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
 import 'package:flutter_flavorizr/src/exception/null_fields_exception.dart';
+import 'package:flutter_flavorizr/src/parser/config_path.dart';
+import 'package:flutter_flavorizr/src/parser/did_you_mean.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/pubspec.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 class Parser {
   static const _validExtensions = ['yaml', 'yml'];
@@ -39,21 +45,18 @@ class Parser {
   final String pubspecPath;
   final String flavorizrPath;
 
-  const Parser({
-    required this.pubspecPath,
-    required this.flavorizrPath,
-  });
+  const Parser({required this.pubspecPath, required this.flavorizrPath});
 
   Flavorizr parse() {
     assert(flavorizrPath.isNotEmpty || pubspecPath.isNotEmpty);
 
-    final validFileNames = [
-      flavorizrPath,
-      pubspecPath,
-    ].expand(
-      (fileName) =>
-          _validExtensions.map((extension) => [fileName, extension].join('.')),
-    ).where((fileName) => fileName.isNotEmpty);
+    final validFileNames = [flavorizrPath, pubspecPath]
+        .expand(
+          (fileName) => _validExtensions.map(
+            (extension) => [fileName, extension].join('.'),
+          ),
+        )
+        .where((fileName) => fileName.isNotEmpty);
 
     final configFileName = validFileNames.firstWhereOrNull(
       (fileName) => File(fileName).existsSync(),
@@ -64,19 +67,66 @@ class Parser {
     }
 
     final file = File(configFileName);
+    final yaml = file.readAsStringSync();
 
     try {
       if (configFileName.contains(flavorizrPath)) {
-        final yaml = file.readAsStringSync();
         return Flavorizr.parse(yaml);
       } else {
-        final yaml = file.readAsStringSync();
         return Pubspec.parse(yaml).flavorizr;
       }
-    } on DisallowedNullValueException catch (e) {
-      throw NullFieldsException(e.keysWithNullValues);
-    } on MissingRequiredKeysException catch (e) {
-      throw MissingRequiredFieldsException(e.missingKeys);
+    } on ParsedYamlException catch (e) {
+      throw _translate(e, yaml, configFileName);
+    }
+  }
+
+  /// What a [ParsedYamlException] says, in the words of the configuration: the
+  /// path of the map it is about, where it is in the file and, for a key that is
+  /// not known, the one that was most likely meant.
+  Exception _translate(ParsedYamlException error, String yaml, String file) {
+    final node = error.yamlNode;
+    final inner = error.innerError;
+    final cause = inner is CheckedFromJsonException ? inner.innerError : inner;
+    final root = _tryLoad(yaml);
+    final location = node == null
+        ? null
+        : '${p.basename(file)}:${node.span.start.line + 1}:'
+              '${node.span.start.column + 1}';
+    final path = node == null || root == null
+        ? ''
+        : configContainerPathOf(root, node) ?? '';
+
+    return switch (cause) {
+      UnrecognizedKeysException(:final unrecognizedKeys, :final allowedKeys) =>
+        UnknownFieldsException(
+          unrecognizedKeys,
+          path: path,
+          allowedKeys: allowedKeys,
+          location: location,
+          suggestions: {
+            for (final key in unrecognizedKeys)
+              key: ?didYouMean(key, allowedKeys),
+          },
+        ),
+      MissingRequiredKeysException(:final missingKeys) =>
+        MissingRequiredFieldsException(
+          missingKeys,
+          path: path,
+          location: location,
+        ),
+      DisallowedNullValueException(:final keysWithNullValues) =>
+        NullFieldsException(keysWithNullValues, path: path, location: location),
+      _ => InvalidConfigurationException(
+        error.formattedMessage ?? error.message,
+      ),
+    };
+  }
+
+  static YamlNode? _tryLoad(String yaml) {
+    try {
+      return loadYamlNode(yaml);
+    } on YamlException {
+      return null;
     }
   }
 }

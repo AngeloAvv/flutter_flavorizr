@@ -28,7 +28,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'variable.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Variable {
   @JsonKey(disallowNullValue: true)
   final Target? target;
@@ -36,11 +41,7 @@ class Variable {
   @JsonKey(required: true, disallowNullValue: true)
   final String value;
 
-  const Variable({
-    required this.value,
-    this.target,
-  });
+  const Variable({required this.value, this.target});
 
-  factory Variable.fromJson(Map<String, dynamic> json) =>
-      _$VariableFromJson(json);
+  factory Variable.fromJson(Map json) => _$VariableFromJson(json);
 }

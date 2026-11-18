@@ -6,18 +6,25 @@ part of 'ios.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-IOS _$IOSFromJson(Map json) {
-  $checkKeys(json, disallowNullValues: const ['includes']);
-  return IOS(
-    buildSettings:
-        (json['buildSettings'] as Map?)?.map(
-          (k, e) => MapEntry(k as String, e),
-        ) ??
-        {},
-    includes:
-        (json['includes'] as List<dynamic>?)
-            ?.map((e) => Include.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList() ??
-        [],
+IOS _$IOSFromJson(Map json) => $checkedCreate('IOS', json, ($checkedConvert) {
+  $checkKeys(
+    json,
+    allowedKeys: const ['buildSettings', 'includes'],
+    disallowNullValues: const ['includes'],
   );
-}
+  final val = IOS(
+    buildSettings: $checkedConvert(
+      'buildSettings',
+      (v) => (v as Map?)?.map((k, e) => MapEntry(k as String, e)) ?? {},
+    ),
+    includes: $checkedConvert(
+      'includes',
+      (v) =>
+          (v as List<dynamic>?)
+              ?.map((e) => Include.fromJson(e as Map))
+              .toList() ??
+          [],
+    ),
+  );
+  return val;
+});

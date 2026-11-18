@@ -28,7 +28,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'include.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Include {
   @JsonKey(disallowNullValue: true)
   final Target? target;
@@ -39,12 +44,7 @@ class Include {
   @JsonKey(disallowNullValue: true, defaultValue: false)
   final bool optional;
 
-  const Include({
-    required this.value,
-    this.target,
-    this.optional = false,
-  });
+  const Include({required this.value, this.target, this.optional = false});
 
-  factory Include.fromJson(Map<String, dynamic> json) =>
-      _$IncludeFromJson(json);
+  factory Include.fromJson(Map json) => _$IncludeFromJson(json);
 }

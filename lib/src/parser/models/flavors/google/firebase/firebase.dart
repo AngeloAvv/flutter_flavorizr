@@ -27,13 +27,17 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'firebase.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Firebase {
   @JsonKey(required: true, disallowNullValue: true)
   final String config;
 
   const Firebase({required this.config});
 
-  factory Firebase.fromJson(Map<String, dynamic> json) =>
-      _$FirebaseFromJson(json);
+  factory Firebase.fromJson(Map json) => _$FirebaseFromJson(json);
 }

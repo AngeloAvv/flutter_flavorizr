@@ -33,7 +33,12 @@ import 'windows.dart';
 
 part 'flavor.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Flavor {
   @JsonKey(required: true, disallowNullValue: true)
   final App app;
@@ -62,5 +67,5 @@ class Flavor {
     this.windows,
   });
 
-  factory Flavor.fromJson(Map<String, dynamic> json) => _$FlavorFromJson(json);
+  factory Flavor.fromJson(Map json) => _$FlavorFromJson(json);
 }

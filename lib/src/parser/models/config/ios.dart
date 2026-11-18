@@ -29,7 +29,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ios.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class IOS with BuildSettingsMixin {
   @JsonKey(disallowNullValue: true, defaultValue: [])
   final List<Include> includes;
@@ -42,5 +47,5 @@ class IOS with BuildSettingsMixin {
     this.buildSettings.addAll(buildSettings);
   }
 
-  factory IOS.fromJson(Map<String, dynamic> json) => _$IOSFromJson(json);
+  factory IOS.fromJson(Map json) => _$IOSFromJson(json);
 }

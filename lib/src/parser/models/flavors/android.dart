@@ -36,7 +36,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'android.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
@@ -72,6 +77,5 @@ class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
     this.icon = icon;
   }
 
-  factory Android.fromJson(Map<String, dynamic> json) =>
-      _$AndroidFromJson(json);
+  factory Android.fromJson(Map json) => _$AndroidFromJson(json);
 }

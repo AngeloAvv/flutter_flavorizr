@@ -31,9 +31,13 @@ import 'macos.dart';
 
 part 'app.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class App {
-
   @JsonKey(required: false, disallowNullValue: true)
   final Android? android;
 
@@ -42,11 +46,7 @@ class App {
 
   final MacOS? macos;
 
-  const App({
-    this.android,
-    this.ios,
-    this.macos,
-  });
+  const App({this.android, this.ios, this.macos});
 
-  factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
+  factory App.fromJson(Map json) => _$AppFromJson(json);
 }

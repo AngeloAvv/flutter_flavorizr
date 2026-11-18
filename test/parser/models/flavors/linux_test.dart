@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -33,7 +34,9 @@ void main() {
   test(
     'Linux flavors are collected into Flavorizr.linuxFlavors with their applicationId',
     () {
-      final flavorizr = TestUtils.parseFlavorizr('test_resources/linux/pubspec');
+      final flavorizr = TestUtils.parseFlavorizr(
+        'test_resources/linux/pubspec',
+      );
 
       expect(flavorizr.linuxFlavorsAvailable, isTrue);
       expect(flavorizr.linuxFlavors.keys, containsAll(['apple', 'banana']));
@@ -53,19 +56,26 @@ void main() {
     },
   );
 
-  test(
-    'Linux.fromJson throws when applicationId is missing',
-    () {
-      expect(
-        () => Flavorizr.parse('''
+  test('Linux.fromJson throws when applicationId is missing', () {
+    expect(
+      () => Flavorizr.parse('''
 flavors:
   apple:
     app:
       name: "Apple App"
     linux: {}
 '''),
-        throwsA(isA<MissingRequiredKeysException>()),
-      );
-    },
-  );
+      throwsA(
+        isA<ParsedYamlException>().having(
+          (e) => e.innerError,
+          'innerError',
+          isA<CheckedFromJsonException>().having(
+            (e) => e.innerError,
+            'innerError',
+            isA<MissingRequiredKeysException>(),
+          ),
+        ),
+      ),
+    );
+  });
 }

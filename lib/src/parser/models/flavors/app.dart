@@ -27,7 +27,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'app.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class App {
   @JsonKey(required: true, disallowNullValue: true)
   final String name;
@@ -35,12 +40,9 @@ class App {
   @JsonKey(disallowNullValue: true)
   final String? icon;
 
-  const App({
-    required this.name,
-    this.icon,
-  });
+  const App({required this.name, this.icon});
 
   String get escapedName => name.replaceAll('\'', '\\\'');
 
-  factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
+  factory App.fromJson(Map json) => _$AppFromJson(json);
 }

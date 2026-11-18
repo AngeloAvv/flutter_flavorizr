@@ -1,0 +1,6 @@
+flavors:
+  apple:
+    app:
+      name: "Apple"
+    ios:
+      bundle_id: "com.example.apple"

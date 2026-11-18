@@ -6,18 +6,24 @@ part of 'include.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Include _$IncludeFromJson(Map json) {
-  $checkKeys(
-    json,
-    requiredKeys: const ['value'],
-    disallowNullValues: const ['target', 'value', 'optional'],
-  );
-  return Include(
-    value: json['value'] as String,
-    target: $enumDecodeNullable(_$TargetEnumMap, json['target']),
-    optional: json['optional'] as bool? ?? false,
-  );
-}
+Include _$IncludeFromJson(Map json) =>
+    $checkedCreate('Include', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        allowedKeys: const ['target', 'value', 'optional'],
+        requiredKeys: const ['value'],
+        disallowNullValues: const ['target', 'value', 'optional'],
+      );
+      final val = Include(
+        value: $checkedConvert('value', (v) => v as String),
+        target: $checkedConvert(
+          'target',
+          (v) => $enumDecodeNullable(_$TargetEnumMap, v),
+        ),
+        optional: $checkedConvert('optional', (v) => v as bool? ?? false),
+      );
+      return val;
+    });
 
 const _$TargetEnumMap = {
   Target.debug: 'debug',

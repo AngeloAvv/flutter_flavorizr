@@ -35,7 +35,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'darwin.g.dart';
 
-@JsonSerializable(anyMap: true, createToJson: false)
+@JsonSerializable(
+  anyMap: true,
+  createToJson: false,
+  checked: true,
+  disallowUnrecognizedKeys: true,
+)
 class Darwin extends OS
     with BuildSettingsMixin, FirebaseMixin, IconMixin, DummyAssetsMixin {
   @JsonKey(required: true, disallowNullValue: true)
@@ -59,11 +64,9 @@ class Darwin extends OS
     this.generateDummyAssets = generateDummyAssets;
     this.firebase = firebase;
     this.icon = icon;
-    this.buildSettings = {
-      "PRODUCT_BUNDLE_IDENTIFIER": bundleId,
-    };
+    this.buildSettings = {"PRODUCT_BUNDLE_IDENTIFIER": bundleId};
     this.buildSettings.addAll(buildSettings);
   }
 
-  factory Darwin.fromJson(Map<String, dynamic> json) => _$DarwinFromJson(json);
+  factory Darwin.fromJson(Map json) => _$DarwinFromJson(json);
 }
