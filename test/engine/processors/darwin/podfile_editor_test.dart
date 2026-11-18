@@ -711,6 +711,28 @@ final _unsafe = <({String name, List<String> source, String reason})>[
     reason: 'loop header',
   ),
   (
+    name: 'a regular expression hiding an interpolation terminator',
+    source: [r'note = "#{ /\}"#/ }', ..._decoy, '#"', "project('Runner', {})"],
+    reason: 'interpolation',
+  ),
+  (
+    name: 'a loop header that continues on the next line',
+    source: [
+      'while \\',
+      '([1].any? do |item|',
+      'false',
+      'end)',
+      ..._decoy,
+      'end',
+    ],
+    reason: 'loop header',
+  ),
+  (
+    name: 'a block opener before a namespace-qualified condition',
+    source: ['if::Object.nil?', ..._decoy, 'end'],
+    reason: 'inside a block',
+  ),
+  (
     name: 'a nested do after the loop delimiter',
     source: ['while false do [1].each do |item|', 'end', ..._decoy, 'end'],
     reason: 'inside a block',

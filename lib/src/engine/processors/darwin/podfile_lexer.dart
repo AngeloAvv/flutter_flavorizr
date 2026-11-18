@@ -103,7 +103,7 @@ final class LexedPodfile {
   static final RegExp _simple = RegExp(r'#\{[\w@.]+\}');
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
-    r'(?:^|[=(,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b(?![!?=:])|'
+    r'(?:^|[=(,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b(?![!?=]|:(?!:))|'
     r'(?<![\w:.])do\b(?![!?=:])|\{\s*(?:\|[^|]*\|)?\s*$',
   );
   static final RegExp _loopOpener = RegExp(r'\b(?:while|until|for)$');
@@ -151,12 +151,21 @@ final class LexedPodfile {
         final scan = _scan(text, path);
 
         for (final opener in _opens.allMatches(scan.code)) {
-          if (_loopOpener.hasMatch(opener.group(0)!) &&
-              scan.code.substring(opener.end).contains('(')) {
+          if (!_loopOpener.hasMatch(opener.group(0)!)) continue;
+
+          if (scan.continues) {
+            _refuse(
+              path,
+              'a loop header in `${text.trim()}` goes on after a `\\` at its end, so its condition cannot be read safely.',
+              'Write the loop header on a single line.',
+            );
+          }
+
+          if (scan.code.substring(opener.end).contains('(')) {
             _refuse(
               path,
               'a loop header in `${text.trim()}` contains parentheses, whose blocks and statement separators cannot be read safely.',
-              'Compute the condition separately and use a simple loop header on its own line.',
+              'Write the condition without parentheses, on the line of the loop.',
             );
           }
         }
@@ -245,10 +254,12 @@ final class LexedPodfile {
           final end = text.indexOf('}', i);
 
           if (end < 0 ||
-              RegExp(r'''["'`{#%]|<<''').hasMatch(text.substring(i + 2, end))) {
+              RegExp(
+                r'''["'`{#%/]|<<''',
+              ).hasMatch(text.substring(i + 2, end))) {
             _refuse(
               path,
-              'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `#`, a `%`, a `{` '
+              'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `#`, a `%`, a `/`, a `{` '
                   'or a heredoc in it, or is not closed on its line.',
               'Compute the value on a line of its own, and use it in the string.',
             );

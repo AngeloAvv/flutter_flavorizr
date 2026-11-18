@@ -326,10 +326,11 @@ Ruby:
 
 * a string, a `%` literal, a regular expression or an interpolation that does
   not close on its line, and a heredoc that is never closed;
-* a `#{...}` with a quote, a `#`, a `%`, a `{` or a heredoc in it;
-* a loop header line (`while`, `until` or `for`) containing parentheses:
-  blocks and statement separators in its condition cannot be read safely.
-  Compute the condition separately and keep the loop header on its own line;
+* a `#{...}` with a quote, a `#`, a `%`, a `/`, a `{` or a heredoc in it;
+* a loop header line (`while`, `until` or `for`) containing parentheses or
+  going on after a `\` at its end: blocks and statement separators in its
+  condition cannot be read safely. Write the condition without parentheses, on
+  the line of the loop, so that it is still evaluated on every iteration;
 * a `%` literal that is not `%q`, `%w` or `%i` with a pair of brackets: `%Q`,
   `%W`, `%I`, `%r`, `%s`, `%x`, `%(...)` and any with the same character on both
   sides (`%w|a b|`, `%q!x!`);
