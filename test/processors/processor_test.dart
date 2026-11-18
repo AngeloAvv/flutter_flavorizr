@@ -84,11 +84,11 @@ void main() {
     () async {
       // The instruction after the unknown one is never reached: it would run
       // against the working directory.
-      final flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec')
-        ..instructions = ['unknown:instruction', 'android:androidManifest'];
+      final flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
       final processor = Processor(
         flavorizr,
         force: true,
+        instructions: ['unknown:instruction', 'android:androidManifest'],
         logger: TestUtils.quietLogger(),
       );
 
@@ -106,12 +106,16 @@ void main() {
   );
 
   test(
-    'Processor.resolveInstructions respects an explicit `instructions` override in the config',
+    'Processor.resolveInstructions respects the instructions it is given',
     () {
       final flavorizr = TestUtils.parseFlavorizr(
         'test_resources/windows/pubspec',
-      )..instructions = ['windows:cmake'];
-      final processor = Processor(flavorizr, logger: TestUtils.quietLogger());
+      );
+      final processor = Processor(
+        flavorizr,
+        instructions: ['windows:cmake'],
+        logger: TestUtils.quietLogger(),
+      );
 
       expect(processor.resolveInstructions(), ['windows:cmake']);
     },

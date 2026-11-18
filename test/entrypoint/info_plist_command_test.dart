@@ -222,11 +222,11 @@ void main() {
     });
 
     test('the launch storyboard follows the launch screen of the run, not '
-        'the instructions of the file', () async {
+        'the default recipe of the file', () async {
       // The file asks for it, the run does not: nothing generates it.
       project.write(
         'flavorizr.yaml',
-        'instructions:\n  - ios:plist\n  - ios:launchScreen\n'
+        'recipes:\n  default:\n    - ios:plist\n    - ios:launchScreen\n'
             '${_config(['apple', 'banana'])}',
       );
 

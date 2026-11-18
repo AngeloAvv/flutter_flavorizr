@@ -48,9 +48,7 @@ class IOSPListProcessor extends StringProcessor {
     _updateCFBundleName(root);
     _updateCFBundleDisplayName(root);
 
-    if ((config.instructions ?? []).contains("ios:launchScreen")) {
-      _updateUILaunchStoryboardName(root);
-    }
+    _updateUILaunchStoryboardName(root);
 
     final result = document.toXmlString(pretty: true);
 

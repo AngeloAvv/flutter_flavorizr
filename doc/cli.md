@@ -21,8 +21,7 @@ document instead of text: see [the output](json-output.md).
 
 A *target* is the name of a recipe (`android`, `all`, or one of yours) or the
 id of a processor (`android:icons`). Without a target the default recipe runs:
-the `instructions` of `flavorizr.yaml` when it has any, otherwise `default`
-when it defines one, otherwise `all`.
+`default` when `flavorizr.yaml` defines one in `recipes`, otherwise `all`.
 
 ## `apply` options
 
@@ -206,8 +205,7 @@ are ported, so they lose their base configuration when its reference goes.
 `macos/Runner/Info.plist` in place. Only the value of a few `<string>` entries is
 replaced in the text of the file: `CFBundleName` and `CFBundleDisplayName` on
 iOS, `UILaunchStoryboardName` too when `ios:launchScreen` is one of the
-processors of the run (the targets you give it, or the recipe it resolves to:
-not the `instructions` of the file when you name others), and `CFBundleName` on
+processors of the run (the targets you give it, or the recipe it resolves to), and `CFBundleName` on
 macOS. 2.x parsed the plist and wrote it
 back pretty printed, which reformatted the whole file: now indentation, line
 endings, comments and the order of every other key are yours, and a plist that

@@ -76,12 +76,12 @@ void main() {
       expect(project.exists('flavorizr.lock'), isTrue);
     });
 
-    test('the instructions of the configuration are what runs', () async {
+    test('the default recipe of the configuration is what runs', () async {
       project.write(
         'flavorizr.yaml',
         CliFixture.config([
           'apple',
-        ], extra: 'instructions:\n  - android:flavorizrGradle\n'),
+        ], extra: 'recipes:\n  default:\n    - android:flavorizrGradle\n'),
       );
 
       final code = await project.run(['-f']);

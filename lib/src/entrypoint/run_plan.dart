@@ -93,10 +93,8 @@ Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
 /// Resolves what to run for [targets].
 ///
 /// A target is the name of a recipe or the id of a processor. Without targets,
-/// the `instructions` of the configuration are run when it has any, as in 2.x
-/// (an empty list runs nothing),
-/// otherwise its default recipe: `default` when the configuration defines it,
-/// `all` if not. The recipes of the platforms with no flavors are left out, with
+/// its default recipe: `default` when the configuration defines it, `all` if
+/// not. The recipes of the platforms with no flavors are left out, with
 /// a message.
 ///
 /// The processors that run on the engine are ordered by their dependencies,
@@ -116,15 +114,10 @@ RunPlan resolveRunPlan({
     recipes: config.recipes ?? const {},
     defaultRecipe: config.defaultRecipe,
   );
-  final instructions = targets.isNotEmpty ? targets : config.instructions;
-  // `instructions: []` is a choice, which 2.x honored by running nothing: it is
-  // not the absence of one, which the catalog answers with its default recipe.
-  final resolution = instructions != null && instructions.isEmpty
-      ? const RecipeResolution([])
-      : catalog.resolve(
-          instructions ?? const [],
-          platformsWithoutFlavors: platformsWithoutFlavors(config),
-        );
+  final resolution = catalog.resolve(
+    targets,
+    platformsWithoutFlavors: platformsWithoutFlavors(config),
+  );
   final engine = resolveExecutionPlan(
     registry.engineProcessors.values,
     requested: resolution.processorIds.where(registry.isEngine),

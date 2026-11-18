@@ -41,6 +41,17 @@ class InvalidConfigurationException implements Exception {
   String toString() => location == null ? message : '$location: $message';
 }
 
+/// A key of flavorizr 2.x that 3.0 does not read any more.
+///
+/// [message] says what replaces it, with the yaml to write.
+class RemovedKeyException extends InvalidConfigurationException {
+  /// The key that was removed.
+  final String key;
+
+  /// Creates the exception.
+  RemovedKeyException(this.key, super.message, {super.location});
+}
+
 /// A key of the configuration that flavorizr does not know, which is silently
 /// ignored by nothing: a typo is far more likely than a key that does nothing.
 class UnknownFieldsException extends InvalidConfigurationException {

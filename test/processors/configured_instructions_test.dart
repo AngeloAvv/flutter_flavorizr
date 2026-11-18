@@ -41,16 +41,19 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   for (final path in _configurations) {
-    test('$path only lists instructions that are processors', () {
-      final config = Flavorizr.parse(File(path).readAsStringSync());
-      final instructions = config.instructions ?? const <String>[];
+    test(
+      '$path only lists instructions that are processors in its default recipe',
+      () {
+        final config = Flavorizr.parse(File(path).readAsStringSync());
+        final instructions = config.recipes?['default'] ?? const <String>[];
 
-      expect(
-        instructions.where(
-          (instruction) => !registry.ids.contains(instruction),
-        ),
-        isEmpty,
-      );
-    });
+        expect(
+          instructions.where(
+            (instruction) => !registry.ids.contains(instruction),
+          ),
+          isEmpty,
+        );
+      },
+    );
   }
 }
