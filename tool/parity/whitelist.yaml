@@ -29,6 +29,20 @@
     label of the application and writes the rest of the file back byte for byte,
     where 2.6.0 serialized the whole document again. The two documents are
     equivalent, which android_differential_test checks.
+- path: ios/Runner/Info.plist
+  reason: >-
+    ios:plist runs on the engine (#520), which replaces only the value of the
+    owned keys in the text of the file and keeps the rest byte for byte, where
+    2.6.0 serialized the whole document again, reindenting it with two spaces.
+    The two documents are equivalent: the same keys, in the same order, with
+    the same values.
+- path: macos/Runner/Info.plist
+  reason: >-
+    macos:plist runs on the engine (#520), which replaces only the value of
+    `CFBundleName` in the text of the file and keeps the rest byte for byte,
+    where 2.6.0 serialized the whole document again, reindenting it with two
+    spaces. The two documents are equivalent: the same keys, in the same order,
+    with the same values.
 - path: linux/CMakeLists.txt
   reason: >-
     linux:cmake runs on the engine (#525), which touches only the marked region:
