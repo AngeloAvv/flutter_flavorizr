@@ -102,8 +102,10 @@ void main() {
         '${dir.path}/Runner/$flavor/GoogleService-Info.plist',
       ).writeAsStringSync('the one');
 
+      // Xcode runs it with a shell that knows `==`, as bash does (dash, which
+      // `sh` is on Linux, does not).
       final result = await Process.run(
-        'sh',
+        'bash',
         ['script.sh'],
         workingDirectory: dir.path,
         environment: {'CONFIGURATION': 'Profile-$flavor'},
