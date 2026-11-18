@@ -137,20 +137,22 @@ void main() {
     });
   });
 
-  group('a drop-from-actual whitelist entry', () {
+  group('a moved whitelist entry', () {
     final whitelist = Whitelist.parse(r'''
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-actual: '^\s*\w{24} /\* Moved \*/,$'
+  moved: '^\s*\w{24} /\* Moved(?: in Resources)? \*/(?: = \{isa = \w+;.*\};|,)$'
   reason: It is in another place
 ''');
     const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
-    const moved = 'AAAAAAAAAAAAAAAAAAAAAAAA /* Moved */,';
+    const definition =
+        'AAAAAAAAAAAAAAAAAAAAAAAA /* Moved */ = {isa = PBXFileReference; path = m; };';
+    const listing = 'AAAAAAAAAAAAAAAAAAAAAAAA /* Moved */,';
     const other = 'BBBBBBBBBBBBBBBBBBBBBBBB /* Other */,';
 
-    test('compares the new output without what it has in another place', () {
-      write(golden, pbxproj, '\t\t$other\n');
-      write(actual, pbxproj, '\t\t$moved\n\t\t$other\n');
+    test('compares both without what moved, which is the same in both', () {
+      write(golden, pbxproj, '\t\t$other\n\t\t$definition\n\t\t$listing\n');
+      write(actual, pbxproj, '\t\t$definition\n\t\t$listing\n\t\t$other\n');
 
       final report = compareTrees(golden, actual, whitelist: whitelist);
 
@@ -158,12 +160,34 @@ void main() {
       expect(report.differences.single.reason, 'It is in another place');
     });
 
-    test('does not hide anything else', () {
-      write(golden, pbxproj, '\t\t$other\n');
+    test('does not hide what is gone', () {
+      write(golden, pbxproj, '\t\t$other\n\t\t$definition\n\t\t$listing\n');
+      write(actual, pbxproj, '\t\t$other\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+
+    test('does not hide what changed', () {
+      write(golden, pbxproj, '\t\t$other\n\t\t$definition\n');
       write(
         actual,
         pbxproj,
-        '\t\t$moved\n\t\tCCCCCCCCCCCCCCCCCCCCCCCC /* Different */,\n',
+        '\t\t$other\n\t\t${definition.replaceAll('path = m', 'path = n')}\n',
+      );
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+
+    test('does not hide anything else', () {
+      write(golden, pbxproj, '\t\t$other\n\t\t$listing\n');
+      write(
+        actual,
+        pbxproj,
+        '\t\t$listing\n\t\tCCCCCCCCCCCCCCCCCCCCCCCC /* Different */,\n',
       );
 
       final report = compareTrees(golden, actual, whitelist: whitelist);

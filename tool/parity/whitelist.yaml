@@ -7,8 +7,8 @@
 # `only-comments: true` makes an entry cover a changed file only if it differs
 # from the golden in its `/* ... */` annotations and in nothing else.
 #
-# `drop-from-golden: <regex>`, `drop-from-actual: <regex>` (the same, for the new
-# output, when what it has is in another place) and `ignore: <regex>` say what else a pbxproj may
+# `drop-from-golden: <regex>`, `moved: <regex>` (what is in another place in the
+# new output, and is the same) and `ignore: <regex>` say what else a pbxproj may
 # differ in, on top of `only-comments`: the lines of the golden the new output no
 # longer has (the golden is named again without them), and text that the new
 # output has more of in the lines it shares with the golden. Both are matched
@@ -87,8 +87,8 @@
     needed anymore.
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$|^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
-  drop-from-actual: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
+  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
   ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )| \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\w+\\" \]'
   reason: >-
     dart_xcodeproj 0.4.0 (#513) prints only the annotations of its object model,
@@ -106,13 +106,14 @@
     `Runner/GoogleService-Info.plist` before the legacy `ios:launchScreen` adds
     the storyboards, where 2.6.0 added it after them, so the reference and its
     entry in Resources are in another place of the lists, which names the UUIDs
-    of what follows differently: both files are compared without them. The
+    of what follows differently: both files are compared without them, once they
+    are known to hold the same references (`moved`). The
     script of its `Firebase Setup` phase also copies the configuration for the
     Profile build configurations (see ios/firebaseScript.sh).
 - path: macos/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$|^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
-  drop-from-actual: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
+  drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
   ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )| \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\w+\\" \]'
   reason: >-
     Same as ios/Runner.xcodeproj/project.pbxproj: the comments are the ones
@@ -120,7 +121,8 @@
     not add the flavor xcconfigs of Runner/Configs to the Resources build phase,
     and types their file references. macos:firebase on the engine (#521) adds the
     reference to `Runner/GoogleService-Info.plist` in another place of the
-    lists: both files are compared without it.
+    lists: both files are compared without it, once they are known to hold the
+    same reference (`moved`).
 - path: flavorizr.yaml
   reason: >-
     The configuration is the input of the run, and 3.0 reads `recipes` where
