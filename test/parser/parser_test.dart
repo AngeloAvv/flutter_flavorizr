@@ -209,6 +209,20 @@ void main() {
       fail('Should have thrown InvalidConfigurationException');
     }
 
+    test('says where a YAML syntax error is', () {
+      expect(
+        invalid('syntax_error').toString(),
+        allOf(contains('flavorizr.yaml'), contains('line 3')),
+      );
+    });
+
+    test('is refused when it is not a map', () {
+      expect(
+        invalid('not_a_map').toString(),
+        'flavorizr.yaml:1:1: The configuration must be a map of keys',
+      );
+    });
+
     test('names a key that is not text and where it is', () {
       final error = invalid('non_string_key');
 
