@@ -361,10 +361,15 @@ void main() {
 
     test('spell the name of a flavor as the processors take it', () {
       final text = File('tool/parity/whitelist.yaml').readAsStringSync();
-      final patterns = RegExp(
-        r"^  (?:drop-from-golden|ignore): '(.*)'$",
-        multiLine: true,
-      ).allMatches(text).map((match) => match.group(1)!).toList();
+      final patterns =
+          RegExp(r"^  (?:drop-from-golden|ignore): '(.*)'$", multiLine: true)
+              .allMatches(text)
+              .map((match) => match.group(1)!)
+              .where(
+                // The ones about the flavor xcconfigs: the others do not name a flavor.
+                (pattern) => pattern.contains('xcconfig'),
+              )
+              .toList();
 
       // The two patterns of each of the two projects.
       expect(patterns, hasLength(4));

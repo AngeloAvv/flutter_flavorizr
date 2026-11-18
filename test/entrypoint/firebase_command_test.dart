@@ -72,6 +72,38 @@ ${withFirebase.contains(flavor) ? '''
 ''' : ''}'''].join()}';
 
 void main() {
+  group('firebaseScriptSource', () {
+    test('has no script for no flavor', () {
+      expect(firebaseScriptSource(const []), '');
+    });
+
+    test('quotes the names the shell would read otherwise', () {
+      final script = firebaseScriptSource(["qa's", r'a$(b)', 'plain']);
+
+      expect(script, contains(r'''[ "$CONFIGURATION" == 'Debug-qa'\''s' ]'''));
+      expect(
+        script,
+        contains(r'''cp 'Runner/qa'\''s/GoogleService-Info.plist' Runner/'''),
+      );
+      expect(script, contains(r"== 'Release-a$(b)'"));
+      expect(script, contains('== "Profile-plain"'));
+    });
+
+    test('is a script the shell reads, whatever the names', () async {
+      final dir = Directory.systemTemp.createTempSync('firebase_script_');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final file = File('${dir.path}/script.sh')
+        ..writeAsStringSync(
+          firebaseScriptSource(["qa's", r'a$(touch pwned)', 'with space']),
+        );
+
+      final result = await Process.run('sh', ['-n', file.path]);
+
+      expect(result.exitCode, 0, reason: '${result.stderr}');
+      expect(File('${dir.path}/pwned').existsSync(), isFalse);
+    }, skip: Platform.isWindows ? 'no sh' : false);
+  });
+
   late CliFixture project;
 
   Future<XcodeProject> open(String pbxproj) => XcodeProject.open(
@@ -149,9 +181,11 @@ void main() {
       expect(
         project.read('ios/firebaseScript.sh'),
         'if [ "\$CONFIGURATION" == "Debug-apple" ] || '
+        '[ "\$CONFIGURATION" == "Profile-apple" ] || '
         '[ "\$CONFIGURATION" == "Release-apple" ]; then\n'
         '  cp Runner/apple/GoogleService-Info.plist Runner/GoogleService-Info.plist\n'
         'elif [ "\$CONFIGURATION" == "Debug-banana" ] || '
+        '[ "\$CONFIGURATION" == "Profile-banana" ] || '
         '[ "\$CONFIGURATION" == "Release-banana" ]; then\n'
         '  cp Runner/banana/GoogleService-Info.plist Runner/GoogleService-Info.plist\n'
         'fi\n\n',

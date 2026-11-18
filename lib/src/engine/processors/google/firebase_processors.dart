@@ -117,19 +117,23 @@ class AndroidFirebaseProcessor extends FlavorizrProcessor {
 /// that is built to `Runner/GoogleService-Info.plist`.
 ///
 /// The configuration is told by the name of the build configuration, which is
-/// `Debug-<flavor>`, `Profile-<flavor>` or `Release-<flavor>`.
+/// `Debug-<flavor>`, `Profile-<flavor>` or `Release-<flavor>` (2.x left the
+/// Profile ones out, which kept whatever configuration was there). A name that
+/// is not made of letters, digits, `_`, `.` and `-` is quoted for the shell.
 String firebaseScriptSource(Iterable<String> flavors) {
   final buffer = StringBuffer();
   var keyword = 'if';
 
   for (final flavor in flavors) {
+    final conditions = [
+      for (final mode in const ['Debug', 'Profile', 'Release'])
+        '[ "\$CONFIGURATION" == ${_shellLiteral('$mode-$flavor')} ]',
+    ];
+
     buffer
+      ..writeln('$keyword ${conditions.join(' || ')}; then')
       ..writeln(
-        '$keyword [ "\$CONFIGURATION" == "Debug-$flavor" ] || '
-        '[ "\$CONFIGURATION" == "Release-$flavor" ]; then',
-      )
-      ..writeln(
-        '  cp Runner/$flavor/GoogleService-Info.plist '
+        '  cp ${_shellWord('Runner/$flavor/GoogleService-Info.plist')} '
         'Runner/GoogleService-Info.plist',
       );
     keyword = 'elif';
@@ -143,6 +147,17 @@ String firebaseScriptSource(Iterable<String> flavors) {
 
   return buffer.toString();
 }
+
+final _plain = RegExp(r'^[A-Za-z0-9_./-]+$');
+
+/// [value] as a word of the shell: as it is when it needs no quoting.
+String _shellWord(String value) =>
+    _plain.hasMatch(value) ? value : "'${value.replaceAll("'", r"'\''")}'";
+
+/// [value] as a string to compare with: in double quotes when it needs no
+/// quoting, as 2.x did.
+String _shellLiteral(String value) =>
+    _plain.hasMatch(value) ? '"$value"' : _shellWord(value);
 
 /// The UUID of the build phase of [platform], which is the same on every run
 /// and in every project: it is how the lock, and the owned content of the
