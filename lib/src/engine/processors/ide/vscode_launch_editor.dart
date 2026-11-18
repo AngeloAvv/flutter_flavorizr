@@ -433,8 +433,6 @@ abstract final class VsCodeLaunchEditor {
 
     if (ownLine && tail < source.length && source[tail] == '\n') {
       end = tail + 1;
-    } else if (ownLine && tail >= source.length) {
-      end = tail;
     } else if (!ownLine) {
       end = tail;
     }

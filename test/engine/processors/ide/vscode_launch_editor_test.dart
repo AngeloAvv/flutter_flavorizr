@@ -190,6 +190,28 @@ void main() {
       },
     );
 
+    test('removes an entry that has spaces after its comma', () {
+      final edited = VsCodeLaunchEditor.edit(
+        '{\n  "configurations": [\n    {"name": "a"},   \n    {"name": "b"}\n'
+        '  ]\n}\n',
+        [],
+        remove: {'a'},
+      );
+
+      expect(_names(edited), ['b']);
+      expect(edited, isNot(contains('   \n')));
+    });
+
+    test('adds to a list that holds only a comment', () {
+      final edited = VsCodeLaunchEditor.edit(
+        '{"configurations": [ // nothing yet\n ]}',
+        [_entry('a')],
+      );
+
+      expect(edited, contains('// nothing yet'));
+      expect(_names(edited), ['a']);
+    });
+
     test('removes every entry and still reads', () {
       final edited = VsCodeLaunchEditor.edit(
         '{\n  "configurations": [\n    {"name": "a"},\n    {"name": "b"}\n  ]\n}\n',
@@ -277,6 +299,8 @@ void main() {
       ('{a: 1}', 'a key without quotes'),
       ('{"a": nope}', 'a value that is not one'),
       ('{} {}', 'something after the document'),
+      ('{"a": 1 "b": 2}', 'a member that follows another with no comma'),
+      ('{"a" 1}', 'a key with no colon'),
     ]) {
       test('refuses $reason', () {
         expect(
