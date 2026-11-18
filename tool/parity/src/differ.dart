@@ -25,6 +25,8 @@
 
 import 'dart:io';
 
+import 'package:collection/collection.dart';
+
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -84,6 +86,7 @@ typedef _Entry = ({
   String reason,
   bool onlyComments,
   RegExp? dropFromGolden,
+  RegExp? moved,
   RegExp? ignore,
 });
 
@@ -104,6 +107,11 @@ class Whitelist {
   ///   names the UUIDs of the golden again (see [normalizePbxproj]). It is what
   ///   the new output no longer has: the objects that went away, and the ones
   ///   that are named after their place in a list after them.
+  /// * `moved` is for what the new output has in another place than the
+  ///   golden, which names the UUIDs of everything after it differently. The
+  ///   lines that match are left out of both files, which are named again, and
+  ///   what was left out has to be the same in both (their UUIDs and comments
+  ///   put aside), so that an object that is gone, or changed, is not hidden.
   /// * `ignore` removes what matches from both files before comparing them. It
   ///   is what the new output has more of, in the lines it shares with the
   ///   golden.
@@ -133,6 +141,7 @@ class Whitelist {
             reason: reason.trim(),
             onlyComments: entry['only-comments'] == true,
             dropFromGolden: _optionalPattern(entry, 'drop-from-golden', path),
+            moved: _optionalPattern(entry, 'moved', path),
             ignore: _optionalPattern(entry, 'ignore', path),
           );
         }(),
@@ -161,6 +170,7 @@ class Whitelist {
       final restricted =
           entry.onlyComments ||
           entry.dropFromGolden != null ||
+          entry.moved != null ||
           entry.ignore != null;
       if (restricted &&
           (before == null || after == null || !_covers(entry, before, after))) {
@@ -183,6 +193,22 @@ class Whitelist {
       );
     }
 
+    final moved = entry.moved;
+    if (moved != null) {
+      final (kept: keptLeft, moved: movedLeft) = _split(left, moved);
+      final (kept: keptRight, moved: movedRight) = _split(right, moved);
+
+      if (!const ListEquality<String>().equals(
+        _essence(left, moved),
+        _essence(right, moved),
+      )) {
+        return false;
+      }
+
+      left = normalizePbxproj(keptLeft);
+      right = normalizePbxproj(keptRight);
+    }
+
     final ignore = entry.ignore;
     if (ignore != null) {
       left = left.replaceAll(ignore, '');
@@ -192,6 +218,121 @@ class Whitelist {
     return entry.onlyComments
         ? _withoutComments(left) == _withoutComments(right)
         : left == right;
+  }
+
+  static ({String kept, List<int> moved}) _split(String content, RegExp moved) {
+    final kept = <String>[];
+    final away = <int>[];
+
+    for (final (index, line) in content.split('\n').indexed) {
+      if (moved.hasMatch(line)) {
+        away.add(index);
+      } else {
+        kept.add(line);
+      }
+    }
+
+    return (kept: kept.join('\n'), moved: away);
+  }
+
+  static final _uuid = RegExp(r'\b[0-9A-F]{24}(?:[0-9A-F]{8})?\b');
+  static final _objectStart = RegExp(
+    r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)? = \{\s*$',
+  );
+  static final _definition = RegExp(
+    r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)? = \{isa = (\w+);(.*)\};\s*$',
+  );
+  static final _listing = RegExp(
+    r'^\s*([0-9A-F]{24}(?:[0-9A-F]{8})?)(?: /\*.*?\*/)?,\s*$',
+  );
+  static final _listStart = RegExp(r'^\s*(\w+) = \(\s*$');
+  static final _path = RegExp(r'\bpath = (?:"([^"]*)"|([^;"\s]+));');
+  static final _fileRef = RegExp(
+    r'\bfileRef = ([0-9A-F]{24}(?:[0-9A-F]{8})?)\b',
+  );
+
+  /// What the lines of [content] that match [moved] say, without where they
+  /// are: no UUID and no annotation, but what each one refers to and the list
+  /// of the object it is in. A build file says which file it builds, a listed
+  /// entry the kind of object that lists it and what it lists. The result is
+  /// sorted, so that a list may have them in another order.
+  static List<String> _essence(String content, RegExp moved) {
+    final lines = content.split('\n');
+    final pathOf = <String, String>{};
+    final buildFileOf = <String, String>{};
+    final settingsOf = <String, String>{};
+
+    for (final line in lines) {
+      final definition = _definition.firstMatch(line);
+
+      if (definition == null) continue;
+
+      final uuid = definition.group(1)!;
+      final body = definition.group(3)!;
+
+      switch (definition.group(2)) {
+        case 'PBXFileReference':
+          final path = _path.firstMatch(body);
+
+          pathOf[uuid] = path?.group(1) ?? path?.group(2) ?? '?';
+        case 'PBXBuildFile':
+          buildFileOf[uuid] = _fileRef.firstMatch(body)?.group(1) ?? '?';
+          settingsOf[uuid] = _withoutComments(
+            body,
+          ).replaceAll(_fileRef, '').replaceAll(_uuid, 'UUID').trim();
+      }
+    }
+
+    String named(String uuid) {
+      final reference = buildFileOf[uuid];
+
+      return reference != null
+          ? 'build of ${pathOf[reference] ?? '?'} ${settingsOf[uuid]}'
+          : 'file ${pathOf[uuid] ?? '?'}';
+    }
+
+    String owner(int index) {
+      String? list;
+
+      for (var at = index - 1; at >= 0; at--) {
+        list ??= _listStart.firstMatch(lines[at])?.group(1);
+
+        final start = _objectStart.firstMatch(lines[at]);
+
+        if (start != null) {
+          for (var next = at + 1; next < lines.length; next++) {
+            final isa = RegExp(r'\bisa = (\w+);').firstMatch(lines[next]);
+
+            // The UUID tells which one: the names of the objects that hold the
+            // moved ones come from their place in the project, which is the
+            // same in both files (it is how two phases of a kind are told
+            // apart).
+            if (isa != null) {
+              return '${isa.group(1)}.$list in ${start.group(1)}';
+            }
+          }
+        }
+      }
+
+      return '?';
+    }
+
+    return [
+      for (final (index, line) in lines.indexed)
+        if (moved.hasMatch(line))
+          if (_definition.firstMatch(line) case final definition?)
+            switch (definition.group(2)) {
+              // The file it builds, and whatever else it says (settings...).
+              'PBXBuildFile' =>
+                'PBXBuildFile ${named(definition.group(1)!)} '
+                    '${_withoutComments(definition.group(3)!).replaceAll(_fileRef, '').replaceAll(_uuid, 'UUID').trim()}',
+              _ => _withoutComments(line).replaceAll(_uuid, 'UUID').trim(),
+            }
+          else if (_listing.firstMatch(line) case final listing?)
+            '${owner(index)} lists ${named(listing.group(1)!)}'
+          else
+            _withoutComments(line).replaceAll(_uuid, 'UUID').trim(),
+    ]..sort();
   }
 
   /// [content] without its `/* ... */` annotations, and the space before each.

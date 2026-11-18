@@ -137,6 +137,260 @@ void main() {
     });
   });
 
+  group('the whitelist of the Firebase script, as it ships', () {
+    final whitelist = Whitelist.parse(
+      File('tool/parity/whitelist.yaml').readAsStringSync(),
+    );
+
+    String script(Iterable<String> flavors, {required bool profile}) => [
+      for (final flavor in flavors)
+        'if [ "\$CONFIGURATION" == "Debug-$flavor" ]'
+            '${profile ? ' || [ "\$CONFIGURATION" == "Profile-$flavor" ]' : ''}'
+            ' || [ "\$CONFIGURATION" == "Release-$flavor" ]; then\n'
+            '  cp Runner/$flavor/GoogleService-Info.plist '
+            'Runner/GoogleService-Info.plist\n',
+    ].join('fi\n');
+
+    for (final flavors in [
+      ['apple'],
+      ['dev-1', 'v2.0'],
+    ]) {
+      test('takes the Profile case of $flavors', () {
+        write(golden, 'ios/firebaseScript.sh', script(flavors, profile: false));
+        write(actual, 'ios/firebaseScript.sh', script(flavors, profile: true));
+
+        expect(
+          compareTrees(golden, actual, whitelist: whitelist).isClean,
+          isTrue,
+        );
+      });
+    }
+
+    test('does not take a Profile case of another flavor', () {
+      const golden0 =
+          'if [ "\$CONFIGURATION" == "Debug-apple" ] || '
+          '[ "\$CONFIGURATION" == "Release-apple" ]; then\n';
+      const actual0 =
+          'if [ "\$CONFIGURATION" == "Debug-apple" ] || '
+          '[ "\$CONFIGURATION" == "Profile-banana" ] || '
+          '[ "\$CONFIGURATION" == "Release-apple" ]; then\n';
+
+      write(golden, 'ios/firebaseScript.sh', golden0);
+      write(actual, 'ios/firebaseScript.sh', actual0);
+
+      expect(
+        compareTrees(golden, actual, whitelist: whitelist).isClean,
+        isFalse,
+      );
+    });
+
+    test('does not take another change of the script', () {
+      write(golden, 'ios/firebaseScript.sh', script(['apple'], profile: false));
+      write(
+        actual,
+        'ios/firebaseScript.sh',
+        script(['apple'], profile: true).replaceAll('Runner/apple', 'Other'),
+      );
+
+      expect(
+        compareTrees(golden, actual, whitelist: whitelist).isClean,
+        isFalse,
+      );
+    });
+  });
+
+  group('a moved whitelist entry', () {
+    final whitelist = Whitelist.parse(r'''
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  moved: '^\s*\w{24} /\* M(?: in Resources)? \*/(?: = \{isa = \w+;.*\};|,)$'
+  reason: It is in another place
+''');
+    const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+    const m = 'AAAAAAAAAAAAAAAAAAAAAAAA';
+    const mBuild = 'BBBBBBBBBBBBBBBBBBBBBBBB';
+    const other = 'CCCCCCCCCCCCCCCCCCCCCCCC';
+    const otherBuild = 'DDDDDDDDDDDDDDDDDDDDDDDD';
+    const phase = 'EEEEEEEEEEEEEEEEEEEEEEEE';
+
+    /// A project with a Resources phase that lists [entries] and a Sources
+    /// phase that lists [sources].
+    String project({
+      List<String> entries = const [],
+      List<String> testEntries = const [],
+      List<String> sources = const [],
+      String path = 'm',
+      String buildOf = m,
+      bool reference = true,
+      bool build = true,
+    }) =>
+        '''
+/* Begin PBXBuildFile section */
+${build ? '\t\t$mBuild /* M in Resources */ = {isa = PBXBuildFile; fileRef = $buildOf; };\n' : ''}\t\t$otherBuild /* Other in Resources */ = {isa = PBXBuildFile; fileRef = $other; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+${reference ? '\t\t$m /* M */ = {isa = PBXFileReference; path = $path; sourceTree = "<group>"; };\n' : ''}\t\t$other /* Other */ = {isa = PBXFileReference; path = o; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+/* Begin PBXResourcesBuildPhase section */
+\t\t$phase /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+${entries.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
+\t\t};
+\t\t111111111111111111111111 /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+${testEntries.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
+\t\t};
+/* End PBXResourcesBuildPhase section */
+/* Begin PBXSourcesBuildPhase section */
+\t\tFFFFFFFFFFFFFFFFFFFFFFFF /* Sources */ = {
+\t\t\tisa = PBXSourcesBuildPhase;
+\t\t\tfiles = (
+${sources.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
+\t\t};
+/* End PBXSourcesBuildPhase section */
+''';
+
+    const mEntry = '$mBuild /* M in Resources */';
+    const otherEntry = '$otherBuild /* Other in Resources */';
+
+    bool clean(String before, String after) {
+      write(golden, pbxproj, before);
+      write(actual, pbxproj, after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
+
+    test('compares both without what moved, which is the same in both', () {
+      expect(
+        clean(
+          project(entries: [otherEntry, mEntry]),
+          project(entries: [mEntry, otherEntry]),
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not hide a reference that is gone', () {
+      expect(
+        clean(
+          project(entries: [otherEntry, mEntry]),
+          project(entries: [otherEntry], reference: false, build: false),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide an entry that is gone from its phase', () {
+      expect(
+        clean(
+          project(entries: [otherEntry, mEntry]),
+          project(entries: [otherEntry]),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide a reference that changed', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry], path: 'n'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide build files that swap their phases', () {
+      const plain = 'AAAA00000000000000000001 /* M in Resources */';
+      const signed = 'AAAA00000000000000000002 /* M in Resources */';
+      String twoTargets({required bool swapped}) =>
+          '''
+/* Begin PBXBuildFile section */
+\t\tAAAA00000000000000000001 /* M in Resources */ = {isa = PBXBuildFile; fileRef = $m; };
+\t\tAAAA00000000000000000002 /* M in Resources */ = {isa = PBXBuildFile; fileRef = $m; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+\t\t$m /* M */ = {isa = PBXFileReference; path = m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+/* Begin PBXResourcesBuildPhase section */
+\t\t$phase /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+\t\t\t\t${swapped ? signed : plain},
+\t\t\t);
+\t\t};
+\t\t111111111111111111111111 /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+\t\t\t\t${swapped ? plain : signed},
+\t\t\t);
+\t\t};
+/* End PBXResourcesBuildPhase section */
+''';
+
+      expect(
+        clean(twoTargets(swapped: false), twoTargets(swapped: true)),
+        isFalse,
+      );
+      expect(
+        clean(twoTargets(swapped: false), twoTargets(swapped: false)),
+        isTrue,
+      );
+    });
+
+    test('does not hide other properties of a build file', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry]).replaceFirst(
+            'fileRef = $m; }',
+            'fileRef = $m; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; }',
+          ),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide a build file that points to another file', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry], buildOf: other),
+        ),
+        isFalse,
+      );
+    });
+
+    test(
+      'does not hide an entry that is in another phase of the same kind',
+      () {
+        expect(
+          clean(project(entries: [mEntry]), project(testEntries: [mEntry])),
+          isFalse,
+        );
+      },
+    );
+
+    test('does not hide an entry that is in another phase', () {
+      expect(
+        clean(project(entries: [mEntry]), project(sources: [mEntry])),
+        isFalse,
+      );
+    });
+
+    test('does not hide anything else', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry]).replaceAll('path = o', 'path = x'),
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('an only-comments whitelist entry', () {
     final whitelist = Whitelist.parse('''
 - path: ios/Runner.xcodeproj/project.pbxproj
@@ -326,10 +580,15 @@ void main() {
 
     test('spell the name of a flavor as the processors take it', () {
       final text = File('tool/parity/whitelist.yaml').readAsStringSync();
-      final patterns = RegExp(
-        r"^  (?:drop-from-golden|ignore): '(.*)'$",
-        multiLine: true,
-      ).allMatches(text).map((match) => match.group(1)!).toList();
+      final patterns =
+          RegExp(r"^  (?:drop-from-golden|ignore): '(.*)'$", multiLine: true)
+              .allMatches(text)
+              .map((match) => match.group(1)!)
+              .where(
+                // The ones about the flavor xcconfigs: the others do not name a flavor.
+                (pattern) => pattern.contains('xcconfig'),
+              )
+              .toList();
 
       // The two patterns of each of the two projects.
       expect(patterns, hasLength(4));

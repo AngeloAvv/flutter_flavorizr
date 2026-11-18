@@ -119,6 +119,8 @@ const Map<String, List<String>> builtInRecipes = {
   // user's once they exist, and a project that has an app does not need them.
   flutterScaffoldRecipeName: ['flutter:app', 'flutter:pages', 'flutter:main'],
   'icons': ['android:icons', 'ios:icons', 'macos:icons', 'windows:icons'],
-  'firebase': ['google:firebase'],
+  'firebase': ['android:firebase', 'ios:firebase', 'macos:firebase'],
+  // The one instruction of 2.x that was the three of them.
+  'google:firebase': ['firebase'],
   'ide': ['ide:config'],
 };

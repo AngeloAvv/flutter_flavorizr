@@ -40,6 +40,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.da
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
+import 'package:flutter_flavorizr/src/engine/processors/google/firebase_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/ide/ide_config_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
@@ -245,6 +246,20 @@ class ProcessorRegistry {
       ),
       EngineProcessor(const FlutterAppProcessor(), paths: {K.flutterAppPath}),
       EngineProcessor(const FlutterMainProcessor(), paths: {K.flutterMainPath}),
+      // The Firebase configuration of the flavors: the copies are local, the
+      // build phase of the Apple projects is owned.
+      EngineProcessor(
+        const AndroidFirebaseProcessor(),
+        paths: {K.androidSrcPath},
+      ),
+      EngineProcessor(
+        const IosFirebaseProcessor(),
+        paths: {K.iOSRunnerPath, K.iOSFirebaseScriptPath},
+      ),
+      EngineProcessor(
+        const MacosFirebaseProcessor(),
+        paths: {K.macOSRunnerPath, K.macOSFirebaseScriptPath},
+      ),
       // The run configurations of the IDEs are local: the IDEs write to them,
       // and git ignores `.idea/`.
       EngineProcessor(
@@ -260,14 +275,20 @@ class ProcessorRegistry {
         XcodeprojResource.ios(),
         paths: const {XcodeprojResource.iosProject},
         ownedContent: {
-          XcodeprojResource.iosArtifact.path: xcconfigReferencesOwnedContent,
+          XcodeprojResource.iosArtifact.path: (source) => [
+            xcconfigReferencesOwnedContent(source),
+            firebaseOwnedContent(source, 'ios'),
+          ].join('\n'),
         },
       ),
       EngineResource(
         XcodeprojResource.macos(),
         paths: const {XcodeprojResource.macosProject},
         ownedContent: {
-          XcodeprojResource.macosArtifact.path: xcconfigReferencesOwnedContent,
+          XcodeprojResource.macosArtifact.path: (source) => [
+            xcconfigReferencesOwnedContent(source),
+            firebaseOwnedContent(source, 'macos'),
+          ].join('\n'),
         },
       ),
     ],

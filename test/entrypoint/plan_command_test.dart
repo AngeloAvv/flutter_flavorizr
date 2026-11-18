@@ -89,9 +89,9 @@ void main() {
     });
 
     test('names the processors that are not on the engine', () async {
-      await project.run(['plan', ...engineTargets, 'google:firebase']);
+      await project.run(['plan', ...engineTargets, 'huawei:agconnect']);
 
-      expect(project.logger.output, contains('google:firebase'));
+      expect(project.logger.output, contains('huawei:agconnect'));
       expect(project.logger.output, contains('not on the engine yet'));
       expect(project.legacy.ran, isEmpty);
     });

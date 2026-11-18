@@ -43,7 +43,6 @@ import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
-import 'package:flutter_flavorizr/src/processors/google/firebase/firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart';
@@ -121,9 +120,6 @@ class Processor extends AbstractProcessor<void> {
     'windows:cmake',
     'windows:dummyAssets',
     'windows:icons',
-
-    // Google
-    'google:firebase',
 
     // Huawei
     'huawei:agconnect',
@@ -421,19 +417,6 @@ class Processor extends AbstractProcessor<void> {
       ),
       'windows:icons': () =>
           WindowsIconsProcessor(config: flavorizr, logger: logger),
-
-      // Google
-      'google:firebase': () => FirebaseProcessor(
-        androidDestination: K.androidSrcPath,
-        iosDestination: K.iOSRunnerPath,
-        macosDestination: K.macOSRunnerPath,
-        iosRunnerProject: K.iOSRunnerProjectPath,
-        macosRunnerProject: K.macOSRunnerProjectPath,
-        iosGeneratedFirebaseScriptPath: K.iOSFirebaseScriptPath,
-        macosGeneratedFirebaseScriptPath: K.macOSFirebaseScriptPath,
-        config: flavorizr,
-        logger: logger,
-      ),
 
       // Huawei
       'huawei:agconnect': () => AGConnectProcessor(

@@ -73,13 +73,12 @@ void main() {
   test('the default is the `all` recipe', () {
     final plan = resolve(android);
 
-    expect(engine(plan), hasLength(6));
-    expect(engine(plan), contains('ide:config'));
+    expect(engine(plan), hasLength(7));
+    expect(engine(plan), containsAll(['ide:config', 'android:firebase']));
     expect(plan.legacy.map((step) => step.id), [
       'assets:download',
       'assets:extract',
       'android:dummyAssets',
-      'google:firebase',
       'huawei:agconnect',
       'assets:clean',
     ]);
@@ -98,11 +97,11 @@ void main() {
     final plan = resolve(
       '$android'
       'recipes:\n  default:\n    - android:flavorizrGradle\n'
-      '    - google:firebase\n',
+      '    - huawei:agconnect\n',
     );
 
     expect(engine(plan), ['android:flavorizrGradle']);
-    expect(plan.legacy.map((step) => step.id), ['google:firebase']);
+    expect(plan.legacy.map((step) => step.id), ['huawei:agconnect']);
   });
 
   test('a default recipe that is empty runs nothing', () {
@@ -123,7 +122,7 @@ void main() {
 
   test('a target wins over the default recipe', () {
     final plan = resolve(
-      '${android}recipes:\n  default:\n    - google:firebase\n',
+      '${android}recipes:\n  default:\n    - huawei:agconnect\n',
       ['android:icons'],
     );
 
@@ -132,12 +131,12 @@ void main() {
   });
 
   test('the recipes of the configuration are targets', () {
-    final yaml = '${android}recipes:\n  ci: [android:icons, google:firebase]\n';
+    final yaml = '${android}recipes:\n  ci: [android:icons, huawei:agconnect]\n';
 
     final plan = resolve(yaml, ['ci']);
 
     expect(engine(plan), ['android:icons']);
-    expect(plan.legacy.map((step) => step.id), ['google:firebase']);
+    expect(plan.legacy.map((step) => step.id), ['huawei:agconnect']);
   });
 
   test('the default recipe of the configuration runs without targets', () {

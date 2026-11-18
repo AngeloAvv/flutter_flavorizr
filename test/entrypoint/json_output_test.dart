@@ -430,7 +430,7 @@ void main() {
           'apply',
           '--json',
           'huawei:agconnect',
-          'google:firebase',
+          'assets:clean',
         ]);
         final steps = (document()['steps'] as List)
             .cast<Map<String, Object?>>();
@@ -438,7 +438,7 @@ void main() {
         expect(code, ExitCodes.software);
         expect(steps.map((s) => '${s['id']} ${s['status']}'), [
           'huawei:agconnect failed',
-          'google:firebase skipped',
+          'assets:clean skipped',
         ]);
         expect(steps.last['durationMs'], isNull);
       });

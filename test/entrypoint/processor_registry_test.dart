@@ -87,6 +87,9 @@ void main() {
         'flutter:app',
         'flutter:main',
         'ide:config',
+        'android:firebase',
+        'ios:firebase',
+        'macos:firebase',
       });
     });
 
@@ -148,6 +151,9 @@ void main() {
           'macos:plist',
           'flutter:flavors',
           'ide:config',
+          'android:firebase',
+          'ios:firebase',
+          'macos:firebase',
         });
       },
     );
@@ -215,7 +221,7 @@ void main() {
     });
 
     test('keeps every other 2.x instruction on the legacy pipeline', () {
-      expect(registry.legacyIds, contains('google:firebase'));
+      expect(registry.legacyIds, contains('huawei:agconnect'));
       expect(registry.legacyIds, contains('ios:buildTargets'));
       expect(registry.legacyIds, contains('macos:buildTargets'));
       expect(registry.legacyIds, contains('android:dummyAssets'));

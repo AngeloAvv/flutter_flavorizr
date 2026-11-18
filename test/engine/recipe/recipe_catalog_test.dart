@@ -34,8 +34,18 @@ import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// What `all` runs: the default instruction set, which has no starting files
-/// of a new app.
-const _allIds = Processor.defaultInstructionSet;
+/// of a new app, with the Firebase processors of the engine where `google:firebase`
+/// of 2.x was.
+final _allIds = [
+  for (final id in Processor.defaultInstructionSet) ...[
+    if (id == 'huawei:agconnect') ...[
+      'android:firebase',
+      'ios:firebase',
+      'macos:firebase',
+    ],
+    id,
+  ],
+];
 
 /// The processor ids that exist today.
 final _ids = [
@@ -87,7 +97,16 @@ void main() {
         'macos:icons',
         'windows:icons',
       ]);
-      expect(catalog.resolve(['firebase']).processorIds, ['google:firebase']);
+      expect(catalog.resolve(['firebase']).processorIds, [
+        'android:firebase',
+        'ios:firebase',
+        'macos:firebase',
+      ]);
+      // The 2.x instruction is the recipe of the three.
+      expect(
+        catalog.resolve(['google:firebase']).processorIds,
+        catalog.resolve(['firebase']).processorIds,
+      );
       expect(catalog.resolve(['ide']).processorIds, ['ide:config']);
       expect(catalog.resolve(['flutter']).processorIds, ['flutter:flavors']);
     });
@@ -158,7 +177,9 @@ void main() {
       );
 
       expect(catalog.resolve(['outer']).processorIds, [
-        'google:firebase',
+        'android:firebase',
+        'ios:firebase',
+        'macos:firebase',
         'ios:plist',
         'ide:config',
       ]);
@@ -597,12 +618,13 @@ void main() {
         'flutter:scaffold',
         'icons',
         'firebase',
+        'google:firebase',
         'ide',
         'alpha',
         'zeta',
       ]);
       expect(listing.map((recipe) => recipe.builtIn), [
-        ...List.filled(11, true),
+        ...List.filled(12, true),
         false,
         false,
       ]);

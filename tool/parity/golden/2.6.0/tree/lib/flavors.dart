@@ -1,7 +1,4 @@
-enum Flavor {
-  apple,
-  banana,
-}
+enum Flavor { apple, banana }
 
 class F {
   static late final Flavor appFlavor;
@@ -16,5 +13,4 @@ class F {
         return 'Banana App';
     }
   }
-
 }

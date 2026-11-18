@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,7 +50,9 @@ void main() {
 
         expect(
           instructions.where(
-            (instruction) => !registry.ids.contains(instruction),
+            (instruction) =>
+                !registry.ids.contains(instruction) &&
+                !builtInRecipes.containsKey(instruction),
           ),
           isEmpty,
         );

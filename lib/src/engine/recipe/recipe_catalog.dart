@@ -171,12 +171,21 @@ final class RecipeCatalog {
     // per path.
     final expanded = <String>{};
 
+    // The platforms whose recipe was left out, and said so: what is left out
+    // after it, such as the processors of the `firebase` recipe, is not said
+    // again.
+    final reported = <String>{};
+
     // Whether [name] belongs to [platform], which has no flavors. When it
     // does, it is left out and the reason is reported once.
     bool leaveOut(String name, String platform) {
       if (!platformsWithoutFlavors.contains(platform)) {
         return false;
       }
+      if (name != platform && reported.contains(platform)) {
+        return true;
+      }
+      if (name == platform) reported.add(platform);
       messages.add(
         'Skipping "$name": no flavors are configured for $platform.',
       );
