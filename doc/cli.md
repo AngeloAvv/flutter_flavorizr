@@ -218,6 +218,30 @@ owned only while it has the value flavorizr gives it
 Flutter wrote is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
+## Firebase
+
+`google:firebase` of 2.x is now three processors, one for each platform, that
+the recipes `firebase` and `google:firebase` run together: `android:firebase`,
+`ios:firebase` and `macos:firebase`. They only do something for the flavors
+that have a `firebase.config`, which is read from the project (a path that
+stays inside it, links included).
+
+* The copy of each flavor (`android/app/src/<flavor>/google-services.json`,
+  `ios/Runner/<flavor>/GoogleService-Info.plist` and the macOS one) is *local*:
+  written again silently on every run, never recorded in `flavorizr.lock`, never
+  a conflict or drift. So is the empty `Runner/GoogleService-Info.plist` the
+  build phase writes to, which is only made when the project has none: a build
+  that changes it, or a flavor you built, is not drift.
+* `ios/firebaseScript.sh` and `macos/firebaseScript.sh` are generated from the
+  flavors that have a configuration, so they are managed. A flavor that loses
+  its `firebase` is out of the script, and the script goes when none is left.
+* The `Firebase Setup` build phase of the Xcode project is **owned**: it has a
+  UUID that is the same on every run, so a run updates it in place, it is first
+  of the phases of the target, and a re-run does not change `project.pbxproj`
+  (2.x made it again, with a random UUID, on every run). The phase of 2.x is
+  replaced by it the first time. When no flavor of the platform has a
+  configuration any more, the phase is removed.
+
 ## The run configurations of the IDEs
 
 `ide:config` writes what `ide` asks for. Everything it writes is *local*: the
@@ -266,7 +290,8 @@ Android ones (`android:androidManifest`, `android:flavorizrGradle`,
 (`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`), the
 xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
 `macos:configs`) the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
-ones (`ios:plist` and `macos:plist`) and the one of the IDEs (`ide:config`). For these a run is previewed, checked
+ones (`ios:plist` and `macos:plist`), the one of the IDEs (`ide:config`) and the Firebase
+ones (`android:firebase`, `ios:firebase` and `macos:firebase`). For these a run is previewed, checked
 against the lock, written atomically and recorded in `flavorizr.lock`.
 
 The Linux processors patch files that belong to you, so they only ever touch the

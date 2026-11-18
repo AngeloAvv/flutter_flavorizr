@@ -53,7 +53,7 @@ void main() {
           ['apple'],
           extra: '''
 recipes:
-  ci: [android, "google:firebase"]
+  ci: [android, "huawei:agconnect"]
   default: ci
 ''',
         ),
@@ -65,7 +65,7 @@ recipes:
       expect(project.logger.output, contains('ci (default)'));
       expect(
         project.logger.output,
-        contains('contains: android, google:firebase'),
+        contains('contains: android, huawei:agconnect'),
       );
       expect(project.logger.output, contains('all (built-in)\n'));
     });
@@ -75,7 +75,7 @@ recipes:
 
       expect(project.logger.output, contains('android:icons [engine]'));
       expect(project.logger.output, contains('android:dummyAssets [legacy]'));
-      expect(project.logger.output, contains('google:firebase [legacy]'));
+      expect(project.logger.output, contains('huawei:agconnect [legacy]'));
       expect(project.logger.output, contains('ios:podfile [engine]'));
       expect(project.logger.output, contains('ios:buildTargets [legacy]'));
     });

@@ -102,7 +102,7 @@ void main() {
         final code = await project.run([
           command,
           if (command == 'apply') '--yes',
-          'google:firebase',
+          'huawei:agconnect',
         ]);
 
         expect(code, ExitCodes.data, reason: project.logger.output);

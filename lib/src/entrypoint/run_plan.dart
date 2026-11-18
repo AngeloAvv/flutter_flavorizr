@@ -80,18 +80,24 @@ Set<String> platformsWithoutFlavors(Flavorizr config) => {
 /// A run that covers all of them is a *full* run, the only one that records the
 /// flavors in the lock (see `updateLock`). A project that has no Linux flavors
 /// can never run the Linux processors, so they are not part of what a full run
-/// has to cover. Neither is `ide:config` for a configuration with no `ide`.
+/// has to cover. Neither are the ones that have nothing to make for the
+/// configuration: `ide:config` with no `ide`, and the Firebase ones with no
+/// Firebase configuration on their platform.
 Set<String> engineIdsFor(ProcessorRegistry registry, Flavorizr config) {
   final skipped = platformsWithoutFlavors(config);
 
-  // `ide:config` has nothing to write for a configuration that names no IDE.
-  final hasIde = config.ide?.isNotEmpty ?? false;
+  // These have nothing to write for a configuration that does not ask for
+  // what they make: no IDE, no Firebase configuration on their platform.
+  final idle = {
+    if (config.ide?.isEmpty ?? true) 'ide:config',
+    if (!config.androidFirebaseFlavorsAvailable) 'android:firebase',
+    if (!config.iosFirebaseFlavorsAvailable) 'ios:firebase',
+    if (!config.macosFirebaseFlavorsAvailable) 'macos:firebase',
+  };
 
   return {
     for (final id in registry.fullRunIds)
-      if (!skipped.contains(id.split(':').first) &&
-          (hasIde || id != 'ide:config'))
-        id,
+      if (!skipped.contains(id.split(':').first) && !idle.contains(id)) id,
   };
 }
 
