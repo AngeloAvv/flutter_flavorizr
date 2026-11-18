@@ -26,6 +26,7 @@
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/src/parser/flavor_fingerprint.dart';
+import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'config/app.dart';
@@ -34,6 +35,9 @@ import 'flavors/flavor.dart';
 
 part 'flavorizr.g.dart';
 
+/// The configuration of a run: `flavorizr.yaml`, or the `flavorizr` section of `pubspec.yaml`.
+///
+/// It is read-only: a processor reads it through `FlavorizrContext.config` and cannot change it, nor what it holds (the maps and lists are unmodifiable).
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -41,17 +45,21 @@ part 'flavorizr.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class FlavorizrConfig {
+  /// What `app` sets for the flavors, if anything.
   final AppDefaults? app;
 
+  /// The flavors, by name.
   @JsonKey(required: true)
   final Map<String, Flavor> flavors;
 
+  /// Where the placeholder assets are downloaded from.
   @JsonKey(
     defaultValue:
         'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip',
   )
   final String assetsUrl;
 
+  /// The IDEs to write the run configurations for, if any.
   @JsonKey(fromJson: _ideListFromJson)
   final List<IDE>? ide;
 
@@ -64,88 +72,140 @@ class FlavorizrConfig {
   /// The recipe to run when no target is given: the value of `default` in
   /// `recipes` when it is a name.
   @JsonKey(includeFromJson: false)
-  String? defaultRecipe;
+  final String? defaultRecipe;
 
   /// The fingerprint of the resolved configuration of each flavor, by name. It
   /// is only known to a configuration that was parsed.
   @JsonKey(includeFromJson: false)
-  Map<String, String> flavorFingerprints = const {};
+  final Map<String, String> flavorFingerprints;
 
+  /// The flavors that are built for Android.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> androidFlavors;
+  final Map<String, Flavor> androidFlavors;
 
+  /// The flavors that are built for iOS.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> iosFlavors;
+  final Map<String, Flavor> iosFlavors;
 
+  /// The flavors that are built for macOS.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> macosFlavors;
+  final Map<String, Flavor> macosFlavors;
 
+  /// The flavors that are built for Linux.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> linuxFlavors;
+  final Map<String, Flavor> linuxFlavors;
 
+  /// The flavors that are built for Windows.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> windowsFlavors;
+  final Map<String, Flavor> windowsFlavors;
 
+  /// The Android flavors that have a Firebase configuration.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> androidFirebaseFlavors;
+  final Map<String, Flavor> androidFirebaseFlavors;
 
+  /// The Android flavors that have an AppGallery Connect configuration.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> androidAGConnectFlavors;
+  final Map<String, Flavor> androidAGConnectFlavors;
 
+  /// The iOS flavors that have a Firebase configuration.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> iosFirebaseFlavors;
+  final Map<String, Flavor> iosFirebaseFlavors;
 
+  /// The macOS flavors that have a Firebase configuration.
   @JsonKey(includeFromJson: false)
-  late Map<String, Flavor> macosFirebaseFlavors;
+  final Map<String, Flavor> macosFirebaseFlavors;
 
+  /// Creates the configuration of [flavors] and the rest.
   FlavorizrConfig({
     this.app,
-    required this.flavors,
+    required Map<String, Flavor> flavors,
     required this.assetsUrl,
-    this.ide,
-    this.recipes,
-  }) : androidFlavors = flavors.where((_, flavor) => flavor.android != null),
-       iosFlavors = flavors.where((_, flavor) => flavor.ios != null),
-       macosFlavors = flavors.where((_, flavor) => flavor.macos != null),
-       linuxFlavors = flavors.where((_, flavor) => flavor.linux != null),
-       windowsFlavors = flavors.where((_, flavor) => flavor.windows != null),
-       androidFirebaseFlavors = flavors.where(
-         (_, flavor) => flavor.android?.firebase != null,
+    List<IDE>? ide,
+    Map<String, List<String>>? recipes,
+    this.defaultRecipe,
+    Map<String, String> flavorFingerprints = const {},
+  }) : flavors = frozenMap(flavors),
+       ide = ide == null ? null : frozenList(ide),
+       recipes = recipes == null
+           ? null
+           : frozenMap({
+               for (final entry in recipes.entries)
+                 entry.key: frozenList(entry.value),
+             }),
+       flavorFingerprints = frozenMap(flavorFingerprints),
+       androidFlavors = _where(flavors, (flavor) => flavor.android != null),
+       iosFlavors = _where(flavors, (flavor) => flavor.ios != null),
+       macosFlavors = _where(flavors, (flavor) => flavor.macos != null),
+       linuxFlavors = _where(flavors, (flavor) => flavor.linux != null),
+       windowsFlavors = _where(flavors, (flavor) => flavor.windows != null),
+       androidFirebaseFlavors = _where(
+         flavors,
+         (flavor) => flavor.android?.firebase != null,
        ),
-       androidAGConnectFlavors = flavors.where(
-         (_, flavor) => flavor.android?.agconnect != null,
+       androidAGConnectFlavors = _where(
+         flavors,
+         (flavor) => flavor.android?.agconnect != null,
        ),
-       iosFirebaseFlavors = flavors.where(
-         (_, flavor) => flavor.ios?.firebase != null,
+       iosFirebaseFlavors = _where(
+         flavors,
+         (flavor) => flavor.ios?.firebase != null,
        ),
-       macosFirebaseFlavors = flavors.where(
-         (_, flavor) => flavor.macos?.firebase != null,
+       macosFirebaseFlavors = _where(
+         flavors,
+         (flavor) => flavor.macos?.firebase != null,
        );
 
-  factory FlavorizrConfig.fromJson(Map json) => _$FlavorizrConfigFromJson(json)
-    ..flavorFingerprints = fingerprintFlavors(json)
-    ..defaultRecipe = _defaultRecipeFromJson(json['recipes']);
+  /// The configuration of [json], with what is told from the document as a
+  /// whole: the fingerprints of the flavors and the default recipe.
+  factory FlavorizrConfig.fromJson(Map json) {
+    final parsed = _$FlavorizrConfigFromJson(json);
 
+    return FlavorizrConfig(
+      app: parsed.app,
+      flavors: parsed.flavors,
+      assetsUrl: parsed.assetsUrl,
+      ide: parsed.ide,
+      recipes: parsed.recipes,
+      defaultRecipe: _defaultRecipeFromJson(json['recipes']),
+      flavorFingerprints: fingerprintFlavors(json),
+    );
+  }
+
+  static Map<String, Flavor> _where(
+    Map<String, Flavor> flavors,
+    bool Function(Flavor flavor) test,
+  ) => frozenMap(flavors.where((_, flavor) => test(flavor)));
+
+  /// Reads the configuration in [yaml], and fails with what is wrong with it.
   factory FlavorizrConfig.parse(String yaml) =>
       checkedYamlDecode(yaml, (o) => FlavorizrConfig.fromJson(o ?? {}));
 
+  /// Whether any flavor is built for Android.
   bool get androidFlavorsAvailable => androidFlavors.isNotEmpty;
 
+  /// Whether any flavor is built for iOS.
   bool get iosFlavorsAvailable => iosFlavors.isNotEmpty;
 
+  /// Whether any flavor is built for macOS.
   bool get macosFlavorsAvailable => macosFlavors.isNotEmpty;
 
+  /// Whether any flavor is built for Linux.
   bool get linuxFlavorsAvailable => linuxFlavors.isNotEmpty;
 
+  /// Whether any flavor is built for Windows.
   bool get windowsFlavorsAvailable => windowsFlavors.isNotEmpty;
 
+  /// Whether any Android flavor has a Firebase configuration.
   bool get androidFirebaseFlavorsAvailable => androidFirebaseFlavors.isNotEmpty;
 
+  /// Whether any Android flavor has an AppGallery Connect configuration.
   bool get androidAGConnectFlavorsAvailable =>
       androidAGConnectFlavors.isNotEmpty;
 
+  /// Whether any iOS flavor has a Firebase configuration.
   bool get iosFirebaseFlavorsAvailable => iosFirebaseFlavors.isNotEmpty;
 
+  /// Whether any macOS flavor has a Firebase configuration.
   bool get macosFirebaseFlavorsAvailable => macosFirebaseFlavors.isNotEmpty;
 }
 

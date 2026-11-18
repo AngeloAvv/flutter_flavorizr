@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'firebase.g.dart';
 
+/// The Firebase configuration of a flavor on a platform.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -34,10 +35,13 @@ part 'firebase.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Firebase {
+  /// The path of the configuration file, a path of the project.
   @JsonKey(required: true, disallowNullValue: true)
   final String config;
 
+  /// Creates a Firebase.
   const Firebase({required this.config});
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Firebase.fromJson(Map json) => _$FirebaseFromJson(json);
 }

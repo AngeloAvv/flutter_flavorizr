@@ -28,6 +28,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'include.g.dart';
 
+/// A file that an xcconfig of a flavor includes.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -35,16 +36,21 @@ part 'include.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Include {
+  /// The build configuration it is for, or `null` for all of them.
   @JsonKey(disallowNullValue: true)
   final Target? target;
 
+  /// The path of the file.
   @JsonKey(required: true, disallowNullValue: true)
   final String value;
 
+  /// Whether the file may be missing.
   @JsonKey(disallowNullValue: true, defaultValue: false)
   final bool optional;
 
+  /// Creates a Include.
   const Include({required this.value, this.target, this.optional = false});
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Include.fromJson(Map json) => _$IncludeFromJson(json);
 }

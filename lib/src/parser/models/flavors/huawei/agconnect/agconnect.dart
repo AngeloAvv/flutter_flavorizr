@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'agconnect.g.dart';
 
+/// The AppGallery Connect configuration of an Android flavor.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -34,10 +35,13 @@ part 'agconnect.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class AGConnect {
+  /// The path of the configuration file, a path of the project.
   @JsonKey(required: true, disallowNullValue: true)
   final String config;
 
+  /// Creates a AGConnect.
   const AGConnect({required this.config});
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory AGConnect.fromJson(Map json) => _$AGConnectFromJson(json);
 }

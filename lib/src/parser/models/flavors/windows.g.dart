@@ -10,7 +10,7 @@ Windows _$WindowsFromJson(Map json) =>
     $checkedCreate('Windows', json, ($checkedConvert) {
       $checkKeys(
         json,
-        allowedKeys: const ['generateDummyAssets', 'icon'],
+        allowedKeys: const ['icon', 'generateDummyAssets'],
         disallowNullValues: const ['icon'],
       );
       final val = Windows(

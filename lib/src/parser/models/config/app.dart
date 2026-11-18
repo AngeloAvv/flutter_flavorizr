@@ -31,6 +31,7 @@ import 'macos.dart';
 
 part 'app.g.dart';
 
+/// What `app` of `flavorizr.yaml` sets for the flavors of each platform.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -38,15 +39,20 @@ part 'app.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class AppDefaults {
+  /// What every Android flavor starts from.
   @JsonKey(required: false, disallowNullValue: true)
   final AndroidDefaults? android;
 
+  /// What every iOS flavor starts from.
   @JsonKey(required: false, disallowNullValue: true)
   final IOS? ios;
 
+  /// What every macOS flavor starts from.
   final MacOS? macos;
 
+  /// Creates a AppDefaults.
   const AppDefaults({this.android, this.ios, this.macos});
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory AppDefaults.fromJson(Map json) => _$AppDefaultsFromJson(json);
 }

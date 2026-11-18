@@ -33,6 +33,7 @@ import 'windows.dart';
 
 part 'flavor.g.dart';
 
+/// A flavor: its name in the app and the configuration of each platform it is built for. A platform that is `null` is not built for.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -40,24 +41,31 @@ part 'flavor.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Flavor {
+  /// The app of the flavor.
   @JsonKey(required: true, disallowNullValue: true)
   final App app;
 
+  /// The Android configuration, or `null` when the flavor is not built for Android.
   @JsonKey(required: false, disallowNullValue: true)
   final Android? android;
 
+  /// The iOS configuration, or `null` when the flavor is not built for iOS.
   @JsonKey(required: false, disallowNullValue: true)
   final Darwin? ios;
 
+  /// The macOS configuration, or `null` when the flavor is not built for macOS.
   @JsonKey(required: false, disallowNullValue: true)
   final Darwin? macos;
 
+  /// The Linux configuration, or `null` when the flavor is not built for Linux.
   @JsonKey(required: false, disallowNullValue: true)
   final Linux? linux;
 
+  /// The Windows configuration, or `null` when the flavor is not built for Windows.
   @JsonKey(required: false, disallowNullValue: true)
   final Windows? windows;
 
+  /// Creates a Flavor.
   const Flavor({
     required this.app,
     this.android,
@@ -67,5 +75,6 @@ class Flavor {
     this.windows,
   });
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Flavor.fromJson(Map json) => _$FlavorFromJson(json);
 }

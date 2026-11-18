@@ -23,9 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:json_annotation/json_annotation.dart';
-
+/// A platform configuration that may have an icon.
 mixin IconMixin {
-  @JsonKey(disallowNullValue: true)
-  String? icon;
+  /// The path of the icon, if there is one.
+  String? get icon;
 }

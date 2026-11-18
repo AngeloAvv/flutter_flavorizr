@@ -23,12 +23,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/include.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'ios.g.dart';
 
+/// What `app.ios` of `flavorizr.yaml` sets for the iOS flavors.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -36,16 +38,27 @@ part 'ios.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class IOS with BuildSettingsMixin {
+  /// The files every iOS xcconfig includes.
   @JsonKey(disallowNullValue: true, defaultValue: [])
   final List<Include> includes;
 
+  @override
+  @JsonKey(defaultValue: {})
+  final Map<String, dynamic> buildSettings;
+
+  /// Creates a IOS.
   IOS({
     Map<String, dynamic> buildSettings = const {},
-    this.includes = const [],
-  }) {
-    this.buildSettings = BuildSettingsMixin.iosDefaultBuildSettings;
-    this.buildSettings.addAll(buildSettings);
-  }
+    List<Include> includes = const [],
+  }) : includes = frozenList(includes),
+       buildSettings =
+           (freeze({
+                     ...BuildSettingsMixin.iosDefaultBuildSettings,
+                     ...buildSettings,
+                   })
+                   as Map)
+               .cast<String, dynamic>();
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory IOS.fromJson(Map json) => _$IOSFromJson(json);
 }

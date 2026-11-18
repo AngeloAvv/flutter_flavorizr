@@ -30,6 +30,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'windows.g.dart';
 
+/// The Windows configuration of a flavor.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -37,10 +38,17 @@ part 'windows.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Windows extends OS with IconMixin, DummyAssetsMixin {
-  Windows({bool generateDummyAssets = true, String? icon}) {
-    this.generateDummyAssets = generateDummyAssets;
-    this.icon = icon;
-  }
+  @override
+  @JsonKey(disallowNullValue: true)
+  final String? icon;
 
+  @override
+  @JsonKey(defaultValue: true)
+  final bool generateDummyAssets;
+
+  /// Creates a Windows.
+  Windows({this.generateDummyAssets = true, this.icon});
+
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Windows.fromJson(Map json) => _$WindowsFromJson(json);
 }

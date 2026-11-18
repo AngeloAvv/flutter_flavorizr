@@ -23,9 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:json_annotation/json_annotation.dart';
-
+/// A platform configuration that may ask for the placeholder assets.
 mixin DummyAssetsMixin {
-  @JsonKey(defaultValue: true)
-  bool generateDummyAssets = true;
+  /// Whether the placeholder assets are made.
+  bool get generateDummyAssets;
 }

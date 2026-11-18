@@ -10,7 +10,7 @@ MacOS _$MacOSFromJson(Map json) =>
     $checkedCreate('MacOS', json, ($checkedConvert) {
       $checkKeys(
         json,
-        allowedKeys: const ['buildSettings', 'includes'],
+        allowedKeys: const ['includes', 'buildSettings'],
         disallowNullValues: const ['includes'],
       );
       final val = MacOS(

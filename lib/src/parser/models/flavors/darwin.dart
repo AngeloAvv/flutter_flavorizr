@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/dummy_assets_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/commons/firebase_mixin.dart';
@@ -35,6 +36,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'darwin.g.dart';
 
+/// The iOS or macOS configuration of a flavor.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -43,30 +45,50 @@ part 'darwin.g.dart';
 )
 class Darwin extends OS
     with BuildSettingsMixin, FirebaseMixin, IconMixin, DummyAssetsMixin {
+  /// The bundle identifier of the flavor.
   @JsonKey(required: true, disallowNullValue: true)
   final String bundleId;
 
+  /// The variables of the xcconfig of the flavor, by name.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, Variable> variables;
 
+  /// The files the xcconfig of the flavor includes.
   @JsonKey(disallowNullValue: true, defaultValue: [])
   final List<Include> includes;
 
+  @override
+  @JsonKey(defaultValue: {})
+  final Map<String, dynamic> buildSettings;
+
+  @override
+  @JsonKey(disallowNullValue: true)
+  final Firebase? firebase;
+
+  @override
+  @JsonKey(disallowNullValue: true)
+  final String? icon;
+
+  @override
+  @JsonKey(defaultValue: true)
+  final bool generateDummyAssets;
+
+  /// Creates a Darwin.
   Darwin({
     required this.bundleId,
-    this.variables = const {},
-    this.includes = const [],
+    Map<String, Variable> variables = const {},
+    List<Include> includes = const [],
     Map<String, dynamic> buildSettings = const {},
-    bool generateDummyAssets = true,
-    Firebase? firebase,
-    String? icon,
-  }) {
-    this.generateDummyAssets = generateDummyAssets;
-    this.firebase = firebase;
-    this.icon = icon;
-    this.buildSettings = {"PRODUCT_BUNDLE_IDENTIFIER": bundleId};
-    this.buildSettings.addAll(buildSettings);
-  }
+    this.generateDummyAssets = true,
+    this.firebase,
+    this.icon,
+  }) : variables = frozenMap(variables),
+       includes = frozenList(includes),
+       buildSettings =
+           (freeze({'PRODUCT_BUNDLE_IDENTIFIER': bundleId, ...buildSettings})
+                   as Map)
+               .cast<String, dynamic>();
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Darwin.fromJson(Map json) => _$DarwinFromJson(json);
 }

@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
@@ -36,6 +37,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'android.g.dart';
 
+/// The Android configuration of a flavor.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -43,39 +45,57 @@ part 'android.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
+  /// The application id of the flavor.
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
 
+  /// What goes as it is in the `defaultConfig` of the flavor in Gradle.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, dynamic> customConfig;
 
+  /// The `resValues` of the flavor, by name.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, ResValue> resValues;
 
+  /// The `buildConfigFields` of the flavor, by name.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, BuildConfigField> buildConfigFields;
 
+  /// The AppGallery Connect configuration of the flavor.
   @JsonKey(disallowNullValue: true)
   final AGConnect? agconnect;
 
+  /// The adaptive icon of the flavor.
   @JsonKey(disallowNullValue: true)
   final AdaptiveIcon? adaptiveIcon;
 
+  @override
+  @JsonKey(disallowNullValue: true)
+  final Firebase? firebase;
+
+  @override
+  @JsonKey(disallowNullValue: true)
+  final String? icon;
+
+  @override
+  @JsonKey(defaultValue: true)
+  final bool generateDummyAssets;
+
+  /// Creates a Android.
   Android({
     required this.applicationId,
-    this.customConfig = const {},
-    this.resValues = const {},
-    this.buildConfigFields = const {},
+    Map<String, dynamic> customConfig = const {},
+    Map<String, ResValue> resValues = const {},
+    Map<String, BuildConfigField> buildConfigFields = const {},
     this.agconnect,
-    bool generateDummyAssets = true,
-    Firebase? firebase,
-    String? icon,
+    this.generateDummyAssets = true,
+    this.firebase,
+    this.icon,
     this.adaptiveIcon,
-  }) {
-    this.generateDummyAssets = generateDummyAssets;
-    this.firebase = firebase;
-    this.icon = icon;
-  }
+  }) : customConfig = (freeze(customConfig) as Map).cast<String, dynamic>(),
+       resValues = frozenMap(resValues),
+       buildConfigFields = frozenMap(buildConfigFields);
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Android.fromJson(Map json) => _$AndroidFromJson(json);
 }
