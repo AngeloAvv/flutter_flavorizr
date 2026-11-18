@@ -137,6 +137,41 @@ void main() {
     });
   });
 
+  group('a drop-from-actual whitelist entry', () {
+    final whitelist = Whitelist.parse(r'''
+- path: ios/Runner.xcodeproj/project.pbxproj
+  only-comments: true
+  drop-from-actual: '^\s*\w{24} /\* Moved \*/,$'
+  reason: It is in another place
+''');
+    const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
+    const moved = 'AAAAAAAAAAAAAAAAAAAAAAAA /* Moved */,';
+    const other = 'BBBBBBBBBBBBBBBBBBBBBBBB /* Other */,';
+
+    test('compares the new output without what it has in another place', () {
+      write(golden, pbxproj, '\t\t$other\n');
+      write(actual, pbxproj, '\t\t$moved\n\t\t$other\n');
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isTrue);
+      expect(report.differences.single.reason, 'It is in another place');
+    });
+
+    test('does not hide anything else', () {
+      write(golden, pbxproj, '\t\t$other\n');
+      write(
+        actual,
+        pbxproj,
+        '\t\t$moved\n\t\tCCCCCCCCCCCCCCCCCCCCCCCC /* Different */,\n',
+      );
+
+      final report = compareTrees(golden, actual, whitelist: whitelist);
+
+      expect(report.isClean, isFalse);
+    });
+  });
+
   group('an only-comments whitelist entry', () {
     final whitelist = Whitelist.parse('''
 - path: ios/Runner.xcodeproj/project.pbxproj

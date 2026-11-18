@@ -84,6 +84,7 @@ typedef _Entry = ({
   String reason,
   bool onlyComments,
   RegExp? dropFromGolden,
+  RegExp? dropFromActual,
   RegExp? ignore,
 });
 
@@ -104,6 +105,10 @@ class Whitelist {
   ///   names the UUIDs of the golden again (see [normalizePbxproj]). It is what
   ///   the new output no longer has: the objects that went away, and the ones
   ///   that are named after their place in a list after them.
+  /// * `drop-from-actual` does the same to the new output. It is for what the
+  ///   new output has in another place than the golden, which names the UUIDs
+  ///   of everything after it differently: both are taken without it, and named
+  ///   again.
   /// * `ignore` removes what matches from both files before comparing them. It
   ///   is what the new output has more of, in the lines it shares with the
   ///   golden.
@@ -133,6 +138,7 @@ class Whitelist {
             reason: reason.trim(),
             onlyComments: entry['only-comments'] == true,
             dropFromGolden: _optionalPattern(entry, 'drop-from-golden', path),
+            dropFromActual: _optionalPattern(entry, 'drop-from-actual', path),
             ignore: _optionalPattern(entry, 'ignore', path),
           );
         }(),
@@ -161,6 +167,7 @@ class Whitelist {
       final restricted =
           entry.onlyComments ||
           entry.dropFromGolden != null ||
+          entry.dropFromActual != null ||
           entry.ignore != null;
       if (restricted &&
           (before == null || after == null || !_covers(entry, before, after))) {
@@ -180,6 +187,16 @@ class Whitelist {
     if (drop != null) {
       left = normalizePbxproj(
         left.split('\n').where((line) => !drop.hasMatch(line)).join('\n'),
+      );
+    }
+
+    final dropActual = entry.dropFromActual;
+    if (dropActual != null) {
+      right = normalizePbxproj(
+        right
+            .split('\n')
+            .where((line) => !dropActual.hasMatch(line))
+            .join('\n'),
       );
     }
 
