@@ -112,5 +112,5 @@
 - path: flavorizr.yaml
   reason: >-
     The configuration is the input of the run, and 3.0 reads `recipes` where
-    2.6.0 read `instructions` (#535): the fixture lists the same processors
-    under the new key.
+    2.6.0 read `instructions` (#535): `fixtures/flavorizr.3.yaml` lists the same
+    processors under the new key.

@@ -34,7 +34,7 @@ import 'package:flutter_test/flutter_test.dart';
 const _configurations = [
   'blank/flavorizr.yaml',
   'example/flavorizr.yaml',
-  'tool/parity/fixtures/flavorizr.yaml',
+  'tool/parity/fixtures/flavorizr.3.yaml',
 ];
 
 void main() {

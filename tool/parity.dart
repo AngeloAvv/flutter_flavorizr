@@ -88,6 +88,7 @@ Future<void> main(List<String> arguments) async {
   final runner = ParityRunner(
     fixture: File(p.join(fixtures.path, 'flavorizr.yaml')),
     fixtureFiles: Directory(p.join(fixtures.path, 'files')),
+    fixtureFor3x: File(p.join(fixtures.path, 'flavorizr.3.yaml')),
     flutter: results['flutter'] as String,
   );
   final golden = Golden(Directory(results['golden'] as String));
