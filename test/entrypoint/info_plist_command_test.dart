@@ -34,7 +34,6 @@ import 'cli_fixture.dart';
 
 const _ios = 'ios/Runner/Info.plist';
 const _macos = 'macos/Runner/Info.plist';
-const _paths = [_ios, _macos];
 const _plist = ['ios:plist', 'macos:plist'];
 
 /// What a full run of a project with only iOS and macOS flavors covers.
