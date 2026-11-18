@@ -103,7 +103,7 @@ final class LexedPodfile {
   static final RegExp _simple = RegExp(r'#\{[\w@.]+\}');
   static final RegExp _operand = RegExp(r'[\w)\]}]$');
   static final RegExp _opens = RegExp(
-    r'(?:^|[=(,;])\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b(?![!?=]|:(?!:))|'
+    r'(?:^|[=(,;]|\b(?:then|else)\b)\s*(?:if|unless|begin|def|case|while|until|for|class|module)\b(?![!?=]|:(?!:))|'
     r'(?<![\w:.])do\b(?![!?=:])|\{\s*(?:\|[^|]*\|)?\s*$',
   );
   static final RegExp _loopOpener = RegExp(r'\b(?:while|until|for)$');
@@ -148,15 +148,22 @@ final class LexedPodfile {
       } else {
         if (continued) nonCode.add(line.index);
 
+        final startsContinued = continued;
         final scan = _scan(text, path);
 
         for (final opener in _opens.allMatches(scan.code)) {
           if (!_loopOpener.hasMatch(opener.group(0)!)) continue;
 
-          if (scan.continues) {
+          // The header ends with `do` or `;`: a `\` after that goes on with
+          // the body, which is read as any other line.
+          final headerOpen = !scan.code
+              .substring(opener.end)
+              .contains(RegExp(r'\bdo\b|;'));
+
+          if (startsContinued || (scan.continues && headerOpen)) {
             _refuse(
               path,
-              'a loop header in `${text.trim()}` goes on after a `\\` at its end, so its condition cannot be read safely.',
+              'a loop header in `${text.trim()}` goes on over more lines with a `\\`, so its condition cannot be read safely.',
               'Write the loop header on a single line.',
             );
           }
@@ -255,11 +262,11 @@ final class LexedPodfile {
 
           if (end < 0 ||
               RegExp(
-                r'''["'`{#%/]|<<''',
+                r'''["'`{#%/?\\]|<<''',
               ).hasMatch(text.substring(i + 2, end))) {
             _refuse(
               path,
-              'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `#`, a `%`, a `/`, a `{` '
+              'an interpolation (`#{...}`) in `${text.trim()}` has a quote, a `#`, a `%`, a `/`, a `?`, a `\\`, a `{` '
                   'or a heredoc in it, or is not closed on its line.',
               'Compute the value on a line of its own, and use it in the string.',
             );

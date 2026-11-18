@@ -733,6 +733,26 @@ final _unsafe = <({String name, List<String> source, String reason})>[
     reason: 'inside a block',
   ),
   (
+    name: 'a character literal hiding an interpolation terminator',
+    source: [
+      r'''note = "#{ ?}; '"#' }''',
+      ..._decoy,
+      '#"',
+      "project('Runner', {})",
+    ],
+    reason: 'interpolation',
+  ),
+  (
+    name: 'a loop opener on a continued line',
+    source: [r'result = \\', 'while false', 'end', ..._decoy],
+    reason: 'loop header',
+  ),
+  (
+    name: 'a loop header with parentheses after then',
+    source: ['if ENV["X"] then while (false)', 'end', 'end', ..._decoy],
+    reason: 'loop header',
+  ),
+  (
     name: 'a nested do after the loop delimiter',
     source: ['while false do [1].each do |item|', 'end', ..._decoy, 'end'],
     reason: 'inside a block',
@@ -1027,6 +1047,11 @@ final _lexicalSupported = <_Case>[
   _readable('reads escapes, symbols and a simple interpolation in strings', [
     r'''x = "say \"hi\" it's #{name} # not a comment"''',
     r'''y = 'it\'s' + :'a b'.to_s''',
+  ]),
+  _readable('reads a continuation in the body of a loop', [
+    'while false do puts \\',
+    "'skip'",
+    'end',
   ]),
   _readable('reads a backtick string with a quote in it', ['x = `echo it\'s`']),
   _readable('reads a regular expression with an interpolated name', [
