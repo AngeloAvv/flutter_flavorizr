@@ -85,9 +85,12 @@ Future<void> main(List<String> arguments) async {
   }
 
   final fixtures = Directory(results['fixtures'] as String);
+  final fixtureFor3x = File(p.join(fixtures.path, 'flavorizr.3.yaml'));
   final runner = ParityRunner(
     fixture: File(p.join(fixtures.path, 'flavorizr.yaml')),
     fixtureFiles: Directory(p.join(fixtures.path, 'files')),
+    // Optional: a fixture directory without it uses its flavorizr.yaml for both.
+    fixtureFor3x: fixtureFor3x.existsSync() ? fixtureFor3x : null,
     flutter: results['flutter'] as String,
   );
   final golden = Golden(Directory(results['golden'] as String));

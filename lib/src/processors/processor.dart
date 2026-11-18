@@ -70,6 +70,9 @@ class Processor extends AbstractProcessor<void> {
   final Map<String, AbstractProcessor<void> Function()> _availableProcessors;
   final bool force;
 
+  /// What to run instead of [defaultInstructionSet].
+  final List<String>? instructions;
+
   static const List<String> defaultInstructionSet = [
     // Prepare
     'assets:download',
@@ -132,13 +135,17 @@ class Processor extends AbstractProcessor<void> {
     'ide:config',
   ];
 
-  Processor(super.config, {this.force = false, required super.logger})
-    : _availableProcessors = _initAvailableProcessors(config, logger: logger);
+  Processor(
+    super.config, {
+    this.force = false,
+    this.instructions,
+    required super.logger,
+  }) : _availableProcessors = _initAvailableProcessors(config, logger: logger);
 
   /// Resolves the configured (or default) instruction set, dropping any
   /// platform-specific instructions for platforms with no flavors defined.
   List<String> resolveInstructions() =>
-      List<String>.from(config.instructions ?? defaultInstructionSet)
+      List<String>.from(instructions ?? defaultInstructionSet)
         ..removeWhere(
           (instruction) =>
               !config.androidFlavorsAvailable &&

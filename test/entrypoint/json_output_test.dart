@@ -181,7 +181,7 @@ void main() {
       test('has an empty plan when nothing is to run', () async {
         project.write(
           'flavorizr.yaml',
-          '${CliFixture.config(['a'])}instructions: []\n',
+          '${CliFixture.config(['a'])}recipes:\n  default: []\n',
         );
 
         final code = await project.run(['plan', '--json']);

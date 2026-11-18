@@ -74,8 +74,7 @@ class FlavorizrContext {
   ///
   /// A processor that depends on a step it does not run itself, such as the
   /// launch screen the plist points to, reads it here and not in the
-  /// configuration: the instructions of the file are not what a run does when
-  /// it is given targets, or none.
+  /// configuration: what a run does depends on the targets it is given.
   final Set<String> selected;
 
   final Map<ResourceKey<Object?>, Object?> _resources;

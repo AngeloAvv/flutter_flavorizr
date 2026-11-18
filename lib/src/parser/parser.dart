@@ -90,6 +90,7 @@ class Parser {
     }
 
     _checkKeys(root, root, configFileName, visited: Set<YamlNode>.identity());
+    _checkRemovedKeys(root, configFileName);
 
     try {
       return isFlavorizrFile
@@ -160,6 +161,53 @@ class Parser {
         _checkKeys(root, item, file, visited: visited, path: [...path, index]);
       }
     }
+  }
+
+  /// Fails on a key of 2.x that 3.0 does not read, with what replaces it: an
+  /// unknown key would only say it is not known, and a project migrating would
+  /// have to find out what to write instead.
+  void _checkRemovedKeys(YamlMap root, String file) {
+    final isFile = _isFlavorizrFile(file);
+    final section = isFile ? root : root.nodes['flavorizr'];
+
+    if (section is! YamlMap) return;
+
+    final instructions = section.nodes['instructions'];
+
+    if (instructions == null) return;
+
+    final key = section.nodes.keys.cast<YamlNode>().firstWhere(
+      (key) => key is YamlScalar && key.value == 'instructions',
+    );
+    final ids = instructions is YamlList
+        ? [
+            for (final item in instructions.nodes)
+              if (item is YamlScalar && item.value != null) '${item.value}',
+          ]
+        : null;
+    final complete =
+        ids != null && ids.length == (instructions as YamlList).length;
+    final hasRecipes = section.nodes['recipes'] != null;
+    final lines = [
+      'recipes:',
+      '  default:${complete && ids.isEmpty ? ' []' : ''}',
+      if (complete)
+        for (final id in ids) '    - $id',
+    ];
+    final yaml = (isFile ? lines : ['flavorizr:', ...lines.map((l) => '  $l')])
+        .map((line) => '    $line')
+        .join('\n');
+
+    throw RemovedKeyException(
+      'instructions',
+      '`instructions` is not a key of flavorizr 3.0: `recipes` replaces it, '
+          'and the recipe `default` is what runs without a target. '
+          '${hasRecipes ? 'Add `default` to your `recipes`' : 'Write'}'
+          '${complete ? '' : ' the list of `instructions` as `default`'}'
+          '${complete ? ':' : '.'}'
+          '${complete ? '\n\n$yaml\n' : ''}',
+      location: _location(file, key),
+    );
   }
 
   bool _isFlavorizrFile(String file) => file.contains(flavorizrPath);

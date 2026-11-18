@@ -209,10 +209,10 @@ void main() {
       });
     });
 
-    test('with `instructions: []` and no target runs nothing', () async {
+    test('with an empty default recipe and no target runs nothing', () async {
       project.write(
         'flavorizr.yaml',
-        CliFixture.config(['apple'], extra: 'instructions: []\n'),
+        CliFixture.config(['apple'], extra: 'recipes:\n  default: []\n'),
       );
       final before = project.snapshot();
 

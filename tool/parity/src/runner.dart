@@ -34,6 +34,11 @@ import 'tree.dart';
 
 /// Where flavorizr comes from: a pub.dev version (`2.6.0`) or the path of a
 /// checkout.
+///
+/// A version is a 2.x reference and runs the 2.x fixture; 3.x is the checkout,
+/// which runs the fixture in the words of 3.x (see
+/// [ParityRunner.fixtureFor3x]). A 3.x published on pub.dev is not supported:
+/// it would be given the 2.x fixture, which it rejects.
 class FlavorizrSource {
   const FlavorizrSource(this.spec);
 
@@ -79,11 +84,18 @@ class ParityRunner {
   const ParityRunner({
     required this.fixture,
     this.fixtureFiles,
+    this.fixtureFor3x,
     this.flutter = 'flutter',
   });
 
-  /// The `flavorizr.yaml` copied in the generated project.
+  /// The `flavorizr.yaml` copied in the generated project: the one of 2.x, which
+  /// the golden is recorded with and identified by.
   final File fixture;
+
+  /// The same configuration in the words of 3.x, for a checkout (see
+  /// [FlavorizrSource.isPath]): 3.x does not read what 2.x did, such as
+  /// `instructions`, which `recipes` replaces.
+  final File? fixtureFor3x;
 
   /// Files copied as they are in the root of the generated project, such as
   /// the Firebase configurations the fixture points to.
@@ -141,7 +153,9 @@ class ParityRunner {
         '--platforms=$platforms',
         '.',
       ]);
-      fixture.copySync(p.join(project.path, 'flavorizr.yaml'));
+      (source.isPath ? fixtureFor3x ?? fixture : fixture).copySync(
+        p.join(project.path, 'flavorizr.yaml'),
+      );
       if (fixtureFiles != null) _copy(fixtureFiles!, project);
       await _flutter(project, source.pubAddArgs);
       await _copyAssets(project);

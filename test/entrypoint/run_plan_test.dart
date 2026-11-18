@@ -94,43 +94,38 @@ void main() {
     expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
   });
 
-  test('the instructions of the configuration are used without targets', () {
+  test('the default recipe of the configuration is used without targets', () {
     final plan = resolve(
       '$android'
-      'instructions:\n  - android:flavorizrGradle\n  - google:firebase\n',
+      'recipes:\n  default:\n    - android:flavorizrGradle\n'
+      '    - google:firebase\n',
     );
 
     expect(engine(plan), ['android:flavorizrGradle']);
     expect(plan.legacy.map((step) => step.id), ['google:firebase']);
   });
 
-  test('instructions that are empty run nothing, like in 2.x', () {
-    final plan = resolve('${android}instructions: []\n');
+  test('a default recipe that is empty runs nothing', () {
+    final plan = resolve('${android}recipes:\n  default: []\n');
 
     expect(plan.isEmpty, isTrue);
     expect(plan.engine.steps, isEmpty);
     expect(plan.legacy, isEmpty);
   });
 
-  test('a target wins over empty instructions', () {
-    final plan = resolve('${android}instructions: []\n', ['android:icons']);
+  test('a target wins over an empty default recipe', () {
+    final plan = resolve('${android}recipes:\n  default: []\n', [
+      'android:icons',
+    ]);
 
     expect(engine(plan), ['android:icons']);
   });
 
-  test('a recipe default does not win over empty instructions', () {
+  test('a target wins over the default recipe', () {
     final plan = resolve(
-      '${android}instructions: []\nrecipes:\n  ci: [android:icons]\n'
-      '  default: ci\n',
+      '${android}recipes:\n  default:\n    - google:firebase\n',
+      ['android:icons'],
     );
-
-    expect(plan.isEmpty, isTrue);
-  });
-
-  test('a target wins over the instructions', () {
-    final plan = resolve('${android}instructions:\n  - google:firebase\n', [
-      'android:icons',
-    ]);
 
     expect(engine(plan), ['android:icons']);
     expect(plan.legacy, isEmpty);

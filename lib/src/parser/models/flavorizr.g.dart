@@ -11,14 +11,7 @@ Flavorizr _$FlavorizrFromJson(Map json) => $checkedCreate('Flavorizr', json, (
 ) {
   $checkKeys(
     json,
-    allowedKeys: const [
-      'app',
-      'flavors',
-      'instructions',
-      'assetsUrl',
-      'ide',
-      'recipes',
-    ],
+    allowedKeys: const ['app', 'flavors', 'assetsUrl', 'ide', 'recipes'],
     requiredKeys: const ['flavors'],
   );
   final val = Flavorizr(
@@ -31,10 +24,6 @@ Flavorizr _$FlavorizrFromJson(Map json) => $checkedCreate('Flavorizr', json, (
       (v) => (v as Map).map(
         (k, e) => MapEntry(k as String, Flavor.fromJson(e as Map)),
       ),
-    ),
-    instructions: $checkedConvert(
-      'instructions',
-      (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
     ),
     assetsUrl: $checkedConvert(
       'assetsUrl',

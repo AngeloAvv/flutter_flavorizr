@@ -10,7 +10,11 @@ be compared against it.
    in a temp dir and copies `fixtures/flavorizr.yaml` (two flavors, `apple` and
    `banana`, each with a Firebase configuration so that the build phase that
    gets a new random UUID on every run is exercised) plus `fixtures/files/`,
-   which holds those placeholder Firebase configs.
+   which holds those placeholder Firebase configs. A checkout of 3.x gets
+   `fixtures/flavorizr.3.yaml` instead: the same configuration in the words of
+   3.x (`recipes` where 2.x had `instructions`), while the golden is recorded
+   and identified by the 2.x one. A version from pub.dev is a 2.x reference and
+   runs the 2.x fixture: check 3.x as a checkout.
 2. The chosen flavorizr runs on it, `2.6.0` from pub.dev or a local checkout.
 3. The result is normalized, so that two runs are identical:
    - every UUID of a `project.pbxproj` is rewritten from the object's

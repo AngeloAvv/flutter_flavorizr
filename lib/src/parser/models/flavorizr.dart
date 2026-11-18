@@ -46,9 +46,6 @@ class Flavorizr {
   @JsonKey(required: true)
   final Map<String, Flavor> flavors;
 
-  @JsonKey()
-  List<String>? instructions;
-
   @JsonKey(
     defaultValue:
         'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip',
@@ -104,7 +101,6 @@ class Flavorizr {
   Flavorizr({
     this.app,
     required this.flavors,
-    this.instructions,
     required this.assetsUrl,
     this.ide,
     this.recipes,
