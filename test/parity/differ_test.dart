@@ -302,6 +302,44 @@ ${sources.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
       );
     });
 
+    test('does not hide build files that swap their phases', () {
+      const plain = 'AAAA00000000000000000001 /* M in Resources */';
+      const signed = 'AAAA00000000000000000002 /* M in Resources */';
+      String twoTargets({required bool swapped}) =>
+          '''
+/* Begin PBXBuildFile section */
+\t\tAAAA00000000000000000001 /* M in Resources */ = {isa = PBXBuildFile; fileRef = $m; };
+\t\tAAAA00000000000000000002 /* M in Resources */ = {isa = PBXBuildFile; fileRef = $m; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+\t\t$m /* M */ = {isa = PBXFileReference; path = m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+/* Begin PBXResourcesBuildPhase section */
+\t\t$phase /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+\t\t\t\t${swapped ? signed : plain},
+\t\t\t);
+\t\t};
+\t\t111111111111111111111111 /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tfiles = (
+\t\t\t\t${swapped ? plain : signed},
+\t\t\t);
+\t\t};
+/* End PBXResourcesBuildPhase section */
+''';
+
+      expect(
+        clean(twoTargets(swapped: false), twoTargets(swapped: true)),
+        isFalse,
+      );
+      expect(
+        clean(twoTargets(swapped: false), twoTargets(swapped: false)),
+        isTrue,
+      );
+    });
+
     test('does not hide other properties of a build file', () {
       expect(
         clean(

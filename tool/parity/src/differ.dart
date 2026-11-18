@@ -260,6 +260,7 @@ class Whitelist {
     final lines = content.split('\n');
     final pathOf = <String, String>{};
     final buildFileOf = <String, String>{};
+    final settingsOf = <String, String>{};
 
     for (final line in lines) {
       final definition = _definition.firstMatch(line);
@@ -276,6 +277,9 @@ class Whitelist {
           pathOf[uuid] = path?.group(1) ?? path?.group(2) ?? '?';
         case 'PBXBuildFile':
           buildFileOf[uuid] = _fileRef.firstMatch(body)?.group(1) ?? '?';
+          settingsOf[uuid] = _withoutComments(
+            body,
+          ).replaceAll(_fileRef, '').replaceAll(_uuid, 'UUID').trim();
       }
     }
 
@@ -283,7 +287,7 @@ class Whitelist {
       final reference = buildFileOf[uuid];
 
       return reference != null
-          ? 'build of ${pathOf[reference] ?? '?'}'
+          ? 'build of ${pathOf[reference] ?? '?'} ${settingsOf[uuid]}'
           : 'file ${pathOf[uuid] ?? '?'}';
     }
 
