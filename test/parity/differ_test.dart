@@ -137,6 +137,50 @@ void main() {
     });
   });
 
+  group('the whitelist of the Firebase script, as it ships', () {
+    final whitelist = Whitelist.parse(
+      File('tool/parity/whitelist.yaml').readAsStringSync(),
+    );
+
+    String script(Iterable<String> flavors, {required bool profile}) => [
+      for (final flavor in flavors)
+        'if [ "\$CONFIGURATION" == "Debug-$flavor" ]'
+            '${profile ? ' || [ "\$CONFIGURATION" == "Profile-$flavor" ]' : ''}'
+            ' || [ "\$CONFIGURATION" == "Release-$flavor" ]; then\n'
+            '  cp Runner/$flavor/GoogleService-Info.plist '
+            'Runner/GoogleService-Info.plist\n',
+    ].join('fi\n');
+
+    for (final flavors in [
+      ['apple'],
+      ['dev-1', 'v2.0'],
+    ]) {
+      test('takes the Profile case of $flavors', () {
+        write(golden, 'ios/firebaseScript.sh', script(flavors, profile: false));
+        write(actual, 'ios/firebaseScript.sh', script(flavors, profile: true));
+
+        expect(
+          compareTrees(golden, actual, whitelist: whitelist).isClean,
+          isTrue,
+        );
+      });
+    }
+
+    test('does not take another change of the script', () {
+      write(golden, 'ios/firebaseScript.sh', script(['apple'], profile: false));
+      write(
+        actual,
+        'ios/firebaseScript.sh',
+        script(['apple'], profile: true).replaceAll('Runner/apple', 'Other'),
+      );
+
+      expect(
+        compareTrees(golden, actual, whitelist: whitelist).isClean,
+        isFalse,
+      );
+    });
+  });
+
   group('a moved whitelist entry', () {
     final whitelist = Whitelist.parse(r'''
 - path: ios/Runner.xcodeproj/project.pbxproj
@@ -229,6 +273,19 @@ ${sources.map((entry) => '\t\t\t\t$entry,\n').join()}\t\t\t);
         clean(
           project(entries: [mEntry]),
           project(entries: [mEntry], path: 'n'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not hide other properties of a build file', () {
+      expect(
+        clean(
+          project(entries: [mEntry]),
+          project(entries: [mEntry]).replaceFirst(
+            'fileRef = $m; }',
+            'fileRef = $m; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; }',
+          ),
         ),
         isFalse,
       );

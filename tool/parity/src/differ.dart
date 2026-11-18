@@ -310,7 +310,10 @@ class Whitelist {
         if (moved.hasMatch(line))
           if (_definition.firstMatch(line) case final definition?)
             switch (definition.group(2)) {
-              'PBXBuildFile' => 'PBXBuildFile ${named(definition.group(1)!)}',
+              // The file it builds, and whatever else it says (settings...).
+              'PBXBuildFile' =>
+                'PBXBuildFile ${named(definition.group(1)!)} '
+                    '${_withoutComments(definition.group(3)!).replaceAll(_fileRef, '').replaceAll(_uuid, 'UUID').trim()}',
               _ => _withoutComments(line).replaceAll(_uuid, 'UUID').trim(),
             }
           else if (_listing.firstMatch(line) case final listing?)
