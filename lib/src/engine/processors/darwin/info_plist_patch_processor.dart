@@ -75,7 +75,7 @@ abstract class InfoPlistPatchProcessor extends FlavorizrProcessor {
 }
 
 /// Sets the name, the display name and, when the launch screen is one of the
-/// instructions of the run, the launch storyboard of `ios/Runner/Info.plist`.
+/// processors of the run (`ios:launchScreen`, on the legacy pipeline), the launch storyboard of `ios/Runner/Info.plist`.
 class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
   /// Creates the processor.
   const IosInfoPlistPatchProcessor();
@@ -90,7 +90,7 @@ class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
   Map<String, String> values(FlavorizrContext ctx) => {
     InfoPlistEditor.bundleName: InfoPlistEditor.bundleNameValue,
     InfoPlistEditor.bundleDisplayName: InfoPlistEditor.bundleDisplayNameValue,
-    if ((ctx.config.instructions ?? const []).contains('ios:launchScreen'))
+    if (ctx.selected.contains('ios:launchScreen'))
       InfoPlistEditor.launchStoryboardName:
           InfoPlistEditor.launchStoryboardNameValue,
   };

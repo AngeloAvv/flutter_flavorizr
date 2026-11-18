@@ -48,10 +48,10 @@ const _run = [
 
 final String _iosPristine = File(
   'test_resources/darwin/info_plist_test/IosInfoPlistOriginal.plist',
-).readAsStringSync();
+).readAsStringSync().replaceAll('\r\n', '\n');
 final String _macosPristine = File(
   'test_resources/darwin/info_plist_test/MacosInfoPlistOriginal.plist',
-).readAsStringSync();
+).readAsStringSync().replaceAll('\r\n', '\n');
 
 String _config(Iterable<String> flavors) =>
     'flavors:\n${[for (final flavor in flavors) '''
@@ -209,6 +209,33 @@ void main() {
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_ios), flavorized);
+    });
+
+    test('the launch storyboard follows the launch screen of the run, not '
+        'the instructions of the file', () async {
+      // The file asks for it, the run does not: nothing generates it.
+      project.write(
+        'flavorizr.yaml',
+        'instructions:\n  - ios:plist\n  - ios:launchScreen\n'
+            '${_config(['apple', 'banana'])}',
+      );
+
+      expect(await project.run(['apply', '--yes', 'ios:plist']), ExitCodes.ok);
+      expect(project.read(_ios), isNot(contains('ASSET_PREFIX')));
+
+      // The run asks for it, the file does not.
+      project.write('flavorizr.yaml', _config(['apple', 'banana']));
+
+      expect(
+        await project.run(['apply', '--yes', 'ios:plist', 'ios:launchScreen']),
+        ExitCodes.ok,
+        reason: project.logger.output,
+      );
+      expect(project.legacy.ids, contains('ios:launchScreen'));
+      expect(
+        project.read(_ios),
+        contains(r'<string>$(ASSET_PREFIX)LaunchScreen</string>'),
+      );
     });
 
     test('a plist without the key fails the run, and writes nothing', () async {

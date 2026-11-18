@@ -32,10 +32,10 @@ import 'package:xml/xml.dart';
 
 final String _ios = File(
   'test_resources/darwin/info_plist_test/IosInfoPlistOriginal.plist',
-).readAsStringSync();
+).readAsStringSync().replaceAll('\r\n', '\n');
 final String _macos = File(
   'test_resources/darwin/info_plist_test/MacosInfoPlistOriginal.plist',
-).readAsStringSync();
+).readAsStringSync().replaceAll('\r\n', '\n');
 
 const _owned = {
   'CFBundleName': r'$(BUNDLE_NAME)',
@@ -233,6 +233,20 @@ void main() {
           reason: first,
         );
       }
+    });
+
+    test('never edits a repeated key in place of a first one with no '
+        'value', () {
+      expect(
+        () => InfoPlistEditor.withStrings(
+          _plist(
+            '<key>CFBundleName</key>\n'
+            '<key>CFBundleName</key><string>two</string>\n',
+          ),
+          {'CFBundleName': 'x'},
+        ),
+        throwsA(isA<MalformedResourceException>()),
+      );
     });
 
     test('escapes a value that has characters of the markup', () {

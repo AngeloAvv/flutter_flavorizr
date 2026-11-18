@@ -39,16 +39,15 @@ import '../../../test_utils.dart';
 
 final String _ios = File(
   'test_resources/darwin/info_plist_test/IosInfoPlistOriginal.plist',
-).readAsStringSync();
+).readAsStringSync().replaceAll('\r\n', '\n');
 final String _macos = File(
   'test_resources/darwin/info_plist_test/MacosInfoPlistOriginal.plist',
-).readAsStringSync();
+).readAsStringSync().replaceAll('\r\n', '\n');
 
-String _pubspec({List<String> instructions = const []}) =>
-    '''
+const _pubspec = '''
 name: app
 flavorizr:
-${instructions.isEmpty ? '' : '  instructions:\n${instructions.map((i) => '    - $i\n').join()}'}  flavors:
+  flavors:
     apple:
       app:
         name: "Apple"
@@ -71,16 +70,15 @@ void main() {
     projectRoot = Directory(p.join(temp.path, 'project'))..createSync();
   });
 
-  FlavorizrContext context({List<String> instructions = const []}) {
-    File(
-      p.join(temp.path, 'pubspec.yaml'),
-    ).writeAsStringSync(_pubspec(instructions: instructions));
+  FlavorizrContext context({Set<String> selected = const {}}) {
+    File(p.join(temp.path, 'pubspec.yaml')).writeAsStringSync(_pubspec);
 
     return FlavorizrContext(
       config: TestUtils.parseFlavorizr(p.join(temp.path, 'pubspec')),
       root: root,
       projectRoot: projectRoot,
       logger: TestUtils.quietLogger(),
+      selected: selected,
     );
   }
 
@@ -123,11 +121,11 @@ void main() {
       expect(ctx.tracked, [Artifact.patched(K.iOSPListPath)]);
     });
 
-    test('sets the launch storyboard when the launch screen is an '
-        'instruction', () async {
+    test('sets the launch storyboard when the launch screen is selected for '
+        'the run', () async {
       write(K.iOSPListPath, _ios);
 
-      await processor.apply(context(instructions: ['ios:launchScreen']));
+      await processor.apply(context(selected: {'ios:launchScreen'}));
 
       expect(
         plist(K.iOSPListPath).readAsStringSync(),
@@ -237,9 +235,9 @@ void main() {
       expect(processor.requires, isEmpty);
     });
 
-    test('sets the name and nothing else, whatever the instructions', () async {
+    test('sets the name and nothing else, whatever the run selects', () async {
       write(K.macOSPlistPath, _macos);
-      final ctx = context(instructions: ['ios:launchScreen']);
+      final ctx = context(selected: {'ios:launchScreen'});
 
       await processor.apply(ctx);
 

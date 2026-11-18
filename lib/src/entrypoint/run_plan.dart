@@ -46,12 +46,18 @@ final class RunPlan {
   /// The paths of the project the processors of [engine] work on.
   final Set<String> paths;
 
+  /// The ids of every processor the run was asked for, the ones of the legacy
+  /// pipeline too: what a processor of the engine needs to know about the
+  /// steps it works with, but does not run itself.
+  final Set<String> selected;
+
   /// Creates a plan.
   RunPlan({
     required this.messages,
     required this.engine,
     required this.legacy,
     required this.paths,
+    this.selected = const {},
   });
 
   /// Whether nothing is left to run.
@@ -132,5 +138,6 @@ RunPlan resolveRunPlan({
         if (!registry.isEngine(id)) LegacyStep(id, config),
     ],
     paths: registry.pathsOf(engine.steps.map((step) => step.processor)),
+    selected: Set.unmodifiable(resolution.processorIds),
   );
 }

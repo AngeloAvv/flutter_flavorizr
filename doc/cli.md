@@ -206,7 +206,9 @@ are ported, so they lose their base configuration when its reference goes.
 `macos/Runner/Info.plist` in place. Only the value of a few `<string>` entries is
 replaced in the text of the file: `CFBundleName` and `CFBundleDisplayName` on
 iOS, `UILaunchStoryboardName` too when `ios:launchScreen` is one of the
-instructions, and `CFBundleName` on macOS. 2.x parsed the plist and wrote it
+processors of the run (the targets you give it, or the recipe it resolves to:
+not the `instructions` of the file when you name others), and `CFBundleName` on
+macOS. 2.x parsed the plist and wrote it
 back pretty printed, which reformatted the whole file: now indentation, line
 endings, comments and the order of every other key are yours, and a plist that
 is up to date is not written at all.

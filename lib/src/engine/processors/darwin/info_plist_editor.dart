@@ -173,6 +173,12 @@ abstract final class InfoPlistEditor {
 
         if (parent == 'plist/dict' && foundDict) {
           if (event.name == 'key') {
+            // A key that got no value before the next one is the first
+            // occurrence all the same, and it cannot be edited.
+            if (key != null && claimed.add(key)) {
+              entries[key] = const _Entry.unreadable();
+            }
+
             keyText = StringBuffer();
             key = null;
           } else if (key != null) {

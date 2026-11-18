@@ -107,6 +107,7 @@ class PlanExecutor {
     Iterable<Resource<Object?>> resources = const [],
     Set<String> previousFlavors = const {},
     Map<String, Map<String, Set<String>>> previousObjects = const {},
+    Set<String> selected = const {},
     Directory? tempParent,
   }) {
     final lifecycle = ResourceLifecycle(plan, resources);
@@ -123,6 +124,7 @@ class PlanExecutor {
           logger: logger,
           previousFlavors: previousFlavors,
           previousObjects: previousObjects,
+          selected: selected,
         );
         final completed = <String>[];
         String? currentId;
