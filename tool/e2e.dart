@@ -86,8 +86,7 @@ Future<void> main(List<String> arguments) async {
   final platform = arguments.single;
   final checkout = Directory.current;
 
-  if (!File(p.join(checkout.path, 'pubspec.yaml')).existsSync() ||
-      !Directory(p.join(checkout.path, 'assets')).existsSync()) {
+  if (!File(p.join(checkout.path, 'pubspec.yaml')).existsSync()) {
     stderr.writeln('Run it from the root of the flutter_flavorizr checkout.');
     exit(64);
   }
@@ -129,10 +128,6 @@ Future<void> _e2e(String platform, Directory checkout) async {
       '--path',
       checkout.path,
     ]);
-    _copy(
-      Directory(p.join(checkout.path, 'assets')),
-      Directory(p.join(project.path, '.tmp')),
-    );
 
     final config = File(p.join(project.path, 'flavorizr.yaml'));
 
@@ -214,19 +209,5 @@ Future<void> _expectNothingToDo(Directory project, String after) async {
       'plan has something to do after $after, so it is not idempotent:\n'
       '${changes.map((change) => '  $change').join('\n')}',
     );
-  }
-}
-
-void _copy(Directory from, Directory to) {
-  to.createSync(recursive: true);
-
-  for (final entity in from.listSync(followLinks: false)) {
-    final target = p.join(to.path, p.basename(entity.path));
-
-    if (entity is Directory) {
-      _copy(entity, Directory(target));
-    } else if (entity is File) {
-      entity.copySync(target);
-    }
   }
 }

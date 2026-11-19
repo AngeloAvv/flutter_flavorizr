@@ -193,8 +193,8 @@ class ParityRunner {
     return json['frameworkVersion'] as String;
   }
 
-  /// flavorizr downloads its dummy assets by default; offline we hand them
-  /// over from the package itself, the way the CI of this repository does.
+  /// flavorizr 2.x downloads its dummy assets by default; offline we hand them
+  /// over from the package itself.
   Future<void> _copyAssets(Directory project) async {
     final configFile = File(
       p.join(project.path, '.dart_tool', 'package_config.json'),
@@ -210,10 +210,12 @@ class ParityRunner {
       configFile.uri.resolve(package['rootUri'] as String),
     );
 
-    _copy(
-      Directory(p.join(root.path, 'assets')),
-      Directory(p.join(project.path, '.tmp')),
-    );
+    // 3.x has no assets: it makes everything it writes.
+    final assets = Directory(p.join(root.path, 'assets'));
+
+    if (assets.existsSync()) {
+      _copy(assets, Directory(p.join(project.path, '.tmp')));
+    }
   }
 
   void _copy(Directory from, Directory to) {

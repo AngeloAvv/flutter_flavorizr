@@ -35,12 +35,8 @@ import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_fl
 import 'package:flutter_flavorizr/src/processors/android/icons/android_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_existing_file_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/delete_file_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/download_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
@@ -73,10 +69,6 @@ class Processor extends AbstractProcessor<void> {
   final List<String>? instructions;
 
   static const List<String> defaultInstructionSet = [
-    // Prepare
-    'assets:download',
-    'assets:extract',
-
     // Android
     'android:androidManifest',
     'android:flavorizrGradle',
@@ -123,9 +115,6 @@ class Processor extends AbstractProcessor<void> {
 
     // Huawei
     'huawei:agconnect',
-
-    // Cleanup
-    'assets:clean',
 
     // IDE
     'ide:config',
@@ -223,31 +212,6 @@ class Processor extends AbstractProcessor<void> {
   static Map<String, AbstractProcessor<void> Function()>
   _initAvailableProcessors(FlavorizrConfig flavorizr, {required Logger logger}) {
     return {
-      // Commons
-      'assets:download': () => DownloadFileProcessor(
-        K.assetsZipPath,
-        config: flavorizr,
-        logger: logger,
-      ),
-      'assets:extract': () => UnzipFileProcessor(
-        K.assetsZipPath,
-        K.tempPath,
-        config: flavorizr,
-        logger: logger,
-      ),
-      'assets:clean': () => QueueProcessor(
-        [
-          DeleteFileProcessor(
-            K.assetsZipPath,
-            config: flavorizr,
-            logger: logger,
-          ),
-          DeleteFileProcessor(K.tempPath, config: flavorizr, logger: logger),
-        ],
-        config: flavorizr,
-        logger: logger,
-      ),
-
       // Android
       'android:androidManifest': () => ExistingFileStringProcessor(
         K.androidManifestPath,
@@ -312,7 +276,6 @@ class Processor extends AbstractProcessor<void> {
         logger: logger,
       ),
       'ios:dummyAssets': () => IOSDummyAssetsTargetsProcessor(
-        K.tempiOSAssetsPath,
         K.iOSAssetsPath,
         config: flavorizr,
         logger: logger,
@@ -326,7 +289,6 @@ class Processor extends AbstractProcessor<void> {
       ),
       'ios:launchScreen': () => IOSTargetsLaunchScreenFileProcessor(
         K.iOSRunnerProjectPath,
-        K.tempiOSLaunchScreenPath,
         K.iOSRunnerPath,
         config: flavorizr,
         logger: logger,

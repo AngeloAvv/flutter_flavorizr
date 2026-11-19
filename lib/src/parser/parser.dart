@@ -91,6 +91,7 @@ class Parser {
 
     _checkKeys(root, root, configFileName, visited: Set<YamlNode>.identity());
     _checkRemovedKeys(root, configFileName);
+    _checkRemovedAssetsUrl(root, configFileName);
     _checkCustomConfig(root, configFileName);
 
     try {
@@ -273,6 +274,28 @@ class Parser {
         }
       case _:
     }
+  }
+
+  /// Fails on `assetsUrl`: 3.0 downloads nothing, so there is no place to
+  /// download from.
+  void _checkRemovedAssetsUrl(YamlMap root, String file) {
+    final section = _isFlavorizrFile(file) ? root : root.nodes['flavorizr'];
+
+    if (section is! YamlMap) return;
+
+    final key = section.nodes.keys.cast<YamlNode>().firstWhereOrNull(
+      (key) => key is YamlScalar && key.value == 'assetsUrl',
+    );
+
+    if (key == null) return;
+
+    throw RemovedKeyException(
+      'assetsUrl',
+      '`assetsUrl` is not a key of flavorizr 3.0: it downloaded the dummy '
+          'assets, and flavorizr makes what it writes now, so nothing is '
+          'downloaded. Remove it.',
+      location: _location(file, key),
+    );
   }
 
   bool _isFlavorizrFile(String file) => file.contains(flavorizrPath);

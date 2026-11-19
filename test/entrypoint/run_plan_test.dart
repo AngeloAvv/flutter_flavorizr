@@ -76,11 +76,8 @@ void main() {
     expect(engine(plan), hasLength(7));
     expect(engine(plan), containsAll(['ide:config', 'android:firebase']));
     expect(plan.legacy.map((step) => step.id), [
-      'assets:download',
-      'assets:extract',
       'android:dummyAssets',
       'huawei:agconnect',
-      'assets:clean',
     ]);
   });
 

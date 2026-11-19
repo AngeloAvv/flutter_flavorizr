@@ -53,13 +53,6 @@ class FlavorizrConfig {
   @JsonKey(required: true)
   final Map<String, Flavor> flavors;
 
-  /// Where the placeholder assets are downloaded from.
-  @JsonKey(
-    defaultValue:
-        'https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip',
-  )
-  final String assetsUrl;
-
   /// The IDEs to write the run configurations for, if any.
   @JsonKey(fromJson: _ideListFromJson)
   final List<IDE>? ide;
@@ -125,7 +118,6 @@ class FlavorizrConfig {
   FlavorizrConfig({
     this.app,
     required Map<String, Flavor> flavors,
-    required this.assetsUrl,
     List<IDE>? ide,
     Map<String, List<String>>? recipes,
     this.defaultRecipe,
@@ -171,7 +163,6 @@ class FlavorizrConfig {
     return FlavorizrConfig(
       app: parsed.app,
       flavors: parsed.flavors,
-      assetsUrl: parsed.assetsUrl,
       ide: parsed.ide,
       recipes: parsed.recipes,
       defaultRecipe: _defaultRecipeFromJson(json['recipes']),

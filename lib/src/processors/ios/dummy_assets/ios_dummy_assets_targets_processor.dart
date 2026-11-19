@@ -28,7 +28,6 @@ import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_asse
 
 class IOSDummyAssetsTargetsProcessor extends QueueProcessor {
   IOSDummyAssetsTargetsProcessor(
-    String source,
     String destination, {
     required super.config,
     required super.logger,
@@ -38,7 +37,6 @@ class IOSDummyAssetsTargetsProcessor extends QueueProcessor {
                 (flavorName, flavor) => MapEntry(
                   flavorName,
                   IOSDummyAssetsProcessor(
-                    source,
                     destination,
                     flavorName,
                     config: config,

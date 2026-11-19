@@ -137,29 +137,6 @@ class K {
 
   static String windowsIconsPath = '$windowsRunnerPath/resources';
 
-  static String assetsZipPath = 'assets.tmp.zip';
-
-  static String tempPath = '.tmp';
-
-  static String tempAndroidPath = '$tempPath/android';
-
-  static String tempAndroidResPath = '$tempAndroidPath/res';
-
-  static String tempiOSPath = '$tempPath/ios';
-
-  static String tempiOSAssetsPath = '$tempiOSPath/Assets.xcassets';
-
-  static String tempiOSLaunchScreenPath =
-      '$tempiOSPath/LaunchScreen.storyboard';
-
-  static String tempMacOSPath = '$tempPath/macos';
-
-  static String tempMacOSAssetsPath = '$tempMacOSPath/Assets.xcassets';
-
-  static String tempWindowsPath = '$tempPath/windows';
-
-  static String tempWindowsIconPath = '$tempWindowsPath/app_icon.ico';
-
   static String ideaPath = '.idea';
 
   static String ideaLaunchpath = '$ideaPath/runConfigurations';

@@ -322,17 +322,17 @@ void main() {
           'apply',
           '--yes',
           'android:flavorizrGradle',
-          'assets:clean',
+          'android:dummyAssets',
           'huawei:agconnect',
         ]);
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
-        expect(project.legacy.ids, ['assets:clean', 'huawei:agconnect']);
+        expect(project.legacy.ids, ['android:dummyAssets', 'huawei:agconnect']);
       });
 
       test('are asked to keep the files the engine generated', () async {
-        await project.run(['apply', '--yes', ...engine, 'assets:clean']);
+        await project.run(['apply', '--yes', ...engine, 'android:dummyAssets']);
 
         expect(project.legacy.preserved.single, {
           'android/app/flavorizr.gradle',
@@ -341,16 +341,16 @@ void main() {
       });
 
       test('are named in the plan, with what that means', () async {
-        await project.run(['apply', '--yes', 'assets:clean']);
+        await project.run(['apply', '--yes', 'android:dummyAssets']);
 
         expect(project.logger.output, contains('not on the engine yet'));
-        expect(project.logger.output, contains('assets:clean'));
+        expect(project.logger.output, contains('android:dummyAssets'));
       });
 
       test('alone, still ask for confirmation', () async {
         project.answer = false;
 
-        await project.run(['apply', 'assets:clean']);
+        await project.run(['apply', 'android:dummyAssets']);
 
         expect(project.questions, hasLength(1));
         expect(project.legacy.ran, isEmpty);
@@ -363,7 +363,7 @@ void main() {
           'apply',
           '--yes',
           'android:flavorizrGradle',
-          'assets:clean',
+          'android:dummyAssets',
         ]);
 
         expect(code, ExitCodes.software);
@@ -381,7 +381,7 @@ void main() {
           'apply',
           '--yes',
           'android:flavorizrGradle',
-          'assets:clean',
+          'android:dummyAssets',
         ]);
 
         expect(code, ExitCodes.software);
@@ -397,7 +397,7 @@ void main() {
           'apply',
           '--yes',
           'android:androidManifest',
-          'assets:clean',
+          'android:dummyAssets',
         ]);
 
         expect(code, ExitCodes.software);

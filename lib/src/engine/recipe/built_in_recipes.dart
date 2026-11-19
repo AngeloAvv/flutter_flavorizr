@@ -66,8 +66,6 @@ const Set<String> reservedRecipeNames = {
 /// can name a processor before it exists.
 const Map<String, List<String>> builtInRecipes = {
   allRecipeName: [
-    'assets:download',
-    'assets:extract',
     'android',
     'flutter',
     'ios',
@@ -76,7 +74,6 @@ const Map<String, List<String>> builtInRecipes = {
     'windows',
     'firebase',
     'huawei:agconnect',
-    'assets:clean',
     'ide',
   ],
   'android': [

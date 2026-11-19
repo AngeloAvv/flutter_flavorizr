@@ -175,3 +175,10 @@
     (#529), where 2.6.0 built a dummy one.
 - path: windows/runner/resources/banana.ico.sha256
   reason: *dummy-ico
+- path: ios/Runner/Assets.xcassets/appleLaunchImage.imageset/README.md
+  reason: &launch-readme >-
+    The launch image set is written in code (#528), with its `Contents.json` and
+    its three images. 2.6.0 copied the folder of the downloaded assets, which also
+    held a `README.md` about the set.
+- path: ios/Runner/Assets.xcassets/bananaLaunchImage.imageset/README.md
+  reason: *launch-readme
