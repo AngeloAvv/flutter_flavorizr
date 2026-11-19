@@ -141,13 +141,8 @@ flavorizr:
 | ios:podfile             | iOS           | Maps the build configurations of each flavor in the Podfile             |
 | ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
-<<<<<<< HEAD
-| ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
-| ios:dummyAssets         | iOS           | Does nothing now: the launch image is made by `ios:launchScreen`        |
-=======
 | ios:schema              | iOS           | Creates a scheme for each flavor, keeping the edits made to it          |
-| ios:dummyAssets         | iOS           | Copies the launch image of each flavor (no dummy icons anymore)         |
->>>>>>> origin/releases/3.0.0
+| ios:dummyAssets         | iOS           | Does nothing now: the launch image is made by `ios:launchScreen`        |
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Sets the bundle name keys of Info.plist in place, keeping its format    |
 | ios:launchScreen        | iOS           | Creates the launch screen of each flavor that has `launchScreen: true`, from its icon |
