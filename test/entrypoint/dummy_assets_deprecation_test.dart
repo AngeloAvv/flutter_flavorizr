@@ -25,7 +25,7 @@
 
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 

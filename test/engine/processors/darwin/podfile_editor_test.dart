@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
 import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 const _path = 'ios/Podfile';
 

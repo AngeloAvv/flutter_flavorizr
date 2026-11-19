@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_sources.
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../../../test_utils.dart';
 

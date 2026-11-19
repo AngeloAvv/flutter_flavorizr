@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/ide/ide_config_processor.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';

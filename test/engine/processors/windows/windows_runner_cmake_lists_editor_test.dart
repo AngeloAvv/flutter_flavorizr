@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 const _titles = {'apple': 'Apple App', 'banana': 'Banana App'};
 

@@ -31,7 +31,7 @@ import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../../../entrypoint/cli_fixture.dart';
 import '../../darwin/pbxproj_integrity.dart';

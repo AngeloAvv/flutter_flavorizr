@@ -33,7 +33,7 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 

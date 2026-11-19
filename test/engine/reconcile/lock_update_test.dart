@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/engine/lock/lock_codec.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/lock_update.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/stale_artifacts.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 LockedFile managed(String hash) =>
     LockedFile(ownership: Ownership.managed, hash: hash);

@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_editors.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_runner_layout_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 String _read(String path) =>
     File('test_resources/windows/$path').readAsStringSync();

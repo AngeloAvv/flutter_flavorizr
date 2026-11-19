@@ -34,7 +34,7 @@ import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle
 import 'package:flutter_flavorizr/src/exception/existing_flavor_dimensions_exception.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';

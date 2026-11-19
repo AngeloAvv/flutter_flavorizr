@@ -28,7 +28,7 @@ import 'package:flutter_flavorizr/src/engine/lock/lock_codec.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_lock_file_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsupported_lock_version_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('LockCodec.encode', () {

@@ -36,7 +36,7 @@ import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 

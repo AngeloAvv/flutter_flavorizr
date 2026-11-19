@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/engine/conflict/unified_diff.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 String lines(Iterable<String> items) => items.map((i) => '$i\n').join();
 

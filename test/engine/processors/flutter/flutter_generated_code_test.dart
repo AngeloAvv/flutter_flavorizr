@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_sources.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 const _config = '''

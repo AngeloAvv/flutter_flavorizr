@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../test_utils.dart';

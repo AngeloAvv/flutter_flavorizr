@@ -30,7 +30,7 @@ import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 /// A terminal that answers from a script and records everything it was shown.
 class FakeTerminal implements ConflictTerminal {
