@@ -53,6 +53,7 @@ const _macosRun = [
   'macos:plist',
   'macos:xcconfig',
   'macos:configs',
+  'macos:schema',
   'macos:buildTargets',
   'macos:podfile',
   'macos:firebase',

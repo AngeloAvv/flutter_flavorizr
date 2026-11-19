@@ -149,7 +149,7 @@ flavorizr:
 | macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:buildTargets      | macOS         | Creates a set of build targets for each flavor and build configuration  |
-| macos:schema            | macOS         | Creates a set of schemas for each flavor                                |
+| macos:schema            | macOS         | Creates a scheme for each flavor, keeping the edits made to it          |
 | macos:dummyAssets       | macOS         | Does nothing now: a flavor with no `icon` uses the default `AppIcon`    |
 | macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
 | macos:plist             | macOS         | Sets the bundle name keys of Info.plist in place, keeping its format    |

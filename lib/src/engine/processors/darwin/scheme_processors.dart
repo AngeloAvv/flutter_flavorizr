@@ -155,6 +155,19 @@ abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
     }
   }
 
+  /// The file the build of [target] makes, such as `Runner.app`: the one its
+  /// product reference names, which is not the name of the target on macOS
+  /// (`flutter create` makes `my_app.app` of the target `Runner`), and the
+  /// name of the product with [extension] where the target has none.
+  static String _productName(PBXNativeTarget target, String extension) {
+    final product = target.productReference;
+    final name = product is PBXFileReference ? product.displayName : null;
+
+    return name != null && name.isNotEmpty
+        ? name
+        : '${target.productName ?? target.name}.$extension';
+  }
+
   /// The scheme of [flavor], new: what 2.x wrote, with an entry to build the
   /// app, which Xcode needs to build anything, and the pre-action of Flutter
   /// when [withPrepareAction].
@@ -179,7 +192,7 @@ abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
     BuildableReference reference(PBXNativeTarget target, String extension) =>
         BuildableReference()..setReferenceTarget(
           target.uuid,
-          '${target.productName ?? target.name}.$extension',
+          _productName(target, extension),
           target.name!,
           container,
         );
@@ -250,4 +263,33 @@ class IosSchemaProcessor extends DarwinSchemeProcessor {
 
   @override
   Map<String, Flavor> flavors(FlavorizrConfig config) => config.iosFlavors;
+}
+
+/// `macos:schema`: the schemes of the macOS flavors, in
+/// `macos/Runner.xcodeproj/xcshareddata/xcschemes`. See [DarwinSchemeProcessor].
+///
+/// It differs from `ios:schema` in the project it reads and in the script of the
+/// pre-action only. macOS has no launch screen, and no other part of a scheme
+/// depends on the platform.
+class MacosSchemaProcessor extends DarwinSchemeProcessor {
+  /// Creates the processor.
+  const MacosSchemaProcessor();
+
+  @override
+  String get id => 'macos:schema';
+
+  @override
+  Set<String> get after => const {'macos:buildTargets'};
+
+  @override
+  String get projectPath => XcodeprojResource.macosProject;
+
+  @override
+  ResourceKey<XcodeProject> get projectKey => XcodeprojResource.macosKey;
+
+  @override
+  PrepareScript get prepareScript => PrepareScript.macos;
+
+  @override
+  Map<String, Flavor> flavors(FlavorizrConfig config) => config.macosFlavors;
 }
