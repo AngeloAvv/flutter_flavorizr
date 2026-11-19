@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/engine/reconcile/stale_artifacts.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/exception/unapproved_conflicts_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../shadow/shadow_fixture.dart';
 

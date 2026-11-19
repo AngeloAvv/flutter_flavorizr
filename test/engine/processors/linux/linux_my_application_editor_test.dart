@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_applicati
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsafe_title_setter_exception.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../../../test_utils.dart';
 

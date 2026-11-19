@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/exception/unsafe_podfile_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';

@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_bu
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_build_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_existing_file_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';

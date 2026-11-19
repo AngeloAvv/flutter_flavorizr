@@ -27,7 +27,7 @@ import 'dart:convert';
 
 import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 import '../cli_fixture.dart';

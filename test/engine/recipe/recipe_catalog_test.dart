@@ -31,7 +31,7 @@ import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.da
 import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 /// What `all` runs: the default instruction set, which has no starting files
 /// of a new app, with the Firebase processors of the engine where `google:firebase`

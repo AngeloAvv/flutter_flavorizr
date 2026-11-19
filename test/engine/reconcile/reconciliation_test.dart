@@ -35,7 +35,7 @@ import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../conflict/conflict_fakes.dart';
 import '../shadow/shadow_fixture.dart';
