@@ -309,6 +309,55 @@ void main() {
         expect(code, ExitCodes.usage);
         expect(project.exists('flavorizr.lock'), isFalse);
       });
+
+      test('does not take a flavor that flavorizr.yaml has', () async {
+        project.write(_icon('apple', 'hdpi'), _dummyBytes('hdpi'));
+
+        final code = await project.run(['adopt', '--flavors', 'apple,cherry']);
+
+        expect(code, ExitCodes.usage);
+        expect(project.logger.output, contains('`apple`'));
+        expect(project.logger.output, contains('flavorizr.yaml'));
+        expect(project.exists('flavorizr.lock'), isFalse);
+      });
+
+      test('does not take a flavor that flavorizr.yaml has under another '
+          'case, which is the same folder on some file systems', () async {
+        final code = await project.run(['adopt', '--flavors', 'Apple']);
+
+        expect(code, ExitCodes.usage);
+        expect(project.exists('flavorizr.lock'), isFalse);
+      });
+
+      test('does not take two names that differ by case only', () async {
+        final code = await project.run(['adopt', '--flavors', 'cherry,Cherry']);
+
+        expect(code, ExitCodes.usage);
+        expect(project.exists('flavorizr.lock'), isFalse);
+      });
+
+      test('ignores empty names, spaces and a name given twice', () async {
+        final code = await project.run([
+          'adopt',
+          '--flavors',
+          ' cherry ,,lemon,cherry,',
+        ]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect((await _lockOf(project))!.flavorNames, {
+          'apple',
+          'banana',
+          'cherry',
+          'lemon',
+        });
+      });
+
+      test('takes an empty list as no flavors', () async {
+        final code = await project.run(['adopt', '--flavors', '']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect((await _lockOf(project))!.flavorNames, {'apple', 'banana'});
+      });
     });
   });
 }

@@ -65,8 +65,9 @@ class AdoptCommand extends FlavorizrCommand {
 
   @override
   Future<int> execute() async {
-    final historical = _historicalFlavors();
+    final named = _namedFlavors();
     final config = loadConfig();
+    final historical = _historicalFlavors(named, config.flavors.keys);
     final store = LockStore(
       context.projectRoot,
       runningVersion: context.version,
@@ -104,7 +105,7 @@ class AdoptCommand extends FlavorizrCommand {
         context,
         config: config,
         plan: plan,
-        historical: historical,
+        named: historical,
         logger: verbose ? output.logger : output.warningsLogger,
         observer: output,
       ),
@@ -144,9 +145,9 @@ class AdoptCommand extends FlavorizrCommand {
     return ExitCodes.ok;
   }
 
-  /// The names of `--flavors`, each of which must be a name that can be a
-  /// folder.
-  Set<String> _historicalFlavors() {
+  /// The names of `--flavors`, trimmed and without the empty ones, each of
+  /// which must be a name that can be a folder.
+  Set<String> _namedFlavors() {
     final names = (argResults!['flavors'] as List<String>)
         .map((name) => name.trim())
         .where((name) => name.isNotEmpty)
@@ -163,5 +164,38 @@ class AdoptCommand extends FlavorizrCommand {
     }
 
     return names;
+  }
+
+  /// The [named] flavors, which must be historical: ones [configured] does not
+  /// have.
+  ///
+  /// A flavor `flavorizr.yaml` has is not historical, and naming it would take
+  /// its files for the ones of a flavor that is gone. Names that differ by case
+  /// only are the same folder on a file system that ignores case, so they count
+  /// as one name: that of the configuration, or the one given twice.
+  Set<String> _historicalFlavors(
+    Set<String> named,
+    Iterable<String> configured,
+  ) {
+    final seen = {for (final name in configured) name.toLowerCase(): name};
+
+    for (final name in named) {
+      final other = seen[name.toLowerCase()];
+
+      if (other != null) {
+        throw CommandFailure(
+          ExitCodes.usage,
+          configured.contains(other)
+              ? '`$name` is a flavor of flavorizr.yaml'
+                    '${other == name ? '' : ' (as `$other`, the same folder)'}'
+                    ': --flavors is for the flavors it no longer has.'
+              : '`$name` and `$other` are the same folder: name it once.',
+        );
+      }
+
+      seen[name.toLowerCase()] = name;
+    }
+
+    return named;
   }
 }

@@ -71,7 +71,8 @@ When you know such a flavor, name it:
 flutter pub run flutter_flavorizr adopt --flavors cherry,lemon
 ```
 
-`adopt` then looks for the files 3.x would have made for them, like the dummy
+A name that `flavorizr.yaml` already has (case aside) is an error, with exit code
+`64`: `--flavors` is for the flavors it no longer has. `adopt` then looks for the files 3.x would have made for them, like the dummy
 icons and the xcconfigs, and records the ones that exist. The next `plan` shows
 the flavors as removed, and the files as deleted. The settings of the flavors
 are not known, so they are looked for as the settings of the flavors of

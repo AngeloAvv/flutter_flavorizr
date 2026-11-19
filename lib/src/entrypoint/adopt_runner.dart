@@ -91,7 +91,7 @@ FlavorizrConfig withHistoricalFlavors(
 /// make, and records the ones the project already has as its baseline in
 /// `flavorizr.lock`, which is the only thing written: see [adoptProject].
 ///
-/// The flavors [historical] are the ones the project had and [config] does not:
+/// The flavors [named] that [config] does not have are the ones the project had:
 /// their files are recorded too, so that the next run removes them, as it does
 /// for a flavor that was dropped.
 ///
@@ -100,10 +100,15 @@ Future<AdoptRun> runAdoption(
   CliContext context, {
   required FlavorizrConfig config,
   required RunPlan plan,
-  required Set<String> historical,
+  required Set<String> named,
   required Logger logger,
   StepObserver? observer,
 }) async {
+  // A flavor of the configuration is never historical, whatever it is named.
+  final historical = {
+    for (final name in named)
+      if (!config.flavors.containsKey(name)) name,
+  };
   final registry = context.registry;
   final all = withHistoricalFlavors(config, historical);
   final recordedFlavors = {
