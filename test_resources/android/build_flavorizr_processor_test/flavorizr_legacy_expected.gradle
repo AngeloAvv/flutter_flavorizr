@@ -10,7 +10,7 @@ android {
             versionCode 1000
             minSdkVersion 23
             isDefault true
-            resourceConfigurations = ["en", "it"]
+            resourceConfigurations.addAll(["en", "it"])
             extras = ["tier": "gold", "level": 3]
             manifestPlaceholders = ["appAuthRedirectScheme": "com.example.apple", "retries": 3, "label": "raw"]
             resValue "string", "app_name", "Apple App"

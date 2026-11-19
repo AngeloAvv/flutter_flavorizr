@@ -212,7 +212,7 @@ class Parser {
   }
 
   /// Fails on what the `customConfig` of a flavor said in 2.x, where it was
-  /// written to Gradle as it was: a text that carries its own quotes, which
+  /// written to Gradle as it was: a text that carries its own quotes (either kind), which
   /// would now be quoted twice, and `manifestPlaceholders`, which is a key of
   /// the flavor of its own.
   void _checkCustomConfig(YamlMap root, String file) {
@@ -250,7 +250,9 @@ class Parser {
   void _checkQuotedText(YamlNode node, List<String> path, String file) {
     switch (node) {
       case YamlScalar(value: final String text)
-          when text.length >= 2 && text.startsWith('"') && text.endsWith('"'):
+          when text.length >= 2 &&
+              (text.startsWith('"') || text.startsWith("'")) &&
+              text.endsWith(text[0]):
         throw InvalidConfigurationException(
           'The value $text of `${joinConfigPath(path)}` has its own quotes, as '
           'flavorizr 2.x asked for. 3.0 quotes text itself: write the text as '

@@ -14,7 +14,7 @@ android.apply {
             versionCode = 1000
             minSdkVersion = 23
             isDefault = true
-            resourceConfigurations = listOf("en", "it")
+            resourceConfigurations += listOf("en", "it")
             extras = mapOf("tier" to "gold", "level" to 3)
             manifestPlaceholders["appAuthRedirectScheme"] = "com.example.apple"
             manifestPlaceholders["retries"] = 3

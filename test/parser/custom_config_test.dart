@@ -153,6 +153,18 @@ void main() {
       },
     );
 
+    test('a text in single quotes fails as well', () {
+      final error = fails(
+        _config("""
+      customConfig:
+        versionNameSuffix: "'-uat'"
+"""),
+      );
+
+      expect(error.message, contains('versionNameSuffix'));
+      expect(error.message, contains('(-uat)'));
+    });
+
     test('a manifestPlaceholders in customConfig says where it goes', () {
       final error = fails(
         _config('''

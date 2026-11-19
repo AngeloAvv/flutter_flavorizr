@@ -85,8 +85,7 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
 
       flavor.android?.customConfig.forEach((key, value) {
         buffer.writeln(
-          '            $key ${gradleIsCollection(value) ? '= ' : ''}'
-          '${gradleValue(value, GradleDsl.groovy)}',
+          '            ${gradleProperty(key, value, GradleDsl.groovy)}',
         );
       });
 
@@ -94,7 +93,7 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
       if (placeholders.isNotEmpty) {
         buffer.writeln(
           '            manifestPlaceholders = '
-          '${gradleValue(placeholders, GradleDsl.groovy)}',
+          '${gradleMap(placeholders, GradleDsl.groovy)}',
         );
       }
 

@@ -29,7 +29,7 @@ enum GradleDsl { groovy, kotlin }
 /// Writes [value], a value of the YAML of a configuration, as an expression of
 /// the Gradle script of [dsl].
 ///
-/// * text is a string literal, escaped: `\\`, `"`, `$` and the line breaks;
+/// * text is a string literal, escaped: `\`, `"`, `$` and the line breaks;
 /// * numbers and booleans are written as they are, `null` as `null`;
 /// * a list is a list, `["a", 1]` in Groovy and `listOf("a", 1)` in Kotlin;
 /// * a map is a map, `["a": 1]` in Groovy and `mapOf("a" to 1)` in Kotlin;
@@ -43,7 +43,7 @@ String gradleValue(Object? value, GradleDsl dsl) => switch (value) {
   bool() || num() => '$value',
   String() => gradleString(value),
   {'raw': final raw} when value.length == 1 => '$raw',
-  Map() => _map(value, dsl),
+  Map() => gradleMap(value, dsl),
   Iterable() => _list(value, dsl),
   _ => throw ArgumentError.value(
     value,
@@ -53,13 +53,33 @@ String gradleValue(Object? value, GradleDsl dsl) => switch (value) {
   ),
 };
 
-/// Whether [value] is written as a list or a map, which Groovy is given with an
-/// assignment: `key = [...]`, since `key [...]` could be read as an index.
+/// Whether [value] is written as a list or a map.
 bool gradleIsCollection(Object? value) => switch (value) {
   {'raw': _} when value.length == 1 => false,
   Map() || Iterable() => true,
   _ => false,
 };
+
+/// The statement that gives the property [key] of a flavor the [value] of
+/// `customConfig` in [dsl].
+///
+/// A scalar is assigned. A list *adds* its items, since the collections of a
+/// flavor, such as `resourceConfigurations`, can be added to and mostly cannot
+/// be assigned: `key += listOf(...)` in Kotlin, `key.addAll([...])` in Groovy.
+/// Groovy is given a map with an assignment, `key = [...]`, as `key [...]`
+/// could be read as an index.
+String gradleProperty(String key, Object? value, GradleDsl dsl) {
+  final written = gradleValue(value, dsl);
+
+  return switch ((dsl, value)) {
+    (GradleDsl.kotlin, Iterable()) => '$key += $written',
+    (GradleDsl.kotlin, _) => '$key = $written',
+    (GradleDsl.groovy, Iterable()) => '$key.addAll($written)',
+    (GradleDsl.groovy, Map()) when gradleIsCollection(value) =>
+      '$key = $written',
+    (GradleDsl.groovy, _) => '$key $written',
+  };
+}
 
 /// The string literal of [text] in both languages of Gradle.
 String gradleString(String text) {
@@ -79,21 +99,27 @@ String _list(Iterable<Object?> values, GradleDsl dsl) {
 
   return switch (dsl) {
     GradleDsl.groovy => '[$items]',
-    GradleDsl.kotlin => 'listOf($items)',
+    GradleDsl.kotlin => values.isEmpty ? 'listOf<Any>()' : 'listOf($items)',
   };
 }
 
-String _map(Map<Object?, Object?> values, GradleDsl dsl) {
+/// [values] as a map, whatever its keys are: a map with the single key `raw` is
+/// a map of one entry here, not code. It is how a container that is a map by
+/// definition, such as the `manifestPlaceholders` of a flavor, is written.
+String gradleMap(Map<Object?, Object?> values, GradleDsl dsl) {
   final entries = [
     for (final MapEntry(:key, :value) in values.entries)
       switch (dsl) {
-        GradleDsl.groovy => '${gradleString('$key')}: ${gradleValue(value, dsl)}',
-        GradleDsl.kotlin => '${gradleString('$key')} to ${gradleValue(value, dsl)}',
+        GradleDsl.groovy =>
+          '${gradleString('$key')}: ${gradleValue(value, dsl)}',
+        GradleDsl.kotlin =>
+          '${gradleString('$key')} to ${gradleValue(value, dsl)}',
       },
   ].join(', ');
 
   return switch (dsl) {
     GradleDsl.groovy => values.isEmpty ? '[:]' : '[$entries]',
-    GradleDsl.kotlin => 'mapOf($entries)',
+    GradleDsl.kotlin =>
+      values.isEmpty ? 'mapOf<String, Any>()' : 'mapOf($entries)',
   };
 }

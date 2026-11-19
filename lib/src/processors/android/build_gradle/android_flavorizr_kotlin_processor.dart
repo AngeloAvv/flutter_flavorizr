@@ -93,7 +93,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
 
       flavor.android?.customConfig.forEach((key, value) {
         buffer.writeln(
-          '            $key = ${gradleValue(value, GradleDsl.kotlin)}',
+          '            ${gradleProperty(key, value, GradleDsl.kotlin)}',
         );
       });
 

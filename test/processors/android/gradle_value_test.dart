@@ -61,7 +61,8 @@ void main() {
         'mapOf("tier" to "gold", "levels" to listOf(1, "two"))',
       );
       expect(groovy(<String, Object>{}), '[:]');
-      expect(kotlin(<Object>[]), 'listOf()');
+      expect(kotlin(<Object>[]), 'listOf<Any>()');
+      expect(kotlin(<String, Object>{}), 'mapOf<String, Any>()');
     });
 
     test('writes the value of a raw as it is, quotes included', () {
@@ -89,5 +90,58 @@ void main() {
     expect(gradleIsCollection({'raw': 'x', 'y': 1}), isTrue);
     expect(gradleIsCollection('x'), isFalse);
     expect(gradleIsCollection(1), isFalse);
+  });
+
+  group('gradleProperty', () {
+    test('assigns scalars in Kotlin and calls them in Groovy', () {
+      expect(
+        gradleProperty('versionCode', 3, GradleDsl.kotlin),
+        'versionCode = 3',
+      );
+      expect(
+        gradleProperty('versionCode', 3, GradleDsl.groovy),
+        'versionCode 3',
+      );
+      expect(
+        gradleProperty('signingConfig', {'raw': 'x.y'}, GradleDsl.groovy),
+        'signingConfig x.y',
+      );
+    });
+
+    test(
+      'adds the items of a list, which the collections of a flavor take',
+      () {
+        expect(
+          gradleProperty('resourceConfigurations', ['en'], GradleDsl.kotlin),
+          'resourceConfigurations += listOf("en")',
+        );
+        expect(
+          gradleProperty('resourceConfigurations', ['en'], GradleDsl.groovy),
+          'resourceConfigurations.addAll(["en"])',
+        );
+      },
+    );
+
+    test('assigns a map', () {
+      expect(
+        gradleProperty('extras', {'a': 1}, GradleDsl.kotlin),
+        'extras = mapOf("a" to 1)',
+      );
+      expect(
+        gradleProperty('extras', {'a': 1}, GradleDsl.groovy),
+        'extras = ["a": 1]',
+      );
+    });
+  });
+
+  test('gradleMap writes a map with the single key raw as a map', () {
+    expect(
+      gradleMap({'raw': 'example'}, GradleDsl.groovy),
+      '["raw": "example"]',
+    );
+    expect(
+      gradleMap({'raw': 'example'}, GradleDsl.kotlin),
+      'mapOf("raw" to "example")',
+    );
   });
 }

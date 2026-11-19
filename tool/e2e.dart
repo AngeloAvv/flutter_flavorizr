@@ -53,6 +53,7 @@ const _platformSection = {
   'android':
       'android:\n      applicationId: "com.example.%s"'
       '\n      customConfig:\n        versionNameSuffix: "-%s"'
+      '\n        matchingFallbacks: [release]'
       '\n      manifestPlaceholders:\n        flavorScheme: "%s"',
   'ios': 'ios:\n      bundleId: "com.example.%s"',
   'macos': 'macos:\n      bundleId: "com.example.%s"',

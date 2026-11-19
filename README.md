@@ -391,7 +391,7 @@ flavors:
       customConfig:
         versionNameSuffix: "-green-prod"     # text: quoted and escaped for you
         versionCode: 1000                    # numbers and booleans as they are
-        resourceConfigurations: [en, it]     # a list
+        resourceConfigurations: [en, it]     # a list: its items are added
         signingConfig: {raw: flavorSigning.green}   # code, written as it is
       manifestPlaceholders:
         appAuthRedirectScheme: com.example.apple
@@ -402,7 +402,7 @@ flavors:
 create("apple") {
     versionNameSuffix = "-green-prod"
     versionCode = 1000
-    resourceConfigurations = listOf("en", "it")
+    resourceConfigurations += listOf("en", "it")
     signingConfig = flavorSigning.green
     manifestPlaceholders["appAuthRedirectScheme"] = "com.example.apple"
 }
@@ -413,7 +413,7 @@ create("apple") {
 apple {
     versionNameSuffix "-green-prod"
     versionCode 1000
-    resourceConfigurations = ["en", "it"]
+    resourceConfigurations.addAll(["en", "it"])
     signingConfig flavorSigning.green
     manifestPlaceholders = ["appAuthRedirectScheme": "com.example.apple"]
 }
@@ -422,6 +422,8 @@ apple {
 * A text is always a string, so it needs no escaped quotes (2.x asked for
   `"\"-green-prod\""`: that is an error now). Code that is not a literal, such as
   `flavorSigning.green`, is `{raw: ...}`.
+* A list adds its items to the property (`+=` in Kotlin, `addAll` in Groovy),
+  which is what the collections of a flavor take: most cannot be assigned.
 * `manifestPlaceholders` is a key of the flavor, not of `customConfig`, and
   works in both languages.
 
