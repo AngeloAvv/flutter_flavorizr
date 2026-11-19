@@ -187,10 +187,20 @@ void main() {
     String? print(String yaml, [String flavor = 'dev']) =>
         FlavorizrConfig.parse(yaml).flavorFingerprints[flavor];
 
-    test('does not change for a configuration that has neither key', () {
-      final before = print(_config(flavors: {'dev': ''}));
+    test('is the one 2.x computed for a configuration with neither key', () {
+      // sha256 of {"app":null,"flavor":{"app":{"name":"dev"}}}, as it was
+      // before the badge existed.
+      expect(
+        print(_config(flavors: {'dev': ''})),
+        'sha256:8addbce86c24b9faad2dd72b83a30ad8a980d39ca5d96ff6b0b6626d516858c1',
+      );
+    });
 
-      expect(before, print(_config(flavors: {'dev': ''})));
+    test('is the same on every run', () {
+      expect(
+        print(_config(flavors: {'dev': ''})),
+        print(_config(flavors: {'dev': ''})),
+      );
     });
 
     test('changes with the root badge, the root icon and the flavor badge', () {

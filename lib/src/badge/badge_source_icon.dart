@@ -107,8 +107,8 @@ const _projectIconSets = [
 ///
 /// 1. [flavorIcon], the icon of the flavor;
 /// 2. [rootIcon], the `icon` of the root of the configuration;
-/// 3. the largest image of the `AppIcon` of the iOS project, then of the macOS
-///    one.
+/// 3. the largest image of the `AppIcon` of the iOS project and of the macOS
+///    one, whichever is larger (iOS when they are the same size).
 ///
 /// An image that is smaller, or not there, is passed over. When there is none,
 /// it fails with a [BadgeSourceIconException] that tells to set `icon:`.
@@ -142,13 +142,23 @@ BadgeSourceIcon resolveBadgeSourceIcon({
     if (icon != null) return icon;
   }
 
+  // The largest image of each set that is big enough, then the larger of the
+  // sets: iOS wins a tie.
+  BadgeSourceIcon? largest;
+
   for (final set in _projectIconSets) {
     for (final path in _imagesOfSet(set, files)) {
       final icon = attempt(path, BadgeSourceOrigin.project);
 
-      if (icon != null) return icon;
+      if (icon == null) continue;
+
+      if (largest == null || icon.size > largest.size) largest = icon;
+
+      break;
     }
   }
+
+  if (largest != null) return largest;
 
   throw BadgeSourceIconException(tried);
 }
@@ -197,10 +207,15 @@ List<String> _imagesOfSet(String set, BadgeSourceFiles files) {
 
 /// The width in pixels of an image of [size] (`1024x1024`) at [scale] (`2x`).
 double? _pixels(Object? size, Object? scale) {
-  if (size is! String || scale is! String) return null;
+  if (size is! String) return null;
 
   final points = double.tryParse(size.split('x').first);
-  final factor = double.tryParse(scale.replaceAll('x', ''));
+  // An image with no scale is the single-size icon of Xcode 14: 1x.
+  final factor = switch (scale) {
+    null => 1.0,
+    final String text => double.tryParse(text.replaceAll('x', '')),
+    _ => null,
+  };
 
   return points == null || factor == null ? null : points * factor;
 }

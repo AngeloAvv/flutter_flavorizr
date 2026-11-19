@@ -51,13 +51,69 @@ class _FakeFiles implements BadgeSourceFiles {
 const _iosSet = 'ios/Runner/Assets.xcassets/AppIcon.appiconset';
 const _macosSet = 'macos/Runner/Assets.xcassets/AppIcon.appiconset';
 
-String _contents(List<(String size, String scale, String? file)> images) =>
-    '{"images":[${[for (final (size, scale, file) in images) '{"size":"$size","scale":"$scale",'
-          '"idiom":"universal"${file == null ? '' : ',"filename":"$file"'}}'].join(',')}],'
-    '"info":{"version":1,"author":"xcode"}}';
+String _contents(List<(String size, String? scale, String? file)> images) {
+  final entries = [
+    for (final (size, scale, file) in images)
+      '{"size":"$size","idiom":"universal"'
+          '${scale == null ? '' : ',"scale":"$scale"'}'
+          '${file == null ? '' : ',"filename":"$file"'}}',
+  ];
+
+  return '{"images":[${entries.join(',')}],'
+      '"info":{"version":1,"author":"xcode"}}';
+}
 
 void main() {
   group('resolveBadgeSourceIcon', () {
+    test(
+      'is the largest AppIcon of iOS and macOS, not the first big enough',
+      () {
+        final icon = resolveBadgeSourceIcon(
+          files: _FakeFiles({
+            '$_iosSet/Contents.json': _contents([('512x512', '1x', 'ios.png')]),
+            '$_iosSet/ios.png': 512,
+            '$_macosSet/Contents.json': _contents([
+              ('512x512', '2x', 'macos.png'),
+            ]),
+            '$_macosSet/macos.png': 1024,
+          }),
+        );
+
+        expect(icon.path, '$_macosSet/macos.png');
+        expect(icon.size, 1024);
+      },
+    );
+
+    test('prefers iOS when both AppIcons are the same size', () {
+      final icon = resolveBadgeSourceIcon(
+        files: _FakeFiles({
+          '$_iosSet/Contents.json': _contents([('1024x1024', '1x', 'ios.png')]),
+          '$_iosSet/ios.png': 1024,
+          '$_macosSet/Contents.json': _contents([
+            ('512x512', '2x', 'macos.png'),
+          ]),
+          '$_macosSet/macos.png': 1024,
+        }),
+      );
+
+      expect(icon.path, '$_iosSet/ios.png');
+    });
+
+    test('takes an image that has no scale, the single 1024 px icon of '
+        'Xcode 14, for 1x', () {
+      final icon = resolveBadgeSourceIcon(
+        files: _FakeFiles({
+          '$_iosSet/Contents.json': _contents([
+            ('1024x1024', null, 'AppIcon.png'),
+          ]),
+          '$_iosSet/AppIcon.png': 1024,
+        }),
+      );
+
+      expect(icon.path, '$_iosSet/AppIcon.png');
+      expect(icon.size, 1024);
+    });
+
     test('is the icon of the flavor first', () {
       final icon = resolveBadgeSourceIcon(
         flavorIcon: 'assets/dev.png',
