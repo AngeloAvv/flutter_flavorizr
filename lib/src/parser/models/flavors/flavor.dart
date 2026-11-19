@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'android.dart';
 import 'app.dart';
+import 'badge.dart';
 import 'darwin.dart';
 import 'linux.dart';
 import 'windows.dart';
@@ -65,9 +66,18 @@ class Flavor {
   @JsonKey(required: false, disallowNullValue: true)
   final Windows? windows;
 
+  /// What the flavor says about its icon badge, or `null` when it says nothing and the root decides.
+  @JsonKey(
+    required: false,
+    disallowNullValue: true,
+    fromJson: FlavorBadge.fromJson,
+  )
+  final FlavorBadge? badge;
+
   /// Creates a Flavor.
   const Flavor({
     required this.app,
+    this.badge,
     this.android,
     this.ios,
     this.macos,
