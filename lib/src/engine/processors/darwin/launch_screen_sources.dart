@@ -139,8 +139,8 @@ $_storyboardMarker. Do not edit it: it is written again from the icon of the fla
                         <constraints>
                             <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1a2-6s-vTC"/>
                             <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4X2-HB-R7a"/>
-                            <constraint firstAttribute="width" constant="$launchImagePoints" id="7Gq-3m-WdX"/>
-                            <constraint firstAttribute="height" constant="$launchImagePoints" id="9Vt-2k-LhP"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="width" constant="$launchImagePoints" id="7Gq-3m-WdX"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="height" constant="$launchImagePoints" id="9Vt-2k-LhP"/>
                         </constraints>
                     </view>
                 </viewController>

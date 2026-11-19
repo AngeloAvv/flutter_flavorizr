@@ -261,20 +261,19 @@ flavors:
       expect(read('android/app/flavorizr.gradle'), 'GRADLE');
     }, skip: Platform.isWindows ? 'needs POSIX permissions' : false);
 
-    test('a path that did not exist is not created', () async {
-      await icons({
-        'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/no.png',
-      });
+    test('a path that did not exist is not created, and what the step writes '
+        'there stays', () async {
+      await icons({icon20});
 
-      expect(
-        File(
-          p.join(
-            project.path,
-            'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/no.png',
-          ),
-        ).existsSync(),
-        isFalse,
-      );
+      expect(File(p.join(project.path, icon20)).existsSync(), isTrue);
+
+      // A path the step does not write is not made by preserving it.
+      const absent =
+          'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/no.png';
+
+      await icons({absent});
+
+      expect(File(p.join(project.path, absent)).existsSync(), isFalse);
     });
   });
 }

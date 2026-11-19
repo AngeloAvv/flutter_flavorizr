@@ -80,7 +80,7 @@ void main() {
       );
     });
 
-    test('is the launch screen of the project in a flavor that has none, '
+    test('is the launch screen the project had in a flavor that has none, '
         'when another flavor has one', () {
       final config = FlavorizrConfig.parse(
         _config(flavors: {'dev': '    launchScreen: true', 'prod': ''}),
@@ -88,11 +88,60 @@ void main() {
 
       expect(
         _ios(config, 'prod'),
-        contains('\nLAUNCH_SCREEN_NAME=LaunchScreen\n'),
+        contains('\nLAUNCH_SCREEN_NAME=\$(DEFAULT_LAUNCH_SCREEN_NAME)\n'),
       );
       expect(
         _ios(config, 'dev'),
         contains('\nLAUNCH_SCREEN_NAME=devLaunchScreen\n'),
+      );
+    });
+
+    test('keeps the launch storyboard the project had, in every flavor', () {
+      final config = FlavorizrConfig.parse(
+        _config(flavors: {'dev': '    launchScreen: true', 'prod': ''}),
+      );
+
+      for (final flavor in ['dev', 'prod']) {
+        expect(
+          iosXcconfigSource(
+            config,
+            flavor,
+            config.flavors[flavor]!,
+            Target.debug,
+            defaultLaunchScreen: 'CustomLaunch',
+          ),
+          contains('\nDEFAULT_LAUNCH_SCREEN_NAME=CustomLaunch\n'),
+          reason: flavor,
+        );
+      }
+    });
+
+    test(
+      'keeps the launch storyboard of Flutter unless it is told another',
+      () {
+        final config = FlavorizrConfig.parse(
+          _config(root: 'launchScreen: true', flavors: {'dev': ''}),
+        );
+
+        expect(
+          _ios(config, 'dev'),
+          contains('\nDEFAULT_LAUNCH_SCREEN_NAME=LaunchScreen\n'),
+        );
+      },
+    );
+
+    test('keeps nothing when no flavor has a launch screen', () {
+      final config = FlavorizrConfig.parse(_config(flavors: {'dev': ''}));
+
+      expect(
+        iosXcconfigSource(
+          config,
+          'dev',
+          config.flavors['dev']!,
+          Target.debug,
+          defaultLaunchScreen: 'CustomLaunch',
+        ),
+        isNot(contains('LAUNCH_SCREEN_NAME')),
       );
     });
 

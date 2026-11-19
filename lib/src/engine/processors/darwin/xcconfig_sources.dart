@@ -25,6 +25,8 @@
 
 import 'dart:collection';
 
+import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/launch_storyboard_name.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_string.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
@@ -47,12 +49,16 @@ String xcconfigName(String flavorName, Target target) =>
 /// It is plain text, written as it is: reading it with an xcconfig parser and
 /// writing it back would turn `#include?` into `#include`, sort the keys and
 /// drop whatever is not a setting.
+///
+/// [defaultLaunchScreen] is the launch storyboard the project had, which a
+/// flavor without a launch screen keeps (see [launchScreenName]).
 String iosXcconfigSource(
   FlavorizrConfig config,
   String flavorName,
   Flavor flavor,
-  Target target,
-) {
+  Target target, {
+  String defaultLaunchScreen = InfoPlistEditor.defaultLaunchStoryboardNameValue,
+}) {
   final buffer = StringBuffer();
 
   _writeIncludes(
@@ -68,14 +74,11 @@ String iosXcconfigSource(
     target,
     flavor.ios?.variables,
     launchScreenName: launchScreenName(config, flavorName),
+    defaultLaunchScreen: defaultLaunchScreen,
   );
 
   return buffer.toString();
 }
-
-/// The name of the project's own launch screen, which a flavor without one of
-/// its own uses.
-const defaultLaunchScreenName = 'LaunchScreen';
 
 /// What `LAUNCH_SCREEN_NAME` is for [flavorName] on iOS, or `null` when it is
 /// not defined.
@@ -83,15 +86,16 @@ const defaultLaunchScreenName = 'LaunchScreen';
 /// It is the name of the storyboard of the flavor when it has a launch screen
 /// (see `FlavorizrConfig.launchScreenOf`). `Info.plist` points at it as
 /// `$(LAUNCH_SCREEN_NAME)` as soon as one flavor has a launch screen, so the
-/// flavors that have none define it as the storyboard of the project: an empty
-/// name would leave them with no launch screen at all. Without any launch
-/// screen it is not defined, and the project keeps the one it has.
+/// flavors that have none keep the storyboard the project had, which every
+/// flavor holds as `DEFAULT_LAUNCH_SCREEN_NAME`: an empty name would leave them
+/// with no launch screen at all. Without any launch screen it is not defined,
+/// and the project keeps the one it has.
 String? launchScreenName(FlavorizrConfig config, String flavorName) {
   if (config.launchScreenFlavors.isEmpty) return null;
 
   return config.launchScreenOf(flavorName)
       ? '${flavorName}LaunchScreen'
-      : defaultLaunchScreenName;
+      : '\$($defaultLaunchScreenVariable)';
 }
 
 /// The text of `macos/Flutter/<flavor><Target>.xcconfig`: the same as the one
@@ -161,13 +165,16 @@ void _writeVariables(
   Target target,
   Map<String, Variable>? flavorVariables, {
   String? launchScreenName,
+  String defaultLaunchScreen = InfoPlistEditor.defaultLaunchStoryboardNameValue,
 }) {
   final variables = LinkedHashMap<String, Variable>.from({
     'ASSET_PREFIX': Variable(value: flavorName),
     'BUNDLE_NAME': Variable(value: flavor.app.name),
     'BUNDLE_DISPLAY_NAME': Variable(value: flavor.app.name),
-    if (launchScreenName != null)
+    if (launchScreenName != null) ...{
+      defaultLaunchScreenVariable: Variable(value: defaultLaunchScreen),
       'LAUNCH_SCREEN_NAME': Variable(value: launchScreenName),
+    },
   });
 
   for (final MapEntry(:key, :value) in flavorVariables?.entries ?? const {}) {

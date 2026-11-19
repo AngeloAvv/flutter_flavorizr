@@ -270,8 +270,8 @@ The lock records the owned keys, so editing one by hand is a conflict, while
 anything else you change in the plist is not drift. `UILaunchStoryboardName` is
 owned only while it has the value flavorizr gives it
 (`$(LAUNCH_SCREEN_NAME)`, which each flavor defines in its xcconfig): when the
-last launch screen goes, it goes back to `LaunchScreen` and the storyboard
-Flutter wrote, or the one 2.x set, is yours. A plist without one of the keys, or whose value is not
+last launch screen goes, it goes back to the storyboard the project had (kept
+in the xcconfig of the flavors as `DEFAULT_LAUNCH_SCREEN_NAME`), which is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
 ## Firebase

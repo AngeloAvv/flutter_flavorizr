@@ -90,6 +90,24 @@ void main() {
       );
     });
 
+    test('sizes the image view, not the view it is in', () {
+      final document = XmlDocument.parse(launchScreenStoryboard('apple'));
+      final image = document.findAllElements('imageView').single;
+      final sizes = document
+          .findAllElements('constraint')
+          .where((c) => c.getAttribute('constant') != null)
+          .toList();
+
+      expect(sizes.map((c) => c.getAttribute('firstAttribute')), [
+        'width',
+        'height',
+      ]);
+      expect(
+        sizes.map((c) => c.getAttribute('firstItem')),
+        everyElement(image.getAttribute('id')),
+      );
+    });
+
     test('is the same document for every flavor but the name', () {
       expect(
         launchScreenStoryboard('banana').replaceAll('banana', 'apple'),

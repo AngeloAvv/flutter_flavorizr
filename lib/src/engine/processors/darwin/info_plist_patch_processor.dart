@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/bom_text_file.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/launch_storyboard_name.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -86,8 +87,9 @@ abstract class InfoPlistPatchProcessor extends FlavorizrProcessor {
 /// The storyboard is `$(LAUNCH_SCREEN_NAME)`, which every flavor defines in its
 /// xcconfig: it is a property of the configuration, and does not depend on the
 /// processors of the run. When no flavor has a launch screen anymore, a
-/// storyboard that is that value goes back to `LaunchScreen`, the one of the
-/// project; any other, such as the one 2.x set, is the user's and is left.
+/// storyboard that is that value goes back to the one the project had (see
+/// `originalLaunchStoryboardName`); any other, such as the one 2.x set, is the
+/// user's and is left.
 class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
   /// Creates the processor.
   const IosInfoPlistPatchProcessor();
@@ -122,8 +124,10 @@ class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
     return {
       ...values,
       if (current == InfoPlistEditor.launchStoryboardNameValue)
-        InfoPlistEditor.launchStoryboardName:
-            InfoPlistEditor.defaultLaunchStoryboardNameValue,
+        InfoPlistEditor.launchStoryboardName: originalLaunchStoryboardName(
+          ctx.projectRoot,
+          plistSource: source,
+        ),
     };
   }
 }

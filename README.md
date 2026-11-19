@@ -484,14 +484,17 @@ flavors:
   flavor defines `LAUNCH_SCREEN_NAME` in its xcconfig (`<flavor>LaunchScreen`).
   It is a property of the configuration: it does not depend on the processors
   you run, so a run of `ios:plist` and `ios:xcconfig` alone is enough to point
-  the app at the storyboard. When only some flavors have a launch screen, the
-  others define `LAUNCH_SCREEN_NAME` as `LaunchScreen`, the one of the project.
-  Without `launchScreen` nowhere, nothing is defined and the project keeps its
-  launch screen.
+  the app at the storyboard. The launch storyboard the project had (the
+  `UILaunchStoryboardName` of `Info.plist` before flavorizr changed it: the
+  `LaunchScreen` of `flutter create`, a storyboard of your own, or the one 2.x
+  set) is kept in every flavor as `DEFAULT_LAUNCH_SCREEN_NAME`, and the flavors
+  without a launch screen define `LAUNCH_SCREEN_NAME` as that. Without
+  `launchScreen` nowhere, nothing is defined and the project keeps its launch
+  screen.
 * The files are generated: edit the icon, not them. A hand edit of one is a
   conflict. Turning `launchScreen` off removes the storyboards, the image sets
   and their references in the project, and `UILaunchStoryboardName` goes back
-  to `LaunchScreen`.
+  to the storyboard the project had.
 * What 2.x made is yours. A `<flavor>LaunchScreen.storyboard` that flavorizr did
   not generate, and the `<flavor>LaunchImage.imageset` of that flavor, are never
   overwritten or deleted: flavorizr points the flavor at the storyboard and says
