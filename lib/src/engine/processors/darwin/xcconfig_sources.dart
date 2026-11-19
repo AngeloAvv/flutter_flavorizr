@@ -61,9 +61,37 @@ String iosXcconfigSource(
     generated: 'Generated.xcconfig',
     includes: [...?config.app?.ios?.includes, ...?flavor.ios?.includes],
   );
-  _writeVariables(buffer, flavorName, flavor, target, flavor.ios?.variables);
+  _writeVariables(
+    buffer,
+    flavorName,
+    flavor,
+    target,
+    flavor.ios?.variables,
+    launchScreenName: launchScreenName(config, flavorName),
+  );
 
   return buffer.toString();
+}
+
+/// The name of the project's own launch screen, which a flavor without one of
+/// its own uses.
+const defaultLaunchScreenName = 'LaunchScreen';
+
+/// What `LAUNCH_SCREEN_NAME` is for [flavorName] on iOS, or `null` when it is
+/// not defined.
+///
+/// It is the name of the storyboard of the flavor when it has a launch screen
+/// (see `FlavorizrConfig.launchScreenOf`). `Info.plist` points at it as
+/// `$(LAUNCH_SCREEN_NAME)` as soon as one flavor has a launch screen, so the
+/// flavors that have none define it as the storyboard of the project: an empty
+/// name would leave them with no launch screen at all. Without any launch
+/// screen it is not defined, and the project keeps the one it has.
+String? launchScreenName(FlavorizrConfig config, String flavorName) {
+  if (config.launchScreenFlavors.isEmpty) return null;
+
+  return config.launchScreenOf(flavorName)
+      ? '${flavorName}LaunchScreen'
+      : defaultLaunchScreenName;
 }
 
 /// The text of `macos/Flutter/<flavor><Target>.xcconfig`: the same as the one
@@ -131,12 +159,15 @@ void _writeVariables(
   String flavorName,
   Flavor flavor,
   Target target,
-  Map<String, Variable>? flavorVariables,
-) {
+  Map<String, Variable>? flavorVariables, {
+  String? launchScreenName,
+}) {
   final variables = LinkedHashMap<String, Variable>.from({
     'ASSET_PREFIX': Variable(value: flavorName),
     'BUNDLE_NAME': Variable(value: flavor.app.name),
     'BUNDLE_DISPLAY_NAME': Variable(value: flavor.app.name),
+    if (launchScreenName != null)
+      'LAUNCH_SCREEN_NAME': Variable(value: launchScreenName),
   });
 
   for (final MapEntry(:key, :value) in flavorVariables?.entries ?? const {}) {

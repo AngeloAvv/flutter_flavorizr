@@ -162,7 +162,8 @@ class FlavorizrConfig {
        windowsFlavors = _where(flavors, (flavor) => flavor.windows != null),
        launchScreenFlavors = _where(
          flavors,
-         (flavor) => flavor.ios != null && (flavor.launchScreen ?? launchScreen),
+         (flavor) =>
+             flavor.ios != null && (flavor.launchScreen ?? launchScreen),
        ),
        androidFirebaseFlavors = _where(
          flavors,
