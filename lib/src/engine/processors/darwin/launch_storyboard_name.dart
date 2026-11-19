@@ -75,27 +75,55 @@ String originalLaunchStoryboardName(
     // reports: here it only means there is nothing to keep.
   }
 
+  final kept = keptLaunchStoryboardName(projectRoot);
+
+  if (kept != null) return kept;
+
+  return InfoPlistEditor.defaultLaunchStoryboardNameValue;
+}
+
+/// The launch storyboard an earlier run kept in the xcconfig of the flavors
+/// ([defaultLaunchScreenVariable]), or `null` when none did.
+String? keptLaunchStoryboardName(Directory projectRoot) {
   final flutter = Directory(p.join(projectRoot.path, K.iOSFlutterPath));
 
-  if (flutter.existsSync()) {
-    final files =
-        flutter
-            .listSync()
-            .whereType<File>()
-            .where((file) => file.path.endsWith('.xcconfig'))
-            .toList()
-          ..sort((a, b) => a.path.compareTo(b.path));
+  if (!flutter.existsSync()) return null;
 
-    for (final file in files) {
-      try {
-        final kept = _kept.firstMatch(file.readAsStringSync())?.group(1);
+  final files =
+      flutter
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.xcconfig'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
 
-        if (kept != null) return kept;
-      } on FileSystemException {
-        continue;
-      }
+  for (final file in files) {
+    try {
+      final kept = _kept.firstMatch(file.readAsStringSync())?.group(1);
+
+      if (kept != null) return kept;
+    } on FileSystemException {
+      continue;
     }
   }
 
-  return InfoPlistEditor.defaultLaunchStoryboardNameValue;
+  return null;
+}
+
+/// Whether `Info.plist` of the project in [projectRoot] points at
+/// `$(LAUNCH_SCREEN_NAME)` now, so that the xcconfig of every flavor has to
+/// define it, whatever the configuration says.
+bool launchStoryboardIsPointedAtFlavors(Directory projectRoot) {
+  try {
+    final source = File(
+      p.join(projectRoot.path, K.iOSPListPath),
+    ).readAsStringSync();
+
+    return InfoPlistEditor.readStrings(source, [
+          InfoPlistEditor.launchStoryboardName,
+        ])[InfoPlistEditor.launchStoryboardName] ==
+        InfoPlistEditor.launchStoryboardNameValue;
+  } on Object {
+    return false;
+  }
 }

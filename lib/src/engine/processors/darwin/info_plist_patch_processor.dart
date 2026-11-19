@@ -112,23 +112,42 @@ class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
   @override
   Map<String, String> valuesFor(FlavorizrContext ctx, String source) {
     final values = this.values(ctx);
-
-    if (values.containsKey(InfoPlistEditor.launchStoryboardName)) {
-      return values;
-    }
-
     final current = InfoPlistEditor.readStrings(source, [
       InfoPlistEditor.launchStoryboardName,
     ])[InfoPlistEditor.launchStoryboardName];
 
-    return {
-      ...values,
-      if (current == InfoPlistEditor.launchStoryboardNameValue)
-        InfoPlistEditor.launchStoryboardName: originalLaunchStoryboardName(
-          ctx.projectRoot,
-          plistSource: source,
-        ),
-    };
+    if (!values.containsKey(InfoPlistEditor.launchStoryboardName)) {
+      return {
+        ...values,
+        if (current == InfoPlistEditor.launchStoryboardNameValue)
+          InfoPlistEditor.launchStoryboardName: originalLaunchStoryboardName(
+            ctx.projectRoot,
+            plistSource: source,
+          ),
+      };
+    }
+
+    // The storyboard the project has is lost once the plist points at the
+    // flavors, unless the xcconfig of the flavors keeps it: it does when
+    // `ios:xcconfig` is in the run (it reads the plist as it is now), or kept it
+    // in an earlier one. Without it the plist is left as it is, so that the
+    // storyboard can be put back.
+    if (current != InfoPlistEditor.launchStoryboardNameValue &&
+        current != null &&
+        current != InfoPlistEditor.defaultLaunchStoryboardNameValue &&
+        !ctx.selected.contains('ios:xcconfig') &&
+        keptLaunchStoryboardName(ctx.projectRoot) == null) {
+      ctx.logger.warn(
+        '`UILaunchStoryboardName` of `${K.iOSPListPath}` is `$current`, and it '
+        'is left as it is: run `ios:xcconfig` first (or with `ios:plist`) so '
+        'that the xcconfig of the flavors keeps it for the flavors without a '
+        'launch screen, and for when the launch screen is turned off.',
+      );
+
+      return {...values}..remove(InfoPlistEditor.launchStoryboardName);
+    }
+
+    return values;
   }
 }
 

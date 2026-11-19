@@ -148,6 +148,10 @@ class IosXcconfigProcessor extends _XcconfigProcessor {
     flavor,
     target,
     defaultLaunchScreen: originalLaunchStoryboardName(ctx.projectRoot),
+    // `ios:plist` in the run puts the storyboard back by itself.
+    launchScreenPointedAt:
+        !ctx.selected.contains('ios:plist') &&
+        launchStoryboardIsPointedAtFlavors(ctx.projectRoot),
   );
 
   @override

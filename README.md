@@ -490,7 +490,9 @@ flavors:
   set) is kept in every flavor as `DEFAULT_LAUNCH_SCREEN_NAME`, and the flavors
   without a launch screen define `LAUNCH_SCREEN_NAME` as that. Without
   `launchScreen` nowhere, nothing is defined and the project keeps its launch
-  screen.
+  screen. To never lose a storyboard of your own, `ios:plist` run on its own
+  leaves `UILaunchStoryboardName` as it is (and warns) until `ios:xcconfig` has
+  kept it: run them together, or `ios:xcconfig` first.
 * The files are generated: edit the icon, not them. A hand edit of one is a
   conflict. Turning `launchScreen` off removes the storyboards, the image sets
   and their references in the project, and `UILaunchStoryboardName` goes back

@@ -52,12 +52,16 @@ String xcconfigName(String flavorName, Target target) =>
 ///
 /// [defaultLaunchScreen] is the launch storyboard the project had, which a
 /// flavor without a launch screen keeps (see [launchScreenName]).
+/// [launchScreenPointedAt] is whether `Info.plist` points at
+/// `$(LAUNCH_SCREEN_NAME)` already, which every flavor has to define until the
+/// plist is back to the storyboard the project had.
 String iosXcconfigSource(
   FlavorizrConfig config,
   String flavorName,
   Flavor flavor,
   Target target, {
   String defaultLaunchScreen = InfoPlistEditor.defaultLaunchStoryboardNameValue,
+  bool launchScreenPointedAt = false,
 }) {
   final buffer = StringBuffer();
 
@@ -73,7 +77,11 @@ String iosXcconfigSource(
     flavor,
     target,
     flavor.ios?.variables,
-    launchScreenName: launchScreenName(config, flavorName),
+    launchScreenName: launchScreenName(
+      config,
+      flavorName,
+      pointedAt: launchScreenPointedAt,
+    ),
     defaultLaunchScreen: defaultLaunchScreen,
   );
 
@@ -89,9 +97,15 @@ String iosXcconfigSource(
 /// flavors that have none keep the storyboard the project had, which every
 /// flavor holds as `DEFAULT_LAUNCH_SCREEN_NAME`: an empty name would leave them
 /// with no launch screen at all. Without any launch screen it is not defined,
-/// and the project keeps the one it has.
-String? launchScreenName(FlavorizrConfig config, String flavorName) {
-  if (config.launchScreenFlavors.isEmpty) return null;
+/// and the project keeps the one it has, unless the plist still points at it
+/// ([pointedAt]): then it is defined for every flavor, as the one the project
+/// had, so that the plist resolves until it is back.
+String? launchScreenName(
+  FlavorizrConfig config,
+  String flavorName, {
+  bool pointedAt = false,
+}) {
+  if (config.launchScreenFlavors.isEmpty && !pointedAt) return null;
 
   return config.launchScreenOf(flavorName)
       ? '${flavorName}LaunchScreen'
