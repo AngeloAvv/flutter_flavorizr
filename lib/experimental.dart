@@ -38,6 +38,17 @@
 ///   them through `FlavorizrContext.config`, and cannot change them.
 library;
 
+export 'src/badge/badge_color.dart' show BadgeColor;
+export 'src/badge/badge_palette.dart' show badgePalette, defaultBadgeColor;
+export 'src/badge/badge_source_icon.dart'
+    show
+        BadgeSourceFiles,
+        BadgeSourceIcon,
+        BadgeSourceIconException,
+        BadgeSourceOrigin,
+        minBadgeSourceSize,
+        resolveBadgeSourceIcon;
+export 'src/badge/resolved_badge.dart' show ResolvedBadge;
 export 'src/engine/artifact.dart';
 export 'src/engine/darwin/owned_objects.dart' show OwnedObjects, ObjectFactory;
 export 'src/engine/ownership.dart' show Ownership;
@@ -61,6 +72,7 @@ export 'src/parser/models/flavors/android/build_config_field.dart'
     show BuildConfigField;
 export 'src/parser/models/flavors/android/res_value.dart' show ResValue;
 export 'src/parser/models/flavors/app.dart' show App;
+export 'src/parser/models/flavors/badge.dart' show FlavorBadge;
 export 'src/parser/models/flavors/commons/dummy_assets_mixin.dart'
     show DummyAssetsMixin;
 export 'src/parser/models/flavors/commons/firebase_mixin.dart'
