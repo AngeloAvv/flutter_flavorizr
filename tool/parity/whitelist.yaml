@@ -126,6 +126,16 @@
     reference to `Runner/GoogleService-Info.plist` in another place of the
     lists: both files are compared without it, once they are known to hold the
     same reference (`moved`).
+- path: ios/Runner.xcodeproj/xcshareddata/xcschemes/*.xcscheme
+  ignore: '^ {6}<PreActions>\n {9}<ExecutionAction\n {12}ActionType = "[\w.]+ShellScriptAction">\n {12}<ActionContent\n {15}title = "Run Prepare Flutter Framework Script"\n {15}scriptText = "/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend\.sh&quot; prepare&#10;">\n {15}<EnvironmentBuildable>\n {18}<BuildableReference\n(?: {21}\w+ = "[^"]*">?\n)+ {18}</BuildableReference>\n {15}</EnvironmentBuildable>\n {12}</ActionContent>\n {9}</ExecutionAction>\n {6}</PreActions>\n|^ {6}<BuildActionEntries>\n {9}<BuildActionEntry\n(?: {12}buildFor(?:Testing|Running|Profiling|Archiving|Analyzing) = "YES">?\n){5} {12}<BuildableReference\n(?: {15}\w+ = "[^"]*">?\n)+ {12}</BuildableReference>\n {9}</BuildActionEntry>\n {6}</BuildActionEntries>\n'
+  reason: >-
+    ios:schema on the engine (#517) makes the scheme of a flavor with the
+    `Run Prepare Flutter Framework Script` pre-action that Flutter adds when
+    Swift Package Manager is enabled, so that a build from Xcode or
+    `flutter build` finds it (#286), and with the entry that builds the app,
+    which Xcode needs to build anything from the scheme and 2.6.0 left out. The
+    two blocks are the only thing not compared: the rest of the scheme, the
+    build configuration of each action included, is the golden one.
 - path: flavorizr.yaml
   reason: >-
     The configuration is the input of the run, and 3.0 reads `recipes` where

@@ -199,6 +199,126 @@ void main() {
     });
   });
 
+  group('the whitelist of the schemes, as it ships', () {
+    final whitelist = Whitelist.parse(
+      File('tool/parity/whitelist.yaml').readAsStringSync(),
+    );
+    const schemes = 'ios/Runner.xcodeproj/xcshareddata/xcschemes';
+    const preActions = '''
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Prepare Flutter Framework Script"
+               scriptText = "/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "97C146ED1CF9000F007C117D"
+                     BuildableName = "Runner.app"
+                     BlueprintName = "Runner"
+                     ReferencedContainer = "container:Runner.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
+''';
+    const entries = '''
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "97C146ED1CF9000F007C117D"
+               BuildableName = "Runner.app"
+               BlueprintName = "Runner"
+               ReferencedContainer = "container:Runner.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+''';
+    const open = '''
+<Scheme
+   version = "1.3">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+''';
+    const close = '''
+   </BuildAction>
+   <LaunchAction
+      buildConfiguration = "Debug-apple">
+   </LaunchAction>
+</Scheme>
+''';
+
+    bool clean(String before, String after, {String path = 'apple'}) {
+      write(golden, '$schemes/$path.xcscheme', before);
+      write(actual, '$schemes/$path.xcscheme', after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
+
+    test(
+      'takes the pre-action of Flutter and the entry that builds the app',
+      () {
+        expect(clean('$open$close', '$open$preActions$entries$close'), isTrue);
+        expect(
+          clean('$open$close', '$open$preActions$entries$close', path: 'dev-1'),
+          isTrue,
+        );
+      },
+    );
+
+    test('does not take the schemes of macOS', () {
+      write(
+        golden,
+        'macos/Runner.xcodeproj/xcshareddata/xcschemes/a.xcscheme',
+        '$open$close',
+      );
+      write(
+        actual,
+        'macos/Runner.xcodeproj/xcshareddata/xcschemes/a.xcscheme',
+        '$open$preActions$entries$close',
+      );
+
+      expect(
+        compareTrees(golden, actual, whitelist: whitelist).isClean,
+        isFalse,
+      );
+    });
+
+    test('does not take another script', () {
+      final other = preActions.replaceAll('xcode_backend', 'evil');
+
+      expect(clean('$open$close', '$open$other$entries$close'), isFalse);
+    });
+
+    test('does not take a change of a build configuration', () {
+      expect(
+        clean(
+          '$open$close',
+          '$open$preActions$entries$close'.replaceAll('Debug-apple', 'Debug'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not take a build entry that does not build for everything', () {
+      final partial = entries.replaceAll(
+        'buildForTesting = "YES"',
+        'buildForTesting = "NO"',
+      );
+
+      expect(clean('$open$close', '$open$preActions$partial$close'), isFalse);
+    });
+  });
+
   group('a moved whitelist entry', () {
     final whitelist = Whitelist.parse(r'''
 - path: ios/Runner.xcodeproj/project.pbxproj
