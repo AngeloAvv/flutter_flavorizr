@@ -175,7 +175,19 @@ abstract class FlavorizrCommand extends Command<int> {
     try {
       return parser.parse();
     } on Object catch (error) {
-      throw CommandFailure(ExitCodes.data, '$error', cause: error);
+      final noConfiguration =
+          error is ConfigurationNotFoundException ||
+          (error is MissingRequiredFieldsException &&
+              error.fields.length == 1 &&
+              error.fields.single == 'flavorizr');
+
+      throw CommandFailure(
+        ExitCodes.data,
+        noConfiguration
+            ? '$error\nRun `flavorizr init` to write a flavorizr.yaml.'
+            : '$error',
+        cause: error,
+      );
     }
   }
 }

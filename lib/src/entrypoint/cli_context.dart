@@ -39,6 +39,11 @@ import 'package:mason_logger/mason_logger.dart';
 /// Asks the user [question] and returns whether the answer was yes.
 typedef Confirm = Future<bool> Function(String question);
 
+/// Asks the user [question] and returns the answer, [defaultValue] when there
+/// is none.
+typedef Prompt =
+    Future<String> Function(String question, {required String defaultValue});
+
 /// The version of the Flutter SDK that is installed, or `null` when it cannot
 /// be told.
 typedef FlutterVersionProbe = Future<String?> Function();
@@ -57,6 +62,12 @@ class CliContext {
   final ConflictTerminal terminal;
 
   final Confirm? _confirm;
+
+  final Prompt? _prompt;
+
+  /// Asks a question that has a default answer. Without a terminal to answer
+  /// it, nothing is asked and the default is the answer.
+  Prompt get prompt => _prompt ?? _askForText;
 
   /// Asks for the confirmation of `apply`. Without a terminal to answer it,
   /// nothing is asked and the answer is yes: a CI has nobody to ask.
@@ -87,6 +98,7 @@ class CliContext {
     required this.logger,
     ConflictTerminal? terminal,
     Confirm? confirm,
+    Prompt? prompt,
     ProcessorRegistry? registry,
     LegacyPipeline? legacy,
     FlutterVersionProbe? flutterVersion,
@@ -97,9 +109,17 @@ class CliContext {
        environment = environment ?? OutputEnvironment.current(),
        sink = sink ?? stdout,
        _confirm = confirm,
+       _prompt = prompt,
        registry = registry ?? ProcessorRegistry.standard(),
        legacy = legacy ?? StandardLegacyPipeline(projectRoot),
        flutterVersion = flutterVersion ?? probeFlutterVersion;
+
+  Future<String> _askForText(
+    String question, {
+    required String defaultValue,
+  }) async => environment.interactive
+      ? logger.prompt(question, defaultValue: defaultValue)
+      : defaultValue;
 
   Future<bool> _askIfAnybodyIsThere(String question) async =>
       environment.interactive

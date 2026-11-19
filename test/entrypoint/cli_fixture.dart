@@ -189,6 +189,13 @@ class CliFixture {
   /// What the user answers when asked to confirm.
   bool answer = true;
 
+  /// What the user answers to a question that has a default, by question: the
+  /// default when it is not here.
+  final Map<String, String> answers = {};
+
+  /// The questions the user was asked, with a default answer.
+  final List<String> prompts = [];
+
   /// What stdout holds: the JSON document of `--json`, and what is drawn on a
   /// terminal.
   final StringBuffer stdout = StringBuffer();
@@ -234,6 +241,11 @@ class CliFixture {
       questions.add(question);
 
       return answer;
+    },
+    prompt: (question, {required defaultValue}) async {
+      prompts.add(question);
+
+      return answers[question] ?? defaultValue;
     },
     legacy: legacy,
     registry: registry,
