@@ -303,9 +303,11 @@ class ProcessorRegistry {
   /// Throws a [DuplicateProcessorException] when the id of a processor is
   /// already taken, by this registry or by another of [processors].
   ProcessorRegistry withProcessors(Iterable<FlavorizrProcessor> processors) {
+    // Read once: a lazy iterable may not give the same processors twice.
+    final added = processors.toList(growable: false);
     final taken = {...ids};
 
-    for (final processor in processors) {
+    for (final processor in added) {
       if (!taken.add(processor.id)) {
         throw DuplicateProcessorException(processor.id);
       }
@@ -314,7 +316,7 @@ class ProcessorRegistry {
     return ProcessorRegistry(
       engine: [
         ..._engine.values,
-        for (final processor in processors)
+        for (final processor in added)
           EngineProcessor(
             processor,
             paths: processor.paths,
@@ -378,17 +380,19 @@ class ProcessorRegistry {
   String hash(Artifact artifact, List<int> bytes) {
     if (artifact.ownership != Ownership.patched) return digestOf(bytes);
 
-    final read = [
+    final readers = [
       ..._engine.values.map((entry) => entry.ownedContent[artifact.path]),
       ..._resources.values.map((entry) => entry.ownedContent[artifact.path]),
-    ].nonNulls.firstOrNull;
+    ].nonNulls.toList(growable: false);
 
-    if (read == null) return digestOf(bytes);
+    if (readers.isEmpty) return digestOf(bytes);
 
     final text = utf8.decode(bytes, allowMalformed: true);
+    final source = text.startsWith('\ufeff') ? text.substring(1) : text;
 
+    // Processors may own different parts of the same file: every part counts.
     return digestOf(
-      utf8.encode(read(text.startsWith('﻿') ? text.substring(1) : text)),
+      utf8.encode([for (final read in readers) read(source)].join('\n')),
     );
   }
 }

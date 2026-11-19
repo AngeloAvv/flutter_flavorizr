@@ -296,9 +296,11 @@ recipes:
 * A processor declares what it works on itself, in the class: `paths`, the
   files and folders of the project it reads or writes, and `ownedContent` for
   the part of a patched file it owns. Nothing else has to be registered.
-* An id that another processor has is an error (exit code 65), and so is an id
-  nobody has: the message says to register the processor in
+* An id that another processor has is an error (exit code 65), and so is a
+  recipe member that nobody has: the message says to register the processor in
   `tool/flavorizr.dart`.
+* A target on the command line that is neither a recipe nor a processor id is a
+  usage error (exit code 64), with the same hint.
 * **The files of your processors must be pure Dart.** `tool/flavorizr.dart` runs
   with `dart run`, not inside Flutter, so a processor, or anything it imports,
   cannot import `package:flutter` or `dart:ui`.

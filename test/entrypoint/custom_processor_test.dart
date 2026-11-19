@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/experimental.dart';
@@ -55,6 +56,30 @@ class _SentryProcessor extends FlavorizrProcessor {
         [for (final name in ctx.config.flavors.keys) 'flavor=$name'].join('\n'),
       );
   }
+}
+
+/// Owns the line that starts with [key] of `shared.properties`.
+class _SharedKey extends FlavorizrProcessor {
+  @override
+  final String id;
+
+  final String key;
+
+  const _SharedKey(this.id, this.key);
+
+  @override
+  Set<String> get paths => const {'shared.properties'};
+
+  @override
+  Map<String, String Function(String)> get ownedContent => {
+    'shared.properties': (source) => source
+        .split('\n')
+        .where((line) => line.startsWith('$key='))
+        .join('\n'),
+  };
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {}
 }
 
 class _Named extends FlavorizrProcessor {
@@ -156,6 +181,45 @@ void main() {
         ]),
         throwsA(isA<DuplicateProcessorException>()),
       );
+    });
+
+    test(
+      'reads each part of a file that processors own, when they share it',
+      () {
+        final registry = ProcessorRegistry.standard().withProcessors([
+          const _SharedKey('acme:a', 'a'),
+          const _SharedKey('acme:b', 'b'),
+        ]);
+        const artifact = Artifact.patched('shared.properties');
+
+        List<int> file(String text) => utf8.encode(text);
+
+        expect(
+          registry.hash(artifact, file('a=1\nb=1\nc=1')),
+          isNot(registry.hash(artifact, file('a=1\nb=2\nc=1'))),
+        );
+        expect(
+          registry.hash(artifact, file('a=1\nb=1\nc=1')),
+          isNot(registry.hash(artifact, file('a=2\nb=1\nc=1'))),
+        );
+        expect(
+          registry.hash(artifact, file('a=1\nb=1\nc=1')),
+          registry.hash(artifact, file('a=1\nb=1\nc=2')),
+        );
+      },
+    );
+
+    test('reads a lazy iterable of processors once', () {
+      var reads = 0;
+      final lazy = () sync* {
+        reads++;
+        yield const _Named('acme:one');
+      }();
+
+      final registry = ProcessorRegistry.standard().withProcessors(lazy);
+
+      expect(registry.ids, contains('acme:one'));
+      expect(reads, 1);
     });
 
     test('keeps the processors and the resources it had', () {
