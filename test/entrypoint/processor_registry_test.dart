@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 const _manifest = 'android/app/src/main/AndroidManifest.xml';
 const _build = 'android/app/build.gradle';

@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_create_scheme_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:io/io.dart';
 import 'package:mason_logger/mason_logger.dart';
 

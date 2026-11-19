@@ -28,7 +28,7 @@ library;
 
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 /// The files `lib/flutter_flavorizr.dart` and `lib/experimental.dart` export.
 List<String> _exportedFiles(String library) => [

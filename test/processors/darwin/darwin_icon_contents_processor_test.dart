@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/models/macos/macos_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/icons/darwin_icon_contents_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 void main() {

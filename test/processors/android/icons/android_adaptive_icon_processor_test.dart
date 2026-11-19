@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/models/commons/size.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_adaptive_icon_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:sprintf/sprintf.dart';

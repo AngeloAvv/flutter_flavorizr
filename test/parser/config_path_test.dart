@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/config_path.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 const _yaml = '''

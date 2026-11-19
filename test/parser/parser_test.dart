@@ -27,7 +27,7 @@ import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.
 import 'package:flutter_flavorizr/src/exception/missing_required_fields_exception.dart';
 import 'package:flutter_flavorizr/src/exception/null_fields_exception.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Test Flavorizr loaded from a dedicated .yml (not .yaml) file', () {
