@@ -276,6 +276,36 @@ void main() {
         expect(changes, isNot(contains(_icon('cherry', 'hdpi'))));
       });
 
+      test('keeps the root settings of the configuration: the badged icons of '
+          'the flavors are in the baseline all the same', () async {
+        File(project.abs('assets/icon.png'))
+          ..parent.createSync(recursive: true)
+          ..writeAsBytesSync(gradientPng(512, 512));
+        project.write(
+          'flavorizr.yaml',
+          'badge: true\nicon: "assets/icon.png"\n${project.read('flavorizr.yaml')}',
+        );
+
+        expect(
+          await project.run(['adopt']),
+          ExitCodes.ok,
+          reason: project.logger.output,
+        );
+        final without = (await _lockOf(
+          project,
+        ))!.processors['android:icons']!.files.keys.toSet();
+
+        File(project.abs('flavorizr.lock')).deleteSync();
+
+        await project.run(['adopt', '--flavors', 'cherry']);
+        final withHistorical = (await _lockOf(
+          project,
+        ))!.processors['android:icons']!.files.keys.toSet();
+
+        expect(without, contains(_icon('banana', 'hdpi')));
+        expect(withHistorical, containsAll(without));
+      });
+
       test('are not recorded by a run of some of the processors, which says '
           'so', () async {
         final code = await project.run([

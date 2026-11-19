@@ -76,15 +76,10 @@ FlavorizrConfig withHistoricalFlavors(
     windows: config.windowsFlavors.values.firstOrNull?.windows,
   );
 
-  return FlavorizrConfig(
-    app: config.app,
-    flavors: {...config.flavors, for (final name in missing) name: template},
-    ide: config.ide,
-    recipes: config.recipes,
-    defaultRecipe: config.defaultRecipe,
-    flavorFingerprints: config.flavorFingerprints,
-    deprecations: config.deprecations,
-  );
+  return config.withFlavors({
+    ...config.flavors,
+    for (final name in missing) name: template,
+  });
 }
 
 /// Runs the processors of [plan] on a shadow workspace to learn the files they
