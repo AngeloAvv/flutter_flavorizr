@@ -1,0 +1,59 @@
+# Troubleshooting: `appFlavor` is null when the app is launched from Xcode
+
+`appFlavor` (from `package:flutter/services.dart`) is `null`, and the generated `flavors.g.dart`
+fails with a message saying so, when the app is launched with the Run button of Xcode, or archived
+from it, instead of `flutter run --flavor apple`.
+
+## Why it happens
+
+`appFlavor` is not a runtime value: it is `String.fromEnvironment('FLUTTER_APP_FLAVOR')`, so it
+exists only if `FLUTTER_APP_FLAVOR=<flavor>` is one of the Dart defines the app was compiled with.
+
+* With `flutter run --flavor apple`, the Flutter CLI adds that define itself.
+* From Xcode there is no CLI, and Xcode does not tell the build scripts the name of the scheme. The
+  Run Script of the `Runner` target (`xcode_backend`) only forwards the `DART_DEFINES` build setting
+  to `flutter assemble`.
+
+## What flutter_flavorizr does about it
+
+Nothing needs to be generated: this is fixed by Flutter itself, and `flutter_flavorizr` already
+produces the layout the fix relies on.
+
+Since [flutter/flutter#162907](https://github.com/flutter/flutter/pull/162907), which fixes
+[flutter/flutter#155951](https://github.com/flutter/flutter/issues/155951) and is part of Flutter
+3.32 and later, `flutter assemble` works the flavor out of the `CONFIGURATION` build setting that
+Xcode passes to it. It reads the configuration as `<mode>-<scheme>` (`Debug-apple`), and sets
+`FLUTTER_APP_FLAVOR` when the second part is the name of a scheme of the project (compared without
+regard to the case). `flutter_flavorizr` names the build configurations `Debug-<flavor>`,
+`Profile-<flavor>` and `Release-<flavor>` and creates one scheme per flavor, so a project it
+flavorized is found.
+
+## The workarounds that are not needed anymore
+
+Setting `FLUTTER_APP_FLAVOR` in the `.xcconfig` of a flavor, or in `variables`, does **not** work:
+it is a build setting, and nothing in the build forwards it to the compiler. Only `DART_DEFINES`
+reaches it, and it is a base64 list of **all** the defines of the build. Writing it in the xcconfig
+replaces the one Flutter writes in `Generated.xcconfig` (`--dart-define`, `--dart-define-from-file`),
+so flavorizr does not generate it.
+
+## If `appFlavor` is still null
+
+1. Update Flutter to 3.32 or later (`flutter --version`). With an older one the flavor is not
+   derived in Xcode, and the only way is `flutter run --flavor`/`flutter build --flavor`.
+2. Make sure the configuration the scheme runs is `<mode>-<flavor>`, with the name of the scheme
+   after the dash: in Xcode, **Product > Scheme > Edit Scheme > Run > Build Configuration** must be
+   `Debug-<flavor>`, and the same for the Archive action (`Release-<flavor>`). A scheme or a
+   configuration that was renamed by hand is not found.
+3. Do not use `-` or a space in the name of a flavor. Flutter splits the configuration on the first
+   of them and takes the second piece, so for `Debug-my-app` it looks for a scheme named `my`, finds
+   none, and falls back to the `FLAVOR` environment variable. Xcode passes `FLAVOR` from
+   `Generated.xcconfig`, which can keep a value from an earlier `flutter run --flavor`: check that
+   setting when the flavor is not the one you expect. Use a name such as `myApp` or `my_app`.
+4. Only when Flutter does not derive the flavor (Flutter older than 3.32, or a configuration it
+   cannot match to a scheme), set `DART_DEFINES` in the xcconfig of the flavor (through
+   `variables`, as in [#394](https://github.com/AngeloAvv/flutter_flavorizr/issues/394)) to the
+   base64 of `FLUTTER_APP_FLAVOR=<flavor>`, for example
+   `echo -n 'FLUTTER_APP_FLAVOR=apple' | base64`. It replaces every other define of the build, so
+   this is only worth it when the app has none, and it is yours to keep in step with the flavor.
+   After upgrading to Flutter 3.32 or later, remove any `FLUTTER_APP_FLAVOR` entry from
+   `DART_DEFINES`, so that it does not override the flavor Flutter derives.

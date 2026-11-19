@@ -713,6 +713,8 @@ Remember to add the native dependencies for the targeted operative system for bo
 ## Troubleshooting
 How to fix the error ["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md)
 
+How to fix [`appFlavor` being null when the app is launched from Xcode](doc/troubleshooting/app-flavor-null-from-xcode/README.md)
+
 ## Docs & Tutorials (from the community)
 [Easily build flavors in Flutter (Android and iOS) with flutter_flavorizr](https://angeloavv.medium.com/easily-build-flavors-in-flutter-android-and-ios-with-flutter-flavorizr-d48cbf956e4) - Angelo Cassano
 
