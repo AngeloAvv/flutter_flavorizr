@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/darwin_build_configurations.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/owned_build_settings.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
@@ -118,6 +119,22 @@ abstract class _BuildTargetsProcessor extends FlavorizrProcessor {
       '[$id] Removed ${settings.settle().length} setting(s) flavorizr no '
       'longer wants',
     );
+
+    // A configuration that goes with its flavor takes with it whatever is in
+    // it: the ones that hold settings of the user (a `DEVELOPMENT_TEAM`) stay.
+    for (final uuid in ctx.previousObjectsOf(objects.artifact.path)) {
+      final object = objects.project.objectsByUuid[uuid];
+
+      if (!objects.owned.contains(uuid) &&
+          object is XCBuildConfiguration &&
+          settings.holdsOthers(object)) {
+        ctx.logger.detail(
+          '[$id] Keeping `${object.name}`: it holds settings of its own',
+        );
+        objects.release(object);
+      }
+    }
+
     objects.settle();
 
     ctx.track(objects.artifact);

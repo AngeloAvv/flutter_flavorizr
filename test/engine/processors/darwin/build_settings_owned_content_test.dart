@@ -197,6 +197,52 @@ void main() {
       );
     });
 
+    test('reads the product name of the first native target, whatever comes '
+        'before it', () {
+      const aggregate = 'AAAAAAAAAAAAAAAAAAAAAAAA';
+      final source = _source
+          .replaceFirst(
+            'targets = (\n',
+            'targets = (\n\t\t\t\t$aggregate /* Aggregate */,\n',
+          )
+          .replaceFirst(
+            '/* Begin XCConfigurationList section */\n',
+            '/* Begin XCConfigurationList section */\n'
+                '\t\t$aggregate /* Aggregate */ = {\n'
+                '\t\t\tisa = PBXAggregateTarget;\n'
+                '\t\t\tname = Aggregate;\n'
+                '\t\t};\n',
+          );
+      final edited = source.replaceAll(
+        r'PRODUCT_NAME = "$(TARGET_NAME)";',
+        'PRODUCT_NAME = Mine;',
+      );
+
+      expect(source, contains('PBXAggregateTarget'));
+      expect(
+        buildSettingsOwnedContent(source),
+        contains('PRODUCT_NAME'),
+        reason: 'the product name of Runner is read',
+      );
+      expect(
+        buildSettingsOwnedContent(edited),
+        isNot(buildSettingsOwnedContent(source)),
+      );
+    });
+
+    test('is the same for a value with quotes and the same one without', () {
+      final quoted = _source.replaceAll(
+        'SWIFT_VERSION = 5.0;',
+        'SWIFT_VERSION = "5.0";',
+      );
+
+      expect(quoted, isNot(_source));
+      expect(
+        buildSettingsOwnedContent(quoted),
+        buildSettingsOwnedContent(_source),
+      );
+    });
+
     test('is not changed by the rest of the project', () {
       final edited = _edit(
         _source,

@@ -147,7 +147,7 @@ void main() {
 
   group('OwnedBuildSettings.settle', () {
     test('tells the context which settings it wrote, by scope and '
-        'configuration', () {
+        'configuration UUID', () {
       final ctx = contextOf();
       final settings = settingsOf(ctx);
 
@@ -173,8 +173,8 @@ void main() {
       expect(ctx.ownedKeys, {
         'ios:buildTargets': {
           _pbxproj.path: {
-            'project/Debug-apple/SWIFT_VERSION': hash('5.0'),
-            'target/Debug-apple/PRODUCT_NAME': hash(r'$(TARGET_NAME)'),
+            'project/${config.uuid}/SWIFT_VERSION': hash('5.0'),
+            'target/${targetConfig.uuid}/PRODUCT_NAME': hash(r'$(TARGET_NAME)'),
           },
         },
       });
@@ -186,7 +186,9 @@ void main() {
         'SWIFT_VERSION': '5.0',
         'DEVELOPMENT_TEAM': 'ABCDE12345',
       };
-      final ctx = contextOf({'project/Debug-apple/SWIFT_VERSION': hash('5.0')});
+      final ctx = contextOf({
+        'project/${config.uuid}/SWIFT_VERSION': hash('5.0'),
+      });
       final settings = settingsOf(ctx);
 
       settings.apply(
@@ -196,7 +198,7 @@ void main() {
       );
       final removed = settings.settle();
 
-      expect(removed, ['project/Debug-apple/SWIFT_VERSION']);
+      expect(removed, ['project/${config.uuid}/SWIFT_VERSION']);
       expect(config.buildSettings, {'DEVELOPMENT_TEAM': 'ABCDE12345'});
       expect(ctx.ownedKeys['ios:buildTargets']![_pbxproj.path], isEmpty);
     });
@@ -204,7 +206,9 @@ void main() {
     test('keeps a setting that is no longer wanted when the value is not the '
         'one flavorizr wrote, and stops owning it', () {
       config.buildSettings = {'SWIFT_VERSION': '6.0'};
-      final ctx = contextOf({'project/Debug-apple/SWIFT_VERSION': hash('5.0')});
+      final ctx = contextOf({
+        'project/${config.uuid}/SWIFT_VERSION': hash('5.0'),
+      });
       final settings = settingsOf(ctx);
 
       settings.apply(
@@ -221,7 +225,9 @@ void main() {
 
     test('keeps a setting that is still wanted', () {
       config.buildSettings = {'SWIFT_VERSION': '5.0'};
-      final ctx = contextOf({'project/Debug-apple/SWIFT_VERSION': hash('5.0')});
+      final ctx = contextOf({
+        'project/${config.uuid}/SWIFT_VERSION': hash('5.0'),
+      });
       final settings = settingsOf(ctx);
 
       settings.apply(
@@ -240,19 +246,21 @@ void main() {
         'SWIFT_VERSION': '5.0',
         'DEVELOPMENT_TEAM': 'ABCDE12345',
       };
-      final ctx = contextOf({'project/Debug-apple/SWIFT_VERSION': hash('5.0')});
+      final ctx = contextOf({
+        'project/${config.uuid}/SWIFT_VERSION': hash('5.0'),
+      });
 
       // `apply` is never called for it: the flavor is not wanted anymore.
       final removed = settingsOf(ctx).settle();
 
-      expect(removed, ['project/Debug-apple/SWIFT_VERSION']);
+      expect(removed, ['project/${config.uuid}/SWIFT_VERSION']);
       expect(config.buildSettings, {'DEVELOPMENT_TEAM': 'ABCDE12345'});
     });
 
     test('forgets the settings of a configuration that is not there', () {
       final ctx = contextOf({
-        'project/Debug-gone/SWIFT_VERSION': hash('5.0'),
-        'target/Debug-gone/PRODUCT_NAME': hash('x'),
+        'project/AAAAAAAAAAAAAAAAAAAAAAAA/SWIFT_VERSION': hash('5.0'),
+        'target/BBBBBBBBBBBBBBBBBBBBBBBB/PRODUCT_NAME': hash('x'),
       });
       final settings = settingsOf(ctx);
 
@@ -272,11 +280,181 @@ void main() {
 
       config.buildSettings = {name: 'Apple Distribution'};
       final ctx = contextOf({
-        'project/Debug-apple/$name': hash('Apple Distribution'),
+        'project/${config.uuid}/$name': hash('Apple Distribution'),
       });
 
-      expect(settingsOf(ctx).settle(), ['project/Debug-apple/$name']);
+      expect(settingsOf(ctx).settle(), ['project/${config.uuid}/$name']);
       expect(config.buildSettings, isEmpty);
+    });
+  });
+  group('OwnedBuildSettings, as the project stores the values', () {
+    Future<XcodeProject> reopen() async {
+      await project.save();
+
+      return XcodeProject.open(p.join(temp.path, 'ios', 'Runner.xcodeproj'));
+    }
+
+    test('hashes a flag string as the list the project writes', () {
+      final ctx = contextOf();
+      final settings = settingsOf(ctx);
+
+      settings.apply(
+        config,
+        scope: OwnedBuildSettings.projectScope,
+        wanted: {'OTHER_LDFLAGS': '-ObjC -all_load'},
+      );
+      settings.settle();
+
+      expect(ctx.ownedKeys['ios:buildTargets']![_pbxproj.path], {
+        'project/${config.uuid}/OTHER_LDFLAGS': hash(['-ObjC', '-all_load']),
+      });
+    });
+
+    test(
+      'removes a setting written as a string and read back as a list',
+      () async {
+        final first = contextOf();
+        final written = settingsOf(first);
+
+        written.apply(
+          config,
+          scope: OwnedBuildSettings.projectScope,
+          wanted: {'OTHER_LDFLAGS': '-ObjC -all_load'},
+        );
+        written.settle();
+
+        project = await reopen();
+        config = project.buildConfigurationList['Debug-apple']!;
+        expect(config.buildSettings['OTHER_LDFLAGS'], ['-ObjC', '-all_load']);
+
+        final second = contextOf(
+          first.ownedKeys['ios:buildTargets']![_pbxproj.path]!,
+        );
+        final removed = settingsOf(second).settle();
+
+        expect(removed, ['project/${config.uuid}/OTHER_LDFLAGS']);
+        expect(config.buildSettings, isNot(contains('OTHER_LDFLAGS')));
+      },
+    );
+  });
+
+  group('OwnedBuildSettings, edited by hand', () {
+    Future<List<String>> run(
+      Map<String, String> previous,
+      Map<String, dynamic> wanted,
+    ) async {
+      final ctx = contextOf(previous);
+      final settings = settingsOf(ctx);
+
+      settings.apply(
+        config,
+        scope: OwnedBuildSettings.projectScope,
+        wanted: wanted,
+      );
+      settings.settle();
+
+      return ctx.edited.toList();
+    }
+
+    test(
+      'reports the file when a setting it wrote holds another value',
+      () async {
+        config.buildSettings = {'SWIFT_VERSION': '6.0'};
+
+        expect(
+          await run(
+            {'project/${config.uuid}/SWIFT_VERSION': hash('5.0')},
+            {'SWIFT_VERSION': '5.0'},
+          ),
+          [_pbxproj.path],
+        );
+      },
+    );
+
+    test('reports the file when a setting it wrote was deleted', () async {
+      config.buildSettings = {};
+
+      expect(
+        await run(
+          {'project/${config.uuid}/SWIFT_VERSION': hash('5.0')},
+          {'SWIFT_VERSION': '5.0'},
+        ),
+        [_pbxproj.path],
+      );
+    });
+
+    test('says nothing when the value is the one flavorizr wrote', () async {
+      config.buildSettings = {'SWIFT_VERSION': '5.0'};
+
+      expect(
+        await run(
+          {'project/${config.uuid}/SWIFT_VERSION': hash('5.0')},
+          {'SWIFT_VERSION': '5.1'},
+        ),
+        isEmpty,
+      );
+    });
+
+    test('says nothing for a setting it did not write before', () async {
+      config.buildSettings = {'SWIFT_VERSION': '6.0'};
+
+      expect(await run(const {}, {'SWIFT_VERSION': '5.0'}), isEmpty);
+    });
+
+    test('says nothing when the value already is the wanted one', () async {
+      config.buildSettings = {'SWIFT_VERSION': '5.1'};
+
+      expect(
+        await run(
+          {'project/${config.uuid}/SWIFT_VERSION': hash('5.0')},
+          {'SWIFT_VERSION': '5.1'},
+        ),
+        isEmpty,
+      );
+    });
+  });
+
+  group('OwnedBuildSettings.holdsOthers', () {
+    test('is false for a configuration that only holds what it copied of the '
+        'base configuration', () {
+      final base = project.buildConfigurationList['Debug']!;
+      final copy = project.newObject<XCBuildConfiguration>(
+        (g, u) => XCBuildConfiguration(g, u),
+      )..name = 'Debug-new';
+
+      copy.buildSettings = Map.of(base.buildSettings);
+      project.buildConfigurationList.buildConfigurations.add(copy);
+
+      expect(settingsOf(contextOf()).holdsOthers(copy), isFalse);
+    });
+
+    test('is true for a project configuration with a setting of its own', () {
+      final base = project.buildConfigurationList['Debug']!;
+      final copy = project.newObject<XCBuildConfiguration>(
+        (g, u) => XCBuildConfiguration(g, u),
+      )..name = 'Debug-new';
+
+      copy.buildSettings = {...base.buildSettings, 'DEVELOPMENT_TEAM': 'X'};
+      project.buildConfigurationList.buildConfigurations.add(copy);
+
+      expect(settingsOf(contextOf()).holdsOthers(copy), isTrue);
+    });
+
+    test('is true for a target configuration with any setting left, false '
+        'with none', () {
+      final list = project.nativeTargets.first.buildConfigurationList!;
+      final target = project.newObject<XCBuildConfiguration>(
+        (g, u) => XCBuildConfiguration(g, u),
+      )..name = 'Debug-new';
+
+      list.buildConfigurations.add(target);
+      final settings = settingsOf(contextOf());
+
+      expect(settings.holdsOthers(target), isFalse);
+
+      target.buildSettings = {'DEVELOPMENT_TEAM': 'X'};
+
+      expect(settings.holdsOthers(target), isTrue);
     });
   });
 }

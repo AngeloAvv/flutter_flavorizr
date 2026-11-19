@@ -166,6 +166,15 @@ flavors:
       expect(() => ctx.ownKeys(pbxproj, const {}), throwsStateError);
     });
 
+    test('a file found edited by hand is told in its canonical form', () {
+      final ctx = build();
+
+      ctx.reportEdited(r'ios\Runner.xcodeproj\project.pbxproj');
+
+      expect(ctx.edited, {pbxproj});
+      expect(() => ctx.reportEdited('../escape'), throwsArgumentError);
+    });
+
     test('a path that leaves the project cannot be owned', () {
       final ctx = build();
 

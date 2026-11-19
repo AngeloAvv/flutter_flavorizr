@@ -43,7 +43,10 @@ import 'package:flutter_flavorizr/src/engine/darwin/owned_build_settings.dart';
 ///
 /// It is made to be read from the text of the file, by what the objects refer
 /// to, never by the annotations of a line: the project is the one a
-/// `PBXProject` object says, and the first target the first of its `targets`.
+/// `PBXProject` object says, and the first target the first **native** one of its
+/// `targets` (an aggregate target before it does not count, as for the
+/// processors, which edit `XcodeProject.nativeTargets`). The values are compared
+/// as they are decoded, so `5.0` and `"5.0"` are the same setting.
 /// A text that is not a project is empty.
 ///
 /// A setting a user adds by hand to a configuration of the project that is
@@ -56,7 +59,12 @@ String buildSettingsOwnedContent(String source) {
     (object) => object.isa == 'PBXProject',
     orElse: () => _Object.empty,
   );
-  final firstTarget = objects[project.firstOf('targets')];
+  final firstTarget = project
+      .listOf('targets')
+      .map((uuid) => objects[uuid])
+      .nonNulls
+      .where((target) => target.isa == 'PBXNativeTarget')
+      .firstOrNull;
   final owned = <String>[];
 
   void collect(String scope, String? list, {String? only}) {
@@ -73,9 +81,7 @@ String buildSettingsOwnedContent(String source) {
 
       for (final entry in config.settings.entries) {
         if (only == null || entry.key == only) {
-          owned.add(
-            '${OwnedBuildSettings.keyOf(scope, name, entry.key)} = ${entry.value}',
-          );
+          owned.add('$scope/$name/${entry.key} = ${entry.value}');
         }
       }
     }
@@ -111,6 +117,27 @@ final _listItem = RegExp(
 final _name = RegExp(r'^\t\t\tname = (?:"((?:[^"\\]|\\.)*)"|([^;"\s]+));\s*$');
 final _settingsStart = RegExp(r'^\t\t\tbuildSettings = \{\s*$');
 final _setting = RegExp(r'^\t\t\t\t("(?:[^"\\]|\\.)*"|[^\s=;"]+) = ');
+
+/// What a value or a list item says, without the quotes around it and the `;`
+/// or `,` that ends it.
+String _decode(String text) {
+  final trimmed = text.trim();
+  final end = trimmed.endsWith(';') || trimmed.endsWith(',')
+      ? trimmed.substring(0, trimmed.length - 1)
+      : trimmed;
+
+  return _unquote(end.trimRight());
+}
+
+String _unquote(String text) {
+  if (text.length < 2 || !text.startsWith('"') || !text.endsWith('"')) {
+    return text;
+  }
+
+  return text
+      .substring(1, text.length - 1)
+      .replaceAllMapped(RegExp(r'\\(.)'), (match) => match.group(1)!);
+}
 
 /// The multi-line objects of the file, by UUID.
 Map<String, _Object> _objects(String source) {
@@ -189,10 +216,9 @@ final class _Object {
     return items;
   }
 
-  String? firstOf(String attribute) => listOf(attribute).firstOrNull;
-
-  /// The build settings, by setting as the file spells it, with the lines of the
-  /// entry (a list takes several).
+  /// The build settings, by setting, with the lines of the entry (a list takes
+  /// several), decoded: the spelling of a value (quoted or not) is not part of
+  /// it.
   Map<String, String> get settings {
     final entries = <String, String>{};
     var inside = false;
@@ -220,10 +246,10 @@ final class _Object {
 
       if (_setting.firstMatch(line) case final match?) {
         flush();
-        key = match.group(1)!;
-        value.add(line.substring(match.end));
+        key = _unquote(match.group(1)!);
+        value.add(_decode(line.substring(match.end)));
       } else {
-        value.add(line);
+        value.add(_decode(line));
       }
     }
 

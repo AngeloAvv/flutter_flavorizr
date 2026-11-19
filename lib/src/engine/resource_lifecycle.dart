@@ -194,6 +194,7 @@ class ResourceLifecycle {
           step.processor.id,
           stepContext.ownedKeys[step.processor.id] ?? const {},
         );
+        stepContext.edited.forEach(ctx.reportEdited);
 
         await tearDownAll([
           for (final key in open.keys)

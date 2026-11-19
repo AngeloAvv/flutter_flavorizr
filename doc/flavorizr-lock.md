@@ -42,8 +42,8 @@ processors:
   ios:buildTargets:
     keys:
       ios/Runner.xcodeproj/project.pbxproj:
-        project/Debug-dev/SWIFT_VERSION: sha256:5cc31a
-        target/Debug-dev/PRODUCT_NAME: sha256:9d8e1f
+        project/C93DD37D645EA448590670D3/SWIFT_VERSION: sha256:5cc31a
+        target/0A5C1A5E4B1C0D2F3E4A5B6C/PRODUCT_NAME: sha256:9d8e1f
   android:icons:
     inputs:
       android/app/src/dev/res/mipmap-hdpi/ic_launcher.png: sha256:e8a6b7
@@ -183,14 +183,17 @@ in `keys`, under `project.pbxproj`:
 ios:buildTargets:
   keys:
     ios/Runner.xcodeproj/project.pbxproj:
-      project/Debug-dev/SWIFT_VERSION: sha256:5cc31a
-      target/Debug-dev/PRODUCT_NAME: sha256:9d8e1f
+      project/C93DD37D645EA448590670D3/SWIFT_VERSION: sha256:5cc31a
+      target/0A5C1A5E4B1C0D2F3E4A5B6C/PRODUCT_NAME: sha256:9d8e1f
 ```
 
-A key is `<scope>/<configuration>/<setting>`: `project` is a configuration of
-the project (the settings of the yaml: `PRODUCT_BUNDLE_IDENTIFIER`,
+A key is `<scope>/<configuration UUID>/<setting>`: `project` is a configuration
+of the project (the settings of the yaml: `PRODUCT_BUNDLE_IDENTIFIER`,
 `SWIFT_VERSION`, and so on), `target` one of the first native target of the
-project (`PRODUCT_NAME`). The value is the hash of what flavorizr wrote, as JSON.
+project (`PRODUCT_NAME`). The configuration is told by its UUID, since every
+target has a `Debug-dev`. The value is the hash of what flavorizr wrote, as JSON,
+in the form the project stores it (a flag string such as `-ObjC -all_load` is a
+list in `OTHER_LDFLAGS`).
 
 * **Other settings are never touched.** A `DEVELOPMENT_TEAM`, a
   `CODE_SIGN_STYLE` or anything else you or Xcode put in a configuration
@@ -198,7 +201,16 @@ project (`PRODUCT_NAME`). The value is the hash of what flavorizr wrote, as JSON
 * **A setting that is not wanted anymore** (it left the yaml, or its flavor did)
   is removed **only when its value is still the one flavorizr wrote**. If you
   changed it, the value is yours: it stays, and flavorizr stops owning it.
-* **Editing an owned setting by hand is a conflict.** The lock hashes the
+* **A configuration that holds settings of yours stays.** The configurations of
+  a flavor you remove go with it, unless they hold a setting flavorizr did not
+  write (a `DEVELOPMENT_TEAM` in the target one, anything that differs from the
+  `Debug`, `Profile` or `Release` configuration it started as in the project
+  one): they stay in the project, flavorizr stops owning them, and the lock
+  forgets them.
+* **Editing an owned setting by hand is a conflict.** A run that has to write
+  over a value it recorded finds it was changed and asks first, whichever
+  processors ran before it: that does not depend on the hash of the file, which
+  the other processors that write `project.pbxproj` move. The lock also hashes the
   settings of the `<Mode>-<flavor>` configurations of the project and the
   `PRODUCT_NAME` of the ones of the target (the rest of the target is never
   hashed), so a run that has to write over the value you put asks first, as it

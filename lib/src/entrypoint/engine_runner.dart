@@ -198,6 +198,7 @@ Future<EngineRun> runEngine(
         await shadow.diff(
           tracked: ctx.tracked,
           overwriteScaffold: overwriteScaffold,
+          edited: ctx.edited,
           recordedHashes: {
             for (final processor
                 in previous?.processors.values ?? const <ProcessorLock>[])

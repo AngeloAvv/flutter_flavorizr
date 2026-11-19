@@ -83,6 +83,16 @@ void main() {
   XCBuildConfiguration targetConfig(XcodeProject xcodeproj, String name) =>
       xcodeproj.nativeTargets.first.buildConfigurationList![name]!;
 
+  /// The name the lock gives to a setting of a configuration.
+  Future<String> keyOf(String scope, String name, String setting) async {
+    final xcodeproj = await open();
+    final config = scope == OwnedBuildSettings.projectScope
+        ? projectConfig(xcodeproj, name)
+        : targetConfig(xcodeproj, name);
+
+    return OwnedBuildSettings.keyOf(scope, config.uuid, setting);
+  }
+
   setUpAll(() {
     temp = Directory.systemTemp.createTempSync('flavorizr_build_targets_');
   });
@@ -157,18 +167,17 @@ void main() {
 
       final keys = (await locked()).keys[_iosPbxproj]!;
 
+      final swift = await keyOf('project', 'Debug-dev', 'SWIFT_VERSION');
+
       expect(
         keys.keys,
         containsAll([
-          'project/Debug-dev/SWIFT_VERSION',
-          'project/Release-dev/PRODUCT_BUNDLE_IDENTIFIER',
-          'target/Profile-dev/PRODUCT_NAME',
+          swift,
+          await keyOf('project', 'Release-dev', 'PRODUCT_BUNDLE_IDENTIFIER'),
+          await keyOf('target', 'Profile-dev', 'PRODUCT_NAME'),
         ]),
       );
-      expect(
-        keys['project/Debug-dev/SWIFT_VERSION'],
-        OwnedBuildSettings.hashOf('5.0'),
-      );
+      expect(keys[swift], OwnedBuildSettings.hashOf('5.0'));
       expect(keys.keys, everyElement(isNot(contains('DEVELOPMENT_TEAM'))));
     });
 
@@ -328,7 +337,7 @@ void main() {
         }
         expect(
           (await locked()).keys[_iosPbxproj]!.keys,
-          isNot(contains('project/Debug-dev/MY_SETTING')),
+          isNot(contains(await keyOf('project', 'Debug-dev', 'MY_SETTING'))),
         );
       });
 
@@ -374,7 +383,7 @@ void main() {
           );
           expect(
             (await locked()).keys[_iosPbxproj]!.keys,
-            isNot(contains('project/Debug-dev/MY_SETTING')),
+            isNot(contains(await keyOf('project', 'Debug-dev', 'MY_SETTING'))),
             reason: 'flavorizr does not own it anymore',
           );
         },
@@ -387,12 +396,13 @@ void main() {
           _config(['dev', 'prod'], ios: _settings({'MY_SETTING': 'one'})),
         );
         await apply();
-        await edit((xcodeproj) {
-          targetConfig(xcodeproj, 'Debug-prod').buildSettings = {
-            ...targetConfig(xcodeproj, 'Debug-prod').buildSettings,
-            'DEVELOPMENT_TEAM': 'ABCDE12345',
-          };
-        });
+
+        final dropped = {
+          for (final name in ['Debug-prod', 'Profile-prod', 'Release-prod'])
+            projectConfig(await open(), name).uuid,
+          for (final name in ['Debug-prod', 'Profile-prod', 'Release-prod'])
+            targetConfig(await open(), name).uuid,
+        };
 
         project.write(
           'flavorizr.yaml',
@@ -424,10 +434,83 @@ void main() {
           'one',
         );
         expect(
-          (await locked()).keys[_iosPbxproj]!.keys,
-          everyElement(isNot(contains('prod'))),
+          (await locked()).keys[_iosPbxproj]!.keys.map((k) => k.split('/')[1]),
+          everyElement(isNot(isIn(dropped))),
         );
         expect(danglingUuids(project.read(_iosPbxproj)), isEmpty);
+      });
+
+      test('but a configuration that holds a setting of the user stays, with '
+          'that setting, and is not flavorizr\'s anymore', () async {
+        project.write('flavorizr.yaml', _config(['dev', 'prod']));
+        await apply();
+        await edit((xcodeproj) {
+          targetConfig(xcodeproj, 'Debug-prod').buildSettings = {
+            ...targetConfig(xcodeproj, 'Debug-prod').buildSettings,
+            'DEVELOPMENT_TEAM': 'ABCDE12345',
+          };
+          projectConfig(xcodeproj, 'Release-prod').buildSettings = {
+            ...projectConfig(xcodeproj, 'Release-prod').buildSettings,
+            'DEVELOPMENT_TEAM': 'FGHIJ67890',
+          };
+        });
+        final kept = {
+          targetConfig(await open(), 'Debug-prod').uuid,
+          projectConfig(await open(), 'Release-prod').uuid,
+        };
+
+        project.write('flavorizr.yaml', _config(['dev']));
+        // What the user added to a configuration of the project is part of what
+        // the lock hashes, so the run asks about the project first.
+        final code = await apply(['--on-conflict', 'overwrite']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+
+        final xcodeproj = await open();
+
+        expect(targetConfig(xcodeproj, 'Debug-prod').buildSettings, {
+          'DEVELOPMENT_TEAM': 'ABCDE12345',
+        });
+        expect(
+          projectConfig(xcodeproj, 'Release-prod').buildSettings,
+          containsPair('DEVELOPMENT_TEAM', 'FGHIJ67890'),
+        );
+        expect(
+          xcodeproj.buildConfigurationList.buildConfigurations.map(
+            (c) => c.name,
+          ),
+          allOf(
+            contains('Release-prod'),
+            isNot(contains('Debug-prod')),
+            isNot(contains('Profile-prod')),
+          ),
+        );
+        expect(
+          xcodeproj
+              .nativeTargets
+              .first
+              .buildConfigurationList!
+              .buildConfigurations
+              .map((c) => c.name),
+          allOf(
+            contains('Debug-prod'),
+            isNot(contains('Release-prod')),
+            isNot(contains('Profile-prod')),
+          ),
+        );
+        expect(
+          (await locked()).objects[_iosPbxproj]!.intersection(kept),
+          isEmpty,
+          reason: 'the user has them now',
+        );
+        expect(danglingUuids(project.read(_iosPbxproj)), isEmpty);
+
+        // And they stay on the next run.
+        expect(await apply(), ExitCodes.ok, reason: project.logger.output);
+        expect(
+          targetConfig(await open(), 'Debug-prod').buildSettings,
+          containsPair('DEVELOPMENT_TEAM', 'ABCDE12345'),
+        );
       });
     });
 
@@ -506,6 +589,84 @@ void main() {
 
           expect(code, ExitCodes.ok, reason: project.logger.output);
         },
+      );
+    });
+
+    test('a run of ios:xcconfig alone does not hide a hand edit of a build '
+        'setting from the next run of ios:buildTargets', () async {
+      expect(
+        await project.run([
+          'apply',
+          '--yes',
+          'ios:xcconfig',
+          'ios:buildTargets',
+        ]),
+        ExitCodes.ok,
+        reason: project.logger.output,
+      );
+      await edit((xcodeproj) {
+        projectConfig(xcodeproj, 'Debug-dev').buildSettings = {
+          ...projectConfig(xcodeproj, 'Debug-dev').buildSettings,
+          'SWIFT_VERSION': '6.0',
+        };
+      });
+
+      expect(
+        await project.run(['apply', '--yes', 'ios:xcconfig']),
+        ExitCodes.ok,
+        reason: project.logger.output,
+      );
+
+      final code = await apply();
+
+      expect(code, ExitCodes.attention, reason: project.logger.output);
+      expect(
+        projectConfig(await open(), 'Debug-dev').buildSettings['SWIFT_VERSION'],
+        '6.0',
+      );
+    });
+
+    test('refuses a configuration with no iOS flavor left, instead of '
+        'leaving what it owns behind', () async {
+      await apply();
+      final before = project.snapshot();
+
+      project.write('flavorizr.yaml', '''
+flavors:
+  dev:
+    app:
+      name: Dev
+    macos:
+      bundleId: com.example.dev
+''');
+      before['flavorizr.yaml'] = project.read('flavorizr.yaml');
+
+      final code = await apply();
+
+      expect(code, ExitCodes.data, reason: project.logger.output);
+      expect(project.snapshot(), before);
+    });
+
+    test('writes a flag setting the way the project stores it, and removes it '
+        'when it leaves the yaml', () async {
+      project.write(
+        'flavorizr.yaml',
+        _config(['dev'], ios: _settings({'OTHER_LDFLAGS': '-ObjC -all_load'})),
+      );
+      await apply();
+
+      expect(
+        projectConfig(await open(), 'Debug-dev').buildSettings['OTHER_LDFLAGS'],
+        ['-ObjC', '-all_load'],
+      );
+
+      project.write('flavorizr.yaml', _config(['dev']));
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(
+        projectConfig(await open(), 'Debug-dev').buildSettings,
+        isNot(contains('OTHER_LDFLAGS')),
       );
     });
 
@@ -594,7 +755,15 @@ flavors:
           'macos:buildTargets',
           macos,
         )).keys['$_macosProject/project.pbxproj']!.keys,
-        contains('project/Debug-dev/PRODUCT_BUNDLE_IDENTIFIER'),
+        contains(
+          OwnedBuildSettings.keyOf(
+            'project',
+            (await XcodeProject.open(
+              macos.abs(_macosProject),
+            )).buildConfigurationList['Debug-dev']!.uuid,
+            'PRODUCT_BUNDLE_IDENTIFIER',
+          ),
+        ),
       );
     });
   });

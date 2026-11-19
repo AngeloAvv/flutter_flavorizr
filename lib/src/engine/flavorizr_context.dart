@@ -84,6 +84,7 @@ class FlavorizrContext {
   final Map<String, Map<String, Set<String>>> _ownedObjects = {};
   final Map<String, Map<String, Map<String, String>>> _previousKeys;
   final Map<String, Map<String, Map<String, String>>> _ownedKeys = {};
+  final Set<String> _edited = {};
 
   /// Creates a context.
   ///
@@ -284,6 +285,28 @@ class FlavorizrContext {
           .putIfAbsent(canonicalPath(path), () => {})
           .addAll(hashes);
     }
+  }
+
+  /// The files whose owned content a processor found edited by hand, by
+  /// canonical path: see [reportEdited].
+  Set<String> get edited => Set.unmodifiable(_edited);
+
+  /// Says that the owned content of the file at [path], relative to the
+  /// project, was edited by hand since the processor wrote it, and that the
+  /// processor is about to write over it.
+  ///
+  /// It is for what the hash of the file cannot tell: a processor that owns
+  /// some keys of a file other processors own as well (the build settings of
+  /// the project of Xcode) compares what it finds with what it recorded in the
+  /// lock (see [previousKeysOf]). The run then does not write the file without
+  /// the user's say, as for any file edited by hand, and a run of another
+  /// processor that writes the same file does not hide the edit.
+  ///
+  /// The path must stay within [root], otherwise an [ArgumentError] is thrown.
+  void reportEdited(String path) {
+    resolve(path);
+
+    _edited.add(canonicalPath(path));
   }
 
   String _requireProcessor() =>
