@@ -54,7 +54,7 @@ abstract final class Flavorizr {
   /// id, which is the only way to take one: replacing `flutter:app` is how the
   /// Flutter code that is generated is customized. An override takes the place
   /// of the processor in the recipes, and works on the paths of the processor
-  /// it replaces as well as on its own. An id that flavorizr does not have is
+  /// it replaces as well as on its own (when that one is on the engine). An id that flavorizr does not have is
   /// an error. `flavorizr list` tells which processors are overridden.
   static Future<void> run(
     List<String> args, {

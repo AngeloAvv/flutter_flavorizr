@@ -385,6 +385,26 @@ void main() {
       );
     });
 
+    test('are refused for the id of a processor of the user', () {
+      final registry = ProcessorRegistry.standard().withProcessors([
+        const _Named('acme:one'),
+      ]);
+
+      expect(
+        () => registry.withProcessors(
+          const [],
+          overrides: [const _Named('acme:one')],
+        ),
+        throwsA(isA<InvalidProcessorRegistrationException>()),
+      );
+      expect(
+        registry
+            .withProcessors(const [], overrides: [const _Named('flutter:app')])
+            .overriddenIds,
+        {'flutter:app'},
+      );
+    });
+
     test('are refused twice for the same id', () {
       expect(
         () => override([

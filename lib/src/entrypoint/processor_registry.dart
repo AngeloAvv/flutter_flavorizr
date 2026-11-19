@@ -126,6 +126,10 @@ class ProcessorRegistry {
   final Map<String, EngineProcessor> _engine;
   final Set<String> _legacyIds;
   final Set<String> _overridden = {};
+
+  /// The ids of the processors of flavorizr: the only ones an override can
+  /// replace, whatever the registry has been extended with.
+  Set<String> _builtIn = const {};
   final Map<ResourceKey<Object?>, EngineResource> _resources;
 
   /// Creates a registry of [engine] processors, the legacy processors named by
@@ -139,7 +143,9 @@ class ProcessorRegistry {
        _legacyIds = {
          for (final id in legacyIds)
            if (!engine.any((entry) => entry.processor.id == id)) id,
-       };
+       } {
+    _builtIn = {..._engine.keys, ..._legacyIds};
+  }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
   /// xcconfig, Podfile and Info.plist processors that were ported run on the
@@ -306,7 +312,12 @@ class ProcessorRegistry {
   /// namespace of flavorizr (see [reservedNamespaces]). The [overrides] replace
   /// a processor of flavorizr, the one that has their id: they take its place
   /// in the recipes and in the dependencies of the other processors, and work
-  /// on the paths of the processor they replace as well as their own.
+  /// on the paths of the processor they replace as well as their own, when it
+  /// is one of the engine: a processor that still is a 2.x one declares none.
+  /// What an override patches in a file, it declares in [FlavorizrProcessor.ownedContent],
+  /// which replaces the one of the processor for that file: otherwise the lock
+  /// hashes the part the replaced processor owned, not what the override
+  /// changes.
   ///
   /// Throws a [DuplicateProcessorException] when the id of a processor is
   /// already taken, by this registry or by another processor of the user, and
@@ -319,8 +330,8 @@ class ProcessorRegistry {
     // Read once: a lazy iterable may not give the same processors twice.
     final added = processors.toList(growable: false);
     final replaced = overrides.toList(growable: false);
-    final builtIn = {...ids};
-    final taken = {...builtIn};
+    final builtIn = _builtIn;
+    final taken = {...ids};
 
     for (final processor in added) {
       if (builtIn.contains(processor.id)) {
@@ -358,18 +369,20 @@ class ProcessorRegistry {
     }
 
     return ProcessorRegistry(
-      engine: [
-        ...engine.values,
-        for (final processor in added)
-          EngineProcessor(
-            processor,
-            paths: processor.paths,
-            ownedContent: processor.ownedContent,
-          ),
-      ],
-      legacyIds: _legacyIds,
-      resources: _resources.values,
-    ).._overridden.addAll({..._overridden, ...replacing});
+        engine: [
+          ...engine.values,
+          for (final processor in added)
+            EngineProcessor(
+              processor,
+              paths: processor.paths,
+              ownedContent: processor.ownedContent,
+            ),
+        ],
+        legacyIds: _legacyIds,
+        resources: _resources.values,
+      )
+      .._overridden.addAll({..._overridden, ...replacing})
+      .._builtIn = builtIn;
   }
 
   /// The ids of the processors of flavorizr that a processor of the user

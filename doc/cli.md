@@ -315,7 +315,11 @@ recipes:
 
   The override takes the place of the processor in the recipes and in the
   `needs` of the other processors, and it works on the paths of the processor it
-  replaces as well as on its own. `flavorizr list` marks it `(overridden)`, and
+  replaces as well as on its own, when that one is on the engine (one that still
+  is a 2.x processor declares none). An override that patches a file declares
+  what it owns in it, with `ownedContent`: that replaces the one of the
+  processor for that file, and without it the lock would hash what the replaced
+  processor owned, not what the override changes. `flavorizr list` marks it `(overridden)`, and
   `overridden` is `true` in its JSON. An id that flavorizr does not have cannot
   be overridden.
 * **The files of your processors must be pure Dart.** `tool/flavorizr.dart` runs
