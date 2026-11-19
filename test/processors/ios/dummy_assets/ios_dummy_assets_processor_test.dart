@@ -47,8 +47,8 @@ void main() {
 
   test(
     'IOSDummyAssetsProcessor.execute copies the LaunchImage set into a flavor-specific folder and no AppIcon set',
-    () {
-      TestUtils.withTempDir((dir) async {
+    () async {
+      await TestUtils.withTempDir((dir) async {
         final source = p.join(dir.path, 'source');
         final destination = p.join(dir.path, 'destination');
         Directory(source).createSync(recursive: true);
