@@ -91,6 +91,7 @@ class Parser {
 
     _checkKeys(root, root, configFileName, visited: Set<YamlNode>.identity());
     _checkRemovedKeys(root, configFileName);
+    _checkCustomConfig(root, configFileName);
 
     try {
       return isFlavorizrFile
@@ -208,6 +209,68 @@ class Parser {
           '${complete ? '\n\n$yaml\n' : ''}',
       location: _location(file, key),
     );
+  }
+
+  /// Fails on what the `customConfig` of a flavor said in 2.x, where it was
+  /// written to Gradle as it was: a text that carries its own quotes, which
+  /// would now be quoted twice, and `manifestPlaceholders`, which is a key of
+  /// the flavor of its own.
+  void _checkCustomConfig(YamlMap root, String file) {
+    final section = _isFlavorizrFile(file) ? root : root.nodes['flavorizr'];
+    final flavors = section is YamlMap ? section.nodes['flavors'] : null;
+
+    if (flavors is! YamlMap) return;
+
+    for (final MapEntry(key: name, value: flavor) in flavors.nodes.entries) {
+      final android = flavor is YamlMap ? flavor.nodes['android'] : null;
+      final custom = android is YamlMap ? android.nodes['customConfig'] : null;
+
+      if (custom is! YamlMap) continue;
+
+      final base = ['flavors', '${(name as YamlNode).value}', 'android'];
+
+      for (final MapEntry(key: key, value: value) in custom.nodes.entries) {
+        final property = [...base, 'customConfig', '${(key as YamlNode).value}'];
+
+        if (key is YamlScalar && key.value == 'manifestPlaceholders') {
+          throw InvalidConfigurationException(
+            '`manifestPlaceholders` is not a property of `customConfig`: it is '
+            'a key of the flavor, `${joinConfigPath(base)}.manifestPlaceholders`, '
+            'whose values are written the way each Gradle script needs. Move '
+            'it there, with a map of names and values.',
+            location: _location(file, key),
+          );
+        }
+
+        _checkQuotedText(value, property, file);
+      }
+    }
+  }
+
+  void _checkQuotedText(YamlNode node, List<String> path, String file) {
+    switch (node) {
+      case YamlScalar(value: final String text)
+          when text.length >= 2 && text.startsWith('"') && text.endsWith('"'):
+        throw InvalidConfigurationException(
+          'The value $text of `${joinConfigPath(path)}` has its own quotes, as '
+          'flavorizr 2.x asked for. 3.0 quotes text itself: write the text as '
+          'it is (${text.substring(1, text.length - 1)}), or `{raw: ...}` for '
+          'code that goes to Gradle as it is.',
+          location: _location(file, node),
+        );
+      // The code of a `raw` is written as it is, quotes included.
+      case YamlMap() when node.length == 1 && node.containsKey('raw'):
+        break;
+      case YamlMap():
+        for (final MapEntry(key: key, value: value) in node.nodes.entries) {
+          _checkQuotedText(value, [...path, '${(key as YamlNode).value}'], file);
+        }
+      case YamlList():
+        for (final (index, item) in node.nodes.indexed) {
+          _checkQuotedText(item, [...path, '$index'], file);
+        }
+      case _:
+    }
   }
 
   bool _isFlavorizrFile(String file) => file.contains(flavorizrPath);

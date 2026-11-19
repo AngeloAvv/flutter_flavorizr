@@ -13,6 +13,7 @@ Android _$AndroidFromJson(Map json) =>
         allowedKeys: const [
           'applicationId',
           'customConfig',
+          'manifestPlaceholders',
           'resValues',
           'buildConfigFields',
           'agconnect',
@@ -25,6 +26,7 @@ Android _$AndroidFromJson(Map json) =>
         disallowNullValues: const [
           'applicationId',
           'customConfig',
+          'manifestPlaceholders',
           'resValues',
           'buildConfigFields',
           'agconnect',
@@ -37,6 +39,10 @@ Android _$AndroidFromJson(Map json) =>
         applicationId: $checkedConvert('applicationId', (v) => v as String),
         customConfig: $checkedConvert(
           'customConfig',
+          (v) => (v as Map?)?.map((k, e) => MapEntry(k as String, e)) ?? {},
+        ),
+        manifestPlaceholders: $checkedConvert(
+          'manifestPlaceholders',
           (v) => (v as Map?)?.map((k, e) => MapEntry(k as String, e)) ?? {},
         ),
         resValues: $checkedConvert(

@@ -48,7 +48,12 @@ const _platforms = ['android', 'ios', 'macos', 'linux', 'windows'];
 
 /// What each flavor says about [platform].
 const _platformSection = {
-  'android': 'android:\n      applicationId: "com.example.%s"',
+  // `customConfig` and `manifestPlaceholders` are written in Kotlin here, as
+  // `flutter create` makes a Kotlin project, and in Groovy by the tests.
+  'android':
+      'android:\n      applicationId: "com.example.%s"'
+      '\n      customConfig:\n        versionNameSuffix: "-%s"'
+      '\n      manifestPlaceholders:\n        flavorScheme: "%s"',
   'ios': 'ios:\n      bundleId: "com.example.%s"',
   'macos': 'macos:\n      bundleId: "com.example.%s"',
   'linux': 'linux:\n      applicationId: "com.example.%s"',

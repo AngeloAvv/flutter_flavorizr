@@ -375,37 +375,55 @@ flavorizr:
             target: release
 ```
 
-#### customConfig (for Android only)
+#### customConfig and manifestPlaceholders (for Android only)
 
-You can define any custom property for android
+Any property of the flavor in Gradle. Values are written in the language of the
+script, Groovy or Kotlin, whichever your `build.gradle` is:
+
 ```yml
 flavors:
   apple:
     app:
       name: "Apple App"
-  
+
     android:
       applicationId: "com.example.apple"
       customConfig:
-          versionNameSuffix: "\"-green-prod\"" # Don't forget to escape strings with \"
-          signingConfig: flavorSigning.green
-          versionCode: 1000
-          minSdkVersion: 23
-          # ..... and any custom property you want to add
+        versionNameSuffix: "-green-prod"     # text: quoted and escaped for you
+        versionCode: 1000                    # numbers and booleans as they are
+        resourceConfigurations: [en, it]     # a list
+        signingConfig: {raw: flavorSigning.green}   # code, written as it is
+      manifestPlaceholders:
+        appAuthRedirectScheme: com.example.apple
 ```
 
-This .yml part, generate this custom android flavor:
-
-```groovy
-apple {
-  dimension "flavor-type"
-  applicationId "com.example.apple"
-  versionNameSuffix "-green-prod"
-  signingConfig flavorSigning.green
-  versionCode 1000
-  minSdkVersion 23
+```kotlin
+// build.gradle.kts
+create("apple") {
+    versionNameSuffix = "-green-prod"
+    versionCode = 1000
+    resourceConfigurations = listOf("en", "it")
+    signingConfig = flavorSigning.green
+    manifestPlaceholders["appAuthRedirectScheme"] = "com.example.apple"
 }
 ```
+
+```groovy
+// build.gradle
+apple {
+    versionNameSuffix "-green-prod"
+    versionCode 1000
+    resourceConfigurations = ["en", "it"]
+    signingConfig flavorSigning.green
+    manifestPlaceholders = ["appAuthRedirectScheme": "com.example.apple"]
+}
+```
+
+* A text is always a string, so it needs no escaped quotes (2.x asked for
+  `"\"-green-prod\""`: that is an error now). Code that is not a literal, such as
+  `flavorSigning.green`, is `{raw: ...}`.
+* `manifestPlaceholders` is a key of the flavor, not of `customConfig`, and
+  works in both languages.
 
 #### adaptiveIcon (for Android only)
 

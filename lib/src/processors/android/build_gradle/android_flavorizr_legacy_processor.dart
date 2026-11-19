@@ -28,6 +28,7 @@ import 'dart:collection';
 import 'package:flutter_flavorizr/src/parser/models/config/android.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/gradle_value.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
 class AndroidFlavorizrLegacyProcessor extends StringProcessor {
@@ -83,8 +84,19 @@ class AndroidFlavorizrLegacyProcessor extends StringProcessor {
           '            applicationId "${flavor.android?.applicationId}"');
 
       flavor.android?.customConfig.forEach((key, value) {
-        buffer.writeln('            $key $value');
+        buffer.writeln(
+          '            $key ${gradleIsCollection(value) ? '= ' : ''}'
+          '${gradleValue(value, GradleDsl.groovy)}',
+        );
       });
+
+      final placeholders = flavor.android?.manifestPlaceholders ?? const {};
+      if (placeholders.isNotEmpty) {
+        buffer.writeln(
+          '            manifestPlaceholders = '
+          '${gradleValue(placeholders, GradleDsl.groovy)}',
+        );
+      }
 
       final Map<String, ResValue> resValues = LinkedHashMap.from({
         'app_name': ResValue(

@@ -28,6 +28,7 @@ import 'dart:collection';
 import 'package:flutter_flavorizr/src/parser/models/config/android.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
+import 'package:flutter_flavorizr/src/processors/android/build_gradle/gradle_value.dart';
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
 class AndroidFlavorizrKotlinProcessor extends StringProcessor {
@@ -91,7 +92,16 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
           '            applicationId = "${flavor.android?.applicationId}"');
 
       flavor.android?.customConfig.forEach((key, value) {
-        buffer.writeln('            $key = $value');
+        buffer.writeln(
+          '            $key = ${gradleValue(value, GradleDsl.kotlin)}',
+        );
+      });
+
+      flavor.android?.manifestPlaceholders.forEach((name, value) {
+        buffer.writeln(
+          '            manifestPlaceholders[${gradleString(name)}] = '
+          '${gradleValue(value, GradleDsl.kotlin)}',
+        );
       });
 
       final Map<String, ResValue> resValues = LinkedHashMap.from({
