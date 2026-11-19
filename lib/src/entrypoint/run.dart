@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/apply_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/doctor_command.dart';
@@ -42,8 +43,29 @@ import 'package:mason_logger/mason_logger.dart';
 ///
 /// Ends the process with the exit code of the command when it is not `0`: see
 /// [ExitCodes]. With no command, `apply` runs.
-Future<void> execute(List<String> args) async {
-  final code = await run(args, context: CliContext.standard(logger: Logger()));
+///
+/// The [processors] are the ones of the project, added to the ones of
+/// flavorizr.
+Future<void> execute(
+  List<String> args, {
+  Iterable<FlavorizrProcessor> processors = const [],
+}) async {
+  final logger = Logger();
+  final int code;
+
+  try {
+    code = await run(
+      args,
+      context: CliContext.standard(logger: logger, processors: processors),
+    );
+  } on Object catch (error) {
+    // The processors of the project are checked before any command runs.
+    final code = ExitCodes.of(error);
+    if (code == null) rethrow;
+
+    logger.err('$error');
+    exit(code);
+  }
 
   if (code != ExitCodes.ok) exit(code);
 }

@@ -59,6 +59,7 @@ import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
+import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -119,7 +120,7 @@ final class EngineResource {
 /// atomically, or it still is a 2.x one, which the legacy pipeline applies
 /// straight to the project. Porting a processor moves it from the second kind
 /// to the first: it is added to [ProcessorRegistry.standard], and the CLI needs
-/// no other change. Processors of the user would be registered the same way.
+/// no other change. Processors of the user are added with [withProcessors].
 class ProcessorRegistry {
   final Map<String, EngineProcessor> _engine;
   final Set<String> _legacyIds;
@@ -295,6 +296,38 @@ class ProcessorRegistry {
     legacyIds: Processor.defaultInstructionSet,
   );
 
+  /// This registry with the [processors] of the user, which run on the engine
+  /// and declare the paths they work on and the part of a patched file they
+  /// own themselves.
+  ///
+  /// Throws a [DuplicateProcessorException] when the id of a processor is
+  /// already taken, by this registry or by another of [processors].
+  ProcessorRegistry withProcessors(Iterable<FlavorizrProcessor> processors) {
+    // Read once: a lazy iterable may not give the same processors twice.
+    final added = processors.toList(growable: false);
+    final taken = {...ids};
+
+    for (final processor in added) {
+      if (!taken.add(processor.id)) {
+        throw DuplicateProcessorException(processor.id);
+      }
+    }
+
+    return ProcessorRegistry(
+      engine: [
+        ..._engine.values,
+        for (final processor in added)
+          EngineProcessor(
+            processor,
+            paths: processor.paths,
+            ownedContent: processor.ownedContent,
+          ),
+      ],
+      legacyIds: _legacyIds,
+      resources: _resources.values,
+    );
+  }
+
   /// The processors that run on the engine, by id.
   Map<String, FlavorizrProcessor> get engineProcessors => {
     for (final entry in _engine.entries) entry.key: entry.value.processor,
@@ -347,17 +380,27 @@ class ProcessorRegistry {
   String hash(Artifact artifact, List<int> bytes) {
     if (artifact.ownership != Ownership.patched) return digestOf(bytes);
 
-    final read = [
+    final readers = [
       ..._engine.values.map((entry) => entry.ownedContent[artifact.path]),
       ..._resources.values.map((entry) => entry.ownedContent[artifact.path]),
-    ].nonNulls.firstOrNull;
+    ].nonNulls.toList(growable: false);
 
-    if (read == null) return digestOf(bytes);
+    if (readers.isEmpty) return digestOf(bytes);
 
     final text = utf8.decode(bytes, allowMalformed: true);
+    final source = text.startsWith('\ufeff') ? text.substring(1) : text;
 
+    final parts = [for (final read in readers) read(source)];
+
+    // Processors may own different parts of the same file: every part counts.
+    // Each is framed by its length, so that where one ends and the next starts
+    // is part of what is hashed. A file with one owner hashes its part as is.
     return digestOf(
-      utf8.encode(read(text.startsWith('﻿') ? text.substring(1) : text)),
+      utf8.encode(
+        parts.length == 1
+            ? parts.single
+            : [for (final part in parts) '${part.length}:$part'].join(),
+      ),
     );
   }
 }
