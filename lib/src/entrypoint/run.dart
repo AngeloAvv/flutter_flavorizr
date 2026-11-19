@@ -29,6 +29,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/adopt_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/apply_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/doctor_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
@@ -159,6 +160,7 @@ class _Runner extends CommandRunner<int> {
       ApplyCommand(_context),
       PlanCommand(_context),
       StatusCommand(_context),
+      AdoptCommand(_context),
       ListCommand(_context),
       DoctorCommand(_context),
     ].forEach(addCommand);
