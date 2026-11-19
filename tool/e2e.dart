@@ -36,6 +36,10 @@
 //    second `plan` has nothing to do again;
 // 4. the flavor that is left builds.
 //
+// On iOS the flavors have a launch screen (`launchScreen: true`), so the build
+// also compiles the storyboard and the image sets flavorizr generated, and the
+// files of the flavor that was dropped are gone.
+//
 // The files of the project are the ones `flutter create` writes, so a change of
 // Flutter that a processor does not follow is found here.
 
@@ -72,8 +76,9 @@ const _build = {
 
 String _config(String platform, Iterable<String> flavors) {
   final section = _platformSection[platform]!;
+  final root = platform == 'ios' ? 'launchScreen: true\n' : '';
 
-  return 'flavors:\n${[for (final flavor in flavors) '  $flavor:\n    app:\n      name: "$flavor"\n'
+  return '${root}flavors:\n${[for (final flavor in flavors) '  $flavor:\n    app:\n      name: "$flavor"\n'
         '    ${section.replaceAll('%s', flavor)}\n'].join()}';
 }
 
@@ -137,10 +142,30 @@ Future<void> _e2e(String platform, Directory checkout) async {
     await _flavorizr(project, ['apply', '--yes', '--overwrite-scaffold']);
     await _expectNothingToDo(project, 'a second run');
 
+    if (platform == 'ios') _expectLaunchScreens(project, ['apple', 'banana']);
+
     _step('remove banana');
     config.writeAsStringSync(_config(platform, ['apple']));
     await _flavorizr(project, ['apply', '--yes']);
     await _expectNothingToDo(project, 'the removal of a flavor');
+
+    if (platform == 'ios') {
+      _expectLaunchScreens(project, ['apple']);
+
+      if (File(
+            p.join(project.path, 'ios/Runner/bananaLaunchScreen.storyboard'),
+          ).existsSync() ||
+          Directory(
+            p.join(
+              project.path,
+              'ios/Runner/Assets.xcassets/bananaLaunchImage.imageset',
+            ),
+          ).existsSync()) {
+        _fail(
+          'The launch screen of the flavor that was removed is still there.',
+        );
+      }
+    }
 
     final lock = File(p.join(project.path, 'flavorizr.lock'));
 
@@ -152,6 +177,41 @@ Future<void> _e2e(String platform, Directory checkout) async {
     await _run(project, 'flutter', [..._build[platform]!, '--flavor', 'apple']);
   } finally {
     workspace.deleteSync(recursive: true);
+  }
+}
+
+/// Fails unless each of [flavors] has the storyboard, the image set and the
+/// `LAUNCH_SCREEN_NAME` the launch screen is made of, and `Info.plist` points
+/// at it.
+void _expectLaunchScreens(Directory project, List<String> flavors) {
+  String read(String path) =>
+      File(p.join(project.path, path)).readAsStringSync();
+  bool exists(String path) => File(p.join(project.path, path)).existsSync();
+
+  for (final flavor in flavors) {
+    final files = [
+      'ios/Runner/${flavor}LaunchScreen.storyboard',
+      for (final name in ['', '@2x', '@3x'])
+        'ios/Runner/Assets.xcassets/${flavor}LaunchImage.imageset/'
+            'LaunchImage$name.png',
+      'ios/Runner/Assets.xcassets/${flavor}LaunchImage.imageset/Contents.json',
+    ];
+
+    for (final file in files.where((file) => !exists(file))) {
+      _fail('The launch screen of `$flavor` has no `$file`.');
+    }
+
+    for (final mode in ['Debug', 'Profile', 'Release']) {
+      final xcconfig = read('ios/Flutter/$flavor$mode.xcconfig');
+
+      if (!xcconfig.contains('LAUNCH_SCREEN_NAME=${flavor}LaunchScreen')) {
+        _fail('`$flavor$mode.xcconfig` does not define LAUNCH_SCREEN_NAME.');
+      }
+    }
+  }
+
+  if (!read('ios/Runner/Info.plist').contains(r'$(LAUNCH_SCREEN_NAME)')) {
+    _fail('Info.plist does not use LAUNCH_SCREEN_NAME.');
   }
 }
 

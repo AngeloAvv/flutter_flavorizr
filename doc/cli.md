@@ -259,9 +259,9 @@ leaves its configurations in the project, with the settings that you added.
 `ios:plist` and `macos:plist` edit `ios/Runner/Info.plist` and
 `macos/Runner/Info.plist` in place. Only the value of a few `<string>` entries is
 replaced in the text of the file: `CFBundleName` and `CFBundleDisplayName` on
-iOS, `UILaunchStoryboardName` too when `ios:launchScreen` is one of the
-processors of the run (the targets you give it, or the recipe it resolves to), and `CFBundleName` on
-macOS. 2.x parsed the plist and wrote it
+iOS, `UILaunchStoryboardName` too when a flavor has a `launchScreen` (it does
+not depend on the processors of the run: it is a property of the configuration),
+and `CFBundleName` on macOS. 2.x parsed the plist and wrote it
 back pretty printed, which reformatted the whole file: now indentation, line
 endings, comments and the order of every other key are yours, and a plist that
 is up to date is not written at all.
@@ -269,8 +269,9 @@ is up to date is not written at all.
 The lock records the owned keys, so editing one by hand is a conflict, while
 anything else you change in the plist is not drift. `UILaunchStoryboardName` is
 owned only while it has the value flavorizr gives it
-(`$(ASSET_PREFIX)LaunchScreen`): with the launch screen off, the storyboard
-Flutter wrote is yours. A plist without one of the keys, or whose value is not
+(`$(LAUNCH_SCREEN_NAME)`, which each flavor defines in its xcconfig): when the
+last launch screen goes, it goes back to `LaunchScreen` and the storyboard
+Flutter wrote, or the one 2.x set, is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
 ## Firebase
