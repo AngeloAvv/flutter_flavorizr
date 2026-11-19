@@ -1,5 +1,9 @@
+# The tests of the legacy processors change the working directory of the
+# process, which every test file shares: the files run one after the other.
+concurrency: 1
+
 tags:
   # End-to-end golden parity runs: they need Flutter and the network and take
   # minutes, so they are skipped unless asked for.
   parity:
-    skip: "Run with: flutter test --run-skipped -t parity"
+    skip: "Run with: dart test --run-skipped -t parity"

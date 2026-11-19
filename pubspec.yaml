@@ -11,6 +11,9 @@ environment:
 funding:
   - https://github.com/sponsors/AngeloAvv
 
+executables:
+  flavorizr: flutter_flavorizr
+
 platforms:
   android:
   ios:
@@ -19,8 +22,6 @@ platforms:
   windows:
 
 dependencies:
-  flutter:
-    sdk: flutter
   args: ^2.4.2
   checked_yaml: ^2.0.3
   collection: ^1.18.0
@@ -36,9 +37,6 @@ dependencies:
   yaml: ^3.1.2
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: 6.0.0
   build_runner: ^2.4.9
   json_serializable: ^6.7.1
   test: ^1.26.0
