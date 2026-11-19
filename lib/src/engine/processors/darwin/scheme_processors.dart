@@ -155,19 +155,6 @@ abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
     }
   }
 
-  /// The file the build of [target] makes, such as `Runner.app`: the one its
-  /// product reference names, which is not the name of the target on macOS
-  /// (`flutter create` makes `my_app.app` of the target `Runner`), and the
-  /// name of the product with [extension] where the target has none.
-  static String _productName(PBXNativeTarget target, String extension) {
-    final product = target.productReference;
-    final name = product is PBXFileReference ? product.displayName : null;
-
-    return name != null && name.isNotEmpty
-        ? name
-        : '${target.productName ?? target.name}.$extension';
-  }
-
   /// The scheme of [flavor], new: what 2.x wrote, with an entry to build the
   /// app, which Xcode needs to build anything, and the pre-action of Flutter
   /// when [withPrepareAction].
@@ -189,13 +176,23 @@ abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
     final scheme = XCScheme.create();
     final container = 'container:${project.name}.xcodeproj';
 
-    BuildableReference reference(PBXNativeTarget target, String extension) =>
-        BuildableReference()..setReferenceTarget(
-          target.uuid,
-          _productName(target, extension),
-          target.name!,
-          container,
-        );
+    // The product of the app is named after its target: `ios:buildTargets` and
+    // `macos:buildTargets` set `PRODUCT_NAME` of the configurations of the
+    // flavors to `$(TARGET_NAME)`, which is what the scheme builds. It is not
+    // the name of the product reference of the project, which is the one of the
+    // app on macOS (`my_app.app`) and is what the configurations of the flavors
+    // override.
+    BuildableReference reference(
+      PBXNativeTarget target,
+      String extension,
+    ) => BuildableReference()
+      ..setReferenceTarget(
+        target.uuid,
+        '${extension == 'app' ? target.name : target.productName ?? target.name}'
+        '.$extension',
+        target.name!,
+        container,
+      );
 
     SchemeEditor.setBuildConfigurations(scheme, flavor);
 

@@ -413,7 +413,7 @@ void main() {
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "33CC10EC2044A3C60003C045"
-                     BuildableName = "parity_app.app"
+                     BuildableName = "Runner.app"
                      BlueprintName = "Runner"
                      ReferencedContainer = "container:Runner.xcodeproj">
                   </BuildableReference>
@@ -433,7 +433,7 @@ void main() {
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "33CC10EC2044A3C60003C045"
-               BuildableName = "parity_app.app"
+               BuildableName = "Runner.app"
                BlueprintName = "Runner"
                ReferencedContainer = "container:Runner.xcodeproj">
             </BuildableReference>
@@ -475,9 +475,9 @@ void main() {
     }
 
     final before = '$open${close('Runner.app')}';
-    final after = '$open$preActions$entries${close('parity_app.app')}';
+    final after = '$open$preActions$entries${close('Runner.app')}';
 
-    test('takes the pre-action, the build entry and the real product', () {
+    test('takes the pre-action and the build entry', () {
       expect(clean(before, after), isTrue);
     });
 
@@ -503,11 +503,18 @@ void main() {
       );
     });
 
-    test('does not take another product than the app', () {
-      expect(
-        clean(before, '$open$preActions$entries${close('other.app')}'),
-        isFalse,
-      );
+    test('does not take another product in the actions', () {
+      for (final product in ['other.app', 'parity_app.app']) {
+        expect(
+          clean(before, '$open$preActions$entries${close(product)}'),
+          isFalse,
+          reason: product,
+        );
+      }
+    });
+
+    test('does not take a Runner.app that only one side has', () {
+      expect(clean('$open${close('parity_app.app')}', after), isFalse);
     });
 
     test('does not take a change of a build configuration', () {
@@ -516,8 +523,8 @@ void main() {
 
     test('does not take a pre-action or an entry that is there twice', () {
       for (final twice in [
-        '$open$preActions$preActions$entries${close('parity_app.app')}',
-        '$open$preActions$entries$entries${close('parity_app.app')}',
+        '$open$preActions$preActions$entries${close('Runner.app')}',
+        '$open$preActions$entries$entries${close('Runner.app')}',
       ]) {
         expect(clean(before, twice), isFalse, reason: twice);
       }

@@ -136,21 +136,47 @@ void main() {
       }
     });
 
-    test('builds the app the project names, and tests its target', () async {
-      await apply();
+    test(
+      'builds the app the flavor configurations build, and tests its target',
+      () async {
+        await apply();
 
-      final text = scheme('citrus');
+        final text = scheme('citrus');
 
-      expect(text, contains('BlueprintIdentifier = "$_runnerUuid"'));
-      // The product of the target, which is not `Runner.app` on macOS.
-      expect(text, contains('BuildableName = "example.app"'));
-      expect(text, isNot(contains('Runner.app')));
+        expect(text, contains('BlueprintIdentifier = "$_runnerUuid"'));
+        // What the flavor configurations build: they set PRODUCT_NAME to
+        // `$(TARGET_NAME)`, so the app is named after the target, not after the
+        // product reference of the project (`example.app`).
+        expect(text, contains('BuildableName = "Runner.app"'));
+        expect(text, isNot(contains('example.app')));
+        expect(
+          text,
+          contains('ReferencedContainer = "container:Runner.xcodeproj"'),
+        );
+        expect(text, contains('<BuildActionEntry'));
+        expect(text, contains('BuildableName = "RunnerTests.xctest"'));
+      },
+    );
+
+    test('names the product macos:buildTargets gives the configurations of the '
+        'flavor', () async {
+      final code = await project.run([
+        'apply',
+        '--yes',
+        'macos:buildTargets',
+        ..._targets,
+      ]);
+      final pbxproj = project.read('macos/Runner.xcodeproj/project.pbxproj');
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      // `$(TARGET_NAME)` of the target `Runner`, and the scheme says the same.
       expect(
-        text,
-        contains('ReferencedContainer = "container:Runner.xcodeproj"'),
+        RegExp(
+          r'PRODUCT_NAME = "\$\(TARGET_NAME\)";\s*\};\s*name = "Debug-citrus";',
+        ).hasMatch(pbxproj),
+        isTrue,
       );
-      expect(text, contains('<BuildActionEntry'));
-      expect(text, contains('BuildableName = "RunnerTests.xctest"'));
+      expect(scheme('citrus'), contains('BuildableName = "Runner.app"'));
     });
 
     test(

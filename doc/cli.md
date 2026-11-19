@@ -302,9 +302,9 @@ off (`flutter: config: enable-swift-package-manager: false`). The global
 `flutter config` setting and the version of Xcode are not looked at.
 
 The two differ in the script of the pre-action (`xcode_backend.sh prepare` on
-iOS, `macos_assemble.sh prepare` on macOS) and in the app they build, which on
-macOS is the product the target names (`my_app.app`, where 2.x wrote a
-`Runner.app` that does not exist). macOS has no launch screen.
+iOS, `macos_assemble.sh prepare` on macOS). Both build the app named after its
+target (`Runner.app`), which is what the configurations of the flavors build.
+macOS has no launch screen.
 
 ## Firebase
 
