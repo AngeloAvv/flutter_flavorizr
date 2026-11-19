@@ -32,7 +32,7 @@ import 'package:crypto/crypto.dart';
 ///
 /// [json] is the decoded configuration. A flavor is resolved against the
 /// shared `app` section, so the fingerprint covers both: changing the flavor
-/// or the section changes it, and so does the root `badge` or `icon`, while anything else, such as another flavor, a
+/// or the section changes it, and so do the root `badge`, `icon` and `launchScreen`, while anything else, such as another flavor, a
 /// recipe or the order of the keys, does not. It is what `flavorizr.lock`
 /// records to tell which flavors changed since the last run.
 Map<String, String> fingerprintFlavors(Map<dynamic, dynamic> json) {
@@ -43,6 +43,7 @@ Map<String, String> fingerprintFlavors(Map<dynamic, dynamic> json) {
   final shared = _canonical(json['app']);
   final badge = _canonical(json['badge']);
   final icon = _canonical(json['icon']);
+  final launchScreen = _canonical(json['launchScreen']);
 
   return {
     for (final MapEntry(:key, :value) in flavors.entries)
@@ -53,6 +54,7 @@ Map<String, String> fingerprintFlavors(Map<dynamic, dynamic> json) {
           // use them is what it was.
           'badge': ?badge,
           'icon': ?icon,
+          'launchScreen': ?launchScreen,
           'flavor': _canonical(value),
         }),
       ),

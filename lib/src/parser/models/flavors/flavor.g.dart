@@ -18,6 +18,7 @@ Flavor _$FlavorFromJson(Map json) =>
           'linux',
           'windows',
           'badge',
+          'launchScreen',
         ],
         requiredKeys: const ['app'],
         disallowNullValues: const [
@@ -28,6 +29,7 @@ Flavor _$FlavorFromJson(Map json) =>
           'linux',
           'windows',
           'badge',
+          'launchScreen',
         ],
       );
       final val = Flavor(
@@ -36,6 +38,7 @@ Flavor _$FlavorFromJson(Map json) =>
           'badge',
           (v) => v == null ? null : FlavorBadge.fromJson(v as Object),
         ),
+        launchScreen: $checkedConvert('launchScreen', (v) => v as bool?),
         android: $checkedConvert(
           'android',
           (v) => v == null ? null : Android.fromJson(v as Map),

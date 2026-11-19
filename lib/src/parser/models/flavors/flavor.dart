@@ -74,10 +74,16 @@ class Flavor {
   )
   final FlavorBadge? badge;
 
+  /// Whether the flavor has an iOS launch screen made from its icon, or `null`
+  /// when it says nothing and the root decides.
+  @JsonKey(required: false, disallowNullValue: true)
+  final bool? launchScreen;
+
   /// Creates a Flavor.
   const Flavor({
     required this.app,
     this.badge,
+    this.launchScreen,
     this.android,
     this.ios,
     this.macos,
