@@ -43,7 +43,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
 
     logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating flavors in Kotlin DSL');
 
-    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating AppExtension');
+    logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating ApplicationExtension');
     _appendStartContent(buffer);
 
     logger.detail('[$AndroidFlavorizrKotlinProcessor] Generating flavor dimensions');
@@ -62,10 +62,10 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
   }
 
   void _appendStartContent(StringBuffer buffer) {
-    buffer.writeln('import com.android.build.gradle.AppExtension');
+    buffer.writeln('import com.android.build.api.dsl.ApplicationExtension');
     buffer.writeln('');
     buffer.writeln(
-        'val android = project.extensions.getByType(AppExtension::class.java)');
+        'val android = project.extensions.getByType(ApplicationExtension::class.java)');
     buffer.writeln('');
     buffer.writeln('android.apply {');
   }
@@ -74,7 +74,7 @@ class AndroidFlavorizrKotlinProcessor extends StringProcessor {
     final flavorDimension =
         config.app?.android?.flavorDimensions ?? AndroidDefaults.kFlavorDimensionValue;
 
-    buffer.writeln('    flavorDimensions("$flavorDimension")');
+    buffer.writeln('    flavorDimensions += "$flavorDimension"');
     buffer.writeln();
   }
 

@@ -139,3 +139,10 @@
   ignore: '(?<=== "Debug-([\w./-]+)" \]) \|\| \[ "\$CONFIGURATION" == "Profile-\1" \]'
   reason: >-
     Same as ios/firebaseScript.sh, for macos:firebase.
+- path: android/app/flavorizr.gradle.kts
+  reason: >-
+    The Kotlin DSL file is written against `ApplicationExtension`
+    (`com.android.build.api.dsl`), the public DSL, where 2.6.0 used `AppExtension`
+    of `com.android.build.gradle`, the legacy one, which resolves only while
+    Flutter forces `android.newDsl=false` (#537). `flavorDimensions` is
+    appended to with `+=` as the new DSL has it. The flavors are the golden ones.
