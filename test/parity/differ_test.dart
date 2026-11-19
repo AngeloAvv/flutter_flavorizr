@@ -350,6 +350,32 @@ void main() {
       });
     }
 
+    test('does not take a build entry that repeats a flag and misses one', () {
+      final repeated = entries.replaceAll(
+        'buildForRunning = "YES"',
+        'buildForTesting = "YES"',
+      );
+
+      expect(repeated, isNot(entries));
+      expect(clean('$open$close', '$open$preActions$repeated$close'), isFalse);
+    });
+
+    test('does not take a build entry with a flag more or less', () {
+      final more = entries.replaceAll(
+        'buildForAnalyzing = "YES">',
+        'buildForAnalyzing = "YES"\n            buildForAnalyzing = "YES">',
+      );
+      final less = entries.replaceAll(
+        '            buildForArchiving = "YES"\n',
+        '',
+      );
+
+      for (final other in [more, less]) {
+        expect(other, isNot(entries));
+        expect(clean('$open$close', '$open$preActions$other$close'), isFalse);
+      }
+    });
+
     test('does not take a build entry that does not build for everything', () {
       final partial = entries.replaceAll(
         'buildForTesting = "YES"',
