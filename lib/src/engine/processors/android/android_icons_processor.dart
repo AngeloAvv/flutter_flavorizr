@@ -153,8 +153,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
           'The badge of the flavor `$flavor` is not drawn on its Android '
           'icons, and flavorizr makes none for it: the foreground of its '
           '`adaptiveIcon`, `${adaptiveIcon.foreground}`, is a vector, which '
-          'cannot be badged. Give it a raster foreground to badge it, or set '
-          '`badge: false` for it.',
+          'cannot be badged. Give it a raster foreground to badge it.',
         );
 
         continue;

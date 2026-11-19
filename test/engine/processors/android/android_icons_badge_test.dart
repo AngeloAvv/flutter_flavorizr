@@ -382,6 +382,9 @@ void main() {
         logger.warnings.single,
         allOf(contains('dev'), contains('vector'), contains('assets/fg.xml')),
       );
+      // Without the badge a vector foreground still is not decodable, so
+      // turning the badge off is no way out of the warning.
+      expect(logger.warnings.single, isNot(contains('badge: false')));
     });
 
     test('is not skipped by the adaptive icon of `main` when the flavor has an '
