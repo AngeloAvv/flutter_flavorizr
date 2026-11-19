@@ -47,6 +47,7 @@ const _targets = [
   'ios:plist',
   'macos:plist',
   'ios:xcconfig',
+  'ios:schema',
   'macos:xcconfig',
   'macos:configs',
   'ios:buildTargets',

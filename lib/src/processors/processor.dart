@@ -262,11 +262,6 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'ios:schema': () => DarwinSchemasProcessor(
-        K.iOSRunnerProjectPath,
-        config: flavorizr,
-        logger: logger,
-      ),
       'ios:dummyAssets': () =>
           IOSDummyAssetsTargetsProcessor(config: flavorizr, logger: logger),
       'ios:icons': () => IOSIconsProcessor(config: flavorizr, logger: logger),

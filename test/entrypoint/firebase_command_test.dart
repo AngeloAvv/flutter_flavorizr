@@ -41,6 +41,7 @@ const _iosRun = [
   'flutter:flavors',
   'ios:plist',
   'ios:xcconfig',
+  'ios:schema',
   'ios:buildTargets',
   'ios:podfile',
   'ios:firebase',
