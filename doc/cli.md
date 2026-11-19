@@ -10,6 +10,7 @@ command has `--help`.
 
 | Command | What it does |
 | --- | --- |
+| `init` | Writes `flavorizr.yaml`: finds the platforms of the project, asks for the flavors, the identifier and the name of each app. |
 | `apply [target...]` | Shows what would change, asks, and applies it. Writes `flavorizr.lock`. |
 | `plan [target...]` | The same preview, writing nothing: the processors that would run, with the ones they need marked `(auto)`, and the files that would be added (`+`), changed (`~`) or deleted (`-`), by platform. |
 | `status [target...]` | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. Exits with `1` on drift. |
@@ -22,6 +23,39 @@ document instead of text: see [the output](json-output.md).
 A *target* is the name of a recipe (`android`, `all`, or one of yours) or the
 id of a processor (`android:icons`). Without a target the default recipe runs:
 `default` when `flavorizr.yaml` defines one in `recipes`, otherwise `all`.
+
+## `init`
+
+```sh
+flutter create my_app && cd my_app
+flutter pub add --dev flutter_flavorizr
+dart run flutter_flavorizr init    # asks a few questions, writes flavorizr.yaml
+dart run flutter_flavorizr plan    # what would change
+dart run flutter_flavorizr         # apply
+```
+
+`init` looks at the folders of the project (`android`, `ios`, `macos`, `linux`,
+`windows`) and writes a flavor for each of them. It asks, with a default for
+each answer, for the **flavors** (`dev,prod`), the **identifier** the apps are
+built on (`com.example.<project>`, which becomes `com.example.<project>.dev`
+and so on) and the **name of the app** of each flavor. On a project `flutter
+create` has just made it also offers `flutter:scaffold`, the Flutter code that
+uses the flavors: when accepted, the default recipe becomes `start`, which runs
+`all` and `flutter:scaffold`. Scaffold files are never overwritten, so the
+`lib/main.dart` of the new project stays until `apply --overwrite-scaffold`
+replaces it, and every other scaffold file that exists.
+
+| Option | |
+| --- | --- |
+| `--flavors dev,prod` | The flavors: a name starts with a lowercase letter, has letters and digits, is not a word of Dart (`class`, `new`...) and is not another name in other case (`qa`, `qA`) (the Flutter code writes an enum value for each), and is not one Gradle refuses: `main`, `debug`, `release`, `profile`, or a name that starts with `test` or `androidTest`. |
+| `--id com.example.app` | The identifier the apps are built on. |
+| `--scaffold` / `--no-scaffold` | Adds `flutter:scaffold`, or does not ask about it. |
+| `-y`, `--yes` | Asks nothing: the defaults are the answers, and `flutter:scaffold` is not added. For scripts. |
+| `--force` | Replaces a `flavorizr.yaml` that exists. Without it `init` stops with exit code `1`. |
+
+Run it from the root of the project: with no `pubspec.yaml`, or with no platform
+folder, it stops with exit code `64`. Without a terminal to answer, the
+defaults are the answers.
 
 ## `apply` options
 

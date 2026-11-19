@@ -32,6 +32,7 @@ import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/apply_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/doctor_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
+import 'package:flutter_flavorizr/src/entrypoint/commands/init_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/list_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/plan_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/status_command.dart';
@@ -115,7 +116,13 @@ Future<int> _run(
 }
 
 /// The options that take a value, wherever they are used.
-const _optionsWithValue = {'-p', '--processors', '--on-conflict'};
+const _optionsWithValue = {
+  '-p',
+  '--processors',
+  '--on-conflict',
+  '--flavors',
+  '--id',
+};
 
 /// [args] with the command first, which is where the runner wants it, and
 /// `apply` when none was given. `--help` alone is the help of the tool.
@@ -148,6 +155,7 @@ class _Runner extends CommandRunner<int> {
             'Windows.\nWith no command, apply runs.',
       ) {
     <FlavorizrCommand>[
+      InitCommand(_context),
       ApplyCommand(_context),
       PlanCommand(_context),
       StatusCommand(_context),
