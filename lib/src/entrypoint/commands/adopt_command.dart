@@ -119,6 +119,15 @@ class AdoptCommand extends FlavorizrCommand {
       output.info('Yours, left alone: $path');
     }
 
+    if (adoption.lock.flavors.isEmpty && config.flavors.isNotEmpty) {
+      output.info(
+        'The flavors are not recorded in the lock: only an adoption that '
+        'covers every processor of the engine records them, and the one of '
+        'some targets, or of a default recipe that leaves processors out, '
+        'does not.',
+      );
+    }
+
     if (plan.legacy.isNotEmpty) {
       output.info(
         'Not adopted, since they are not on the engine yet: '

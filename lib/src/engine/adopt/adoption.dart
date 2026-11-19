@@ -83,6 +83,12 @@ final class Adoption {
 /// ones with other bytes are the user's, and are only reported. This is done only
 /// when the icons processor is part of [produced].
 ///
+/// The flavors in [historicalFlavors] are the ones the configuration does not
+/// have: what the processors make for them is made from the settings of another
+/// flavor, so the files they make say nothing about who owns them. For the
+/// icons of such a flavor the hash is all there is to go by, and the files the
+/// icons processor makes for it are not taken as produced.
+///
 /// [flavors] maps each flavor to what the lock records for it, and
 /// [availableProcessors] are the processors a full run covers: like any run, the
 /// adoption records the flavors only when it covers all of them.
@@ -90,6 +96,7 @@ Future<Adoption> adoptProject({
   required Directory projectRoot,
   required Map<String, Iterable<Artifact>> produced,
   required Iterable<String> androidFlavors,
+  Set<String> historicalFlavors = const {},
   required Map<String, String> flavors,
   required Set<String> availableProcessors,
   required String flavorizrVersion,
@@ -101,6 +108,12 @@ Future<Adoption> adoptProject({
 
   for (final MapEntry(key: id, value: artifacts) in produced.entries) {
     final found = present.putIfAbsent(id, () => []);
+    final synthetic = id == androidIconsProcessorId
+        ? [
+            for (final flavor in historicalFlavors.where(_isFolderName))
+              'android/app/src/$flavor/',
+          ]
+        : const <String>[];
 
     for (final artifact in artifacts) {
       if (artifact.ownership == Ownership.local ||
@@ -112,6 +125,7 @@ Future<Adoption> adoptProject({
       final bytes = path == null ? null : _read(projectRoot, path);
 
       if (path == null || bytes == null) continue;
+      if (synthetic.any(path.startsWith)) continue;
 
       found.add(artifact);
       hashes[path] = hasher(artifact, bytes);

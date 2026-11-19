@@ -55,8 +55,12 @@ neither are its object identifiers.
 
 ## Flavors that are not in `flavorizr.yaml` anymore
 
-The flavors in `flavorizr.yaml` are recorded in the lock. A flavor you removed
-from it **before** the first run of 3.x cannot be detected: 2.x kept no record of
+The flavors in `flavorizr.yaml` (and the ones of `--flavors`) are recorded in the
+lock only when `adopt` covers every processor of the engine that a full run
+covers. An `adopt` limited to targets, such as `adopt android:icons`, or one
+whose default recipe leaves processors out, records the files of the processors
+it ran and no flavor names, and says so. A flavor you removed from
+`flavorizr.yaml` **before** the first run of 3.x cannot be detected: 2.x kept no record of
 the flavors it applied, and nothing in the project says which files belong to a
 flavor that is gone. Its files stay where they are, and flavorizr never deletes
 a file it does not know.
@@ -71,4 +75,7 @@ flutter pub run flutter_flavorizr adopt --flavors cherry,lemon
 icons and the xcconfigs, and records the ones that exist. The next `plan` shows
 the flavors as removed, and the files as deleted. The settings of the flavors
 are not known, so they are looked for as the settings of the flavors of
-`flavorizr.yaml`, for each platform.
+`flavorizr.yaml`, for each platform. That is enough to tell the name of a file,
+not who owns it: the launcher icons of such a flavor are recorded only when they
+still have the bytes of the dummy icons of 2.x, whatever icon the flavors of
+`flavorizr.yaml` have.

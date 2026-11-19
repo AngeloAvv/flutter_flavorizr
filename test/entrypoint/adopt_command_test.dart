@@ -33,6 +33,8 @@ import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+import '../engine/processors/android/android_icon_source_test.dart'
+    show gradientPng;
 import 'cli_fixture.dart';
 
 /// What flavorizr 2.6.0 made of a new project, as the parity harness recorded
@@ -237,6 +239,56 @@ void main() {
           changes['ios/Flutter/cherryDebug.xcconfig'],
           startsWith('deleted/'),
         );
+      });
+
+      test('does not take the icons of the flavor for the ones of another '
+          'flavor that has an icon', () async {
+        File(project.abs('assets/apple.png'))
+          ..parent.createSync(recursive: true)
+          ..writeAsBytesSync(gradientPng(64, 64));
+        project.write(
+          'flavorizr.yaml',
+          project
+              .read('flavorizr.yaml')
+              .replaceFirst(
+                'name: "Apple App"',
+                'name: "Apple App"\n      icon: "assets/apple.png"',
+              ),
+        );
+        project.write(_icon('cherry', 'hdpi'), 'the logo of cherry');
+        project.write(_icon('cherry', 'mdpi'), _dummyBytes('mdpi'));
+
+        final code = await project.run(['adopt', '--flavors', 'cherry']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+
+        final recorded = (await _lockOf(
+          project,
+        ))!.processors['android:icons']!.files.keys;
+
+        expect(recorded, contains(_icon('cherry', 'mdpi')));
+        expect(recorded, isNot(contains(_icon('cherry', 'hdpi'))));
+        expect(project.logger.output, contains(_icon('cherry', 'hdpi')));
+
+        final changes = await _planned(project);
+
+        expect(changes[_icon('cherry', 'mdpi')], startsWith('deleted/'));
+        expect(changes, isNot(contains(_icon('cherry', 'hdpi'))));
+      });
+
+      test('are not recorded by a run of some of the processors, which says '
+          'so', () async {
+        final code = await project.run([
+          'adopt',
+          'android:icons',
+          '--flavors',
+          'cherry',
+        ]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect((await _lockOf(project))!.flavorNames, isEmpty);
+        expect(project.logger.output, contains('flavors'));
+        expect(project.logger.output, contains('every processor'));
       });
 
       test('takes a list', () async {

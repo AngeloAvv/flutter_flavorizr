@@ -63,10 +63,12 @@ void main() {
     Iterable<String> androidFlavors = const [],
     Map<String, String> flavors = const {},
     Set<String>? available,
+    Set<String> historical = const {},
   }) => adoptProject(
     projectRoot: root,
     produced: produced,
     androidFlavors: androidFlavors,
+    historicalFlavors: historical,
     flavors: flavors,
     availableProcessors: available ?? produced.keys.toSet(),
     flavorizrVersion: '3.0.0',
@@ -204,6 +206,49 @@ void main() {
       expect(adoption.lock.processors, isEmpty);
       expect(adoption.userOwned, isEmpty);
     });
+
+    test('of a historical flavor are told by their hash alone, even when the '
+        'processor makes them from the settings of another flavor', () async {
+      const cherry = 'android/app/src/cherry/res/mipmap-hdpi/ic_launcher.png';
+
+      write(icon, 'my own icon');
+      write(cherry, 'my own icon');
+
+      final adoption = await adopt(
+        produced: {
+          // `cherry` has the icon source of `apple`, so the processor makes it.
+          'android:icons': [
+            const Artifact.managed(icon),
+            const Artifact.managed(cherry),
+          ],
+        },
+        androidFlavors: ['apple', 'cherry'],
+        historical: {'cherry'},
+      );
+
+      expect(adoption.recorded['android:icons'], [icon]);
+      expect(adoption.userOwned, [cherry]);
+    });
+
+    test(
+      'of a historical flavor that were never touched are managed',
+      () async {
+        const cherry = 'android/app/src/cherry/res/mipmap-hdpi/ic_launcher.png';
+
+        write(cherry, 'dummy');
+
+        final adoption = await adopt(
+          produced: {
+            'android:icons': [const Artifact.managed(cherry)],
+          },
+          androidFlavors: ['cherry'],
+          historical: {'cherry'},
+        );
+
+        expect(adoption.recorded['android:icons'], [cherry]);
+        expect(adoption.userOwned, isEmpty);
+      },
+    );
 
     test('that the processor makes anyway are recorded once', () async {
       write(icon, 'dummy');
