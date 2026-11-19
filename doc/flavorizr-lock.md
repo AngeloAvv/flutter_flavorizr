@@ -39,6 +39,11 @@ processors:
     keys:
       ios/Runner/Info.plist:
         CFBundleDisplayName: sha256:0d44ab
+  ios:buildTargets:
+    keys:
+      ios/Runner.xcodeproj/project.pbxproj:
+        project/C93DD37D645EA448590670D3/SWIFT_VERSION: sha256:5cc31a
+        target/0A5C1A5E4B1C0D2F3E4A5B6C/PRODUCT_NAME: sha256:9d8e1f
   android:icons:
     inputs:
       android/app/src/dev/res/mipmap-hdpi/ic_launcher.png: sha256:e8a6b7
@@ -60,7 +65,7 @@ Each processor has these optional sections, left out when empty:
 | --- | --- | --- |
 | `files` | path to `{ownership, hash?}` | Whole files. `ownership` is `scaffold`, `managed` or `patched`. `hash` is the hash of the owned content (the whole file for `managed`, the owned parts for `patched`) and is present exactly for the hashed classes, so never for `scaffold`. |
 | `regions` | path to region id to hash | Marked regions of a shared file. |
-| `keys` | path to key to hash | Owned keys of a plist, manifest or XML file. |
+| `keys` | path to key to hash | Owned keys of a plist, manifest, XML or project file: the hash of the value flavorizr wrote. See [Owned build settings](#owned-build-settings). |
 | `objects` | path to list of UUIDs | UUIDs of the pbxproj objects flavorizr created, sorted. See [Owned objects](#owned-objects). |
 | `inputs` | output path to hash | Generated binaries such as icons: the hash of the *inputs* (source file hash plus options), never of the output, so bumping a library such as `image` creates no noise. |
 
@@ -86,12 +91,13 @@ Notes:
   (`Flutter/<flavor>Debug.xcconfig` and `Runner/Configs/...`, and the `Profile`
   and `Release` ones, for any flavor) and their entries in a Resources phase,
   which a run removes. An edit of the rest, by Xcode, CocoaPods, Flutter or a 2.x
-  processor, is not drift. **Known limitation:** an object another processor
-  owns (the build configurations of `DarwinBuildConfigurations`, a build phase)
-  is recorded in `objects` but not hashed until that processor extends the
-  reader, so an edit of it by hand is not seen as drift (the owned build
-  settings are #515). A test checks that every object `ios:xcconfig` records is
-  one of the lines the reader hashes.
+  processor, is not drift. `ios:buildTargets` and `macos:buildTargets` add the
+  build settings of the flavors to it (see [Owned build settings](#owned-build-settings)),
+  and `ios:firebase` and `macos:firebase` their build phase. **Known limitation:**
+  an object another processor owns and does not extend the reader for is recorded
+  in `objects` but not hashed, so an edit of it by hand is not seen as drift. A
+  test checks that every object `ios:xcconfig` records is one of the lines the
+  reader hashes.
 
 ## Owned objects
 
@@ -164,6 +170,57 @@ In code, `PbxprojSeed` and `OwnedObjects` (`lib/src/engine/darwin/`) are what a
 processor uses on top of the `xcodeproj:ios` / `xcodeproj:macos` resources:
 `ensure` creates or finds an object, `settle` removes the stale ones and tells
 the context what the processor owns.
+
+## Owned build settings
+
+`ios:buildTargets` and `macos:buildTargets` edit the build settings of a
+configuration **key by key**. 2.x replaced the `buildSettings` of the
+configuration on every run, which wiped the `DEVELOPMENT_TEAM` chosen in Xcode
+(#340). Now flavorizr owns the keys it sets and nothing else, and records them
+in `keys`, under `project.pbxproj`:
+
+```yaml
+ios:buildTargets:
+  keys:
+    ios/Runner.xcodeproj/project.pbxproj:
+      project/C93DD37D645EA448590670D3/SWIFT_VERSION: sha256:5cc31a
+      target/0A5C1A5E4B1C0D2F3E4A5B6C/PRODUCT_NAME: sha256:9d8e1f
+```
+
+A key is `<scope>/<configuration UUID>/<setting>`: `project` is a configuration
+of the project (the settings of the yaml: `PRODUCT_BUNDLE_IDENTIFIER`,
+`SWIFT_VERSION`, and so on), `target` one of the first native target of the
+project (`PRODUCT_NAME`). The configuration is told by its UUID, since every
+target has a `Debug-dev`. The value is the hash of what flavorizr wrote, as JSON,
+in the form the project stores it (a flag string such as `-ObjC -all_load` is a
+list in `OTHER_LDFLAGS`).
+
+* **Other settings are never touched.** A `DEVELOPMENT_TEAM`, a
+  `CODE_SIGN_STYLE` or anything else you or Xcode put in a configuration
+  survives every run.
+* **A setting that is not wanted anymore** (it left the yaml, or its flavor did)
+  is removed **only when its value is still the one flavorizr wrote**. If you
+  changed it, the value is yours: it stays, and flavorizr stops owning it.
+* **A configuration that holds settings of yours stays.** The configurations of
+  a flavor you remove go with it, unless they hold a setting flavorizr did not
+  write (a `DEVELOPMENT_TEAM` in the target one, anything that differs from the
+  `Debug`, `Profile` or `Release` configuration it started as in the project
+  one): they stay in the project, flavorizr stops owning them, and the lock
+  forgets them.
+* **Editing an owned setting by hand is a conflict.** A run that has to write
+  over a value it recorded finds it was changed and asks first, whichever
+  processors ran before it: that does not depend on the hash of the file, which
+  the other processors that write `project.pbxproj` move. The lock also hashes the
+  settings of the `<Mode>-<flavor>` configurations of the project and the
+  `PRODUCT_NAME` of the ones of the target (the rest of the target is never
+  hashed), so a run that has to write over the value you put asks first, as it
+  does for any file you edited.
+
+  The hash covers **every** setting of a project configuration named like a
+  flavor one, since the lock cannot tell which of them flavorizr wrote from the
+  file alone. A setting you add to one of them by hand does not change what the
+  run writes, but it makes the run ask when it also has to change the other
+  settings of the flavors; what it writes keeps your setting.
 
 ## Determinism
 

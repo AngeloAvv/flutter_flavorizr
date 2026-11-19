@@ -26,7 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 
@@ -44,6 +44,8 @@ const _fullRun = [
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
 ];
 
 final String _pristine = File(

@@ -31,7 +31,7 @@ import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../../../entrypoint/cli_fixture.dart';
 import '../../darwin/pbxproj_integrity.dart';
@@ -49,6 +49,8 @@ const _targets = [
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
   'ios:podfile',
   'macos:podfile',
 ];
@@ -597,7 +599,13 @@ void main() {
         'them: only the lock can tell whose they are', () async {
       final iosBefore = objectUuids(project.read(_iosPbxproj));
 
-      final code = await apply();
+      // Without the build configurations, which are not what is tested here.
+      final code = await project.run([
+        'apply',
+        '--yes',
+        for (final target in _targets)
+          if (!target.endsWith(':buildTargets')) target,
+      ]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       for (final (bundle, path) in [

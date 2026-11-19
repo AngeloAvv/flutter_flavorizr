@@ -26,7 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 
@@ -77,7 +77,8 @@ recipes:
       expect(project.logger.output, contains('android:dummyAssets [legacy]'));
       expect(project.logger.output, contains('huawei:agconnect [legacy]'));
       expect(project.logger.output, contains('ios:podfile [engine]'));
-      expect(project.logger.output, contains('ios:buildTargets [legacy]'));
+      expect(project.logger.output, contains('ios:buildTargets [engine]'));
+      expect(project.logger.output, contains('ios:schema [legacy]'));
     });
 
     test('draws what a processor needs and what it runs after', () async {

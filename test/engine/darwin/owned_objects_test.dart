@@ -31,7 +31,7 @@ import 'package:flutter_flavorizr/src/engine/darwin/pbxproj_seed.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../entrypoint/cli_fixture.dart';
@@ -431,6 +431,25 @@ void main() {
   });
 
   group('OwnedObjects.settle', () {
+    test('leaves a released object in the project, and forgets it', () async {
+      final first = await open();
+      final owned = OwnedObjects.ios(contextOf(first));
+      final config = ensureProjectConfig(owned, first);
+
+      owned.settle();
+      await first.save();
+
+      final second = await open();
+      final context = contextOf(second, previous: {config.uuid});
+      final again = OwnedObjects.ios(context);
+
+      again.release(second.objectsByUuid[config.uuid]!);
+
+      expect(again.settle(), isEmpty);
+      expect(second.objectsByUuid, contains(config.uuid));
+      expect(context.ownedObjects['test:ios']![_pbxproj.path], isEmpty);
+    });
+
     test('removes what the lock recorded and the run does not want anymore, '
         'with no dangling reference', () async {
       final baseline = objectUuids(text());

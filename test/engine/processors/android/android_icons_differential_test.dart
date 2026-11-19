@@ -33,7 +33,7 @@ import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dar
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_icons_processor.dart'
     as legacy;
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 

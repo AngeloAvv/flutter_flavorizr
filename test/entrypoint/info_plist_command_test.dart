@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 
@@ -44,6 +44,8 @@ const _run = [
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
   'ios:podfile',
   'macos:podfile',
 ];

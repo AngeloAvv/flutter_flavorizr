@@ -31,7 +31,7 @@ import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run.dart' as cli;
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../entrypoint/cli_fixture.dart';

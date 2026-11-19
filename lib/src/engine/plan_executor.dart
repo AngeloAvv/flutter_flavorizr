@@ -87,7 +87,9 @@ class PlanExecutor {
   ///
   /// [previousObjects] are the UUIDs of the pbxproj objects the lock recorded,
   /// by processor id and then by path of the project file: each processor reads
-  /// its own through `FlavorizrContext.previousObjectsOf`.
+  /// its own through `FlavorizrContext.previousObjectsOf`. [previousKeys] are
+  /// the hashes of the keys the lock recorded, in the same way
+  /// (`FlavorizrContext.previousKeysOf`).
   ///
   /// [resources] must hold every resource the plan requires. A resource a step
   /// requires and is missing, and an invalid [paths], throw before anything is
@@ -107,6 +109,7 @@ class PlanExecutor {
     Iterable<Resource<Object?>> resources = const [],
     Set<String> previousFlavors = const {},
     Map<String, Map<String, Set<String>>> previousObjects = const {},
+    Map<String, Map<String, Map<String, String>>> previousKeys = const {},
     Set<String> selected = const {},
     Directory? tempParent,
   }) {
@@ -124,6 +127,7 @@ class PlanExecutor {
           logger: logger,
           previousFlavors: previousFlavors,
           previousObjects: previousObjects,
+          previousKeys: previousKeys,
           selected: selected,
         );
         final completed = <String>[];

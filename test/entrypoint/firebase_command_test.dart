@@ -29,7 +29,7 @@ import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/processors/google/firebase_processors.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 
@@ -41,6 +41,7 @@ const _iosRun = [
   'flutter:flavors',
   'ios:plist',
   'ios:xcconfig',
+  'ios:buildTargets',
   'ios:podfile',
   'ios:firebase',
 ];
@@ -51,6 +52,7 @@ const _macosRun = [
   'macos:plist',
   'macos:xcconfig',
   'macos:configs',
+  'macos:buildTargets',
   'macos:podfile',
   'macos:firebase',
 ];

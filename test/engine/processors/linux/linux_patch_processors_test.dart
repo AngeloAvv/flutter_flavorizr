@@ -35,7 +35,7 @@ import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';

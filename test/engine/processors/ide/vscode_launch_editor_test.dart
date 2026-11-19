@@ -26,7 +26,7 @@
 import 'dart:convert';
 
 import 'package:flutter_flavorizr/src/engine/processors/ide/vscode_launch_editor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 Map<String, Object?> _entry(String name, {String program = 'lib/main.dart'}) =>
     {'name': name, 'request': 'launch', 'type': 'dart', 'program': program};
