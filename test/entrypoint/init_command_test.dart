@@ -156,6 +156,40 @@ void main() {
       },
     );
 
+    test('reads the name of the project as yaml, quoted or not', () async {
+      project.write('pubspec.yaml', 'name: "my_shop_app"\n');
+
+      await project.run(['init', '--yes']);
+
+      expect(written().flavors['dev']!.app.name, 'My Shop App Dev');
+    });
+
+    test('a flavor that is a word of yaml is a flavor, quoted', () async {
+      final code = await project.run(['init', '--yes', '--flavors', 'yes,off']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(written().flavors.keys, ['yes', 'off']);
+    });
+
+    test('does not replace a file that appeared while it asked', () async {
+      project.whileAsking = (_) => project.write('flavorizr.yaml', 'mine');
+
+      final code = await project.run(['init']);
+
+      expect(code, ExitCodes.attention);
+      expect(project.read('flavorizr.yaml'), 'mine');
+      expect(project.logger.errors.join(), contains('--force'));
+    });
+
+    test('--force replaces what appeared while it asked', () async {
+      project.whileAsking = (_) => project.write('flavorizr.yaml', 'mine');
+
+      final code = await project.run(['init', '--force']);
+
+      expect(code, ExitCodes.ok);
+      expect(project.read('flavorizr.yaml'), contains('flavors:'));
+    });
+
     test('a flavor named like a command is a flavor', () async {
       final code = await project.run([
         '--flavors',
@@ -174,6 +208,13 @@ void main() {
         (['--flavors', 'my-flavor'], 'a flavor with a hyphen'),
         (['--flavors', 'a,a'], 'a flavor twice'),
         (['--flavors', ','], 'no flavor'),
+        (['--flavors', 'class'], 'a flavor that is a word of Dart'),
+        (
+          ['--flavors', 'New'],
+          'a flavor that is a word of Dart, in other case',
+        ),
+        (['--flavors', 'index'], 'a flavor that is a member of every enum'),
+        (['--flavors', 'qa,qA'], 'two flavors the Flutter code names the same'),
         (['--id', 'app'], 'an identifier that is not a reverse domain name'),
         (['--id', 'com.my_app'], 'an identifier with an underscore'),
       ]) {
@@ -227,6 +268,27 @@ void main() {
         expect(written().defaultRecipe, 'start');
         expect(written().recipes!['start'], ['all', 'flutter:scaffold']);
       });
+
+      test(
+        'says that apply keeps the files that exist, and how to replace them',
+        () async {
+          project.answer = true;
+
+          await project.run(['init', '--flavors', 'dev']);
+
+          expect(project.logger.output, contains('--overwrite-scaffold'));
+
+          project.answer = false;
+          await project.run(['init', '--flavors', 'dev', '--force']);
+
+          expect(
+            project.logger.lines.where(
+              (l) => l.contains('--overwrite-scaffold'),
+            ),
+            hasLength(1),
+          );
+        },
+      );
 
       test('is not added when declined', () async {
         project.answer = false;

@@ -28,6 +28,7 @@ id of a processor (`android:icons`). Without a target the default recipe runs:
 
 ```sh
 flutter create my_app && cd my_app
+flutter pub add --dev flutter_flavorizr
 dart run flutter_flavorizr init    # asks a few questions, writes flavorizr.yaml
 dart run flutter_flavorizr plan    # what would change
 dart run flutter_flavorizr         # apply
@@ -40,11 +41,13 @@ built on (`com.example.<project>`, which becomes `com.example.<project>.dev`
 and so on) and the **name of the app** of each flavor. On a project `flutter
 create` has just made it also offers `flutter:scaffold`, the Flutter code that
 uses the flavors: when accepted, the default recipe becomes `start`, which runs
-`all` and `flutter:scaffold`.
+`all` and `flutter:scaffold`. Scaffold files are never overwritten, so the
+`lib/main.dart` of the new project stays until `apply --overwrite-scaffold`
+replaces it, and every other scaffold file that exists.
 
 | Option | |
 | --- | --- |
-| `--flavors dev,prod` | The flavors: a name starts with a lowercase letter and has letters and digits. |
+| `--flavors dev,prod` | The flavors: a name starts with a lowercase letter, has letters and digits, is not a word of Dart (`class`, `new`...) and is not another name in other case (`qa`, `qA`): the Flutter code writes an enum value for each. |
 | `--id com.example.app` | The identifier the apps are built on. |
 | `--scaffold` / `--no-scaffold` | Adds `flutter:scaffold`, or does not ask about it. |
 | `-y`, `--yes` | Asks nothing: the defaults are the answers, and `flutter:scaffold` is not added. For scripts. |

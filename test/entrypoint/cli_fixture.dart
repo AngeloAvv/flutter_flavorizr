@@ -196,6 +196,9 @@ class CliFixture {
   /// The questions the user was asked, with a default answer.
   final List<String> prompts = [];
 
+  /// What happens while the user is asked a question.
+  void Function(String question)? whileAsking;
+
   /// What stdout holds: the JSON document of `--json`, and what is drawn on a
   /// terminal.
   final StringBuffer stdout = StringBuffer();
@@ -244,6 +247,7 @@ class CliFixture {
     },
     prompt: (question, {required defaultValue}) async {
       prompts.add(question);
+      whileAsking?.call(question);
 
       return answers[question] ?? defaultValue;
     },

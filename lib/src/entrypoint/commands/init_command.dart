@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 /// The file `flavorizr init` writes.
 const _configFile = 'flavorizr.yaml';
@@ -44,6 +45,17 @@ const _platforms = {
 
 /// The name of a flavor: Android takes it as the name of a source set.
 final _flavorName = RegExp(r'^[a-z][A-Za-z0-9]*$');
+
+/// What the Flutter code names a flavor after (`flutter:flavors` writes an enum
+/// value for each one, lower-cased) cannot be: the reserved words of Dart and
+/// the members every enum has.
+const _notAnEnumValue = {
+  'assert', 'break', 'case', 'catch', 'class', 'const', 'continue', 'default',
+  'do', 'else', 'enum', 'extends', 'false', 'final', 'finally', 'for', 'if',
+  'in', 'is', 'new', 'null', 'rethrow', 'return', 'super', 'switch', 'this',
+  'throw', 'true', 'try', 'var', 'void', 'while', 'with', //
+  'values', 'index', 'hashcode', 'runtimetype', 'tostring', 'nosuchmethod',
+};
 
 /// `flavorizr init`: writes the `flavorizr.yaml` of a project that has none.
 ///
@@ -144,6 +156,18 @@ class InitCommand extends FlavorizrCommand {
     };
     final scaffold = await _scaffold(yes: yes);
 
+    // Nothing is replaced without `--force`, even a file that appeared while
+    // the questions were asked: it is created, which fails when it exists.
+    try {
+      if (argResults!['force'] != true) file.createSync(exclusive: true);
+    } on FileSystemException {
+      throw CommandFailure(
+        ExitCodes.attention,
+        '$_configFile was created meanwhile: edit it, or run init with '
+        '--force to replace it.',
+      );
+    }
+
     file.writeAsStringSync(
       _yaml(platforms: platforms, flavors: names, id: id, scaffold: scaffold),
     );
@@ -156,18 +180,31 @@ class InitCommand extends FlavorizrCommand {
       'Next: flavorizr plan, to see what would change, and flavorizr apply.',
     );
 
+    if (scaffold) {
+      output.info(
+        'flutter:scaffold keeps the files that exist: to have the lib/main.dart '
+        'of the new project replaced by the one that uses the flavors, run '
+        'flavorizr apply --overwrite-scaffold, which replaces every existing '
+        'scaffold file.',
+      );
+    }
+
     return ExitCodes.ok;
   }
 
   /// The name of the project, from `pubspec.yaml`, or `app`.
   String _projectName() {
     final pubspec = File(p.join(context.projectRoot.path, 'pubspec.yaml'));
-    final match = RegExp(
-      r'^name:\s*([A-Za-z0-9_]+)',
-      multiLine: true,
-    ).firstMatch(pubspec.readAsStringSync());
 
-    return match?.group(1) ?? 'app';
+    try {
+      final name = (loadYaml(pubspec.readAsStringSync()) as Map)['name'];
+
+      return name is String && RegExp(r'^[A-Za-z0-9_]+$').hasMatch(name)
+          ? name
+          : 'app';
+    } on Object {
+      return 'app';
+    }
   }
 
   Future<List<String>> _flavors({required bool yes}) async {
@@ -185,16 +222,31 @@ class InitCommand extends FlavorizrCommand {
         for (final flavor in flavors)
           if (!_flavorName.hasMatch(flavor)) flavor,
       ];
-      final duplicated = flavors.length != flavors.toSet().length;
+      // The Flutter code lower-cases the names: `qa` and `qA` are one.
+      final lowered = [for (final flavor in flavors) flavor.toLowerCase()];
+      final duplicated = lowered.length != lowered.toSet().length;
+      final reserved = [
+        for (final flavor in flavors)
+          if (_notAnEnumValue.contains(flavor.toLowerCase())) flavor,
+      ];
 
-      if (flavors.isNotEmpty && invalid.isEmpty && !duplicated) return flavors;
+      if (flavors.isNotEmpty &&
+          invalid.isEmpty &&
+          reserved.isEmpty &&
+          !duplicated) {
+        return flavors;
+      }
 
       final reason = flavors.isEmpty
           ? 'There must be a flavor.'
           : invalid.isNotEmpty
           ? 'A flavor starts with a lowercase letter and has only letters and '
                 'digits: ${invalid.join(', ')}.'
-          : 'A flavor is named once.';
+          : reserved.isNotEmpty
+          ? 'A flavor is an enum value in the Flutter code, so it cannot be a '
+                'word of Dart: ${reserved.join(', ')}.'
+          : 'A flavor is named once, whatever its case: the Flutter code '
+                'lower-cases the names.';
 
       if (given != null || yes || !context.environment.interactive) {
         throw CommandFailure(ExitCodes.usage, reason);
@@ -276,7 +328,7 @@ class InitCommand extends FlavorizrCommand {
       '# The flavors of the app: see https://github.com/AngeloAvv/flutter_flavorizr',
       'flavors:',
       for (final MapEntry(key: flavor, value: name) in flavors.entries) ...[
-        '  $flavor:',
+        '  ${_quote(flavor)}:',
         '    app:',
         '      name: ${_quote(name)}',
         for (final platform in platforms)
