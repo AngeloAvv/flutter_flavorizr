@@ -86,6 +86,23 @@ The processor must track the project file (`XcodeprojResource.iosArtifact`, a pa
 which of the objects in it are its own with `OwnedObjects`: see
 [Building blocks](/extending/building-blocks#owned-objects-of-the-xcode-project).
 
+`OwnedObjects` records the identities of the objects, which is what lets a later run remove them. It does
+**not** say what the lock hashes. The hash of the project file covers only what the registered readers of
+flavorizr read (the references to the xcconfig files, the build settings of the flavors and the Firebase
+build phase), so a change of yours that is outside of them, such as a build phase of your own, would be
+invisible to `status` and to the conflict check. Declare it with `ownedContent`, which adds to the readers
+of flavorizr for that file:
+
+```dart
+@override
+Map<String, String Function(String source)> get ownedContent => {
+  XcodeprojResource.iosArtifact.path: (source) => sentryPhaseOf(source),
+};
+```
+
+where `sentryPhaseOf` returns the text of the objects that your processor owns, in the order that is the
+same on every run.
+
 <Warning>
   A processor that requires a resource nobody registered fails the plan with `Processor "acme:..."
   requires the resource "...", which is not registered`. The entry point `Flavorizr.run` registers the

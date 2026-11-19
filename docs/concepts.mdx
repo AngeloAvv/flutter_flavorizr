@@ -10,7 +10,7 @@ flavorizr separates three things that a script that edits files usually mixes up
 | | What it is | Who writes it |
 | --- | --- | --- |
 | `flavorizr.yaml` | The **desired state**: the flavors you want. | You |
-| `flavorizr.lock` | The **applied state**: what flavorizr generated the last time, and a hash of it. | flavorizr, after a run that fully succeeded |
+| `flavorizr.lock` | The **applied state**: what flavorizr generated the last time, and a hash of it. | flavorizr, once the changes of the engine are written |
 | The project | **Reality**: the files on disk, which you, Xcode, Flutter and CocoaPods also edit. | Everybody |
 
 A run compares the three:
@@ -36,14 +36,24 @@ A run does not touch your project while it works out what to do:
 3. `plan` prints that diff and stops. `apply` asks for a confirmation, copies the changes back to the
    project and writes `flavorizr.lock`.
 
-That gives dry runs, a reviewable diff, and atomic writes: a run that fails does not write the
-changes of the engine to your project. `status` is the same run, which compares and exits with `1`
-when the project and the yaml disagree.
+That gives dry runs, a reviewable diff, and writes that are all or nothing in practice: a processor
+that fails does not write the changes of the engine to your project, and the lock is written last.
+Two failures can still leave a run half done, and each says so:
+
+- the copy back of the files is interrupted: the message lists what was and what was not written, and the
+  lock keeps the previous state. Fix what stopped it, and run flavorizr again: it finds the files that
+  were written and does the rest;
+- a 2.x processor fails after the engine finished: the changes of the engine and the lock stay written
+  (see below).
+
+`status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
 
 Each step of a run is a **processor**: a unit that makes, patches or removes the files of one area,
 for example `android:buildGradle` or `ios:xcconfig`. Processors declare what they need, so a processor
 that depends on another one pulls it into the run, and a run applies them in the right order. A
-[recipe](/recipes) is a named list of processors, and `all` is the one that runs without a target.
+[recipe](/recipes) is a named list of processors. Without a target a run uses the recipe `default` of
+`flavorizr.yaml` when it defines one (`default: name` picks another recipe), and `all` otherwise: a
+`default` that lists fewer processors than `all` makes a plain `apply` run fewer.
 
 ## File ownership
 

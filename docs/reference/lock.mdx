@@ -48,8 +48,10 @@ processors:
         project/C93DD37D645EA448590670D3/SWIFT_VERSION: sha256:5cc31a
         target/0A5C1A5E4B1C0D2F3E4A5B6C/PRODUCT_NAME: sha256:9d8e1f
   android:icons:
-    inputs:
-      android/app/src/dev/res/mipmap-hdpi/ic_launcher.png: sha256:e8a6b7
+    files:
+      android/app/src/dev/res/mipmap-hdpi/ic_launcher.png:
+        hash: sha256:e8a6b7
+        ownership: managed
 schemaVersion: 1
 ```
 
@@ -70,7 +72,7 @@ Each processor has these optional sections, left out when empty:
 | `regions` | path to region id to hash | Marked regions of a shared file. |
 | `keys` | path to key to hash | Owned keys of a plist, manifest, XML or project file: the hash of the value flavorizr wrote. See [Owned build settings](#owned-build-settings). |
 | `objects` | path to list of UUIDs | UUIDs of the pbxproj objects flavorizr created, sorted. See [Owned objects](#owned-objects). |
-| `inputs` | output path to hash | Generated binaries such as icons: the hash of the *inputs* (source file hash plus options), never of the output, so bumping a library such as `image` creates no noise. |
+| `inputs` | output path to hash | Generated binaries: the hash of the *inputs* (source file hash plus options), never of the output. The format has it, but no processor records it yet: the icons of `android:icons` are `managed` files, hashed whole. |
 
 Notes:
 

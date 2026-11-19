@@ -38,13 +38,13 @@ Commit `flavorizr.lock` with the rest: it is how flavorizr knows what it generat
 
 - **Five platforms**: Android, iOS, macOS, Linux and Windows, and the Dart code that uses the flavors
 - **Declarative**: the yaml is the desired state, `flavorizr.lock` the applied one, the disk is reality
-- **Plan and apply**: dry runs, diffs and atomic writes, through a shadow copy of the project
+- **Plan and apply**: dry runs, diffs and all-or-nothing writes, through a shadow copy of the project
 - **Idempotent**: re-run it safely; what you edit in manifests, plists and Gradle scripts is left alone
 - **Removes what it made**: drop a flavor from the yaml and its files and configurations go
 - **Conflicts, not overwrites**: files you edited by hand are reported, and you choose what wins
 - **Icons and badge**: per-flavor launcher icons, with an optional band that names the flavor
 - **Recipes**: choose what runs, instead of a flat list of instructions
-- **CI friendly**: `status` fails on drift, stable exit codes and `--json` output
+- **CI friendly**: `status` fails on drift, stable exit codes, `--json` on `plan`, `apply`, `status` and `list`
 - **Extensible**: your own processors run in the same pipeline from `tool/flavorizr.dart`
 
 ## Documentation

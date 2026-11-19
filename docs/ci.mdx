@@ -81,6 +81,7 @@ animation, nothing is asked. A run is also treated as a CI when `CI` is set, or 
 `plan`, `apply`, `status` and `list` take `--json`, which prints exactly one line of JSON on stdout:
 
 ```sh
+set -o pipefail   # without it the pipeline returns the exit code of jq, and drift passes
 dart run flutter_flavorizr status --json | jq '.drift'
 ```
 

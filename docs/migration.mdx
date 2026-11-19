@@ -59,8 +59,8 @@ On a project flavorized with 2.6.0 these steps end with `status` exiting with `0
 | `customConfig` with quoted text | The values are typed now: **quotes are an error**. `manifestPlaceholders` is a key of the flavor. |
 | An unknown key | **An error**, with the key it was probably meant to be. |
 
-Every one of them fails the run with exit code `65` and writes nothing, so a migration cannot leave the
-project half done.
+Every one of them but the deprecation of `generateDummyAssets`, which only warns, fails the run with exit
+code `65` and writes nothing, so a migration cannot leave the project half done.
 
 ### `instructions` is `recipes`
 
@@ -265,8 +265,9 @@ says how to fix it. See [Flutter code](/configuration/flutter).
   and are replaced by the icons of an `icon` that you add.
 - A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`.
 
-`android:dummyAssets`, `ios:dummyAssets`, `macos:dummyAssets` and `windows:dummyAssets` still exist, so that
-a recipe that names them runs, and do nothing.
+`android:dummyAssets`, `macos:dummyAssets` and `windows:dummyAssets` still exist, so that a recipe that names
+them runs, and do nothing. `ios:dummyAssets` still writes the `<flavor>LaunchImage.imageset` of a flavor,
+unless the project has one for it (it has a `Contents.json`): that is yours.
 
 ## Commit `flavorizr.lock`
 

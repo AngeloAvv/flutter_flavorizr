@@ -6,8 +6,10 @@ description: "Per-flavor launcher icons, what happens to a flavor with no icon, 
 ## Icons
 
 flavorizr makes the launcher icons of a flavor from **one source image**, at every size the platform
-needs: the legacy mipmaps and the adaptive icon of Android, the icon sets of iOS and macOS, and the `.ico`
-of Windows. Nothing is downloaded and no placeholder is bundled: what flavorizr writes, it makes.
+needs: the legacy mipmaps of Android, the icon sets of iOS and macOS, and the `.ico` of Windows. The
+**adaptive icon** of Android is not made from it: it needs its own layers, see
+[`adaptiveIcon`](/configuration/android#adaptiveicon), and until a flavor has them a device from Android 8
+may show the adaptive icon of `main` instead of the icon of the flavor. Nothing is downloaded and no placeholder is bundled: what flavorizr writes, it makes.
 
 The `icon` of a flavor is, in order of precedence, the `icon` of its platform section and the `icon` of its
 `app`:
@@ -24,8 +26,9 @@ flavors:
 ```
 
 An `icon` is a path relative to the project that stays inside it, links included. The icons are generated
-files, tracked in the lock by a hash of their **inputs** (the source and the options), so upgrading a
-library creates no noise. Android flavors can also set an [`adaptiveIcon`](/configuration/android#adaptiveicon).
+files, owned as **managed** and hashed in the lock, so editing one by hand is a conflict. The output is
+deterministic: the same sources always give the same bytes. Android flavors can also set an
+[`adaptiveIcon`](/configuration/android#adaptiveicon).
 
 ### A flavor with no icon
 

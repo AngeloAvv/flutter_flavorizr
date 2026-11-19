@@ -11,7 +11,9 @@ The path is read from the project, and has to stay inside it, links included.
 
 | Key | Type | Required | Description |
 | --- | --- | --- | --- |
-| `config` | string | | The path of the Firebase configuration file. |
+| `config` | string | yes | The path of the Firebase configuration file. |
+
+The `firebase` map itself is optional, but when it is there it must have `config`: `firebase: {}` is an error.
 
 ```yaml
 flavors:
@@ -85,7 +87,9 @@ To enable AppGallery Connect in a flavor, give its `android` section an `agconne
 
 | Key | Type | Required | Description |
 | --- | --- | --- | --- |
-| `config` | string | | The path of the AGConnect configuration file. |
+| `config` | string | yes | The path of the AGConnect configuration file. |
+
+The `agconnect` map itself is optional, but when it is there it must have `config`.
 
 ```yaml
 flavors:

@@ -11,8 +11,10 @@ description: "The idempotent pieces that the processors of flavorizr are made of
 </Warning>
 
 The stable API is small on purpose: `Flavorizr`, `FlavorizrProcessor`, `FlavorizrContext`, `Resource` and
-`ResourceKey`. A processor that writes a file whole needs nothing else (see
-[Custom processors](/extending/processors)). The pieces below are what the processors of flavorizr use to
+`ResourceKey`. A processor has to say who owns what it writes with `ctx.track`, and `Artifact`, which that
+takes, is **not** in the stable library: even a processor that writes a file whole imports
+`experimental.dart` (see [Custom processors](/extending/processors)), and so has to pin the version of
+flutter_flavorizr. The other pieces below are what the processors of flavorizr use to
 edit files that **belong to the user**, without disturbing them and without writing twice.
 
 ```dart

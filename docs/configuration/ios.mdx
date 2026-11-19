@@ -167,6 +167,11 @@ its first target, with the `buildSettings` of the yaml, and point them at the
 xcconfig of the flavor. They are owned: a run finds them again by a UUID of their
 own, and the ones of a flavor you remove are removed with it.
 
+**One exception, which is not limited to the configurations of 2.x:** a configuration that holds a setting
+you added (a `DEVELOPMENT_TEAM` in the target one, anything that differs from the `Debug`, `Profile` or
+`Release` configuration it started as) is **kept** when its flavor goes. flavorizr stops owning it and the
+lock forgets it, so clean it up yourself, after you have moved the settings you want to keep.
+
 The settings are edited **one by one**, never replaced, so what you or Xcode put
 in a configuration survives a run: the `DEVELOPMENT_TEAM` you pick in Signing &
 Capabilities is not wiped anymore. The settings flavorizr sets are recorded in
