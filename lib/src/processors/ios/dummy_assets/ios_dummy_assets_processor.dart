@@ -66,9 +66,14 @@ class IOSDummyAssetsProcessor extends AbstractProcessor<void> {
 
     folder.createSync(recursive: true);
 
-    launchImageFiles.forEach((name, bytes) {
+    // `Contents.json` is what says the set is the project's, so it comes last:
+    // a run that stops before it leaves a set that the next one completes.
+    for (final MapEntry(key: name, value: bytes) in [
+      ...launchImageFiles.entries.where((e) => e.key != 'Contents.json'),
+      ...launchImageFiles.entries.where((e) => e.key == 'Contents.json'),
+    ]) {
       File('${folder.path}/$name').writeAsBytesSync(bytes);
-    });
+    }
 
     logger.detail(
       '[$IOSDummyAssetsProcessor] Launch image written into `${folder.path}`',
