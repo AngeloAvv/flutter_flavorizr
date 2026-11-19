@@ -115,6 +115,8 @@ flavorizr:
 | key                                     | type   | default                                                                                    | required | description                                                                                   |
 |:----------------------------------------|:-------|:-------------------------------------------------------------------------------------------|:---------|:----------------------------------------------------------------------------------------------|
 | app                                     | Object |                                                                                            | false    | An object describing the general capabilities of an app                                       |
+| badge                                   | Bool   | false                                                                                      | false    | Draws a [badge](#icon-badge) on the icon of every flavor, unless a flavor says otherwise      |
+| icon                                    | String |                                                                                            | false    | The image the [badges](#icon-badge) are drawn on when a flavor has no `icon` of its own        |
 | flavors                                 | Array  |                                                                                            | true     | An array of items. Each of them describes a flavor configuration                              |
 | recipes                                 | Map    |                                                                                            | false    | Named lists of [instructions](#available-instructions): `default` is what runs without a target |
 | ide                                     | Array  |                                                                                            | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
@@ -188,6 +190,15 @@ flavorizr:
 |:-----|:-------|:--------|:---------|:------------------------------|
 | name | String |         | true     | The name of the App           |
 | icon | String |         | false    | The icon path for this flavor |
+
+#### badge (under *flavorname*)
+
+| key   | type   | default                  | required | description                                                                  |
+|:------|:-------|:-------------------------|:---------|:-----------------------------------------------------------------------------|
+| label | String | the flavor name, upper-cased | false | The text of the badge: 8 characters at most, a longer one is cut to 7 and `…` |
+| color | String | from the palette, by the flavor name | false | The colour of the band, as `#RRGGBB`                                |
+
+`badge` is `true`, `false`, or this map. See [Icon badge](#icon-badge).
 
 #### android (under *flavorname*)
 
@@ -380,6 +391,35 @@ the default icon of the project**: the `main` resources on Android,
 project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
 `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
 `generateDummyAssets` is deprecated and ignored.
+
+#### Icon badge
+
+A badge is a band with the name of the flavor on its icon, to tell a `dev` build
+from a `prod` one at a glance.
+
+```yaml
+badge: true                       # root default (default: false)
+flavors:
+  dev:
+    badge: { label: DEV, color: "#E53935" }
+  staging:
+    app: { name: Staging }        # inherits: label "STAGING", automatic colour
+  prod:
+    badge: false                  # opt-out
+```
+
+* `badge: true` or a map turns it on for the flavor, `badge: false` off, and a
+  flavor that says nothing does as the root `badge` does.
+* `label` is the upper-cased name of the flavor by default. A label of more than
+  8 characters is cut to 7 and `…`.
+* `color` is picked from a palette by a stable hash of the name of the flavor,
+  so it is the same in every run and on every machine. The text is black or
+  white, whichever has the better contrast: at least 4.5:1 on every colour.
+* There are no font or style options.
+* The badge is drawn on the first of these that is 512 px or more: the `icon`
+  of the flavor, the `icon` of the root, the largest `AppIcon` of the iOS and
+  then the macOS project. When there is none, the run fails and asks for
+  `icon:`.
 
 #### customConfig and manifestPlaceholders (for Android only)
 
