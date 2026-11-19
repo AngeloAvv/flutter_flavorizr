@@ -14,6 +14,9 @@ jobs:
         uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+      # Plain `dart pub get` also resolves example/, a Flutter app, and fails
+      # without Flutter: the package itself resolves with --no-example. The
+      # example is reworked in #543.
       - name: Get dependencies
         run: dart pub get --no-example
       - name: Analyze
