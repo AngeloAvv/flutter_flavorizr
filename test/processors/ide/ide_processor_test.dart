@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/parser.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Test IDEProcessor with null IDE', () {

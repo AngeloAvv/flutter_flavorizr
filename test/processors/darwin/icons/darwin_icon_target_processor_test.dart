@@ -30,7 +30,7 @@ import 'package:flutter_flavorizr/src/models/darwin/icon/darwin_idiom.dart';
 import 'package:flutter_flavorizr/src/models/ios/ios_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/icons/darwin_icon_target_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 

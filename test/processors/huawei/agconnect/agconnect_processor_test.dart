@@ -25,7 +25,7 @@
 
 import 'package:flutter_flavorizr/src/processors/android/huawei/agconnect/android_agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 import '../../../test_utils.dart';
