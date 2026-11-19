@@ -112,7 +112,7 @@ flavors:
 | `ios:podfile` | Maps the build configurations of each flavor in the Podfile. | engine |
 | `ios:plist` | Sets the bundle name keys of `Info.plist` in place. | engine |
 | `ios:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). | engine |
-| `ios:schema` | Creates a scheme for each flavor. | 2.x pipeline |
+| `ios:schema` | Creates a scheme for each flavor, keeping the edits made to it. See [The schemes](#the-schemes-of-the-ios-flavors). | engine |
 | `ios:icons` | Makes the icon set of each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
 | `ios:launchScreen` | Makes a launch screen for each flavor. | 2.x pipeline |
 | `ios:dummyAssets` | Copies the launch image of each flavor. | 2.x pipeline |
@@ -310,3 +310,31 @@ Ruby:
 A marker in a heredoc, a `=begin` block, after `__END__` or on a continued line
 is refused too. A character it cannot read may make an unusual Podfile be
 refused, and that is on purpose: the message names the line.
+
+## The schemes of the iOS flavors
+
+`ios:schema` writes one scheme for each flavor,
+`ios/Runner.xcodeproj/xcshareddata/xcschemes/<flavor>.xcscheme`. A scheme is a
+file you, Xcode and Flutter all edit, so flavorizr owns two things only: that
+the file exists, and the `buildConfiguration` of its Launch, Test, Profile,
+Analyze and Archive actions (`Debug-<flavor>`, `Profile-<flavor>` and
+`Release-<flavor>`). Nothing else is read or changed: the pre-actions, the
+arguments and environment of the Run action, the testables, and the layout of
+the file are yours.
+
+* A scheme that is not there is made, with the app and the test targets of the
+  project, and with the `Run Prepare Flutter Framework Script` pre-action that
+  Flutter adds for Swift Package Manager (see below), so Flutter finds it and
+  adds nothing.
+* A scheme that is there has its five build configurations set, and is not
+  written when they are right: a run after Flutter injected its pre-action
+  changes nothing and is no conflict. The pre-actions that are there are never
+  removed, and none is added.
+* The lock records the build configurations, so editing one by hand is a
+  conflict. The scheme of a flavor you dropped stays: it is a patched file, and
+  the lock only stops owning it.
+
+The pre-action is added unless the `pubspec.yaml` turns Swift Package Manager
+off (`flutter: config: enable-swift-package-manager: false`). The global
+`flutter config` setting and the version of Xcode are not looked at. `macos:schema`
+still is a 2.x processor.

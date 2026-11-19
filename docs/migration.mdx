@@ -198,7 +198,11 @@ dart run flutter_flavorizr adopt
 - The placeholder icons that 2.x made for Android are recognised by their hash. A placeholder that you did
   not touch is recorded as managed, and the next `plan` proposes to delete it, since 3.0 no longer makes
   it. An icon you replaced stays yours.
-- `adopt` takes the same targets as `plan`, to adopt part of a project.
+- `adopt` takes the same targets as `plan`, to adopt part of a project. It needs a configuration that 3.0
+  can read, so fix `flavorizr.yaml` first, and it fails when `flavorizr.lock` exists already: the project
+  has been run by 3.0, and there is nothing to adopt.
+
+The page [Adopting a 2.x project](/reference/adopt) has the details of what is recorded.
 
 ### The limits of adopt
 
@@ -211,8 +215,14 @@ dart run flutter_flavorizr adopt
   dart run flutter_flavorizr adopt --flavors old_flavor,other_old_flavor
   ```
 
+  A name that `flavorizr.yaml` already has is an error, with exit code `64`: `--flavors` is for the flavors it
+  no longer has. The flavors, named or not, are recorded in the lock only when `adopt` covers every processor
+  of the engine that a full run covers: an `adopt` limited to targets records the files of the processors it
+  ran and no flavor names, and says so. The launcher icons of a flavor that is gone are recorded only when
+  they still have the bytes of the dummy icons of 2.x.
+
 - Only what the processors of the engine own is adopted. The Darwin artifacts that are still 2.x
-  processors (schemes, launch storyboards, iOS and macOS icons) are not tracked, and neither are their
+  processors (macOS schemes, launch storyboards, iOS and macOS icons) are not tracked, and neither are their
   objects in `project.pbxproj`.
 
 ### Without adopt

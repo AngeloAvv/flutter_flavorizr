@@ -17,6 +17,7 @@ command has `--help`.
 | `apply [target...]` | Shows what would change, asks, and applies it. Writes `flavorizr.lock`. |
 | `plan [target...]` | The same preview, writing nothing: the processors that would run, with the ones they need marked `(auto)`, and the files that would be added (`+`), changed (`~`) or deleted (`-`), by platform. |
 | `status [target...]` | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. Exits with `1` on drift. |
+| `adopt [target...]` | Records a project flavorized with 2.x as the baseline of `flavorizr.lock` and writes nothing else, so that the next `plan` shows an ordinary diff. `--flavors a,b,c` names flavors the project had and `flavorizr.yaml` no longer has. See [Adopting a 2.x project](/reference/adopt). |
 | `list` | The recipes (built-in and the ones of `flavorizr.yaml`) and the processors, with what each needs. |
 | `doctor` | Groovy or Kotlin build scripts, Xcode project layout, Pods, Flutter version, configuration and lock. |
 
@@ -154,8 +155,8 @@ runs.
 
 | Runs on | Processors |
 | --- | --- |
-| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
-| The 2.x pipeline | `ios:schema`, `ios:icons`, `ios:launchScreen`, `ios:dummyAssets`, `macos:schema`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
+| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:schema`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
+| The 2.x pipeline | `ios:icons`, `ios:launchScreen`, `ios:dummyAssets`, `macos:schema`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
 
 The processors of the 2.x pipeline are not dropped: `apply` runs them **after** the engine, straight on
 the project. That means they have no preview in `plan`, no conflict detection, no lock entry and are not

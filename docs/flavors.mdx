@@ -61,7 +61,7 @@ Delete it from the yaml. A run removes what flavorizr generated for it, which th
   Windows CMake lists, its keys and entries;
 - its **local** files, such as its run configuration of IntelliJ and Android Studio.
 
-What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
+The scheme of an iOS flavor you drop stays: a scheme is a file you and Xcode edit too, so the lock only stops owning it. What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
 stays, and a build configuration of the flavor that holds a setting of yours stays in the project.
 Files that you put in the project yourself, such as an icon in `src/<flavor>/res`, are never deleted.
 
@@ -70,7 +70,7 @@ edited asks before it is deleted.
 
 <Info>
   The processors that are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet))
-  do not track what they write, so they cannot remove it: the schemes and icon sets of iOS and macOS, and
+  do not track what they write, so they cannot remove it: the schemes of macOS, the icon sets of iOS and macOS, and
   the Windows icons of a flavor you remove stay in the project, and you delete them.
 </Info>
 
