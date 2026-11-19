@@ -120,6 +120,9 @@ class Whitelist {
   ///   what it matches from both files like `ignore`, **at most once** in each:
   ///   a file where one matches twice is not covered, so that a block that is
   ///   there twice is not taken for the one that is intended.
+  ///   Each pattern is counted on the text as it is (not after the others took
+  ///   theirs out), and they are taken out together, before `ignore`: the order
+  ///   of the patterns changes nothing.
   factory Whitelist.parse(String yaml) {
     final document = loadYaml(yaml);
     if (document == null) return const Whitelist.empty();
@@ -230,25 +233,60 @@ class Whitelist {
       right = normalizePbxproj(keptRight);
     }
 
+    // Before `ignore` takes anything out: what a pattern matches is counted
+    // in the text the entry was given, whatever the others do to it.
+    final once = _removeOnce(entry.ignoreOnce, left, right);
+    if (once == null) return false;
+    (left, right) = once;
+
     final ignore = entry.ignore;
     if (ignore != null) {
       left = left.replaceAll(ignore, '');
       right = right.replaceAll(ignore, '');
     }
 
-    for (final once in entry.ignoreOnce) {
-      if (once.allMatches(left).length > 1 ||
-          once.allMatches(right).length > 1) {
-        return false;
-      }
-
-      left = left.replaceAll(once, '');
-      right = right.replaceAll(once, '');
-    }
-
     return entry.onlyComments
         ? _withoutComments(left) == _withoutComments(right)
         : left == right;
+  }
+
+  /// [left] and [right] without what [patterns] match, or `null` when one of
+  /// the patterns matches more than once in either.
+  ///
+  /// Every pattern is counted on the text as it is, and what they match is taken
+  /// out in one go: the result does not depend on the order of the patterns, and
+  /// a pattern cannot hide the matches of another one by being applied first.
+  static (String, String)? _removeOnce(
+    List<RegExp> patterns,
+    String left,
+    String right,
+  ) {
+    if (patterns.isEmpty) return (left, right);
+
+    for (final text in [left, right]) {
+      for (final pattern in patterns) {
+        if (pattern.allMatches(text).length > 1) return null;
+      }
+    }
+
+    String without(String text) {
+      final ranges = [
+        for (final pattern in patterns)
+          for (final match in pattern.allMatches(text))
+            (match.start, match.end),
+      ]..sort((a, b) => a.$1.compareTo(b.$1));
+      final kept = StringBuffer();
+      var at = 0;
+
+      for (final (start, end) in ranges) {
+        if (start > at) kept.write(text.substring(at, start));
+        if (end > at) at = end;
+      }
+
+      return (kept..write(text.substring(at))).toString();
+    }
+
+    return (without(left), without(right));
   }
 
   static ({String kept, List<int> moved}) _split(String content, RegExp moved) {

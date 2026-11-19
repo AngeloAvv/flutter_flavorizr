@@ -424,6 +424,58 @@ void main() {
       expect(clean('x\nx\na\n', 'a\n'), isFalse);
     });
 
+    group('with patterns that overlap', () {
+      Whitelist two(String first, String second) => Whitelist.parse('''
+- path: a.txt
+  ignore-once:
+    - '$first'
+    - '$second'
+  reason: It has them once
+''');
+
+      bool cleanWith(Whitelist whitelist, String before, String after) {
+        write(golden, 'a.txt', before);
+        write(actual, 'a.txt', after);
+
+        return compareTrees(golden, actual, whitelist: whitelist).isClean;
+      }
+
+      test('counts each on the text as it is, not after the others', () {
+        // Removing the first would leave the second once.
+        for (final patterns in [(r'^x\ny\n', r'^x\n'), (r'^x\n', r'^x\ny\n')]) {
+          final whitelist = two(patterns.$1, patterns.$2);
+
+          expect(
+            cleanWith(whitelist, 'tail\n', 'x\ny\nx\ntail\n'),
+            isFalse,
+            reason: '$patterns',
+          );
+          expect(
+            cleanWith(whitelist, 'x\ny\nx\ntail\n', 'tail\n'),
+            isFalse,
+            reason: '$patterns',
+          );
+        }
+      });
+
+      test('takes what both match once, whatever their order', () {
+        for (final patterns in [
+          (r'^x\ny\n', r'^y\nz\n'),
+          (r'^y\nz\n', r'^x\ny\n'),
+        ]) {
+          expect(
+            cleanWith(
+              two(patterns.$1, patterns.$2),
+              'tail\n',
+              'x\ny\nz\ntail\n',
+            ),
+            isTrue,
+            reason: '$patterns',
+          );
+        }
+      });
+    });
+
     test('is rejected when it is not a list of patterns', () {
       expect(
         () => Whitelist.parse('''
