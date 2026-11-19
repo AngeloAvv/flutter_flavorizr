@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/gradle_value.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 String groovy(Object? value) => gradleValue(value, GradleDsl.groovy);
 String kotlin(Object? value) => gradleValue(value, GradleDsl.kotlin);

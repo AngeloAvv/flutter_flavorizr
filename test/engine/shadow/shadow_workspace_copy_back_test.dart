@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/exception/copy_back_interrupted_exception.dart';
 import 'package:flutter_flavorizr/src/exception/project_changed_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unapproved_conflicts_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import 'shadow_fixture.dart';

@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/windows/windows_dummy_assets_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import '../../test_utils.dart';
 

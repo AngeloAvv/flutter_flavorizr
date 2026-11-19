@@ -28,7 +28,7 @@ library;
 
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 /// The files `lib/flutter_flavorizr.dart` and `lib/experimental.dart` export.
 List<String> _exportedFiles(String library) => [
@@ -82,7 +82,7 @@ void main() {
         File('pubspec.yaml').copySync('${copy.path}/pubspec.yaml');
         File('pubspec.lock').copySync('${copy.path}/pubspec.lock');
         File('${copy.path}/analysis_options.yaml').writeAsStringSync(
-          'include: package:flutter_lints/flutter.yaml\n'
+          'include: package:lints/recommended.yaml\n'
           'linter:\n  rules:\n    public_member_api_docs: true\n',
         );
         File(
@@ -90,7 +90,7 @@ void main() {
         ).writeAsStringSync('class Undocumented {}\n');
 
         final result = await Process.run(
-          'flutter',
+          'dart',
           ['pub', 'get', '--offline'],
           workingDirectory: copy.path,
           runInShell: Platform.isWindows,

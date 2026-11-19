@@ -26,7 +26,7 @@
 import 'package:flutter_flavorizr/src/processors/android/google/firebase/android_firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/google/firebase/firebase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/google/firebase/ios_targets_firebase_processor.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 import '../../../test_utils.dart';

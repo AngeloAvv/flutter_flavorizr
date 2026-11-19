@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsafe_title_setter_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 /// What the editor has to do with a layout of the call that sets the title of
 /// the window: put its region after it, or refuse it, which is an

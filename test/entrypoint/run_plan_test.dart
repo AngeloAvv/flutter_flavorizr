@@ -27,7 +27,7 @@ import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 

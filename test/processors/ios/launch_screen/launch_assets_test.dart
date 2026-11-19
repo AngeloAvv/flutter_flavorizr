@@ -26,7 +26,7 @@
 import 'dart:convert';
 
 import 'package:flutter_flavorizr/src/processors/ios/launch_screen/launch_assets.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('launchScreenStoryboard', () {

@@ -26,7 +26,7 @@
 import 'dart:io';
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
 

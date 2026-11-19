@@ -27,7 +27,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:image/image.dart' as img;
 
 /// A PNG of [width] x [height] with a diagonal gradient, so that resizing it

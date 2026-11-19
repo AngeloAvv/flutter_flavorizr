@@ -28,7 +28,7 @@ library;
 
 import 'dart:io';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 import '../../tool/parity/src/differ.dart';
@@ -36,7 +36,7 @@ import '../../tool/parity/src/runner.dart';
 
 /// End-to-end: needs Flutter, the network and a few minutes.
 ///
-///   flutter test --run-skipped -t parity
+///   dart test --run-skipped -t parity
 void main() {
   final runner = ParityRunner(
     fixture: File(p.join('tool', 'parity', 'fixtures', 'flavorizr.yaml')),

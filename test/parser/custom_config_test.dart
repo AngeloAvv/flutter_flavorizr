@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.dart';
 import 'package:flutter_flavorizr/src/parser/parser.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 String _config(String android) => '''
 flavors:

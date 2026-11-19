@@ -25,7 +25,7 @@
 
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../../test_utils.dart';

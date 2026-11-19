@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/did_you_mean.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   const known = ['bundleId', 'applicationId', 'name', 'buildSettings'];

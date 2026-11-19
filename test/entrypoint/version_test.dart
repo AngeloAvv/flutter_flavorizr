@@ -26,7 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/utils/version.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('flavorizrVersion is the version of pubspec.yaml', () {

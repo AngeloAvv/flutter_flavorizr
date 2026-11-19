@@ -24,7 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/engine/conflict/terminal_text.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('plain text, newlines and tabs are untouched', () {
