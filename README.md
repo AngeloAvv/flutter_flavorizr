@@ -117,16 +117,12 @@ flavorizr:
 | app                                     | Object |                                                                                            | false    | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                            | true     | An array of items. Each of them describes a flavor configuration                              |
 | recipes                                 | Map    |                                                                                            | false    | Named lists of [instructions](#available-instructions): `default` is what runs without a target |
-| assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | Array  |                                                                                            | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
 ##### <a href="#available-instructions">Available instructions</a>
 
 | value                   | category      | description                                                             |
 |:------------------------|:--------------|:------------------------------------------------------------------------|
-| assets:download         | Miscellaneous | Downloads the assets zip from the network                               |
-| assets:extract          | Miscellaneous | Extracts the downloaded zip in the project .tmp directory               |
-| assets:clean            | Miscellaneous | Removes the assets from the project directory                           |
 | android:flavorizrGradle | Android       | Adds the flavors to the Android flavorizr.gradle file                   |
 | android:buildGradle     | Android       | Imports the Android flavorizr.gradle file into build.gradle file        |
 | android:androidManifest | Android       | Changes the reference of the app name in the AndroidManifest.xml        |
@@ -550,8 +546,6 @@ flavors:
 
 By default, when you do not specify a custom set of processors by appending the -p (or --processors) param, a default processors set will be used:
 
-* assets:download
-* assets:extract
 * android:androidManifest
 * android:flavorizrGradle
 * android:buildGradle
@@ -584,7 +578,6 @@ By default, when you do not specify a custom set of processors by appending the 
 * windows:icons
 * google:firebase
 * huawei:agconnect
-* assets:clean
 * ide:config
 
 ## Customize your app

@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/processors/ios/launch_screen/launch_assets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
@@ -107,14 +108,6 @@ flavors:
         project.deleteSync(recursive: true);
       });
       Directory.current = project;
-      File(
-          p.join(
-            project.path,
-            '.tmp/ios/Assets.xcassets/LaunchImage.imageset/Contents.json',
-          ),
-        )
-        ..parent.createSync(recursive: true)
-        ..writeAsStringSync('<resources/>');
 
       await StandardLegacyPipeline(project).run(
         [LegacyStep('ios:dummyAssets', config)],
@@ -145,14 +138,6 @@ flavors:
       project = Directory.systemTemp.createTempSync('flavorizr_throwing_');
       previous = Directory.current;
       Directory.current = project;
-      File(
-          p.join(
-            project.path,
-            '.tmp/ios/Assets.xcassets/LaunchImage.imageset/Contents.json',
-          ),
-        )
-        ..parent.createSync(recursive: true)
-        ..writeAsStringSync('<resources/>');
     });
 
     tearDown(() {
@@ -219,22 +204,9 @@ flavors:
       project = Directory.systemTemp.createTempSync('flavorizr_preserve_');
       previous = Directory.current;
       Directory.current = project;
-      // What the assets hold, a custom `assetsUrl` included.
-      write(
-        '.tmp/ios/Assets.xcassets/LaunchImage.imageset/launch@1x.png',
-        'PLACEHOLDER',
-      );
-      write(
-        '.tmp/ios/Assets.xcassets/LaunchImage.imageset/launch@2x.png',
-        'PLACEHOLDER',
-      );
-      write(
-        '.tmp/ios/Assets.xcassets/LaunchImage.imageset/Contents.json',
-        '<resources/>',
-      );
       // What the engine generated for the flavor.
       write(
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
         'ICON',
       );
     });
@@ -253,12 +225,12 @@ flavors:
 
     test('a file of the engine survives what is copied over it', () async {
       await dummyAssets({
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
       });
 
       expect(
         read(
-          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
         ),
         'ICON',
       );
@@ -266,20 +238,23 @@ flavors:
 
     test('the rest of the assets still reaches the flavor', () async {
       await dummyAssets({
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
       });
 
       expect(
-        read(
-          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@2x.png',
-        ),
-        'PLACEHOLDER',
+        File(
+          p.join(
+            project.path,
+            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage@2x.png',
+          ),
+        ).existsSync(),
+        isTrue,
       );
       expect(
         read(
           'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/Contents.json',
         ),
-        '<resources/>',
+        launchImageContents,
       );
     });
 
@@ -289,10 +264,13 @@ flavors:
         await dummyAssets({});
 
         expect(
-          read(
-            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
-          ),
-          'PLACEHOLDER',
+          File(
+            p.join(
+              project.path,
+              'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
+            ),
+          ).readAsBytesSync(),
+          launchImageFiles['LaunchImage.png'],
         );
       },
     );

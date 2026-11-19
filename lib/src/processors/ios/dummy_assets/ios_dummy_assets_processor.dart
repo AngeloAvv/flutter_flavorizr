@@ -25,36 +25,66 @@
 
 import 'dart:io';
 
-import 'package:flutter_flavorizr/src/processors/commons/copy_folder_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:flutter_flavorizr/src/processors/ios/launch_screen/launch_assets.dart';
+import 'package:mason_logger/mason_logger.dart';
 
-/// Copies the `LaunchImage.imageset` that the launch screen of a flavor uses,
-/// unless the project has one for the flavor already (it has a
-/// `Contents.json`).
+/// Writes the `<flavor>LaunchImage.imageset` that the launch screen of a flavor
+/// shows, unless the project has one for the flavor already (it has a
+/// `Contents.json`): that is the user's.
 ///
 /// It used to copy a dummy `AppIcon-<flavor>.appiconset` too, which it does not
 /// anymore: a flavor with no `icon` builds with the `AppIcon` of the project
 /// (see `DarwinIconName`), and an appiconset that exists is the user's.
-class IOSDummyAssetsProcessor extends QueueProcessor {
+class IOSDummyAssetsProcessor extends AbstractProcessor<void> {
+  /// The folder of the asset catalog the imageset is written to.
+  final String destination;
+
+  /// The flavor the imageset is for.
+  final String flavorName;
+
   IOSDummyAssetsProcessor(
-    String source,
-    String destination,
-    String flavorName, {
-    required super.config,
-    required super.logger,
-  }) : super([
-         // A launch image that is in the project is the user's: it is not
-         // replaced by the placeholder.
-         if (!File(
-           '$destination/${flavorName}LaunchImage.imageset/Contents.json',
-         ).existsSync())
-           CopyFolderProcessor(
-             '$source/LaunchImage.imageset',
-             '$destination/${flavorName}LaunchImage.imageset',
-             config: config,
-             logger: logger,
-           ),
-       ]);
+    this.destination,
+    this.flavorName, {
+    required FlavorizrConfig config,
+    required Logger logger,
+  }) : super(config, logger: logger);
+
+  @override
+  void execute() {
+    final folder = Directory('$destination/${flavorName}LaunchImage.imageset');
+
+    if (File('${folder.path}/Contents.json').existsSync()) {
+      logger.detail(
+        '[$IOSDummyAssetsProcessor] `${folder.path}` is the project\'s: '
+        'it is left as it is',
+      );
+
+      return;
+    }
+
+    folder.createSync(recursive: true);
+
+    // `Contents.json` is what says the set is the project's, so it comes last,
+    // and it appears whole: it is written beside and renamed. A run that stops
+    // before it leaves a set that the next one completes.
+    for (final MapEntry(key: name, value: bytes) in launchImageFiles.entries) {
+      if (name != 'Contents.json') {
+        File('${folder.path}/$name').writeAsBytesSync(bytes);
+      }
+    }
+
+    final contents = File('${folder.path}/Contents.json');
+    final staged = File('${contents.path}.tmp')
+      ..writeAsBytesSync(launchImageFiles['Contents.json']!);
+
+    staged.renameSync(contents.path);
+
+    logger.detail(
+      '[$IOSDummyAssetsProcessor] Launch image written into `${folder.path}`',
+    );
+  }
 
   @override
   String toString() => 'IOSDummyAssetsProcessor';

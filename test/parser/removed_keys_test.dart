@@ -148,4 +148,30 @@ void main() {
       expect(flavorizr.flavors.keys, ['apple']);
     });
   });
+
+  group('`assetsUrl`, which nothing downloads from anymore', () {
+    test('is an error to remove, with where it is', () {
+      final error = removed(
+        'flavorizr.yaml',
+        '$_flavors'
+            'assetsUrl: https://example.com/assets.zip\n',
+      );
+
+      expect(error.key, 'assetsUrl');
+      expect(error.location, 'flavorizr.yaml:7:1');
+      expect(error.message, contains('nothing is downloaded'));
+      expect(error.message, contains('Remove it'));
+    });
+
+    test('is found in the flavorizr section of a pubspec too', () {
+      final error = removed(
+        'pubspec.yaml',
+        'name: app\nflavorizr:\n  assetsUrl: x\n  flavors:\n    apple:\n'
+            '      app:\n        name: Apple\n',
+      );
+
+      expect(error.key, 'assetsUrl');
+      expect(error.location, 'pubspec.yaml:3:3');
+    });
+  });
 }

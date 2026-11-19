@@ -89,9 +89,9 @@ removed in **4.0**.
 
 * `-p` and the targets can be mixed: the run is the sum of both. An empty `-p`
   (`-p ''`, a CI variable that is not set) runs what no `-p` runs, and warns.
-* The 2.x assets pipeline is gone, since the assets ship with the package
-  (#527): `assets:download`, `assets:extract` and `assets:clean` are skipped in
-  `-p` with a warning, and the rest runs. When `-p` names nothing else, nothing
+* The 2.x assets pipeline is gone, since flavorizr makes what it writes (#527):
+  `assets:download`, `assets:extract` and `assets:clean` are skipped in `-p`
+  with a warning, and the rest runs, and `assetsUrl` is an error to remove. When `-p` names nothing else, nothing
   runs (and not the default recipe), with exit code `0`.
 * `-p list` is the target `list`, which does not exist, and not the `list`
   command: it exits with `64`.
@@ -609,7 +609,7 @@ with any extension).
 
 Every other instruction (the other `ios:*` and `macos:*`,
 `windows:dummyAssets`, `windows:icons`, `google:firebase`, `huawei:agconnect`, `ide:config`,
-`android:dummyAssets` and the `assets:*` ones) still is a 2.x processor. They
+`android:dummyAssets`) still is a 2.x processor. They
 are not dropped: `apply` runs them with the 2.x pipeline, **after** the engine,
 straight on the project. That means they have no preview in `plan`, no conflict
 detection, no lock entry and are not checked by `status`; the commands say so

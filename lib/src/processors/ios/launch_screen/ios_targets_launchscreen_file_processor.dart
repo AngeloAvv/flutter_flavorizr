@@ -29,7 +29,6 @@ import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_target_la
 class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
   IOSTargetsLaunchScreenFileProcessor(
     String project,
-    String source,
     String destination, {
     required super.config,
     required super.logger,
@@ -38,7 +37,6 @@ class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
             ...config.iosFlavors.keys.map(
               (flavorName) => IOSTargetLaunchScreenFileProcessor(
                 project,
-                source,
                 destination,
                 flavorName,
                 config: config,

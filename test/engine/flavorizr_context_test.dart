@@ -60,7 +60,6 @@ void main() {
     root = Directory(p.join(temp.path, 'shadow'))..createSync();
     projectRoot = Directory(p.join(temp.path, 'project'))..createSync();
     config = FlavorizrConfig.parse('''
-assetsUrl: https://example.com/assets.zip
 flavors:
   apple:
     app:

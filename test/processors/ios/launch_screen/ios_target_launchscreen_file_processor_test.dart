@@ -45,42 +45,45 @@ void main() {
   });
 
   test(
-      'IOSTargetLaunchScreenFileProcessor.execute copies the storyboard, replaces the flavor placeholder, and registers the file in the Xcode project',
-      () {
-    TestUtils.withTempDir((dir) async {
-      final projectSourceDir =
-          Directory('test_resources/ios/launch_screen_test/Runner.xcodeproj');
-      final projectDestDir =
-          Directory(p.join(dir.path, 'Runner.xcodeproj'))..createSync();
+    'IOSTargetLaunchScreenFileProcessor.execute writes the storyboard of the flavor, and registers the file in the Xcode project',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectSourceDir = Directory(
+          'test_resources/ios/launch_screen_test/Runner.xcodeproj',
+        );
+        final projectDestDir = Directory(p.join(dir.path, 'Runner.xcodeproj'))
+          ..createSync();
 
-      for (final entity in projectSourceDir.listSync()) {
-        if (entity is File) {
-          entity.copySync(
-              p.join(projectDestDir.path, p.basename(entity.path)));
+        for (final entity in projectSourceDir.listSync()) {
+          if (entity is File) {
+            entity.copySync(
+              p.join(projectDestDir.path, p.basename(entity.path)),
+            );
+          }
         }
-      }
 
-      final destination = p.join(dir.path, 'Runner');
-      Directory(destination).createSync(recursive: true);
+        final destination = p.join(dir.path, 'Runner');
+        Directory(destination).createSync(recursive: true);
 
-      final processor = IOSTargetLaunchScreenFileProcessor(
-        projectDestDir.path,
-        'test_resources/ios/launch_screen_test/Source.storyboard',
-        destination,
-        'apple',
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = IOSTargetLaunchScreenFileProcessor(
+          projectDestDir.path,
+          destination,
+          'apple',
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await processor.execute();
+        await processor.execute();
 
-      final storyboardFile =
-          File(p.join(destination, 'appleLaunchScreen.storyboard'));
-      expect(storyboardFile.existsSync(), isTrue);
+        final storyboardFile = File(
+          p.join(destination, 'appleLaunchScreen.storyboard'),
+        );
+        expect(storyboardFile.existsSync(), isTrue);
 
-      final content = storyboardFile.readAsStringSync();
-      expect(content.contains('[[FLAVOR_NAME]]'), isFalse);
-      expect(content.contains('appleLaunchImage'), isTrue);
-    });
-  });
+        final content = storyboardFile.readAsStringSync();
+        expect(content.contains('[[FLAVOR_NAME]]'), isFalse);
+        expect(content.contains('appleLaunchImage'), isTrue);
+      });
+    },
+  );
 }

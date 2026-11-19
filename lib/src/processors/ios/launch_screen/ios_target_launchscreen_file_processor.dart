@@ -23,37 +23,25 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/replace_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/runtime_file_string_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
+import 'package:flutter_flavorizr/src/processors/ios/launch_screen/launch_assets.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart' as ios_utils;
 
 class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
   IOSTargetLaunchScreenFileProcessor(
     String project,
-    String source,
     String destination,
     String flavorName, {
     required super.config,
     required super.logger,
   }) : super(
           [
-            CopyFileProcessor(
-              source,
+            NewFileStringProcessor(
               '$destination/${flavorName}LaunchScreen.storyboard',
-              config: config,
-              logger: logger,
-            ),
-            RuntimeFileStringProcessor(
-              '$destination/${flavorName}LaunchScreen.storyboard',
-              ReplaceStringProcessor(
-                '[[FLAVOR_NAME]]',
-                flavorName,
-                config: config,
-                logger: logger,
-              ),
+              _Storyboard(flavorName, config: config, logger: logger),
               config: config,
               logger: logger,
             ),
@@ -69,4 +57,18 @@ class IOSTargetLaunchScreenFileProcessor extends QueueProcessor {
 
   @override
   String toString() => 'IOSTargetLaunchScreenFileProcessor';
+}
+
+/// The launch screen of a flavor, made in code.
+class _Storyboard extends StringProcessor {
+  final String flavorName;
+
+  _Storyboard(
+    this.flavorName, {
+    required super.config,
+    required super.logger,
+  });
+
+  @override
+  String execute() => launchScreenStoryboard(flavorName);
 }

@@ -319,12 +319,13 @@ void main() {
       expect(project.logger.output, isNot(contains('nothing to run')));
     });
 
-    test('as a positional target are not dropped', () async {
+    test('as a positional target are not dropped: they are unknown', () async {
       // Only the 2.x option is forgiving: a target of 3.0 is what it says.
       final code = await project.run(['-y', 'assets:download']);
 
       expect(warned('assets:download'), isEmpty);
-      expect(code, isNot(ExitCodes.usage));
+      expect(code, ExitCodes.usage);
+      expect(project.logger.errors.join(), contains('assets:download'));
     });
   });
 }

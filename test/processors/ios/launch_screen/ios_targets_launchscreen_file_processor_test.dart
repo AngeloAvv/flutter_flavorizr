@@ -46,57 +46,64 @@ void main() {
   });
 
   test(
-      'IOSTargetsLaunchScreenFileProcessor wires one IOSTargetLaunchScreenFileProcessor per iOS flavor',
-      () {
-    final processor = IOSTargetsLaunchScreenFileProcessor(
-      'project',
-      'source',
-      'destination',
-      config: flavorizr,
-      logger: logger,
-    );
-
-    expect(processor.processors.length, flavorizr.iosFlavors.length);
-    expect(processor.processors,
-        everyElement(isA<IOSTargetLaunchScreenFileProcessor>()));
-  });
-
-  test(
-      'IOSTargetsLaunchScreenFileProcessor.execute generates a launch screen storyboard for every iOS flavor',
-      () {
-    TestUtils.withTempDir((dir) async {
-      final projectSourceDir =
-          Directory('test_resources/ios/launch_screen_test/Runner.xcodeproj');
-      final projectDestDir =
-          Directory(p.join(dir.path, 'Runner.xcodeproj'))..createSync();
-
-      for (final entity in projectSourceDir.listSync()) {
-        if (entity is File) {
-          entity.copySync(
-              p.join(projectDestDir.path, p.basename(entity.path)));
-        }
-      }
-
-      final destination = p.join(dir.path, 'Runner');
-      Directory(destination).createSync(recursive: true);
-
+    'IOSTargetsLaunchScreenFileProcessor wires one IOSTargetLaunchScreenFileProcessor per iOS flavor',
+    () {
       final processor = IOSTargetsLaunchScreenFileProcessor(
-        projectDestDir.path,
-        'test_resources/ios/launch_screen_test/Source.storyboard',
-        destination,
+        'project',
+        'destination',
         config: flavorizr,
         logger: logger,
       );
 
-      await processor.execute();
+      expect(processor.processors.length, flavorizr.iosFlavors.length);
+      expect(
+        processor.processors,
+        everyElement(isA<IOSTargetLaunchScreenFileProcessor>()),
+      );
+    },
+  );
 
-      for (final flavorName in flavorizr.iosFlavors.keys) {
-        final storyboardFile =
-            File(p.join(destination, '${flavorName}LaunchScreen.storyboard'));
-        expect(storyboardFile.existsSync(), isTrue);
-        expect(storyboardFile.readAsStringSync().contains('[[FLAVOR_NAME]]'),
-            isFalse);
-      }
-    });
-  });
+  test(
+    'IOSTargetsLaunchScreenFileProcessor.execute generates a launch screen storyboard for every iOS flavor',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectSourceDir = Directory(
+          'test_resources/ios/launch_screen_test/Runner.xcodeproj',
+        );
+        final projectDestDir = Directory(p.join(dir.path, 'Runner.xcodeproj'))
+          ..createSync();
+
+        for (final entity in projectSourceDir.listSync()) {
+          if (entity is File) {
+            entity.copySync(
+              p.join(projectDestDir.path, p.basename(entity.path)),
+            );
+          }
+        }
+
+        final destination = p.join(dir.path, 'Runner');
+        Directory(destination).createSync(recursive: true);
+
+        final processor = IOSTargetsLaunchScreenFileProcessor(
+          projectDestDir.path,
+          destination,
+          config: flavorizr,
+          logger: logger,
+        );
+
+        await processor.execute();
+
+        for (final flavorName in flavorizr.iosFlavors.keys) {
+          final storyboardFile = File(
+            p.join(destination, '${flavorName}LaunchScreen.storyboard'),
+          );
+          expect(storyboardFile.existsSync(), isTrue);
+          expect(
+            storyboardFile.readAsStringSync().contains('[[FLAVOR_NAME]]'),
+            isFalse,
+          );
+        }
+      });
+    },
+  );
 }

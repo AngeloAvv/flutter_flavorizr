@@ -29,7 +29,6 @@ import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:io/io.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 
@@ -50,7 +49,6 @@ void main() {
     'IOSDummyAssetsTargetsProcessor wires one IOSDummyAssetsProcessor per iOS flavor',
     () {
       final processor = IOSDummyAssetsTargetsProcessor(
-        'source',
         'destination',
         config: flavorizr,
         logger: logger,
@@ -65,43 +63,33 @@ void main() {
   );
 
   test(
-    'IOSDummyAssetsTargetsProcessor.execute copies the launch image of every iOS flavor, and no icon',
+    'IOSDummyAssetsTargetsProcessor.execute writes the launch image of every iOS flavor, and no icon',
     () async {
       await TestUtils.withTempDir((dir) async {
-        final source = p.join(dir.path, 'source');
         final destination = p.join(dir.path, 'destination');
-        Directory(source).createSync(recursive: true);
 
-        copyPathSync(
-          'test_resources/ios/dummy_assets_processor_test/AppIcon.appiconset',
-          p.join(source, 'AppIcon.appiconset'),
-        );
-        copyPathSync(
-          'test_resources/ios/dummy_assets_processor_test/LaunchImage.imageset',
-          p.join(source, 'LaunchImage.imageset'),
-        );
-
-        final processor = IOSDummyAssetsTargetsProcessor(
-          source,
+        await IOSDummyAssetsTargetsProcessor(
           destination,
           config: flavorizr,
           logger: logger,
-        );
-
-        await processor.execute();
+        ).execute();
 
         for (final flavorName in flavorizr.iosFlavors.keys) {
+          expect(
+            File(
+              p.join(
+                destination,
+                '${flavorName}LaunchImage.imageset',
+                'Contents.json',
+              ),
+            ).existsSync(),
+            isTrue,
+          );
           expect(
             Directory(
               p.join(destination, 'AppIcon-$flavorName.appiconset'),
             ).existsSync(),
             isFalse,
-          );
-          expect(
-            Directory(
-              p.join(destination, '${flavorName}LaunchImage.imageset'),
-            ).existsSync(),
-            isTrue,
           );
         }
       });
