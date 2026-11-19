@@ -151,6 +151,10 @@ Future<void> _e2e(String platform, Directory checkout) async {
       _fail('flavorizr.lock still records the flavor that was removed.');
     }
 
+    // Before Flutter had a chance to inject its own: it is flavorizr that made
+    // the pre-action.
+    if (platform == 'ios') _expectOnePrepareAction(project, 'apple');
+
     _step('build apple');
     await _run(project, 'flutter', [..._build[platform]!, '--flavor', 'apple']);
 

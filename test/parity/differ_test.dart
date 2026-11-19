@@ -309,6 +309,47 @@ void main() {
       );
     });
 
+    test('does not take another type of action', () {
+      final bogus = preActions.replaceAll(
+        'ExecutionActionType.ShellScriptAction',
+        'ExecutionActionType.BogusShellScriptAction',
+      );
+
+      expect(clean('$open$close', '$open$bogus$entries$close'), isFalse);
+    });
+
+    for (final (name, from, to) in [
+      (
+        'another target',
+        'BlueprintIdentifier = "97C146ED1CF9000F007C117D"',
+        'BlueprintIdentifier = "331C8080294A63A400263BE5"',
+      ),
+      (
+        'another product',
+        'BuildableName = "Runner.app"',
+        'BuildableName = "RunnerTests.xctest"',
+      ),
+      (
+        'another container',
+        'container:Runner.xcodeproj',
+        'container:Other.xcodeproj',
+      ),
+    ]) {
+      test('does not take a build entry for $name', () {
+        final other = entries.replaceAll(from, to);
+
+        expect(other, isNot(entries));
+        expect(clean('$open$close', '$open$preActions$other$close'), isFalse);
+      });
+
+      test('does not take a pre-action for $name', () {
+        final other = preActions.replaceAll(from, to);
+
+        expect(other, isNot(preActions));
+        expect(clean('$open$close', '$open$other$entries$close'), isFalse);
+      });
+    }
+
     test('does not take a build entry that does not build for everything', () {
       final partial = entries.replaceAll(
         'buildForTesting = "YES"',
