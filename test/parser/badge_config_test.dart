@@ -171,6 +171,24 @@ void main() {
     });
   });
 
+  test('the example of the README parses, and means what it says', () {
+    final readme = File('README.md').readAsStringSync();
+    final section = readme.substring(readme.indexOf('#### Icon badge'));
+    final example = RegExp(
+      r'```yaml\n(.*?)```',
+      dotAll: true,
+    ).firstMatch(section)!.group(1)!;
+
+    final config = FlavorizrConfig.parse(example);
+
+    expect(config.badge, isTrue);
+    expect(config.badgeOf('dev')!.label, 'DEV');
+    expect(config.badgeOf('dev')!.color, BadgeColor.parse('#E53935'));
+    expect(config.badgeOf('staging')!.label, 'STAGING');
+    expect(config.badgeOf('staging')!.color, defaultBadgeColor('staging'));
+    expect(config.badgeOf('prod'), isNull);
+  });
+
   group('icon', () {
     test('is the root icon, if there is one', () {
       expect(FlavorizrConfig.parse(_config(flavors: {'a': ''})).icon, isNull);

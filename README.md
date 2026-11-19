@@ -408,10 +408,12 @@ from a `prod` one at a glance.
 badge: true                       # root default (default: false)
 flavors:
   dev:
+    app: { name: "App Dev" }
     badge: { label: DEV, color: "#E53935" }
   staging:
-    app: { name: Staging }        # inherits: label "STAGING", automatic colour
+    app: { name: "App Staging" }  # inherits: label "STAGING", automatic colour
   prod:
+    app: { name: "App" }
     badge: false                  # opt-out
 ```
 
