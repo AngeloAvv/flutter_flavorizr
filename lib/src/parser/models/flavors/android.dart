@@ -49,9 +49,16 @@ class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
 
-  /// What goes as it is in the `defaultConfig` of the flavor in Gradle.
+  /// What goes in the flavor in Gradle, by property: text, numbers, booleans,
+  /// lists and maps are written as such, in the language of the script. A map
+  /// with the single key `raw` is code that is written as it is.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, dynamic> customConfig;
+
+  /// The `manifestPlaceholders` of the flavor, by name: the same kinds of value
+  /// as [customConfig].
+  @JsonKey(disallowNullValue: true, defaultValue: {})
+  final Map<String, dynamic> manifestPlaceholders;
 
   /// The `resValues` of the flavor, by name.
   @JsonKey(disallowNullValue: true, defaultValue: {})
@@ -85,6 +92,7 @@ class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
   Android({
     required this.applicationId,
     Map<String, dynamic> customConfig = const {},
+    Map<String, dynamic> manifestPlaceholders = const {},
     Map<String, ResValue> resValues = const {},
     Map<String, BuildConfigField> buildConfigFields = const {},
     this.agconnect,
@@ -93,6 +101,8 @@ class Android extends OS with FirebaseMixin, IconMixin, DummyAssetsMixin {
     this.icon,
     this.adaptiveIcon,
   }) : customConfig = (freeze(customConfig) as Map).cast<String, dynamic>(),
+       manifestPlaceholders = (freeze(manifestPlaceholders) as Map)
+           .cast<String, dynamic>(),
        resValues = frozenMap(resValues),
        buildConfigFields = frozenMap(buildConfigFields);
 

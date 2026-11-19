@@ -13,6 +13,12 @@ android.apply {
             signingConfig = flavorSigning.green
             versionCode = 1000
             minSdkVersion = 23
+            isDefault = true
+            resourceConfigurations += listOf("en", "it")
+            extras = mapOf("tier" to "gold", "level" to 3)
+            manifestPlaceholders["appAuthRedirectScheme"] = "com.example.apple"
+            manifestPlaceholders["retries"] = 3
+            manifestPlaceholders["label"] = "raw"
             resValue(type = "string", name = "app_name", value = "Apple App")
             resValue(type = "string", name = "variable_one", value = "previous variable one")
             resValue(type = "string", name = "common", value = "test common")

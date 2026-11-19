@@ -45,10 +45,17 @@ flavorizr:
       android:
         applicationId: "com.example.apple"
         customConfig:
-          versionNameSuffix: "\"-green-prod\""
-          signingConfig: flavorSigning.green
+          versionNameSuffix: "-green-prod"
+          signingConfig: {raw: flavorSigning.green}
           versionCode: 1000
           minSdkVersion: 23
+          isDefault: true
+          resourceConfigurations: [en, it]
+          extras: {tier: "gold", level: 3}
+        manifestPlaceholders:
+          appAuthRedirectScheme: com.example.apple
+          retries: 3
+          label: {raw: "\"raw\""}
 
       ios:
         bundleId: "com.example.apple"
