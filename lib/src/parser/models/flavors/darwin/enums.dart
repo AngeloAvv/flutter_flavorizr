@@ -23,11 +23,19 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/// A build mode of an Apple platform, which a flavor has a build configuration
+/// for.
 enum Target {
+  /// The `Debug` build configuration.
   debug('debug'),
+
+  /// The `Profile` build configuration, which is built as a release.
   profile('release'),
+
+  /// The `Release` build configuration.
   release('release');
 
+  /// The mode the configuration is built as.
   final String darwinTarget;
 
   const Target(this.darwinTarget);

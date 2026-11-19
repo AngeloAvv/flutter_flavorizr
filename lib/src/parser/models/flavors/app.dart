@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'app.g.dart';
 
+/// The app of a flavor: how it is called, and its icon.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -34,15 +35,20 @@ part 'app.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class App {
+  /// The name of the app, which the user sees.
   @JsonKey(required: true, disallowNullValue: true)
   final String name;
 
+  /// The path of the icon of the app, if there is one.
   @JsonKey(disallowNullValue: true)
   final String? icon;
 
+  /// Creates a App.
   const App({required this.name, this.icon});
 
+  /// The name with its quotes escaped, for the files it is written in.
   String get escapedName => name.replaceAll('\'', '\\\'');
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory App.fromJson(Map json) => _$AppFromJson(json);
 }

@@ -23,4 +23,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-enum IDE { idea, vscode }
+/// An IDE that flavorizr writes the run configurations of the flavors for.
+enum IDE {
+  /// IntelliJ IDEA and Android Studio.
+  idea,
+
+  /// Visual Studio Code.
+  vscode,
+}

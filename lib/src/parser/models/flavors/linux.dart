@@ -27,6 +27,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'linux.g.dart';
 
+/// The Linux configuration of a flavor.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -34,10 +35,13 @@ part 'linux.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Linux {
+  /// The application id of the flavor.
   @JsonKey(required: true, disallowNullValue: true)
   final String applicationId;
 
+  /// Creates a Linux.
   const Linux({required this.applicationId});
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Linux.fromJson(Map json) => _$LinuxFromJson(json);
 }

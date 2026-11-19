@@ -24,9 +24,9 @@
  */
 
 import 'package:flutter_flavorizr/src/parser/models/flavors/google/firebase/firebase.dart';
-import 'package:json_annotation/json_annotation.dart';
 
+/// A platform configuration that may have a Firebase configuration.
 mixin FirebaseMixin {
-  @JsonKey(disallowNullValue: true)
-  Firebase? firebase;
+  /// The Firebase configuration, if there is one.
+  Firebase? get firebase;
 }

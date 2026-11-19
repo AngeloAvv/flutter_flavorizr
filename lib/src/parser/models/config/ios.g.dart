@@ -9,7 +9,7 @@ part of 'ios.dart';
 IOS _$IOSFromJson(Map json) => $checkedCreate('IOS', json, ($checkedConvert) {
   $checkKeys(
     json,
-    allowedKeys: const ['buildSettings', 'includes'],
+    allowedKeys: const ['includes', 'buildSettings'],
     disallowNullValues: const ['includes'],
   );
   final val = IOS(

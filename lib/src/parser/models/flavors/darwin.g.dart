@@ -11,21 +11,21 @@ Darwin _$DarwinFromJson(Map json) =>
       $checkKeys(
         json,
         allowedKeys: const [
-          'buildSettings',
-          'generateDummyAssets',
-          'icon',
-          'firebase',
           'bundleId',
           'variables',
           'includes',
+          'buildSettings',
+          'firebase',
+          'icon',
+          'generateDummyAssets',
         ],
         requiredKeys: const ['bundleId'],
         disallowNullValues: const [
-          'icon',
-          'firebase',
           'bundleId',
           'variables',
           'includes',
+          'firebase',
+          'icon',
         ],
       );
       final val = Darwin(

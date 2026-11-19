@@ -11,26 +11,26 @@ Android _$AndroidFromJson(Map json) =>
       $checkKeys(
         json,
         allowedKeys: const [
-          'generateDummyAssets',
-          'icon',
-          'firebase',
           'applicationId',
           'customConfig',
           'resValues',
           'buildConfigFields',
           'agconnect',
           'adaptiveIcon',
+          'firebase',
+          'icon',
+          'generateDummyAssets',
         ],
         requiredKeys: const ['applicationId'],
         disallowNullValues: const [
-          'icon',
-          'firebase',
           'applicationId',
           'customConfig',
           'resValues',
           'buildConfigFields',
           'agconnect',
           'adaptiveIcon',
+          'firebase',
+          'icon',
         ],
       );
       final val = Android(

@@ -23,4 +23,25 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-export 'src/entrypoint/run.dart' show execute;
+/// flavorizr: flavors for Flutter projects.
+///
+/// This library is the **stable** API: what is exported here follows semver.
+///
+/// * [Flavorizr] runs the command line.
+/// * [FlavorizrProcessor] is a unit of work: it makes, patches or removes the
+///   files of a project for the flavors of `flavorizr.yaml`.
+/// * [FlavorizrContext] is what a processor is given to read the configuration
+///   and to say what it owns.
+/// * [Resource] and [ResourceKey] are something several processors share, such
+///   as the Xcode project.
+///
+/// The building blocks that processors are written with, and the models of the
+/// configuration, are in `package:flutter_flavorizr/experimental.dart`: they are
+/// **not** covered by semver until they are promoted here.
+library;
+
+export 'src/api/flavorizr.dart' show Flavorizr;
+export 'src/engine/flavorizr_context.dart' show FlavorizrContext;
+export 'src/engine/flavorizr_processor.dart' show FlavorizrProcessor;
+export 'src/engine/resource.dart' show Resource;
+export 'src/engine/resource_key.dart' show ResourceKey;

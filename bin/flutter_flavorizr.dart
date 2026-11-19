@@ -26,5 +26,5 @@
 import 'package:flutter_flavorizr/flutter_flavorizr.dart';
 
 Future<void> main(List<String> args) async {
-  await execute(args);
+  await Flavorizr.run(args);
 }

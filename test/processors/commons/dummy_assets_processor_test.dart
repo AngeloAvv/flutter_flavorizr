@@ -35,9 +35,10 @@ import 'package:mason_logger/mason_logger.dart';
 import '../../test_utils.dart';
 
 class _TestDummyAssetsConfig extends OS with DummyAssetsMixin {
-  _TestDummyAssetsConfig({bool generateDummyAssets = true}) {
-    this.generateDummyAssets = generateDummyAssets;
-  }
+  _TestDummyAssetsConfig({this.generateDummyAssets = true});
+
+  @override
+  final bool generateDummyAssets;
 }
 
 void main() {

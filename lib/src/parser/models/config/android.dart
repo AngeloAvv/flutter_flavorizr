@@ -23,12 +23,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/build_config_field.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/res_value.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'android.g.dart';
 
+/// What `app.android` of `flavorizr.yaml` sets for the Android flavors: the `flavorDimensions`, and the `resValues` and `buildConfigFields` that every flavor gets.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -36,22 +38,29 @@ part 'android.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class AndroidDefaults {
+  /// The flavor dimension when `flavorDimensions` is not set.
   static const kFlavorDimensionValue = 'flavor-type';
 
+  /// The flavor dimension of the flavors, which Gradle needs.
   @JsonKey(defaultValue: 'flavor-type')
   final String flavorDimensions;
 
+  /// The `resValues` of every flavor, by name.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, ResValue> resValues;
 
+  /// The `buildConfigFields` of every flavor, by name.
   @JsonKey(disallowNullValue: true, defaultValue: {})
   final Map<String, BuildConfigField> buildConfigFields;
 
-  const AndroidDefaults({
+  /// Creates a AndroidDefaults.
+  AndroidDefaults({
     this.flavorDimensions = kFlavorDimensionValue,
-    this.resValues = const {},
-    this.buildConfigFields = const {},
-  });
+    Map<String, ResValue> resValues = const {},
+    Map<String, BuildConfigField> buildConfigFields = const {},
+  }) : resValues = frozenMap(resValues),
+       buildConfigFields = frozenMap(buildConfigFields);
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory AndroidDefaults.fromJson(Map json) => _$AndroidDefaultsFromJson(json);
 }

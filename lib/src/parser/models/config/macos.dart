@@ -23,12 +23,14 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/include.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'macos.g.dart';
 
+/// What `app.macos` of `flavorizr.yaml` sets for the macOS flavors.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -36,16 +38,27 @@ part 'macos.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class MacOS with BuildSettingsMixin {
+  /// The files every macOS xcconfig includes.
   @JsonKey(disallowNullValue: true, defaultValue: [])
   final List<Include> includes;
 
+  @override
+  @JsonKey(defaultValue: {})
+  final Map<String, dynamic> buildSettings;
+
+  /// Creates a MacOS.
   MacOS({
     Map<String, dynamic> buildSettings = const {},
-    this.includes = const [],
-  }) {
-    this.buildSettings = BuildSettingsMixin.macosDefaultBuildSettings;
-    this.buildSettings.addAll(buildSettings);
-  }
+    List<Include> includes = const [],
+  }) : includes = frozenList(includes),
+       buildSettings =
+           (freeze({
+                     ...BuildSettingsMixin.macosDefaultBuildSettings,
+                     ...buildSettings,
+                   })
+                   as Map)
+               .cast<String, dynamic>();
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory MacOS.fromJson(Map json) => _$MacOSFromJson(json);
 }

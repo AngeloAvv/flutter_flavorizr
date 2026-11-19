@@ -1,6 +1,6 @@
-import 'package:json_annotation/json_annotation.dart';
-
+/// The Xcode build settings of a platform, as the configuration spells them.
 mixin BuildSettingsMixin {
+  /// The build settings every iOS flavor starts from.
   static final Map<String, dynamic> iosDefaultBuildSettings = {
     "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon-\$(ASSET_PREFIX)",
     "LD_RUNPATH_SEARCH_PATHS": "\$(inherited) @executable_path/Frameworks",
@@ -11,6 +11,7 @@ mixin BuildSettingsMixin {
     "INFOPLIST_FILE": "Runner/Info.plist",
   };
 
+  /// The build settings every macOS flavor starts from.
   static final Map<String, dynamic> macosDefaultBuildSettings = {
     "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon-\$(ASSET_PREFIX)",
     "LD_RUNPATH_SEARCH_PATHS": "\$(inherited) @executable_path/../Frameworks",
@@ -20,6 +21,6 @@ mixin BuildSettingsMixin {
     "INFOPLIST_FILE": "Runner/Info.plist",
   };
 
-  @JsonKey(defaultValue: {})
-  late Map<String, dynamic> buildSettings;
+  /// The build settings, which the ones of a flavor add to.
+  Map<String, dynamic> get buildSettings;
 }

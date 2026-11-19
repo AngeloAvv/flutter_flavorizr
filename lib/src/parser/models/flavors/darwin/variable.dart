@@ -28,6 +28,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'variable.g.dart';
 
+/// A variable that an xcconfig of a flavor sets.
 @JsonSerializable(
   anyMap: true,
   createToJson: false,
@@ -35,13 +36,17 @@ part 'variable.g.dart';
   disallowUnrecognizedKeys: true,
 )
 class Variable {
+  /// The build configuration it is for, or `null` for all of them.
   @JsonKey(disallowNullValue: true)
   final Target? target;
 
+  /// The value of the variable.
   @JsonKey(required: true, disallowNullValue: true)
   final String value;
 
+  /// Creates a Variable.
   const Variable({required this.value, this.target});
 
+  /// Reads it from [json], the decoded YAML of the configuration.
   factory Variable.fromJson(Map json) => _$VariableFromJson(json);
 }
