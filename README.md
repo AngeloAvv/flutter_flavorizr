@@ -593,6 +593,12 @@ flutter pub run flutter_flavorizr apply flutter:scaffold
 
 The recipe creates `lib/main.dart`, `lib/app.dart` and `lib/pages/my_home_page.dart`, which show how to use the getters above, and a file that exists is not overwritten. A new Flutter project already has a `lib/main.dart`: add `--overwrite-scaffold` to replace it. The flag replaces every scaffold file of the run that exists, `lib/flavors.dart` included (the recipe runs `flutter:flavors` as a dependency), so use it on a fresh project, not on one with code of yours in those files.
 
+## Extending flavorizr
+
+A project can register processors of its own, in `tool/flavorizr.dart`, and
+replace the ones of flavorizr. See [Extending flavorizr](doc/extending.md) and
+the [example](example).
+
 ## Third party services
 
 ### Google Firebase

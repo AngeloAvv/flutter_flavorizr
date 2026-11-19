@@ -33,3 +33,11 @@ flavors:
 
 ide:
   - idea
+
+# `acme:flavorsDoc` is the processor of tool/flavors_doc_processor.dart. Naming it
+# in the default recipe runs it with everything else.
+recipes:
+  flavorized:
+    - all
+    - acme:flavorsDoc
+  default: flavorized

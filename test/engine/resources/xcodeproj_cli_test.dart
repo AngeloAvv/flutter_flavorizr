@@ -98,7 +98,7 @@ void main() {
     files = ['one.xcconfig'];
     owned = {};
 
-    final source = File('example/$_pbxproj');
+    final source = File('test_resources/example_2x/$_pbxproj');
     project.write(_pbxproj, source.readAsStringSync());
   });
   tearDown(() => project.dispose());

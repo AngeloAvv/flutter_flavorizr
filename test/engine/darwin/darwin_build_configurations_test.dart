@@ -464,7 +464,9 @@ void main() {
 
     test('are all owned, the ones 2.x made too, when the processor claims '
         'them, so that dropping the flavors removes them', () async {
-      final source = File('example/$_pbxprojPath').readAsStringSync();
+      final source = File(
+        'test_resources/example_2x/$_pbxprojPath',
+      ).readAsStringSync();
       final project = CliFixture(android: false)..write(_pbxprojPath, source);
       fixtures.add(project);
       claim = true;
@@ -793,7 +795,9 @@ void main() {
 
     test('only add what a project 2.x flavorized lacks, and use the rest as it '
         'is: it keeps its UUIDs and is not owned', () async {
-      final source = File('example/$_pbxprojPath').readAsStringSync();
+      final source = File(
+        'test_resources/example_2x/$_pbxprojPath',
+      ).readAsStringSync();
       final project = CliFixture(android: false)..write(_pbxprojPath, source);
       fixtures.add(project);
 

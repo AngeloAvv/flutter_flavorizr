@@ -72,7 +72,9 @@ void main() {
   File file(String path) => File(p.join(project.path, path));
 
   void copyProject(String platform) {
-    final source = Directory('example/$platform/Runner.xcodeproj');
+    final source = Directory(
+      'test_resources/example_2x/$platform/Runner.xcodeproj',
+    );
     final target = Directory(p.join(project.path, platform, 'Runner.xcodeproj'))
       ..createSync(recursive: true);
 

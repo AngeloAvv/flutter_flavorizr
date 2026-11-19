@@ -1,20 +1,8 @@
-enum Flavor {
-  apple,
-  banana,
-}
+// This file is yours: flutter_flavorizr creates it once and a normal run never
+// writes it again (apply --overwrite-scaffold does replace it). Add what you
+// need around the flavors, such as colors or URLs by flavor.
+//
+// The Flavor enum and F live in flavors.g.dart, which flutter_flavorizr
+// writes again whenever the flavors change.
 
-class F {
-  static late final Flavor appFlavor;
-
-  static String get name => appFlavor.name;
-
-  static String get title {
-    switch (appFlavor) {
-      case Flavor.apple:
-        return 'Apple App';
-      case Flavor.banana:
-        return 'Banana App';
-    }
-  }
-
-}
+export 'flavors.g.dart';

@@ -62,7 +62,7 @@ void main() {
       final file = File(p.join(directory.path, _pbxproj))
         ..createSync(recursive: true);
 
-      File('example/$_pbxproj').copySync(file.path);
+      File('test_resources/example_2x/$_pbxproj').copySync(file.path);
     }
   });
 

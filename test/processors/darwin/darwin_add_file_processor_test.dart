@@ -36,106 +36,112 @@ void main() {
   late FlavorizrConfig flavorizr;
   late Logger logger;
 
-  const exampleProjectPath = 'example/ios/Runner.xcodeproj';
+  const exampleProjectPath = 'test_resources/example_2x/ios/Runner.xcodeproj';
 
   setUp(() {
     logger = TestUtils.quietLogger();
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test DarwinAddFileProcessor adds a new file reference to the main group',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+  test(
+    'Test DarwinAddFileProcessor adds a new file reference to the main group',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      final processor = DarwinAddFileProcessor(
-        projectPath,
-        'Runner/new_asset.txt',
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = DarwinAddFileProcessor(
+          projectPath,
+          'Runner/new_asset.txt',
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await processor.execute();
+        await processor.execute();
 
-      final reopened = await XcodeProject.open(projectPath);
-      expect(
-        reopened.files.any((f) => f.path == 'Runner/new_asset.txt'),
-        isTrue,
-      );
-    });
-  });
+        final reopened = await XcodeProject.open(projectPath);
+        expect(
+          reopened.files.any((f) => f.path == 'Runner/new_asset.txt'),
+          isTrue,
+        );
+      });
+    },
+  );
 
   test(
-      'Test DarwinAddFileProcessor.addTo adds the file to the resources of the '
-      'first native target, and tells whether it added anything', () async {
-    final project = await XcodeProject.open(exampleProjectPath);
-    final target = project.targets.first as PBXNativeTarget;
-    List<String?> resources() => [
-          for (final buildFile in target.resourcesBuildPhase.files)
-            if (buildFile.fileRef case final PBXFileReference ref) ref.path,
-        ];
+    'Test DarwinAddFileProcessor.addTo adds the file to the resources of the '
+    'first native target, and tells whether it added anything',
+    () async {
+      final project = await XcodeProject.open(exampleProjectPath);
+      final target = project.targets.first as PBXNativeTarget;
+      List<String?> resources() => [
+        for (final buildFile in target.resourcesBuildPhase.files)
+          if (buildFile.fileRef case final PBXFileReference ref) ref.path,
+      ];
 
-    expect(resources(), isNot(contains('Runner/new_asset.txt')));
-    expect(
-      DarwinAddFileProcessor.addTo(project, 'Runner/new_asset.txt'),
-      isTrue,
-    );
-    expect(
-      resources().where((path) => path == 'Runner/new_asset.txt'),
-      hasLength(1),
-    );
-    expect(
-      project.mainGroup.children
-          .whereType<PBXFileReference>()
-          .where((file) => file.path == 'Runner/new_asset.txt'),
-      hasLength(1),
-    );
-    expect(
-      DarwinAddFileProcessor.addTo(project, 'Runner/new_asset.txt'),
-      isFalse,
-    );
-    expect(
-      resources().where((path) => path == 'Runner/new_asset.txt'),
-      hasLength(1),
-    );
-  });
-
-  test('Test DarwinAddFileProcessor is idempotent when file already added',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
-
-      final processor = DarwinAddFileProcessor(
-        projectPath,
-        'Runner/new_asset.txt',
-        config: flavorizr,
-        logger: logger,
+      expect(resources(), isNot(contains('Runner/new_asset.txt')));
+      expect(
+        DarwinAddFileProcessor.addTo(project, 'Runner/new_asset.txt'),
+        isTrue,
       );
-
-      await processor.execute();
-
-      final project = await XcodeProject.open(projectPath);
-      final countAfterFirstRun =
-          project.files.where((f) => f.path == 'Runner/new_asset.txt').length;
-
-      final secondProcessor = DarwinAddFileProcessor(
-        projectPath,
-        'Runner/new_asset.txt',
-        config: flavorizr,
-        logger: logger,
+      expect(
+        resources().where((path) => path == 'Runner/new_asset.txt'),
+        hasLength(1),
       );
-      await secondProcessor.execute();
+      expect(
+        project.mainGroup.children.whereType<PBXFileReference>().where(
+          (file) => file.path == 'Runner/new_asset.txt',
+        ),
+        hasLength(1),
+      );
+      expect(
+        DarwinAddFileProcessor.addTo(project, 'Runner/new_asset.txt'),
+        isFalse,
+      );
+      expect(
+        resources().where((path) => path == 'Runner/new_asset.txt'),
+        hasLength(1),
+      );
+    },
+  );
 
-      final reopened = await XcodeProject.open(projectPath);
-      final countAfterSecondRun = reopened.files
-          .where((f) => f.path == 'Runner/new_asset.txt')
-          .length;
+  test(
+    'Test DarwinAddFileProcessor is idempotent when file already added',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      expect(countAfterFirstRun, 1);
-      expect(countAfterSecondRun, 1);
-    });
-  });
+        final processor = DarwinAddFileProcessor(
+          projectPath,
+          'Runner/new_asset.txt',
+          config: flavorizr,
+          logger: logger,
+        );
 
+        await processor.execute();
+
+        final project = await XcodeProject.open(projectPath);
+        final countAfterFirstRun = project.files
+            .where((f) => f.path == 'Runner/new_asset.txt')
+            .length;
+
+        final secondProcessor = DarwinAddFileProcessor(
+          projectPath,
+          'Runner/new_asset.txt',
+          config: flavorizr,
+          logger: logger,
+        );
+        await secondProcessor.execute();
+
+        final reopened = await XcodeProject.open(projectPath);
+        final countAfterSecondRun = reopened.files
+            .where((f) => f.path == 'Runner/new_asset.txt')
+            .length;
+
+        expect(countAfterFirstRun, 1);
+        expect(countAfterSecondRun, 1);
+      });
+    },
+  );
 }

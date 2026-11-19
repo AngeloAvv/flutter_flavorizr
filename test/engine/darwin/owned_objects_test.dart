@@ -96,7 +96,7 @@ void main() {
     bundle = p.join(temp.path, 'ios', 'Runner.xcodeproj');
     Directory(bundle).createSync(recursive: true);
     File(
-      'example/${_pbxproj.path}',
+      'test_resources/example_2x/${_pbxproj.path}',
     ).copySync(p.join(bundle, 'project.pbxproj'));
   });
 

@@ -38,7 +38,7 @@ void main() {
   late FlavorizrConfig flavorizr;
   late Logger logger;
 
-  const exampleProjectPath = 'example/ios/Runner.xcodeproj';
+  const exampleProjectPath = 'test_resources/example_2x/ios/Runner.xcodeproj';
 
   setUp(() {
     logger = TestUtils.quietLogger();
