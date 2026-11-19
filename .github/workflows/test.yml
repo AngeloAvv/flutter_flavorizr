@@ -1,4 +1,4 @@
-name: Run Flutter Tests
+name: Run Tests
 
 on:
   workflow_call:
@@ -9,18 +9,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Setup Flutter
-        uses: ./.github/actions/setup
+      # The package is pure Dart: no Flutter SDK is needed to test it.
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Get dependencies
+        run: dart pub get --no-example
       - name: Analyze
-        run: flutter analyze
+        run: dart analyze
       - name: Install junitreport
         run: |
           dart pub global activate junitreport
+          dart pub global activate coverage
           echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
       - name: Install lcov
         run: sudo apt-get update && sudo apt-get install -y lcov
       - name: Run Tests
-        run: set -o pipefail; flutter test --machine --coverage | tojunit -o report.xml
+        run: set -o pipefail; dart test --coverage=coverage --reporter json | tojunit -o report.xml
+      - name: Format coverage
+        run: dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib --packages=.dart_tool/package_config.json --base-directory=.
       - name: Strip generated/model files from coverage
         run: lcov --remove coverage/lcov.info '**/*.g.dart' 'lib/src/models/*' 'lib/src/parser/models/*' -o coverage/lcov.info
       - name: Coverage summary
