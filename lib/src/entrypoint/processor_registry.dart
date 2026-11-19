@@ -390,9 +390,17 @@ class ProcessorRegistry {
     final text = utf8.decode(bytes, allowMalformed: true);
     final source = text.startsWith('\ufeff') ? text.substring(1) : text;
 
+    final parts = [for (final read in readers) read(source)];
+
     // Processors may own different parts of the same file: every part counts.
+    // Each is framed by its length, so that where one ends and the next starts
+    // is part of what is hashed. A file with one owner hashes its part as is.
     return digestOf(
-      utf8.encode([for (final read in readers) read(source)].join('\n')),
+      utf8.encode(
+        parts.length == 1
+            ? parts.single
+            : [for (final part in parts) '${part.length}:$part'].join(),
+      ),
     );
   }
 }

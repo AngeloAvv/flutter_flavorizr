@@ -72,10 +72,26 @@ class _SharedKey extends FlavorizrProcessor {
 
   @override
   Map<String, String Function(String)> get ownedContent => {
-    'shared.properties': (source) => source
-        .split('\n')
-        .where((line) => line.startsWith('$key='))
-        .join('\n'),
+    'shared.properties': (source) =>
+        source.split('\n').where((line) => line.startsWith('$key=')).join('\n'),
+  };
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {}
+}
+
+/// Owns what it is told, whatever the file holds.
+class _Fixed extends FlavorizrProcessor {
+  @override
+  final String id;
+
+  final String part;
+
+  const _Fixed(this.id, this.part);
+
+  @override
+  Map<String, String Function(String)> get ownedContent => {
+    'fixed.txt': (_) => part,
   };
 
   @override
@@ -208,6 +224,21 @@ void main() {
         );
       },
     );
+
+    test('tells where the part of a processor ends and the next starts', () {
+      ProcessorRegistry split(String a, String b) =>
+          ProcessorRegistry.standard().withProcessors([
+            _Fixed('acme:a', a),
+            _Fixed('acme:b', b),
+          ]);
+      const artifact = Artifact.patched('fixed.txt');
+      final bytes = utf8.encode('');
+
+      expect(
+        split('x\n', 'y').hash(artifact, bytes),
+        isNot(split('x', '\ny').hash(artifact, bytes)),
+      );
+    });
 
     test('reads a lazy iterable of processors once', () {
       var reads = 0;
