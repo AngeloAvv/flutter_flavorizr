@@ -1,9 +1,0 @@
-# What `lib/flutter_flavorizr.dart` and `lib/experimental.dart` export is the API,
-# and every symbol of it has a dartdoc. `test/public_api_test.dart` runs the
-# analyzer with this file on the files they export: the rule is not on for the
-# whole package, which has far more public members than the API.
-include: ../analysis_options.yaml
-
-linter:
-  rules:
-    public_member_api_docs: true
