@@ -23,76 +23,21 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
 import 'package:test/test.dart';
-import 'package:mason_logger/mason_logger.dart';
-import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';
 
 void main() {
-  late FlavorizrConfig flavorizr;
-  late Logger logger;
-
-  setUp(() {
-    logger = TestUtils.quietLogger();
-    flavorizr = TestUtils.parseFlavorizr(
-      'test_resources/ios/dummy_assets_processor_test/pubspec',
+  test('IOSDummyAssetsTargetsProcessor does nothing: the launch image is made '
+      'by ios:launchScreen, from the icon', () async {
+    final processor = IOSDummyAssetsTargetsProcessor(
+      config: TestUtils.parseFlavorizr('test_resources/pubspec'),
+      logger: TestUtils.quietLogger(),
     );
+
+    expect(processor.processors, isEmpty);
+
+    await processor.execute();
   });
-
-  test(
-    'IOSDummyAssetsTargetsProcessor wires one IOSDummyAssetsProcessor per iOS flavor',
-    () {
-      final processor = IOSDummyAssetsTargetsProcessor(
-        'destination',
-        config: flavorizr,
-        logger: logger,
-      );
-
-      expect(processor.processors.length, flavorizr.iosFlavors.length);
-      expect(
-        processor.processors,
-        everyElement(isA<IOSDummyAssetsProcessor>()),
-      );
-    },
-  );
-
-  test(
-    'IOSDummyAssetsTargetsProcessor.execute writes the launch image of every iOS flavor, and no icon',
-    () async {
-      await TestUtils.withTempDir((dir) async {
-        final destination = p.join(dir.path, 'destination');
-
-        await IOSDummyAssetsTargetsProcessor(
-          destination,
-          config: flavorizr,
-          logger: logger,
-        ).execute();
-
-        for (final flavorName in flavorizr.iosFlavors.keys) {
-          expect(
-            File(
-              p.join(
-                destination,
-                '${flavorName}LaunchImage.imageset',
-                'Contents.json',
-              ),
-            ).existsSync(),
-            isTrue,
-          );
-          expect(
-            Directory(
-              p.join(destination, 'AppIcon-$flavorName.appiconset'),
-            ).existsSync(),
-            isFalse,
-          );
-        }
-      });
-    },
-  );
 }

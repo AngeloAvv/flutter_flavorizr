@@ -38,6 +38,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/build_settings_ow
 import 'package:flutter_flavorizr/src/engine/processors/darwin/build_targets_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/launch_screen_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
@@ -150,7 +151,7 @@ class ProcessorRegistry {
   }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, build targets, Podfile and Info.plist processors that were ported
+  /// xcconfig, build targets, launch screen, Podfile and Info.plist processors that were ported
   /// run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
@@ -195,6 +196,12 @@ class ProcessorRegistry {
         const IosInfoPlistPatchProcessor(),
         paths: {K.iOSPListPath},
         ownedContent: {K.iOSPListPath: InfoPlistEditor.iosOwnedContent},
+      ),
+      // The storyboards and the launch images of the flavors, in the asset
+      // catalog of the app, and their references in the project.
+      EngineProcessor(
+        const IosLaunchScreenProcessor(),
+        paths: {K.iOSRunnerPath},
       ),
       EngineProcessor(
         const MacosInfoPlistPatchProcessor(),
@@ -293,6 +300,7 @@ class ProcessorRegistry {
         ownedContent: {
           XcodeprojResource.iosArtifact.path: (source) => [
             xcconfigReferencesOwnedContent(source),
+            launchScreenReferencesOwnedContent(source),
             buildSettingsOwnedContent(source),
             firebaseOwnedContent(source, 'ios'),
           ].join('\n'),

@@ -24,28 +24,18 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_processor.dart';
 
+/// Used to copy a dummy `AppIcon-<flavor>.appiconset` and a dummy
+/// `<flavor>LaunchImage.imageset` for each flavor.
+///
+/// It does nothing now: a flavor with no `icon` builds with the `AppIcon` of the
+/// project (see `DarwinIconName`), an appiconset that exists is the user's, and
+/// the launch image is made by `ios:launchScreen`, from the icon, for the
+/// flavors that turn `launchScreen` on. The id `ios:dummyAssets` stays so that a
+/// recipe that names it still runs.
 class IOSDummyAssetsTargetsProcessor extends QueueProcessor {
-  IOSDummyAssetsTargetsProcessor(
-    String destination, {
-    required super.config,
-    required super.logger,
-  }) : super(
-          config.iosFlavors
-              .map(
-                (flavorName, flavor) => MapEntry(
-                  flavorName,
-                  IOSDummyAssetsProcessor(
-                    destination,
-                    flavorName,
-                    config: config,
-                    logger: logger,
-                  ),
-                ),
-              )
-              .values,
-        );
+  IOSDummyAssetsTargetsProcessor({required super.config, required super.logger})
+    : super(const []);
 
   @override
   String toString() => 'IOSDummyAssetsTargetsProcessor';

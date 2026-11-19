@@ -35,8 +35,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
-import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
+import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
 import 'package:flutter_flavorizr/src/processors/android/icons/android_generate_iclauncher_xml_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -260,7 +259,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
     final missing = sizes.where((size) => !pngs.containsKey(size)).toList();
 
     if (missing.isNotEmpty) {
-      final source = await _load(ctx, path);
+      final source = await loadIconSource(ctx, path);
 
       for (final size in missing) {
         pngs[size] = source.renderPng(size, size, badge: badge, area: area);
@@ -303,44 +302,5 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
         'cannot be used as the name of a directory',
       );
     }
-  }
-
-  /// Reads and decodes the source icon at [path], relative to the project.
-  static Future<AndroidIconSource> _load(
-    FlavorizrContext ctx,
-    String path,
-  ) async {
-    final resolved = ctx.resolveProject(path);
-
-    switch (FileSystemEntity.typeSync(resolved)) {
-      case FileSystemEntityType.notFound:
-        throw FileNotFoundException(path);
-      case FileSystemEntityType.file:
-        break;
-      default:
-        throw MalformedResourceException(path);
-    }
-
-    // `resolve` is lexical: a link inside the project may still lead out of it.
-    final real = await File(resolved).resolveSymbolicLinks();
-    final realProject = await ctx.projectRoot.resolveSymbolicLinks();
-
-    if (!p.isWithin(realProject, real)) {
-      throw ArgumentError.value(
-        path,
-        'icon',
-        'must stay within `${ctx.projectRoot.path}`, links included',
-      );
-    }
-
-    final file = File(real);
-
-    // Checked before reading, so that a huge file is never loaded; `decode`
-    // checks again for the callers that already hold the bytes.
-    if (await file.length() > AndroidIconSource.maxBytes) {
-      throw MalformedResourceException(path);
-    }
-
-    return AndroidIconSource.decode(await file.readAsBytes(), name: path);
   }
 }
