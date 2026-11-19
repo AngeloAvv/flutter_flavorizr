@@ -23,7 +23,7 @@ processors:
   android:flavorizrGradle:
     files:
       android/app/flavorizr.gradle.kts:
-        hash: sha256:c641e5583add2b1a0c29a7a9f26225a1aa48ec1c720be2891cd9059c30343d36
+        hash: sha256:da8ed595f36b204520a3529b033ac384b6acf8927e5c436cee28e7309250da86
         ownership: managed
   flutter:app:
     files:
