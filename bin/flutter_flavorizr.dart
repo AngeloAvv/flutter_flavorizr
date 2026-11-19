@@ -23,8 +23,19 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
 import 'package:flutter_flavorizr/flutter_flavorizr.dart';
+import 'package:flutter_flavorizr/src/entrypoint/custom_entrypoint.dart';
 
 Future<void> main(List<String> args) async {
+  // A project that has `tool/flavorizr.dart` registers processors of its own
+  // there: its entry point runs instead of this one.
+  final code = await delegateToCustomEntrypoint(args);
+
+  if (code != null) {
+    exit(code);
+  }
+
   await Flavorizr.run(args);
 }

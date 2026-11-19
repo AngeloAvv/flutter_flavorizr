@@ -26,6 +26,11 @@
 /// Thrown when a target, or a member of a recipe, is neither a recipe nor a
 /// processor.
 class UnknownTargetException implements Exception {
+  /// Where a processor of the user is registered.
+  static const customProcessorHint =
+      'A custom processor has to be registered in tool/flavorizr.dart: '
+      'Flavorizr.run(args, processors: [...]).';
+
   /// The name that matches no recipe and no processor.
   final String name;
 
@@ -45,6 +50,8 @@ class UnknownTargetException implements Exception {
         : 'Recipe "$recipe" contains "$name", which is neither a recipe nor '
               'a processor.';
 
-    return suggestion == null ? where : '$where Did you mean "$suggestion"?';
+    return suggestion == null
+        ? '$where $customProcessorHint'
+        : '$where Did you mean "$suggestion"?';
   }
 }

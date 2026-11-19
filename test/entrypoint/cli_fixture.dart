@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
+import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run.dart' as cli;
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
@@ -197,6 +198,9 @@ class CliFixture {
 
   String? flutterVersion = '3.47.9';
 
+  /// The processors the commands know, the standard ones unless a test says so.
+  ProcessorRegistry? registry;
+
   CliFixture({
     bool android = true,
     Iterable<String> flavors = const ['apple', 'banana'],
@@ -232,6 +236,7 @@ class CliFixture {
       return answer;
     },
     legacy: legacy,
+    registry: registry,
     flutterVersion: () async => flutterVersion,
     environment: environment,
     sink: stdout,

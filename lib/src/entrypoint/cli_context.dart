@@ -28,6 +28,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
@@ -113,9 +114,16 @@ class CliContext {
     sink: sink,
   );
 
-  /// The context of the real thing: the project is the working directory.
-  factory CliContext.standard({required Logger logger}) =>
-      CliContext(projectRoot: Directory.current, logger: logger);
+  /// The context of the real thing: the project is the working directory, and
+  /// the [processors] of the project run along with the ones of flavorizr.
+  factory CliContext.standard({
+    required Logger logger,
+    Iterable<FlavorizrProcessor> processors = const [],
+  }) => CliContext(
+    projectRoot: Directory.current,
+    logger: logger,
+    registry: ProcessorRegistry.standard().withProcessors(processors),
+  );
 }
 
 /// Asks [executable], `flutter` of the `PATH` by default, for its version.

@@ -65,6 +65,21 @@ abstract class FlavorizrProcessor {
   /// [FlavorizrContext.resource].
   Set<ResourceKey<Object?>> get requires => const {};
 
+  /// The files and folders of the project, relative to its root, that this
+  /// processor reads or writes.
+  ///
+  /// They are what its shadow workspace is made of: nothing outside of them is
+  /// copied, diffed or written back. A processor of the user declares them
+  /// itself, so that registering it needs nothing but the processor.
+  Set<String> get paths => const {};
+
+  /// How to read the part of a patched file this processor owns, by path of
+  /// the file.
+  ///
+  /// It is what the lock hashes, so that whatever else the user edits in the
+  /// file is never drift. A file that is not here is hashed whole.
+  Map<String, String Function(String source)> get ownedContent => const {};
+
   /// Converges the project to the desired state.
   ///
   /// All paths must be resolved from [FlavorizrContext.root] (output) or

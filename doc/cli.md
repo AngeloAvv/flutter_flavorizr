@@ -261,6 +261,48 @@ sync).
   cannot be read is left alone, with a warning that prints the entries to add
   by hand.
 
+## Your own processors
+
+A project that needs a step flavorizr does not have, such as a Sentry
+configuration per flavor, writes a processor and registers it in its own entry
+point, `tool/flavorizr.dart`:
+
+```dart
+import 'package:flutter_flavorizr/flutter_flavorizr.dart';
+
+import 'sentry_processor.dart';
+
+void main(List<String> args) =>
+    Flavorizr.run(args, processors: [SentryProcessor()]);
+```
+
+The command stays a single one. When `tool/flavorizr.dart` exists,
+`dart run flutter_flavorizr` runs `dart run tool/flavorizr.dart` with the same
+arguments and ends with its exit code. Running `dart run tool/flavorizr.dart`
+yourself does the same thing, with no extra process. The delegated run is
+started with the environment variable `FLAVORIZR_DELEGATED` set: that is what
+stops an entry point from delegating to itself, so it cannot loop.
+
+The id of a processor is what recipes and the command line name, as for the
+ones of flavorizr:
+
+```yaml
+recipes:
+  release:
+    - flutter:flavors
+    - acme:sentry
+```
+
+* A processor declares what it works on itself, in the class: `paths`, the
+  files and folders of the project it reads or writes, and `ownedContent` for
+  the part of a patched file it owns. Nothing else has to be registered.
+* An id that another processor has is an error (exit code 65), and so is an id
+  nobody has: the message says to register the processor in
+  `tool/flavorizr.dart`.
+* **The files of your processors must be pure Dart.** `tool/flavorizr.dart` runs
+  with `dart run`, not inside Flutter, so a processor, or anything it imports,
+  cannot import `package:flutter` or `dart:ui`.
+
 ## Configuration errors
 
 A key that flavorizr does not know fails the run, wherever it is in
