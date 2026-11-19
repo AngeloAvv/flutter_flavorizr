@@ -44,6 +44,8 @@ const _fullRun = [
   'ios:xcconfig',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
 ];
 
 final String _pristine = File(

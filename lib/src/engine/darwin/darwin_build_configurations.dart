@@ -24,10 +24,11 @@
  */
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/engine/darwin/owned_build_settings.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 
 /// The build configurations of a flavor in an Xcode project, made through
-/// [OwnedObjects]: what `DarwinAddBuildConfigurationProcessor` did on its own
+/// [OwnedObjects]: what the 2.x `DarwinAddBuildConfigurationProcessor` did on its own
 /// with random UUIDs, now deterministic, found again on every run and removable.
 ///
 /// For each mode of the flavor (`Debug`, `Profile`, `Release`) it makes:
@@ -48,15 +49,20 @@ import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 /// the file reference of the xcconfig that `ios:xcconfig` added): they are used
 /// as they are, keeping their UUIDs, and never removed.
 ///
-/// A configuration that exists is **not** rewritten: its settings are the
-/// business of the per-key editing of `ios:buildTargets` (#515), and its base
-/// configuration is only filled in when it has none.
+/// A configuration that exists is **not** rewritten, and neither is a setting
+/// that flavorizr does not own: the settings it sets are edited **key by key**
+/// through [OwnedBuildSettings] (#515), so the `DEVELOPMENT_TEAM` of the user
+/// survives a run. Without [OwnedBuildSettings] a configuration that exists is
+/// left as it is. Its base configuration is only filled in when it has none.
 /// A flavor that is no longer wanted is not handled here either: its objects
 /// are removed by [OwnedObjects.settle], which the processor calls at the end.
 abstract final class DarwinBuildConfigurations {
   /// The modes of every flavor, as they are spelled in the names of the
   /// configurations and of the xcconfig files.
   static const modes = ['Debug', 'Profile', 'Release'];
+
+  /// What flavorizr sets in the configurations of the target.
+  static const _targetSettings = {'PRODUCT_NAME': r'$(TARGET_NAME)'};
 
   /// Makes the build configurations of [flavor].
   ///
@@ -69,6 +75,11 @@ abstract final class DarwinBuildConfigurations {
   /// not owned, unless [claimExisting] is set: it is for a project 2.x
   /// flavorized, whose objects flavorizr made and may remove with the flavor.
   ///
+  /// With [settings], the settings of [buildSettings] (and `PRODUCT_NAME` of
+  /// the target) are set **key by key** on the configurations, the ones that
+  /// exist included, and owned: the caller ends the run with
+  /// [OwnedBuildSettings.settle].
+  ///
   /// Throws a [StateError], before it changes anything, when the project has no
   /// native target, or a target without a name or build configurations.
   static void ensure(
@@ -77,6 +88,7 @@ abstract final class DarwinBuildConfigurations {
     Map<String, dynamic> buildSettings = const {},
     required String Function(String mode) xcconfigPath,
     bool claimExisting = false,
+    OwnedBuildSettings? settings,
   }) {
     final project = owned.project;
     final target = project.nativeTargets.firstOrNull;
@@ -116,6 +128,11 @@ abstract final class DarwinBuildConfigurations {
           projectList.buildConfigurations.add(config);
         },
       );
+      settings?.apply(
+        projectConfig,
+        scope: OwnedBuildSettings.projectScope,
+        wanted: buildSettings,
+      );
       _follow(owned, projectConfig, xcconfig);
 
       final targetConfig = owned.ensure<XCBuildConfiguration>(
@@ -127,9 +144,14 @@ abstract final class DarwinBuildConfigurations {
         claimExisting: claimExisting,
         create: (config) {
           config.name = name;
-          config.buildSettings = {'PRODUCT_NAME': r'$(TARGET_NAME)'};
+          config.buildSettings = _copy(_targetSettings);
           targetList.buildConfigurations.add(config);
         },
+      );
+      settings?.apply(
+        targetConfig,
+        scope: OwnedBuildSettings.targetScope,
+        wanted: _targetSettings,
       );
       _follow(owned, targetConfig, xcconfig);
     }

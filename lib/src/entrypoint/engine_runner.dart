@@ -165,6 +165,12 @@ Future<EngineRun> runEngine(
               const <MapEntry<String, ProcessorLock>>[])
         if (lock.objects.isNotEmpty) id: lock.objects,
     },
+    previousKeys: {
+      for (final MapEntry(key: id, value: lock)
+          in previous?.processors.entries ??
+              const <MapEntry<String, ProcessorLock>>[])
+        if (lock.keys.isNotEmpty) id: lock.keys,
+    },
     commit: (shadow, ctx) async {
       final reconciliation = await reconcile(
         projectRoot: shadow.projectRoot,
@@ -182,6 +188,7 @@ Future<EngineRun> runEngine(
               ),
         },
         ownedObjects: ctx.ownedObjects,
+        ownedKeys: ctx.ownedKeys,
         desiredFlavors: config.flavorFingerprints,
         availableProcessors: engineIdsFor(registry, config),
         flavorizrVersion: context.version,
