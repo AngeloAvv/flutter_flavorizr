@@ -47,7 +47,7 @@ replaces it, and every other scaffold file that exists.
 
 | Option | |
 | --- | --- |
-| `--flavors dev,prod` | The flavors: a name starts with a lowercase letter, has letters and digits, is not a word of Dart (`class`, `new`...) and is not another name in other case (`qa`, `qA`): the Flutter code writes an enum value for each. |
+| `--flavors dev,prod` | The flavors: a name starts with a lowercase letter, has letters and digits, is not a word of Dart (`class`, `new`...) and is not another name in other case (`qa`, `qA`) (the Flutter code writes an enum value for each), and is not one Gradle refuses: `main`, `debug`, `release`, `profile`, or a name that starts with `test` or `androidTest`. |
 | `--id com.example.app` | The identifier the apps are built on. |
 | `--scaffold` / `--no-scaffold` | Adds `flutter:scaffold`, or does not ask about it. |
 | `-y`, `--yes` | Asks nothing: the defaults are the answers, and `flutter:scaffold` is not added. For scripts. |

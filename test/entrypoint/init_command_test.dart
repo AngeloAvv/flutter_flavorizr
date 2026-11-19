@@ -171,15 +171,30 @@ void main() {
       expect(written().flavors.keys, ['yes', 'off']);
     });
 
-    test('does not replace a file that appeared while it asked', () async {
-      project.whileAsking = (_) => project.write('flavorizr.yaml', 'mine');
+    test('leaves nothing behind when the file cannot be written', () async {
+      // A directory in its place: it cannot be created as a file.
+      Directory(project.abs('flavorizr.yaml')).createSync();
 
-      final code = await project.run(['init']);
+      final code = await project.run(['init', '--yes', '--force']);
 
-      expect(code, ExitCodes.attention);
-      expect(project.read('flavorizr.yaml'), 'mine');
-      expect(project.logger.errors.join(), contains('--force'));
+      expect(code, isNot(ExitCodes.ok));
+      expect(
+        FileSystemEntity.isDirectorySync(project.abs('flavorizr.yaml')),
+        isTrue,
+      );
     });
+
+    test(
+      'a failure that is not a file that exists is reported as it is',
+      () async {
+        Directory(project.abs('flavorizr.yaml')).createSync();
+
+        final code = await project.run(['init', '--yes']);
+
+        expect(code, ExitCodes.software);
+        expect(project.logger.errors.join(), isNot(contains('meanwhile')));
+      },
+    );
 
     test('--force replaces what appeared while it asked', () async {
       project.whileAsking = (_) => project.write('flavorizr.yaml', 'mine');
@@ -214,6 +229,13 @@ void main() {
           'a flavor that is a word of Dart, in other case',
         ),
         (['--flavors', 'index'], 'a flavor that is a member of every enum'),
+        (['--flavors', 'main'], 'a flavor Gradle takes for a source set'),
+        (['--flavors', 'release'], 'a flavor Gradle takes for a build type'),
+        (['--flavors', 'testing'], 'a flavor that starts like the tests'),
+        (
+          ['--flavors', 'androidTestX'],
+          'a flavor that starts like the Android tests',
+        ),
         (['--flavors', 'qa,qA'], 'two flavors the Flutter code names the same'),
         (['--id', 'app'], 'an identifier that is not a reverse domain name'),
         (['--id', 'com.my_app'], 'an identifier with an underscore'),

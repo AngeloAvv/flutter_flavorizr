@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -56,6 +57,17 @@ const _notAnEnumValue = {
   'throw', 'true', 'try', 'var', 'void', 'while', 'with', //
   'values', 'index', 'hashcode', 'runtimetype', 'tostring', 'nosuchmethod',
 };
+
+/// What the Android Gradle plugin refuses as the name of a flavor: the build
+/// types of a Flutter app, the source set `main`, and the ones that start like
+/// the source sets of the tests.
+bool _gradleReserved(String flavor) {
+  final name = flavor.toLowerCase();
+
+  return const {'main', 'debug', 'release', 'profile'}.contains(name) ||
+      name.startsWith('test') ||
+      name.startsWith('androidtest');
+}
 
 /// `flavorizr init`: writes the `flavorizr.yaml` of a project that has none.
 ///
@@ -156,24 +168,48 @@ class InitCommand extends FlavorizrCommand {
     };
     final scaffold = await _scaffold(yes: yes);
 
-    // Nothing is replaced without `--force`, even a file that appeared while
-    // the questions were asked: it is created, which fails when it exists.
-    try {
-      if (argResults!['force'] != true) file.createSync(exclusive: true);
-    } on FileSystemException {
-      throw CommandFailure(
-        ExitCodes.attention,
-        '$_configFile was created meanwhile: edit it, or run init with '
-        '--force to replace it.',
-      );
-    }
-
-    file.writeAsStringSync(
-      _yaml(platforms: platforms, flavors: names, id: id, scaffold: scaffold),
+    final yaml = _yaml(
+      platforms: platforms,
+      flavors: names,
+      id: id,
+      scaffold: scaffold,
     );
 
-    // What was written has to be something the other commands accept.
-    loadConfig();
+    // What is written has to be something the other commands accept: it is
+    // read back before the disk is touched.
+    try {
+      FlavorizrConfig.parse(yaml);
+    } on Object catch (error) {
+      throw CommandFailure(ExitCodes.software, '$error', cause: error);
+    }
+
+    // Nothing is replaced without `--force`, even a file that appeared while
+    // the questions were asked: it is created, which fails when it exists.
+    var created = false;
+
+    try {
+      if (argResults!['force'] != true) {
+        file.createSync(exclusive: true);
+        created = true;
+      }
+
+      file.writeAsStringSync(yaml);
+    } on FileSystemException {
+      // What was created and not written is not left behind.
+      if (created && file.existsSync()) file.deleteSync();
+
+      // A file that exists is what `--force` is for, any other failure is
+      // the one it is.
+      if (!created && file.existsSync() && argResults!['force'] != true) {
+        throw CommandFailure(
+          ExitCodes.attention,
+          '$_configFile was created meanwhile: edit it, or run init with '
+          '--force to replace it.',
+        );
+      }
+
+      rethrow;
+    }
 
     output.success('Wrote $_configFile for ${flavors.join(', ')}.');
     output.info(
@@ -229,10 +265,15 @@ class InitCommand extends FlavorizrCommand {
         for (final flavor in flavors)
           if (_notAnEnumValue.contains(flavor.toLowerCase())) flavor,
       ];
+      final gradle = [
+        for (final flavor in flavors)
+          if (_gradleReserved(flavor)) flavor,
+      ];
 
       if (flavors.isNotEmpty &&
           invalid.isEmpty &&
           reserved.isEmpty &&
+          gradle.isEmpty &&
           !duplicated) {
         return flavors;
       }
@@ -245,6 +286,10 @@ class InitCommand extends FlavorizrCommand {
           : reserved.isNotEmpty
           ? 'A flavor is an enum value in the Flutter code, so it cannot be a '
                 'word of Dart: ${reserved.join(', ')}.'
+          : gradle.isNotEmpty
+          ? 'The Android Gradle plugin does not take `main`, `debug`, '
+                '`release` or `profile`, or a name that starts with `test` or '
+                '`androidTest`, for a flavor: ${gradle.join(', ')}.'
           : 'A flavor is named once, whatever its case: the Flutter code '
                 'lower-cases the names.';
 
