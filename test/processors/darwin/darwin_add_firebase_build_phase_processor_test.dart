@@ -38,7 +38,7 @@ void main() {
   late FlavorizrConfig flavorizr;
   late Logger logger;
 
-  const exampleProjectPath = 'example/ios/Runner.xcodeproj';
+  const exampleProjectPath = 'test_resources/example_2x/ios/Runner.xcodeproj';
 
   setUp(() {
     logger = TestUtils.quietLogger();
@@ -46,95 +46,97 @@ void main() {
   });
 
   test(
-      'Test DarwinAddFirebaseBuildPhaseProcessor adds a Firebase Setup shell script build phase as the first phase',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+    'Test DarwinAddFirebaseBuildPhaseProcessor adds a Firebase Setup shell script build phase as the first phase',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      final scriptPath = '${dir.path}/firebase.sh';
-      File(scriptPath).writeAsStringSync('echo "firebase setup"');
+        final scriptPath = '${dir.path}/firebase.sh';
+        File(scriptPath).writeAsStringSync('echo "firebase setup"');
 
-      final processor = DarwinAddFirebaseBuildPhaseProcessor(
-        projectPath,
-        scriptPath,
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = DarwinAddFirebaseBuildPhaseProcessor(
+          projectPath,
+          scriptPath,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await processor.execute();
+        await processor.execute();
 
-      final reopened = await XcodeProject.open(projectPath);
-      final target = reopened.targets.first as PBXNativeTarget;
+        final reopened = await XcodeProject.open(projectPath);
+        final target = reopened.targets.first as PBXNativeTarget;
 
-      final firebasePhases = target.buildPhases
-          .whereType<PBXShellScriptBuildPhase>()
-          .where((phase) => phase.name == 'Firebase Setup')
-          .toList();
+        final firebasePhases = target.buildPhases
+            .whereType<PBXShellScriptBuildPhase>()
+            .where((phase) => phase.name == 'Firebase Setup')
+            .toList();
 
-      expect(firebasePhases, hasLength(1));
-      expect(firebasePhases.first.shellScript, 'echo "firebase setup"');
-      expect(target.buildPhases.first, same(firebasePhases.first));
-    });
-  });
-
-  test(
-      'Test DarwinAddFirebaseBuildPhaseProcessor replaces an existing Firebase Setup phase instead of duplicating it',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
-
-      final scriptPath = '${dir.path}/firebase.sh';
-      File(scriptPath).writeAsStringSync('echo "first"');
-
-      await DarwinAddFirebaseBuildPhaseProcessor(
-        projectPath,
-        scriptPath,
-        config: flavorizr,
-        logger: logger,
-      ).execute();
-
-      File(scriptPath).writeAsStringSync('echo "second"');
-
-      await DarwinAddFirebaseBuildPhaseProcessor(
-        projectPath,
-        scriptPath,
-        config: flavorizr,
-        logger: logger,
-      ).execute();
-
-      final reopened = await XcodeProject.open(projectPath);
-      final target = reopened.targets.first as PBXNativeTarget;
-      final firebasePhases = target.buildPhases
-          .whereType<PBXShellScriptBuildPhase>()
-          .where((phase) => phase.name == 'Firebase Setup')
-          .toList();
-
-      expect(firebasePhases, hasLength(1));
-      expect(firebasePhases.first.shellScript, 'echo "second"');
-    });
-  });
+        expect(firebasePhases, hasLength(1));
+        expect(firebasePhases.first.shellScript, 'echo "firebase setup"');
+        expect(target.buildPhases.first, same(firebasePhases.first));
+      });
+    },
+  );
 
   test(
-      'Test DarwinAddFirebaseBuildPhaseProcessor throws when the script file is missing',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+    'Test DarwinAddFirebaseBuildPhaseProcessor replaces an existing Firebase Setup phase instead of duplicating it',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      final processor = DarwinAddFirebaseBuildPhaseProcessor(
-        projectPath,
-        '${dir.path}/missing.sh',
-        config: flavorizr,
-        logger: logger,
-      );
+        final scriptPath = '${dir.path}/firebase.sh';
+        File(scriptPath).writeAsStringSync('echo "first"');
 
-      await expectLater(
-        processor.execute(),
-        throwsA(isA<FileSystemException>()),
-      );
-    });
-  });
+        await DarwinAddFirebaseBuildPhaseProcessor(
+          projectPath,
+          scriptPath,
+          config: flavorizr,
+          logger: logger,
+        ).execute();
 
+        File(scriptPath).writeAsStringSync('echo "second"');
+
+        await DarwinAddFirebaseBuildPhaseProcessor(
+          projectPath,
+          scriptPath,
+          config: flavorizr,
+          logger: logger,
+        ).execute();
+
+        final reopened = await XcodeProject.open(projectPath);
+        final target = reopened.targets.first as PBXNativeTarget;
+        final firebasePhases = target.buildPhases
+            .whereType<PBXShellScriptBuildPhase>()
+            .where((phase) => phase.name == 'Firebase Setup')
+            .toList();
+
+        expect(firebasePhases, hasLength(1));
+        expect(firebasePhases.first.shellScript, 'echo "second"');
+      });
+    },
+  );
+
+  test(
+    'Test DarwinAddFirebaseBuildPhaseProcessor throws when the script file is missing',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
+
+        final processor = DarwinAddFirebaseBuildPhaseProcessor(
+          projectPath,
+          '${dir.path}/missing.sh',
+          config: flavorizr,
+          logger: logger,
+        );
+
+        await expectLater(
+          processor.execute(),
+          throwsA(isA<FileSystemException>()),
+        );
+      });
+    },
+  );
 }

@@ -39,7 +39,7 @@ Future<String> pristineIosPbxproj(Directory temp) async {
     ..createSync(recursive: true);
 
   File(
-    'example/ios/Runner.xcodeproj/project.pbxproj',
+    'test_resources/example_2x/ios/Runner.xcodeproj/project.pbxproj',
   ).copySync(p.join(bundle.path, 'project.pbxproj'));
 
   final project = await XcodeProject.open(bundle.path);

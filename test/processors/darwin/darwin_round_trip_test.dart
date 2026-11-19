@@ -53,7 +53,7 @@ void main() {
   });
 
   for (final platform in ['ios', 'macos']) {
-    final projectPath = 'example/$platform/Runner.xcodeproj';
+    final projectPath = 'test_resources/example_2x/$platform/Runner.xcodeproj';
 
     test(
       'Test dart_xcodeproj saves the pbxproj of the $platform example byte for byte when nothing changes',

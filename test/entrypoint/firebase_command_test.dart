@@ -148,7 +148,7 @@ void main() {
       project.write(
         '$platform/Runner.xcodeproj/project.pbxproj',
         File(
-          'example/$platform/Runner.xcodeproj/project.pbxproj',
+          'test_resources/example_2x/$platform/Runner.xcodeproj/project.pbxproj',
         ).readAsStringSync(),
       );
       project.write(

@@ -33,8 +33,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// The configurations of the repository that CI feeds to a run. Since a run
 /// stops at an unknown instruction, a stale one fails the build.
 const _configurations = [
-  'blank/flavorizr.yaml',
   'example/flavorizr.yaml',
+  'test_resources/example_2x/flavorizr.yaml',
   'tool/parity/fixtures/flavorizr.3.yaml',
 ];
 

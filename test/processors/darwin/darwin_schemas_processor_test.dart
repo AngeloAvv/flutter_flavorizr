@@ -38,46 +38,54 @@ void main() {
   late FlavorizrConfig flavorizr;
   late Logger logger;
 
-  const exampleProjectPath = 'example/ios/Runner.xcodeproj';
+  const exampleProjectPath = 'test_resources/example_2x/ios/Runner.xcodeproj';
 
   setUp(() {
     logger = TestUtils.quietLogger();
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test DarwinSchemasProcessor queues one DarwinCreateSchemeProcessor per flavor', () {
-    final processor = DarwinSchemasProcessor(
-      'project.xcodeproj',
-      config: flavorizr,
-      logger: logger,
-    );
-
-    expect(processor.processors.length, flavorizr.flavors.length);
-    expect(processor.processors, everyElement(isA<DarwinCreateSchemeProcessor>()));
-  });
-
-  test('Test DarwinSchemasProcessor creates a scheme file for every flavor when executed',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
-
+  test(
+    'Test DarwinSchemasProcessor queues one DarwinCreateSchemeProcessor per flavor',
+    () {
       final processor = DarwinSchemasProcessor(
-        projectPath,
+        'project.xcodeproj',
         config: flavorizr,
         logger: logger,
       );
 
-      await processor.execute();
+      expect(processor.processors.length, flavorizr.flavors.length);
+      expect(
+        processor.processors,
+        everyElement(isA<DarwinCreateSchemeProcessor>()),
+      );
+    },
+  );
 
-      for (final flavorName in flavorizr.flavors.keys) {
-        expect(
-          File('$projectPath/xcshareddata/xcschemes/$flavorName.xcscheme')
-              .existsSync(),
-          isTrue,
+  test(
+    'Test DarwinSchemasProcessor creates a scheme file for every flavor when executed',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
+
+        final processor = DarwinSchemasProcessor(
+          projectPath,
+          config: flavorizr,
+          logger: logger,
         );
-      }
-    });
-  });
 
+        await processor.execute();
+
+        for (final flavorName in flavorizr.flavors.keys) {
+          expect(
+            File(
+              '$projectPath/xcshareddata/xcschemes/$flavorName.xcscheme',
+            ).existsSync(),
+            isTrue,
+          );
+        }
+      });
+    },
+  );
 }

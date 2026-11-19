@@ -36,8 +36,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../entrypoint/cli_fixture.dart';
 
-const _ios = 'example/ios/Runner.xcodeproj';
-const _macos = 'example/macos/Runner.xcodeproj';
+const _ios = 'test_resources/example_2x/ios/Runner.xcodeproj';
+const _macos = 'test_resources/example_2x/macos/Runner.xcodeproj';
 
 /// Every build file of every build phase of the project.
 Iterable<PBXBuildFile> _buildFiles(XcodeProject project) => project.targets

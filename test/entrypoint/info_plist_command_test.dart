@@ -84,7 +84,10 @@ void main() {
     }
     for (final platform in ['ios', 'macos']) {
       final path = '$platform/Runner.xcodeproj/project.pbxproj';
-      project.write(path, File('example/$path').readAsStringSync());
+      project.write(
+        path,
+        File('test_resources/example_2x/$path').readAsStringSync(),
+      );
     }
   });
   tearDown(() => project.dispose());

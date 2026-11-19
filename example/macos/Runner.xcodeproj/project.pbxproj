@@ -21,18 +21,12 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		0F42D69BFBE998682C2FA3A4 /* bananaDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0AB8C8470F1A28E8EE0544AA /* bananaDebug.xcconfig */; };
-		173A8C850C9D8C0A2EDC8338 /* bananaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 163033BB600A5DC696A02050 /* bananaProfile.xcconfig */; };
-		318045D2F5D3A98C63A93850 /* bananaRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8FF7574F224CDE6F4EAE3BCB /* bananaRelease.xcconfig */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
-		8F5D656EDC8D096FB5023BF4 /* appleProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1208B73992AC5C4BA0E09A63 /* appleProfile.xcconfig */; };
-		AE1E8CE68D54D2CA309244CD /* appleRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = E51F8636FC67CC62BBE2367A /* appleRelease.xcconfig */; };
-		DB2C2E77EC8B6F56D31EB6AB /* appleDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 50BA4B9C31F798AD848663CD /* appleDebug.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -302,12 +296,6 @@
 			files = (
 				33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
-				DB2C2E77EC8B6F56D31EB6AB /* appleDebug.xcconfig in Resources */,
-				8F5D656EDC8D096FB5023BF4 /* appleProfile.xcconfig in Resources */,
-				AE1E8CE68D54D2CA309244CD /* appleRelease.xcconfig in Resources */,
-				0F42D69BFBE998682C2FA3A4 /* bananaDebug.xcconfig in Resources */,
-				173A8C850C9D8C0A2EDC8338 /* bananaProfile.xcconfig in Resources */,
-				318045D2F5D3A98C63A93850 /* bananaRelease.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -863,6 +851,38 @@
 			};
 			name = "Profile-banana";
 		};
+		3B222A9C8E3725097B0EE6E3 /* Debug-banana */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0AB8C8470F1A28E8EE0544AA /* bananaDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-banana";
+		};
+		41679C539252EB4A5CDA9FC6 /* Debug-apple */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 50BA4B9C31F798AD848663CD /* appleDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-apple";
+		};
+		568E6B6EA738B2337D013D2E /* Release-banana */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8FF7574F224CDE6F4EAE3BCB /* bananaRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-banana";
+		};
+		7D3E2B4222429CAE31218AD7 /* Profile-banana */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 163033BB600A5DC696A02050 /* bananaProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-banana";
+		};
 		97D0DCEB08F0F433EB5FF1D7 /* Profile-apple */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1208B73992AC5C4BA0E09A63 /* appleProfile.xcconfig */;
@@ -922,6 +942,22 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+			};
+			name = "Profile-apple";
+		};
+		C14F6D44D5DF3488F40701F5 /* Release-apple */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E51F8636FC67CC62BBE2367A /* appleRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-apple";
+		};
+		CDDD7881F0D0172923EF637C /* Profile-apple */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1208B73992AC5C4BA0E09A63 /* appleProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-apple";
 		};
@@ -1091,6 +1127,12 @@
 				33CC10FC2044A3C60003C045 /* Debug */,
 				33CC10FD2044A3C60003C045 /* Release */,
 				338D0CEA231458BD00FA5F75 /* Profile */,
+				41679C539252EB4A5CDA9FC6 /* Debug-apple */,
+				CDDD7881F0D0172923EF637C /* Profile-apple */,
+				C14F6D44D5DF3488F40701F5 /* Release-apple */,
+				3B222A9C8E3725097B0EE6E3 /* Debug-banana */,
+				7D3E2B4222429CAE31218AD7 /* Profile-banana */,
+				568E6B6EA738B2337D013D2E /* Release-banana */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

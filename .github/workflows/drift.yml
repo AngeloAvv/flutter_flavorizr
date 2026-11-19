@@ -1,0 +1,24 @@
+name: Drift
+
+on:
+  workflow_call:
+
+# `example/` is committed flavorized, with its `flavorizr.lock`. A change of
+# flavorizr that makes it generate something else, or an edit of a generated
+# file, shows up here as drift.
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Flutter
+        uses: ./.github/actions/setup
+      - name: Get the dependencies of the example
+        working-directory: example
+        run: flutter pub get
+      # `dart run flutter_flavorizr` runs tool/flavorizr.dart of the example,
+      # which registers its custom processor. It exits with 1 on drift.
+      - name: flavorizr status
+        working-directory: example
+        run: dart run flutter_flavorizr status

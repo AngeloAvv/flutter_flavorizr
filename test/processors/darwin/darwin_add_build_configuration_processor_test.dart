@@ -36,7 +36,7 @@ void main() {
   late FlavorizrConfig flavorizr;
   late Logger logger;
 
-  const exampleProjectPath = 'example/ios/Runner.xcodeproj';
+  const exampleProjectPath = 'test_resources/example_2x/ios/Runner.xcodeproj';
 
   setUp(() {
     logger = TestUtils.quietLogger();
@@ -44,129 +44,144 @@ void main() {
   });
 
   test(
-      'Test DarwinAddBuildConfigurationProcessor adds a new target and project build configuration',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+    'Test DarwinAddBuildConfigurationProcessor adds a new target and project build configuration',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      final processor = DarwinAddBuildConfigurationProcessor(
-        projectPath,
-        'Flutter/appleDebug.xcconfig',
-        'orange',
-        'Debug',
-        const {'PRODUCT_BUNDLE_IDENTIFIER': 'com.example.orange'},
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = DarwinAddBuildConfigurationProcessor(
+          projectPath,
+          'Flutter/appleDebug.xcconfig',
+          'orange',
+          'Debug',
+          const {'PRODUCT_BUNDLE_IDENTIFIER': 'com.example.orange'},
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await processor.execute();
+        await processor.execute();
 
-      final reopened = await XcodeProject.open(projectPath);
-      final target = reopened.targets.first;
+        final reopened = await XcodeProject.open(projectPath);
+        final target = reopened.targets.first;
 
-      expect(
-        target.buildConfigurationList!.buildConfigurations
-            .any((c) => c.name == 'Debug-orange'),
-        isTrue,
-      );
-      expect(
-        reopened.buildConfigurations.any((c) => c.name == 'Debug-orange'),
-        isTrue,
-      );
-    });
-  });
+        expect(
+          target.buildConfigurationList!.buildConfigurations.any(
+            (c) => c.name == 'Debug-orange',
+          ),
+          isTrue,
+        );
+        expect(
+          reopened.buildConfigurations.any((c) => c.name == 'Debug-orange'),
+          isTrue,
+        );
+      });
+    },
+  );
 
   test(
-      'Test DarwinAddBuildConfigurationProcessor is idempotent and updates configurations in place on rerun',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+    'Test DarwinAddBuildConfigurationProcessor is idempotent and updates configurations in place on rerun',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      const modes = ['Debug', 'Profile', 'Release'];
+        const modes = ['Debug', 'Profile', 'Release'];
 
-      Future<void> run(String mode, String xcconfig) =>
-          DarwinAddBuildConfigurationProcessor(
-            projectPath,
-            xcconfig,
-            'orange',
-            mode,
-            const {'PRODUCT_BUNDLE_IDENTIFIER': 'com.example.orange'},
-            config: flavorizr,
-            logger: logger,
-          ).execute();
+        Future<void> run(String mode, String xcconfig) =>
+            DarwinAddBuildConfigurationProcessor(
+              projectPath,
+              xcconfig,
+              'orange',
+              mode,
+              const {'PRODUCT_BUNDLE_IDENTIFIER': 'com.example.orange'},
+              config: flavorizr,
+              logger: logger,
+            ).execute();
 
-      for (final mode in modes) {
-        await run(mode, 'Flutter/apple$mode.xcconfig');
-      }
+        for (final mode in modes) {
+          await run(mode, 'Flutter/apple$mode.xcconfig');
+        }
 
-      final afterFirst = await XcodeProject.open(projectPath);
-      final originalUuids = {
-        for (final mode in modes)
-          mode: afterFirst.targets.first.buildConfigurationList!
+        final afterFirst = await XcodeProject.open(projectPath);
+        final originalUuids = {
+          for (final mode in modes)
+            mode: afterFirst
+                .targets
+                .first
+                .buildConfigurationList!
+                .buildConfigurations
+                .firstWhere((c) => c.name == '$mode-orange')
+                .uuid,
+        };
+        final originalProjectUuids = {
+          for (final mode in modes)
+            mode: afterFirst.buildConfigurations
+                .firstWhere((c) => c.name == '$mode-orange')
+                .uuid,
+        };
+
+        for (final mode in modes) {
+          await run(mode, 'Flutter/appleDebug.xcconfig');
+        }
+
+        final reopened = await XcodeProject.open(projectPath);
+        final target = reopened.targets.first;
+        final debugRef = reopened.files.firstWhere(
+          (f) => f.path == 'Flutter/appleDebug.xcconfig',
+        );
+
+        for (final mode in modes) {
+          final targetMatches = target
+              .buildConfigurationList!
               .buildConfigurations
-              .firstWhere((c) => c.name == '$mode-orange')
-              .uuid,
-      };
-      final originalProjectUuids = {
-        for (final mode in modes)
-          mode: afterFirst.buildConfigurations
-              .firstWhere((c) => c.name == '$mode-orange')
-              .uuid,
-      };
+              .where((c) => c.name == '$mode-orange')
+              .toList();
 
-      for (final mode in modes) {
-        await run(mode, 'Flutter/appleDebug.xcconfig');
-      }
+          expect(
+            targetMatches.length,
+            1,
+            reason: '$mode-orange must not be duplicated on the target',
+          );
 
-      final reopened = await XcodeProject.open(projectPath);
-      final target = reopened.targets.first;
-      final debugRef = reopened.files
-          .firstWhere((f) => f.path == 'Flutter/appleDebug.xcconfig');
+          final projectMatches = reopened.buildConfigurations
+              .where((c) => c.name == '$mode-orange')
+              .toList();
+          expect(
+            projectMatches.length,
+            1,
+            reason: '$mode-orange must not be duplicated on the project',
+          );
+          expect(projectMatches.single.uuid, originalProjectUuids[mode]);
 
-      for (final mode in modes) {
-        final targetMatches = target.buildConfigurationList!.buildConfigurations
-            .where((c) => c.name == '$mode-orange')
-            .toList();
-
-        expect(targetMatches.length, 1,
-            reason: '$mode-orange must not be duplicated on the target');
-
-        final projectMatches = reopened.buildConfigurations
-            .where((c) => c.name == '$mode-orange')
-            .toList();
-        expect(projectMatches.length, 1,
-            reason: '$mode-orange must not be duplicated on the project');
-        expect(projectMatches.single.uuid, originalProjectUuids[mode]);
-
-        final config = targetMatches.single;
-        expect(config.uuid, originalUuids[mode]);
-        expect(config.buildSettings['PRODUCT_NAME'], r'$(TARGET_NAME)');
-        expect(config.baseConfigurationReference?.uuid, debugRef.uuid);
-      }
-    });
-  });
+          final config = targetMatches.single;
+          expect(config.uuid, originalUuids[mode]);
+          expect(config.buildSettings['PRODUCT_NAME'], r'$(TARGET_NAME)');
+          expect(config.baseConfigurationReference?.uuid, debugRef.uuid);
+        }
+      });
+    },
+  );
 
   test(
-      'Test DarwinAddBuildConfigurationProcessor throws when the xcconfig file reference does not exist',
-      () async {
-    await TestUtils.withTempDir((dir) async {
-      final projectPath = '${dir.path}/Runner.xcodeproj';
-      copyPathSync(exampleProjectPath, projectPath);
+    'Test DarwinAddBuildConfigurationProcessor throws when the xcconfig file reference does not exist',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final projectPath = '${dir.path}/Runner.xcodeproj';
+        copyPathSync(exampleProjectPath, projectPath);
 
-      final processor = DarwinAddBuildConfigurationProcessor(
-        projectPath,
-        'nonExistentFileReference.xcconfig',
-        'orange',
-        'Debug',
-        const {},
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = DarwinAddBuildConfigurationProcessor(
+          projectPath,
+          'nonExistentFileReference.xcconfig',
+          'orange',
+          'Debug',
+          const {},
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await expectLater(processor.execute(), throwsStateError);
-    });
-  });
-
+        await expectLater(processor.execute(), throwsStateError);
+      });
+    },
+  );
 }
