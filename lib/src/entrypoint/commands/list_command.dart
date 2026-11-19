@@ -62,6 +62,7 @@ class ListCommand extends FlavorizrCommand {
       'processors': listedProcessorFields(
         ids: registry.ids,
         engine: processors,
+        overridden: registry.overriddenIds,
       ),
     });
 
@@ -75,7 +76,9 @@ class ListCommand extends FlavorizrCommand {
       final processor = processors[id];
 
       output.info(
-        '  $id [${processor == null ? 'legacy' : 'engine'}]${_tree(processor)}',
+        '  $id [${processor == null ? 'legacy' : 'engine'}]'
+        '${registry.overriddenIds.contains(id) ? ' (overridden)' : ''}'
+        '${_tree(processor)}',
       );
     }
 

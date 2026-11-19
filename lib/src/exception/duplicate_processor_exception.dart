@@ -28,8 +28,16 @@ class DuplicateProcessorException implements Exception {
   /// The id shared by several processors.
   final String id;
 
-  DuplicateProcessorException(this.id);
+  /// Whether one of the processors is of flavorizr, which a processor of the
+  /// user replaces by being passed in `overrides`.
+  final bool builtIn;
+
+  DuplicateProcessorException(this.id, {this.builtIn = false});
 
   @override
-  String toString() => 'More than one processor has the id "$id".';
+  String toString() => builtIn
+      ? 'More than one processor has the id "$id". To replace the one of '
+            'flavorizr, pass yours in `overrides`: '
+            'Flavorizr.run(args, overrides: [...]).'
+      : 'More than one processor has the id "$id".';
 }

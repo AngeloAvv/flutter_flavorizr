@@ -100,13 +100,14 @@
     },
     "listedProcessor": {
       "type": "object",
-      "required": ["id", "platform", "runsOn", "needs", "after"],
+      "required": ["id", "platform", "runsOn", "needs", "after", "overridden"],
       "properties": {
         "id": { "type": "string" },
         "platform": { "type": "string" },
         "runsOn": { "enum": ["engine", "legacy"] },
         "needs": { "$ref": "#/$defs/strings" },
-        "after": { "$ref": "#/$defs/strings" }
+        "after": { "$ref": "#/$defs/strings" },
+        "overridden": { "type": "boolean" }
       }
     },
     "run": {

@@ -34,6 +34,7 @@ import 'package:flutter_flavorizr/src/exception/platform_drop_exception.dart';
 import 'package:flutter_flavorizr/src/exception/project_changed_exception.dart';
 import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unapproved_conflicts_exception.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_processor_registration_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unresolved_conflicts_exception.dart';
@@ -75,6 +76,7 @@ abstract final class ExitCodes {
     InvalidRecipeNameException() ||
     RecipeCycleException() ||
     DuplicateProcessorException() ||
+    InvalidProcessorRegistrationException() ||
     UnknownProcessorException() ||
     DependencyCycleException() ||
     LastFlavorRemovalException() ||

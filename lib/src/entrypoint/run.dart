@@ -45,10 +45,12 @@ import 'package:mason_logger/mason_logger.dart';
 /// [ExitCodes]. With no command, `apply` runs.
 ///
 /// The [processors] are the ones of the project, added to the ones of
-/// flavorizr.
+/// flavorizr, and the [overrides] replace the ones of flavorizr that have
+/// their ids.
 Future<void> execute(
   List<String> args, {
   Iterable<FlavorizrProcessor> processors = const [],
+  Iterable<FlavorizrProcessor> overrides = const [],
 }) async {
   final logger = Logger();
   final int code;
@@ -56,7 +58,11 @@ Future<void> execute(
   try {
     code = await run(
       args,
-      context: CliContext.standard(logger: logger, processors: processors),
+      context: CliContext.standard(
+        logger: logger,
+        processors: processors,
+        overrides: overrides,
+      ),
     );
   } on Object catch (error) {
     // The processors of the project are checked before any command runs.

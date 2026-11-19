@@ -46,9 +46,19 @@ abstract final class Flavorizr {
   ///
   /// The [processors] are the ones of the project, which run along with the
   /// ones of flavorizr: their ids can be used in the recipes of
-  /// `flavorizr.yaml` and as targets. An id that is already taken is an error.
+  /// `flavorizr.yaml` and as targets. An id that is already taken is an error,
+  /// and so is one in a namespace of flavorizr (`android`, `ios`, `macos`,
+  /// `linux`, `windows`, `flutter`, `google`, `huawei` and `ide`).
+  ///
+  /// The [overrides] replace a processor of flavorizr, the one that has their
+  /// id, which is the only way to take one: replacing `flutter:app` is how the
+  /// Flutter code that is generated is customized. An override takes the place
+  /// of the processor in the recipes, and works on the paths of the processor
+  /// it replaces as well as on its own. An id that flavorizr does not have is
+  /// an error. `flavorizr list` tells which processors are overridden.
   static Future<void> run(
     List<String> args, {
     Iterable<FlavorizrProcessor> processors = const [],
-  }) => execute(args, processors: processors);
+    Iterable<FlavorizrProcessor> overrides = const [],
+  }) => execute(args, processors: processors, overrides: overrides);
 }

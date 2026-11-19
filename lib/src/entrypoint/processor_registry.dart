@@ -60,6 +60,7 @@ import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_processor_registration_exception.dart';
 import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
@@ -124,6 +125,7 @@ final class EngineResource {
 class ProcessorRegistry {
   final Map<String, EngineProcessor> _engine;
   final Set<String> _legacyIds;
+  final Set<String> _overridden = {};
   final Map<ResourceKey<Object?>, EngineResource> _resources;
 
   /// Creates a registry of [engine] processors, the legacy processors named by
@@ -296,26 +298,68 @@ class ProcessorRegistry {
     legacyIds: Processor.defaultInstructionSet,
   );
 
-  /// This registry with the [processors] of the user, which run on the engine
+  /// This registry with the processors of the user, which run on the engine
   /// and declare the paths they work on and the part of a patched file they
   /// own themselves.
   ///
+  /// The [processors] are new ones: their ids are not taken, and are not in a
+  /// namespace of flavorizr (see [reservedNamespaces]). The [overrides] replace
+  /// a processor of flavorizr, the one that has their id: they take its place
+  /// in the recipes and in the dependencies of the other processors, and work
+  /// on the paths of the processor they replace as well as their own.
+  ///
   /// Throws a [DuplicateProcessorException] when the id of a processor is
-  /// already taken, by this registry or by another of [processors].
-  ProcessorRegistry withProcessors(Iterable<FlavorizrProcessor> processors) {
+  /// already taken, by this registry or by another processor of the user, and
+  /// an [InvalidProcessorRegistrationException] for one in a namespace of
+  /// flavorizr, or an override of a processor flavorizr does not have.
+  ProcessorRegistry withProcessors(
+    Iterable<FlavorizrProcessor> processors, {
+    Iterable<FlavorizrProcessor> overrides = const [],
+  }) {
     // Read once: a lazy iterable may not give the same processors twice.
     final added = processors.toList(growable: false);
-    final taken = {...ids};
+    final replaced = overrides.toList(growable: false);
+    final builtIn = {...ids};
+    final taken = {...builtIn};
 
     for (final processor in added) {
+      if (builtIn.contains(processor.id)) {
+        throw DuplicateProcessorException(processor.id, builtIn: true);
+      }
+      if (reservedNamespaces.contains(processor.id.split(':').first)) {
+        throw InvalidProcessorRegistrationException.reserved(processor.id);
+      }
       if (!taken.add(processor.id)) {
         throw DuplicateProcessorException(processor.id);
       }
     }
 
+    final replacing = <String>{};
+
+    for (final processor in replaced) {
+      if (!builtIn.contains(processor.id)) {
+        throw InvalidProcessorRegistrationException.notBuiltIn(processor.id);
+      }
+      if (!replacing.add(processor.id)) {
+        throw DuplicateProcessorException(processor.id);
+      }
+    }
+
+    final engine = {..._engine};
+
+    for (final processor in replaced) {
+      final previous = _engine[processor.id];
+
+      engine[processor.id] = EngineProcessor(
+        processor,
+        paths: {...?previous?.paths, ...processor.paths},
+        ownedContent: {...?previous?.ownedContent, ...processor.ownedContent},
+      );
+    }
+
     return ProcessorRegistry(
       engine: [
-        ..._engine.values,
+        ...engine.values,
         for (final processor in added)
           EngineProcessor(
             processor,
@@ -325,8 +369,12 @@ class ProcessorRegistry {
       ],
       legacyIds: _legacyIds,
       resources: _resources.values,
-    );
+    ).._overridden.addAll({..._overridden, ...replacing});
   }
+
+  /// The ids of the processors of flavorizr that a processor of the user
+  /// replaces.
+  Set<String> get overriddenIds => Set.unmodifiable(_overridden);
 
   /// The processors that run on the engine, by id.
   Map<String, FlavorizrProcessor> get engineProcessors => {

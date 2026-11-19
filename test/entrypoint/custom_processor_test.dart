@@ -31,6 +31,7 @@ import 'package:flutter_flavorizr/flutter_flavorizr.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_processor_registration_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'cli_fixture.dart';
@@ -96,6 +97,28 @@ class _Fixed extends FlavorizrProcessor {
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {}
+}
+
+/// Replaces a processor of flavorizr: it writes [source] to [path].
+class _Replacement extends FlavorizrProcessor {
+  @override
+  final String id;
+
+  final String path;
+  final String source;
+
+  const _Replacement(this.id, this.path, this.source);
+
+  @override
+  Set<String> get paths => {path};
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {
+    ctx.track(Artifact.scaffold(path));
+    File('${ctx.root.path}/$path')
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync(source);
+  }
 }
 
 class _Named extends FlavorizrProcessor {
@@ -260,6 +283,160 @@ void main() {
       expect(extended.engineIds, {...registry.engineIds, 'acme:sentry'});
       expect(extended.legacyIds, registry.legacyIds);
       expect(extended.resources, hasLength(registry.resources.length));
+    });
+  });
+
+  group('a namespace of flavorizr', () {
+    test('is refused to a new processor', () {
+      for (final id in ['android:sentry', 'flutter:extra', 'ide:zed']) {
+        expect(
+          () => ProcessorRegistry.standard().withProcessors([_Named(id)]),
+          throwsA(
+            isA<InvalidProcessorRegistrationException>().having(
+              (e) => e.toString(),
+              'message',
+              allOf(contains(id), contains('reserved'), contains('overrides')),
+            ),
+          ),
+          reason: id,
+        );
+      }
+    });
+
+    test('is not refused to a namespace of the user, and any name without '
+        'one', () {
+      final registry = ProcessorRegistry.standard().withProcessors([
+        const _Named('acme:one'),
+        const _Named('mine'),
+        const _Named('androidx:one'),
+      ]);
+
+      expect(registry.ids, containsAll(['acme:one', 'mine', 'androidx:one']));
+    });
+
+    test('is exit code 65', () {
+      expect(
+        ExitCodes.of(InvalidProcessorRegistrationException.reserved('ios:a')),
+        ExitCodes.data,
+      );
+    });
+  });
+
+  group('overrides', () {
+    ProcessorRegistry override(Iterable<FlavorizrProcessor> overrides) =>
+        ProcessorRegistry.standard().withProcessors(
+          const [],
+          overrides: overrides,
+        );
+
+    test('a built-in id passed as a processor says to override it', () {
+      expect(
+        () => ProcessorRegistry.standard().withProcessors([
+          const _Named('flutter:app'),
+        ]),
+        throwsA(
+          isA<DuplicateProcessorException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('overrides'),
+          ),
+        ),
+      );
+    });
+
+    test('replace the processor of flavorizr that has the id', () {
+      const replacement = _Named('flutter:app');
+      final registry = override([replacement]);
+
+      expect(registry.engineProcessors['flutter:app'], same(replacement));
+      expect(registry.overriddenIds, {'flutter:app'});
+      expect(registry.ids, ProcessorRegistry.standard().ids);
+    });
+
+    test('work on the paths of the processor they replace too', () {
+      final registry = override([
+        const _Replacement('flutter:app', 'lib/mine.dart', ''),
+      ]);
+
+      expect(
+        registry.pathsOf([registry.engineProcessors['flutter:app']!]),
+        containsAll(['lib/app.dart', 'lib/mine.dart']),
+      );
+    });
+
+    test('replace a processor that still runs on the legacy pipeline', () {
+      final registry = override([const _Named('huawei:agconnect')]);
+
+      expect(registry.isEngine('huawei:agconnect'), isTrue);
+      expect(registry.legacyIds, isNot(contains('huawei:agconnect')));
+      expect(registry.overriddenIds, {'huawei:agconnect'});
+    });
+
+    test('are refused when flavorizr has no processor with the id', () {
+      expect(
+        () => override([const _Named('acme:one')]),
+        throwsA(
+          isA<InvalidProcessorRegistrationException>().having(
+            (e) => e.toString(),
+            'message',
+            contains('no processor'),
+          ),
+        ),
+      );
+    });
+
+    test('are refused twice for the same id', () {
+      expect(
+        () => override([
+          const _Named('flutter:app'),
+          const _Named('flutter:app'),
+        ]),
+        throwsA(isA<DuplicateProcessorException>()),
+      );
+    });
+
+    test('take the place of the processor in the recipes', () async {
+      project.registry = override([
+        const _Replacement('flutter:app', 'lib/app.dart', 'my app'),
+      ]);
+
+      final code = await project.run(['apply', '--yes', 'flutter:scaffold']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.read('lib/app.dart'), 'my app');
+      expect(project.exists('lib/main.dart'), isTrue);
+    });
+
+    test('are marked by list, as text and as json', () async {
+      project.registry = override([const _Named('flutter:app')]);
+
+      await project.run(['list']);
+
+      expect(
+        project.logger.lines,
+        contains(startsWith('  flutter:app [engine] (overridden)')),
+      );
+      expect(
+        project.logger.lines,
+        contains(startsWith('  flutter:main [engine]\n')),
+      );
+
+      final json = CliFixture()..registry = project.registry;
+      addTearDown(json.dispose);
+
+      await json.run(['list', '--json']);
+
+      final document = jsonDecode(json.stdout.toString()) as Map;
+      final processors = (document['processors'] as List).cast<Map>();
+
+      expect(
+        processors.firstWhere((p) => p['id'] == 'flutter:app'),
+        containsPair('overridden', true),
+      );
+      expect(
+        processors.firstWhere((p) => p['id'] == 'flutter:main'),
+        containsPair('overridden', false),
+      );
     });
   });
 }
