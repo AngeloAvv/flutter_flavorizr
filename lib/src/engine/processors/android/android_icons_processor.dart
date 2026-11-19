@@ -60,7 +60,8 @@ import 'package:sprintf/sprintf.dart';
 /// no icon has them too), and the foreground of the adaptive icon, inside the
 /// safe zone. The background and the monochrome layer are left as they are. The
 /// badge is skipped, with a warning, for a flavor whose legacy mipmaps would not
-/// be what the device shows: see [_shadowedBy].
+/// be what the device shows (see [_shadowedBy]), and for one whose adaptive
+/// foreground is a vector, for which it makes no icons at all.
 ///
 /// Every file is [Artifact.managed]: it is generated whole from a source icon,
 /// so it is hashed in the lock and a hand edit of it is a conflict. A flavor
@@ -142,6 +143,22 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
       var iconPath = android.icon ?? definition.app.icon;
       final adaptiveIcon = android.adaptiveIcon;
       var badge = ctx.config.badgeOf(flavor);
+
+      // A vector cannot be badged, and is not something the foreground can be
+      // rendered from: the icons of the flavor are left to the user.
+      if (badge != null &&
+          adaptiveIcon != null &&
+          p.extension(adaptiveIcon.foreground).toLowerCase() == '.xml') {
+        ctx.logger.warn(
+          'The badge of the flavor `$flavor` is not drawn on its Android '
+          'icons, and flavorizr makes none for it: the foreground of its '
+          '`adaptiveIcon`, `${adaptiveIcon.foreground}`, is a vector, which '
+          'cannot be badged. Give it a raster foreground to badge it, or set '
+          '`badge: false` for it.',
+        );
+
+        continue;
+      }
 
       if (badge != null && adaptiveIcon == null) {
         final shadow = _shadowedBy(ctx);

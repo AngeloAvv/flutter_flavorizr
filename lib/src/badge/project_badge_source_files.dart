@@ -46,12 +46,25 @@ class ProjectBadgeSourceFiles implements BadgeSourceFiles {
   /// Reads the files of the project in [root].
   const ProjectBadgeSourceFiles(this.root);
 
-  /// The file at [path], or `null` when it is not inside the project: a path
-  /// of the configuration may be anything, and what is outside is not read.
+  /// The file at [path], or `null` when it is not inside the project, links
+  /// included, or cannot be resolved: a path of the configuration may be
+  /// anything, and what is outside is not read. A link that stays inside the
+  /// project is followed.
   File? _file(String path) {
     final resolved = p.normalize(p.join(root.path, path));
 
-    return p.isWithin(p.normalize(root.path), resolved) ? File(resolved) : null;
+    if (!p.isWithin(p.normalize(root.path), resolved)) return null;
+
+    try {
+      // The check above is lexical: a link inside the project may lead out.
+      final real = File(resolved).resolveSymbolicLinksSync();
+
+      return p.isWithin(root.resolveSymbolicLinksSync(), real)
+          ? File(real)
+          : null;
+    } on FileSystemException {
+      return null;
+    }
   }
 
   @override

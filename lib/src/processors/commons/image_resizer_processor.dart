@@ -36,7 +36,8 @@ import 'package:image/image.dart';
 class ImageResizerProcessor extends CopyFileProcessor {
   final Size size;
 
-  /// The badge drawn on the resized icon, at its size, or `null` for none.
+  /// The badge drawn on the resized icon, at its size, or `null` for none. It
+  /// is drawn on a square icon only, which is what every Darwin icon is.
   final ResolvedBadge? badge;
 
   ImageResizerProcessor(
@@ -46,7 +47,10 @@ class ImageResizerProcessor extends CopyFileProcessor {
     this.badge,
     required super.config,
     required super.logger,
-  });
+  }) : assert(
+         badge == null || size.width == size.height,
+         'a badge is drawn on a square icon',
+       );
 
   @override
   File execute() {

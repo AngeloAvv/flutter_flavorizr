@@ -435,7 +435,9 @@ flavors:
   why, when `main` has `mipmap-anydpi-v26/ic_launcher.xml`: a device from
   Android 8 shows that adaptive icon (its foreground may be a vector) instead of
   the legacy mipmaps. Give the flavor a raster `adaptiveIcon`, or set
-  `badge: false`.
+  `badge: false`. A flavor whose `adaptiveIcon` has a vector (`.xml`)
+  foreground gets no Android icons at all while it has a badge, and a warning
+  says why.
 * Changing the label or the colour makes the icons again on the next run, and
   `badge: false` makes the icons of the `icon` without it. The icons of the
   iOS, macOS and Windows flavors that have a badge and no `icon` stay in the

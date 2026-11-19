@@ -141,6 +141,20 @@ void main() {
     });
   });
 
+  test('ImageResizerProcessor only badges a square icon', () {
+    ImageResizerProcessor build(Size size) => ImageResizerProcessor(
+      'assets/icon.png',
+      'out.png',
+      size,
+      badge: _badge,
+      config: FlavorizrConfig.parse('flavors: {}'),
+      logger: TestUtils.quietLogger(),
+    );
+
+    expect(() => build(const Size(120, 80)), throwsA(isA<AssertionError>()));
+    expect(() => build(const Size(120, 120)), returnsNormally);
+  });
+
   group('IcoEncoderProcessor', () {
     test('draws the badge on every size of the .ico', () async {
       await inProject((dir) async {

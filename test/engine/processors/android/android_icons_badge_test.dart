@@ -219,7 +219,10 @@ void main() {
       );
       final blue = output('mipmap-hdpi/ic_launcher.png');
 
-      expect({dev, qa, blue}, hasLength(3));
+      // Lists are compared by content, not by identity.
+      expect(dev, isNot(equals(qa)), reason: 'the label changed');
+      expect(dev, isNot(equals(blue)), reason: 'the colour changed');
+      expect(qa, isNot(equals(blue)));
 
       await run(_config());
 
@@ -358,6 +361,26 @@ void main() {
           contains('mipmap-anydpi-v26/ic_launcher.xml'),
           contains('adaptiveIcon'),
         ),
+      );
+    });
+
+    test('is skipped, with a warning, for a vector adaptive foreground, and '
+        'nothing is written for the flavor', () async {
+      writeProject('assets/fg.xml', '<vector/>'.codeUnits);
+
+      await run(
+        _config(
+          flavorBadge: '    badge: { label: DEV }\n',
+          flavorIcon: '',
+          adaptive: _adaptive.replaceFirst('fg.png', 'fg.xml'),
+        ),
+      );
+
+      expect(Directory(p.join(root.path, 'android')).existsSync(), isFalse);
+      expect(logger.warnings, hasLength(1));
+      expect(
+        logger.warnings.single,
+        allOf(contains('dev'), contains('vector'), contains('assets/fg.xml')),
       );
     });
 
