@@ -30,6 +30,7 @@ class WindowsIconTargetProcessor extends IcoEncoderProcessor {
   WindowsIconTargetProcessor(
     String source,
     String flavorName, {
+    super.badge,
     required super.config,
     required super.logger,
   }) : super(source, '${K.windowsIconsPath}/$flavorName.ico');

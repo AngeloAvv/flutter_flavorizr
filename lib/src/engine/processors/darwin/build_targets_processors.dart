@@ -155,7 +155,8 @@ abstract class _BuildTargetsProcessor extends FlavorizrProcessor {
     {...app ?? defaults, ...own},
     assetsPath: ctx.resolveProject(assetsPath),
     flavorName: flavorName,
-    hasIcon: hasIcon,
+    // A flavor with a badge has the icons that are made for it.
+    hasIcon: hasIcon || ctx.config.badgeOf(flavorName) != null,
     chosen:
         userApp.containsKey(DarwinIconName.setting) ||
         own.containsKey(DarwinIconName.setting),

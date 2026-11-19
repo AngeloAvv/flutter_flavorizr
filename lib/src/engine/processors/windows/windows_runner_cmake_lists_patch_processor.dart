@@ -79,14 +79,16 @@ class WindowsRunnerCMakeListsPatchProcessor extends FlavorizrProcessor {
             in ctx.config.windowsFlavors.entries)
           name: flavor.app.name,
       },
-      // A flavor has an icon of its own when it asks for one, or when the
-      // project already has it: it is the user's. Any other flavor builds with
-      // the `app_icon.ico` of the project.
+      // A flavor has an icon of its own when it asks for one, has a badge (the
+      // icon is made for it), or when the project already has it: it is the
+      // user's. Any other flavor builds with the `app_icon.ico` of the
+      // project.
       icons: {
         for (final MapEntry(key: name, value: flavor)
             in ctx.config.windowsFlavors.entries)
           if (flavor.app.icon != null ||
               flavor.windows?.icon != null ||
+              ctx.config.badgeOf(name) != null ||
               File(
                 p.join(
                   ctx.projectRoot.path,

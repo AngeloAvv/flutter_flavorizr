@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/models/darwin/icon/darwin_icon.dart';
 import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
@@ -37,32 +38,27 @@ abstract class DarwinIconTargetProcessor extends QueueProcessor {
     required String flavorName,
     required Set<DarwinIcon> iconSet,
     required String appIconPath,
+    ResolvedBadge? badge,
     required super.config,
     required super.logger,
-  }) : super(
-          [
-            NewFileStringProcessor(
-              sprintf(
-                  appIconPath, [flavorName, K.darwinAppIconContentsFileName]),
-              DarwinIconContentsProcessor(
-                iconSet,
-                config: config,
-                logger: logger,
-              ),
-              config: config,
-              logger: logger,
-            ),
-            ...iconSet.map(
-              (icon) => ImageResizerProcessor(
-                source,
-                sprintf(appIconPath, [flavorName, icon.fileName]),
-                icon.imageSize,
-                config: config,
-                logger: logger,
-              ),
-            )
-          ],
-        );
+  }) : super([
+         NewFileStringProcessor(
+           sprintf(appIconPath, [flavorName, K.darwinAppIconContentsFileName]),
+           DarwinIconContentsProcessor(iconSet, config: config, logger: logger),
+           config: config,
+           logger: logger,
+         ),
+         ...iconSet.map(
+           (icon) => ImageResizerProcessor(
+             source,
+             sprintf(appIconPath, [flavorName, icon.fileName]),
+             icon.imageSize,
+             badge: badge,
+             config: config,
+             logger: logger,
+           ),
+         ),
+       ]);
 
   @override
   String toString() => 'DarwinIconProcessor';

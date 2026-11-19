@@ -334,6 +334,30 @@ void main() {
       expect(ctx.tracked, [Artifact.patched(path)]);
     });
 
+    test('gives a flavor with a badge the icon that is made for it', () async {
+      write(root, path, utf8.encode(pristine));
+      final badged = FlavorizrContext(
+        config: FlavorizrConfig.parse('''
+flavors:
+  banana:
+    app:
+      name: "Banana App"
+    badge: true
+    windows: {}
+'''),
+        root: root,
+        projectRoot: projectRoot,
+        logger: TestUtils.quietLogger(),
+      );
+
+      await processor.apply(ctx);
+      expect(file(root, path).readAsStringSync(), isNot(contains('banana.ico')));
+
+      await processor.apply(badged);
+
+      expect(file(root, path).readAsStringSync(), contains('banana.ico'));
+    });
+
     test('reads the shadow workspace, never the real project nor the '
         'working directory', () async {
       write(root, path, utf8.encode(pristine));
