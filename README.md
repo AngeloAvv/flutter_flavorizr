@@ -397,9 +397,11 @@ project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
 A badge is a band with the name of the flavor on its icon, to tell a `dev` build
 from a `prod` one at a glance.
 
-> **Configuration only, for now.** These keys are read and checked, and the
-> label, the colour and the source icon are decided, but the icons are not drawn
-> yet: no icon changes, and no run fails, because of `badge` until the rendering
+> **Configuration only, for now.** These keys are read and checked, and an
+> invalid `badge` fails the parsing of the configuration. The label, the colour
+> and the source icon are resolved by the APIs when they are called
+> (`FlavorizrConfig.badgeOf`, `resolveBadgeSourceIcon`); a valid `badge` does not
+> draw anything, nor choose a source icon, in a normal run until the rendering
 > lands.
 
 ```yaml

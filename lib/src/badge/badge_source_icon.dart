@@ -142,19 +142,18 @@ BadgeSourceIcon resolveBadgeSourceIcon({
     if (icon != null) return icon;
   }
 
-  // The largest image of each set that is big enough, then the larger of the
-  // sets: iOS wins a tie.
+  // Every image of both sets is measured, as what Contents.json declares may
+  // not be what the file is: the largest wins, the first listed on a tie (iOS
+  // before macOS).
   BadgeSourceIcon? largest;
 
   for (final set in _projectIconSets) {
     for (final path in _imagesOfSet(set, files)) {
       final icon = attempt(path, BadgeSourceOrigin.project);
 
-      if (icon == null) continue;
-
-      if (largest == null || icon.size > largest.size) largest = icon;
-
-      break;
+      if (icon != null && (largest == null || icon.size > largest.size)) {
+        largest = icon;
+      }
     }
   }
 
@@ -163,7 +162,7 @@ BadgeSourceIcon resolveBadgeSourceIcon({
   throw BadgeSourceIconException(tried);
 }
 
-/// The files of the images of an `.appiconset`, the largest first, as its
+/// The files of the images of an `.appiconset`, the largest declared first, as its
 /// `Contents.json` lists them. There are none when it has no valid one.
 List<String> _imagesOfSet(String set, BadgeSourceFiles files) {
   final text = files.readText(p.posix.join(set, 'Contents.json'));

@@ -84,6 +84,29 @@ void main() {
       },
     );
 
+    test('goes by the real size of the images, not the size Contents.json '
+        'declares', () {
+      final icon = resolveBadgeSourceIcon(
+        files: _FakeFiles({
+          '$_iosSet/Contents.json': _contents([
+            ('1024x1024', '1x', 'lies.png'),
+            ('512x512', '1x', 'honest.png'),
+          ]),
+          '$_iosSet/lies.png': 512,
+          '$_iosSet/honest.png': 900,
+          '$_macosSet/Contents.json': _contents([
+            ('16x16', '1x', 'tiny.png'),
+            ('64x64', '1x', 'big.png'),
+          ]),
+          '$_macosSet/tiny.png': 16,
+          '$_macosSet/big.png': 700,
+        }),
+      );
+
+      expect(icon.path, '$_iosSet/honest.png');
+      expect(icon.size, 900);
+    });
+
     test('prefers iOS when both AppIcons are the same size', () {
       final icon = resolveBadgeSourceIcon(
         files: _FakeFiles({
