@@ -23,31 +23,29 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
+import 'package:flutter_flavorizr/src/processors/commons/badged_icon_source.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icon_target_processor.dart';
 
 class WindowsIconsProcessor extends QueueProcessor {
-  WindowsIconsProcessor({
-    required super.config,
-    required super.logger,
-  }) : super(
-          config.windowsFlavors
-              .where((_, flavor) =>
-                  flavor.app.icon != null || flavor.windows?.icon != null)
-              .map(
-                (flavorName, flavor) => MapEntry(
-                  flavorName,
-                  WindowsIconTargetProcessor(
-                    flavor.windows?.icon ?? flavor.app.icon ?? '',
-                    flavorName,
-                    config: config,
-                    logger: logger,
-                  ),
-                ),
+  WindowsIconsProcessor({required super.config, required super.logger})
+    : super([
+        for (final MapEntry(key: flavorName, value: flavor)
+            in config.windowsFlavors.entries)
+          if (badgedIconSource(
+                config,
+                flavorName,
+                icon: flavor.windows?.icon ?? flavor.app.icon,
               )
-              .values,
-        );
+              case (:final source, :final badge))
+            WindowsIconTargetProcessor(
+              source,
+              flavorName,
+              badge: badge,
+              config: config,
+              logger: logger,
+            ),
+      ]);
 
   @override
   String toString() => 'WindowsIconsProcessor';

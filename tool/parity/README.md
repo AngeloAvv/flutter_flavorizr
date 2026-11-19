@@ -101,9 +101,9 @@ happens to have the same attribute). `differ_test.dart` runs the entries of
 
 ## Tests
 
-The unit tests run with `flutter test`. The end-to-end one, which flavorizes
+The unit tests run with `dart test`. The end-to-end one, which flavorizes
 a real project twice and expects identical output, is skipped by default:
 
 ```sh
-flutter test --run-skipped -t parity
+dart test --run-skipped -t parity
 ```

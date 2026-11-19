@@ -82,7 +82,7 @@ void main() {
         File('pubspec.yaml').copySync('${copy.path}/pubspec.yaml');
         File('pubspec.lock').copySync('${copy.path}/pubspec.lock');
         File('${copy.path}/analysis_options.yaml').writeAsStringSync(
-          'include: package:flutter_lints/flutter.yaml\n'
+          'include: package:lints/recommended.yaml\n'
           'linter:\n  rules:\n    public_member_api_docs: true\n',
         );
         File(
@@ -90,8 +90,8 @@ void main() {
         ).writeAsStringSync('class Undocumented {}\n');
 
         final result = await Process.run(
-          'flutter',
-          ['pub', 'get', '--offline'],
+          'dart',
+          ['pub', 'get', '--offline', '--no-example'],
           workingDirectory: copy.path,
           runInShell: Platform.isWindows,
         );

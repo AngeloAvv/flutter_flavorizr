@@ -25,6 +25,8 @@
 
 import 'dart:typed_data';
 
+import 'package:flutter_flavorizr/src/badge/badge_renderer.dart';
+import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:image/image.dart' as img;
 
@@ -155,12 +157,28 @@ final class AndroidIconSource {
   }
 
   /// Renders the icon as a PNG of [width] x [height] pixels.
-  Uint8List renderPng(int width, int height) => img.encodePng(
-    img.copyResize(
-      _image,
-      width: width,
-      height: height,
-      interpolation: img.Interpolation.average,
-    ),
-  );
+  ///
+  /// With a [badge], the icon is a square and the badge is drawn on it, at
+  /// that size, in [area].
+  Uint8List renderPng(
+    int width,
+    int height, {
+    ResolvedBadge? badge,
+    BadgeArea area = BadgeArea.full,
+  }) {
+    if (badge != null) {
+      assert(width == height, 'a badge is drawn on a square icon');
+
+      return img.encodePng(renderIcon(_image, width, badge: badge, area: area));
+    }
+
+    return img.encodePng(
+      img.copyResize(
+        _image,
+        width: width,
+        height: height,
+        interpolation: img.Interpolation.average,
+      ),
+    );
+  }
 }
