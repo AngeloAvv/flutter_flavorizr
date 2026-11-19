@@ -44,10 +44,11 @@ final String _macos = File(
   'test_resources/darwin/info_plist_test/MacosInfoPlistOriginal.plist',
 ).readAsStringSync().replaceAll('\r\n', '\n');
 
-const _pubspec = '''
+String _pubspec({bool launchScreen = false}) =>
+    '''
 name: app
 flavorizr:
-  flavors:
+${launchScreen ? '  launchScreen: true\n' : ''}  flavors:
     apple:
       app:
         name: "Apple"
@@ -56,6 +57,17 @@ flavorizr:
       macos:
         bundleId: "com.example.apple"
 ''';
+
+/// [source] as the run that has no launch screen leaves it.
+String _expectedOff(String source) => source
+    .replaceFirst(
+      '<string>Example</string>',
+      r'<string>$(BUNDLE_DISPLAY_NAME)</string>',
+    )
+    .replaceFirst(
+      '<string>example</string>',
+      r'<string>$(BUNDLE_NAME)</string>',
+    );
 
 void main() {
   late Directory temp;
@@ -70,8 +82,13 @@ void main() {
     projectRoot = Directory(p.join(temp.path, 'project'))..createSync();
   });
 
-  FlavorizrContext context({Set<String> selected = const {}}) {
-    File(p.join(temp.path, 'pubspec.yaml')).writeAsStringSync(_pubspec);
+  FlavorizrContext context({
+    Set<String> selected = const {},
+    bool launchScreen = false,
+  }) {
+    File(
+      p.join(temp.path, 'pubspec.yaml'),
+    ).writeAsStringSync(_pubspec(launchScreen: launchScreen));
 
     return FlavorizrContext(
       config: TestUtils.parseFlavorizr(p.join(temp.path, 'pubspec')),
@@ -121,11 +138,62 @@ void main() {
       expect(ctx.tracked, [Artifact.patched(K.iOSPListPath)]);
     });
 
-    test('sets the launch storyboard when the launch screen is selected for '
-        'the run', () async {
+    test('sets the launch storyboard to the one the xcconfig of the flavor '
+        'defines when a flavor has a launch screen', () async {
+      write(K.iOSPListPath, _ios);
+
+      await processor.apply(context(launchScreen: true));
+
+      expect(
+        plist(K.iOSPListPath).readAsStringSync(),
+        contains(r'<string>$(LAUNCH_SCREEN_NAME)</string>'),
+      );
+    });
+
+    test('sets it whatever the processors of the run', () async {
+      write(K.iOSPListPath, _ios);
+
+      await processor.apply(
+        context(launchScreen: true, selected: {'ios:plist'}),
+      );
+
+      expect(
+        plist(K.iOSPListPath).readAsStringSync(),
+        contains(r'<string>$(LAUNCH_SCREEN_NAME)</string>'),
+      );
+    });
+
+    test('leaves the launch storyboard alone when no flavor has a launch '
+        'screen, even when the run selects ios:launchScreen', () async {
       write(K.iOSPListPath, _ios);
 
       await processor.apply(context(selected: {'ios:launchScreen'}));
+
+      final text = plist(K.iOSPListPath).readAsStringSync();
+
+      expect(text, contains('<string>LaunchScreen</string>'));
+      expect(text, isNot(contains('LAUNCH_SCREEN_NAME')));
+    });
+
+    test('puts the storyboard of the project back when the last launch '
+        'screen is turned off', () async {
+      write(K.iOSPListPath, _ios);
+      await processor.apply(context(launchScreen: true));
+
+      await processor.apply(context());
+
+      expect(plist(K.iOSPListPath).readAsStringSync(), _expectedOff(_ios));
+    });
+
+    test('leaves a storyboard that is not the one it set, such as the one 2.x '
+        'set', () async {
+      final flavorized = _ios.replaceFirst(
+        '<string>LaunchScreen</string>',
+        r'<string>$(ASSET_PREFIX)LaunchScreen</string>',
+      );
+      write(K.iOSPListPath, flavorized);
+
+      await processor.apply(context());
 
       expect(
         plist(K.iOSPListPath).readAsStringSync(),

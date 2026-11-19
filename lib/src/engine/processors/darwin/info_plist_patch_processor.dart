@@ -51,6 +51,11 @@ abstract class InfoPlistPatchProcessor extends FlavorizrProcessor {
   /// The strings of the plist the processor sets, by key.
   Map<String, String> values(FlavorizrContext ctx);
 
+  /// The strings the processor sets in [source], the text of the plist. It is
+  /// [values] unless the processor needs to look at the plist to tell.
+  Map<String, String> valuesFor(FlavorizrContext ctx, String source) =>
+      values(ctx);
+
   @override
   Future<void> apply(FlavorizrContext ctx) async {
     final file = File(ctx.resolve(path));
@@ -62,7 +67,7 @@ abstract class InfoPlistPatchProcessor extends FlavorizrProcessor {
     }
 
     final (:text, :hasBom) = await BomTextFile.read(file);
-    final patched = InfoPlistEditor.withStrings(text, values(ctx));
+    final patched = InfoPlistEditor.withStrings(text, valuesFor(ctx, text));
 
     if (patched != text) {
       ctx.logger.detail('[$id] Patching `$path`');
@@ -74,8 +79,15 @@ abstract class InfoPlistPatchProcessor extends FlavorizrProcessor {
   }
 }
 
-/// Sets the name, the display name and, when the launch screen is one of the
-/// processors of the run (`ios:launchScreen`, on the legacy pipeline), the launch storyboard of `ios/Runner/Info.plist`.
+/// Sets the name, the display name and, when a flavor has a launch screen (see
+/// `FlavorizrConfig.launchScreenOf`), the launch storyboard of
+/// `ios/Runner/Info.plist`.
+///
+/// The storyboard is `$(LAUNCH_SCREEN_NAME)`, which every flavor defines in its
+/// xcconfig: it is a property of the configuration, and does not depend on the
+/// processors of the run. When no flavor has a launch screen anymore, a
+/// storyboard that is that value goes back to `LaunchScreen`, the one of the
+/// project; any other, such as the one 2.x set, is the user's and is left.
 class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
   /// Creates the processor.
   const IosInfoPlistPatchProcessor();
@@ -90,10 +102,30 @@ class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
   Map<String, String> values(FlavorizrContext ctx) => {
     InfoPlistEditor.bundleName: InfoPlistEditor.bundleNameValue,
     InfoPlistEditor.bundleDisplayName: InfoPlistEditor.bundleDisplayNameValue,
-    if (ctx.selected.contains('ios:launchScreen'))
+    if (ctx.config.launchScreenFlavors.isNotEmpty)
       InfoPlistEditor.launchStoryboardName:
           InfoPlistEditor.launchStoryboardNameValue,
   };
+
+  @override
+  Map<String, String> valuesFor(FlavorizrContext ctx, String source) {
+    final values = this.values(ctx);
+
+    if (values.containsKey(InfoPlistEditor.launchStoryboardName)) {
+      return values;
+    }
+
+    final current = InfoPlistEditor.readStrings(source, [
+      InfoPlistEditor.launchStoryboardName,
+    ])[InfoPlistEditor.launchStoryboardName];
+
+    return {
+      ...values,
+      if (current == InfoPlistEditor.launchStoryboardNameValue)
+        InfoPlistEditor.launchStoryboardName:
+            InfoPlistEditor.defaultLaunchStoryboardNameValue,
+    };
+  }
 }
 
 /// Sets the name of `macos/Runner/Info.plist`.

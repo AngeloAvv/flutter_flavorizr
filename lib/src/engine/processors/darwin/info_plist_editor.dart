@@ -34,7 +34,7 @@ import 'package:xml/xml_events.dart';
 ///
 /// The only part of the file flavorizr owns is the value of a few `<string>`
 /// entries of the top level `<dict>`: `CFBundleName`, `CFBundleDisplayName`
-/// and, when the launch screen is enabled, `UILaunchStoryboardName`. An edit
+/// and, when a flavor has a launch screen, `UILaunchStoryboardName`. An edit
 /// replaces the content of the `<string>` element in the source text and
 /// nothing else: indentation, line endings, comments, the order of the keys and
 /// every other entry are left exactly as the user wrote them. 2.x serialized
@@ -56,9 +56,13 @@ abstract final class InfoPlistEditor {
   /// What `CFBundleDisplayName` is set to: the value every flavor defines.
   static const String bundleDisplayNameValue = r'$(BUNDLE_DISPLAY_NAME)';
 
-  /// What `UILaunchStoryboardName` is set to: the launch screen of the flavor.
-  static const String launchStoryboardNameValue =
-      r'$(ASSET_PREFIX)LaunchScreen';
+  /// What `UILaunchStoryboardName` is set to: the launch screen of the flavor,
+  /// which each flavor defines in its xcconfig as `LAUNCH_SCREEN_NAME`.
+  static const String launchStoryboardNameValue = r'$(LAUNCH_SCREEN_NAME)';
+
+  /// What `UILaunchStoryboardName` goes back to when no flavor has a launch
+  /// screen anymore: the storyboard `flutter create` makes.
+  static const String defaultLaunchStoryboardNameValue = 'LaunchScreen';
 
   /// Returns [source] with the value of every key of [values] set to the value
   /// it maps to.
