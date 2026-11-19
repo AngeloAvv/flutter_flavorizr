@@ -104,7 +104,8 @@ typedef XcodeprojSaver = Future<void> Function(XcodeProject project);
 /// * **Know what the lock hashes.** `project.pbxproj` is a patched artifact,
 ///   and the lock records the hash of the part of it that flavorizr owns. Which
 ///   part is for the processors to say, with `EngineResource.ownedContent` in
-///   the registry (owned build settings, #515). The UUIDs of the objects a
+///   the registry (`buildSettingsOwnedContent`, the owned build settings of
+///   #515). The UUIDs of the objects a
 ///   processor created are recorded in the lock (#516), but a reader gets the
 ///   file alone, which does not say which objects are flavorizr's. So the reader
 ///   is the one of the processors that own the objects: `ios:xcconfig` and

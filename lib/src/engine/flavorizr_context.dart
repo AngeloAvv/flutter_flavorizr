@@ -82,6 +82,9 @@ class FlavorizrContext {
   final Map<String, List<Artifact>> _trackedBy = {};
   final Map<String, Map<String, Set<String>>> _previousObjects;
   final Map<String, Map<String, Set<String>>> _ownedObjects = {};
+  final Map<String, Map<String, Map<String, String>>> _previousKeys;
+  final Map<String, Map<String, Map<String, String>>> _ownedKeys = {};
+  final Set<String> _edited = {};
 
   /// Creates a context.
   ///
@@ -98,10 +101,12 @@ class FlavorizrContext {
     Map<ResourceKey<Object?>, Object?> resources = const {},
     this.processorId,
     Map<String, Map<String, Set<String>>> previousObjects = const {},
+    Map<String, Map<String, Map<String, String>>> previousKeys = const {},
     Set<String> selected = const {},
   }) : selected = Set.unmodifiable(selected),
        _resources = Map.of(resources),
        _previousObjects = _canonicalObjects(previousObjects),
+       _previousKeys = _canonicalKeys(previousKeys),
        root = Directory(p.normalize(root.absolute.path)),
        projectRoot = Directory(p.normalize(projectRoot.absolute.path)),
        previousFlavors = Set.unmodifiable(previousFlavors);
@@ -216,6 +221,94 @@ class FlavorizrContext {
     }
   }
 
+  /// The keys of the pbxproj-like files that the lock recorded for each
+  /// processor, by processor id and then by canonical path of the file.
+  Map<String, Map<String, Map<String, String>>> get previousKeys =>
+      _previousKeys;
+
+  /// What the processor of this context wrote the last time in the file at
+  /// [path] (relative to the project), key by key: the hash of the value it
+  /// set, by the name it gave to the key.
+  ///
+  /// It is what the lock recorded, so the processor can tell a value it wrote
+  /// from the one the user put in its place: a key it no longer wants is
+  /// removed only when the project still holds the value it wrote. It is empty
+  /// on the first run, and for a file the processor owned no key of.
+  ///
+  /// Throws a [StateError] on a context that is not for a processor.
+  Map<String, String> previousKeysOf(String path) {
+    final id = _requireProcessor();
+    final canonical = tryCanonicalPath(path);
+
+    return Map.unmodifiable(
+      canonical == null
+          ? const <String, String>{}
+          : _previousKeys[id]?[canonical] ?? const <String, String>{},
+    );
+  }
+
+  /// The keys the processors declared through [ownKeys] so far, by processor
+  /// id and then by canonical path of the file: the hash of the value, by key.
+  ///
+  /// A processor that never called [ownKeys] has no entry: the lock keeps what
+  /// it recorded for it. One that called it with nothing has an empty map,
+  /// which is how the lock learns it owns no key anymore.
+  Map<String, Map<String, Map<String, String>>> get ownedKeys =>
+      _frozenKeys(_ownedKeys);
+
+  /// Declares that the processor owns the keys of [hashes] in the file at
+  /// [path], relative to the project: the lock records them, and the next run
+  /// finds them through [previousKeysOf].
+  ///
+  /// [hashes] maps the name the processor gives to a key to the hash of the
+  /// value it wrote. They are added to the ones declared before for [path], and
+  /// replace what the lock held for it: declare **every** key that is still
+  /// owned, not only the new ones. A file the processor stops declaring keeps
+  /// what the lock had.
+  ///
+  /// The path must stay within [root], otherwise an [ArgumentError] is thrown.
+  /// Throws a [StateError] on a context that is not for a processor.
+  void ownKeys(String path, Map<String, String> hashes) =>
+      ownKeysFor(_requireProcessor(), {path: hashes});
+
+  /// Declares the keys [owned], by canonical path of the file, as the ones the
+  /// processor [processorId] owns.
+  ///
+  /// It is how the engine hands the keys of a step back to the context of the
+  /// run, as [ownObjectsFor] does for objects.
+  void ownKeysFor(String processorId, Map<String, Map<String, String>> owned) {
+    for (final MapEntry(key: path, value: hashes) in owned.entries) {
+      resolve(path);
+
+      _ownedKeys
+          .putIfAbsent(processorId, () => {})
+          .putIfAbsent(canonicalPath(path), () => {})
+          .addAll(hashes);
+    }
+  }
+
+  /// The files whose owned content a processor found edited by hand, by
+  /// canonical path: see [reportEdited].
+  Set<String> get edited => Set.unmodifiable(_edited);
+
+  /// Says that the owned content of the file at [path], relative to the
+  /// project, was edited by hand since the processor wrote it, and that the
+  /// processor is about to write over it.
+  ///
+  /// It is for what the hash of the file cannot tell: a processor that owns
+  /// some keys of a file other processors own as well (the build settings of
+  /// the project of Xcode) compares what it finds with what it recorded in the
+  /// lock (see [previousKeysOf]). The run then does not write the file without
+  /// the user's say, as for any file edited by hand, and a run of another
+  /// processor that writes the same file does not hide the edit.
+  ///
+  /// The path must stay within [root], otherwise an [ArgumentError] is thrown.
+  void reportEdited(String path) {
+    resolve(path);
+
+    _edited.add(canonicalPath(path));
+  }
+
   String _requireProcessor() =>
       processorId ??
       (throw StateError(
@@ -243,6 +336,37 @@ class FlavorizrContext {
 
     return _frozen(result);
   }
+
+  static Map<String, Map<String, Map<String, String>>> _canonicalKeys(
+    Map<String, Map<String, Map<String, String>>> keys,
+  ) {
+    final result = <String, Map<String, Map<String, String>>>{};
+
+    for (final MapEntry(key: id, value: byPath) in keys.entries) {
+      for (final MapEntry(key: path, value: hashes) in byPath.entries) {
+        final canonical = tryCanonicalPath(path);
+
+        if (canonical == null) continue;
+
+        result
+            .putIfAbsent(id, () => {})
+            .putIfAbsent(canonical, () => {})
+            .addAll(hashes);
+      }
+    }
+
+    return _frozenKeys(result);
+  }
+
+  static Map<String, Map<String, Map<String, String>>> _frozenKeys(
+    Map<String, Map<String, Map<String, String>>> keys,
+  ) => Map.unmodifiable({
+    for (final MapEntry(key: id, value: byPath) in keys.entries)
+      id: Map<String, Map<String, String>>.unmodifiable({
+        for (final MapEntry(key: path, value: hashes) in byPath.entries)
+          path: Map<String, String>.unmodifiable(hashes),
+      }),
+  });
 
   static Map<String, Map<String, Set<String>>> _frozen(
     Map<String, Map<String, Set<String>>> objects,
