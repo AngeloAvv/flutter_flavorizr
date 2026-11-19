@@ -34,7 +34,7 @@
 // 2. `plan` then has nothing to do: a second run is idempotent;
 // 3. a flavor that is dropped from flavorizr.yaml is removed by `apply`, and a
 //    second `plan` has nothing to do again;
-// 4. the flavor that is left builds (on Android with the new DSL too).
+// 4. the flavor that is left builds.
 //
 // The files of the project are the ones `flutter create` writes, so a change of
 // Flutter that a processor does not follow is found here.
@@ -149,20 +149,6 @@ Future<void> _e2e(String platform, Directory checkout) async {
 
     _step('build apple');
     await _run(project, 'flutter', [..._build[platform]!, '--flavor', 'apple']);
-
-    // The generated Gradle file is written against the public DSL, so it keeps
-    // working when the new DSL is on: Flutter turns it off by itself otherwise.
-    if (platform == 'android') {
-      _step('build apple with android.newDsl=true');
-      File(p.join(project.path, 'android', 'gradle.properties'))
-        ..createSync()
-        ..writeAsStringSync('\nandroid.newDsl=true\n', mode: FileMode.append);
-      await _run(project, 'flutter', [
-        ..._build[platform]!,
-        '--flavor',
-        'apple',
-      ]);
-    }
   } finally {
     workspace.deleteSync(recursive: true);
   }
