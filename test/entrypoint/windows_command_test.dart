@@ -53,6 +53,33 @@ String _config(Iterable<String> flavors) =>
     windows: {}
 '''].join()}';
 
+/// The lines of the branch of [flavor] in the region of [cmake]: from its
+/// `if` to the next one.
+List<String> _branch(String cmake, String flavor) {
+  final lines = cmake.split('\n');
+  final start = lines.indexWhere(
+    (line) => line.contains('FLUTTER_APP_FLAVOR STREQUAL "$flavor"'),
+  );
+
+  expect(start, isNonNegative, reason: 'no branch for $flavor');
+
+  final end = lines.indexWhere(
+    (line) => line.trim().startsWith('elseif(') || line.trim() == 'endif()',
+    start + 1,
+  );
+
+  return lines.sublist(start, end);
+}
+
+/// The icon the branch of [flavor] sets, or `null` when it sets none.
+String? _icon(String cmake, String flavor) {
+  final match = RegExp(
+    r'set\(RUNNER_APP_ICON "([^"]+)"\)',
+  ).firstMatch(_branch(cmake, flavor).join('\n'));
+
+  return match?.group(1);
+}
+
 /// The lines of [text] outside of the marked regions.
 List<String> _outsideTheRegions(String text) {
   final lines = <String>[];
@@ -251,7 +278,8 @@ void main() {
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_cmake), contains('"Cherry App"'));
       // It has no icon: it builds with the app_icon.ico of the project.
-      expect(project.read(_cmake), isNot(contains('"cherry.ico"')));
+      expect(_icon(project.read(_cmake), 'cherry'), isNull);
+      expect(_icon(project.read(_cmake), 'apple'), isNull);
     });
 
     test('a flavor with an icon of its own is built with it', () async {
@@ -269,8 +297,8 @@ void main() {
       final code = await project.run(['apply', '--yes', 'windows:cmake']);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.read(_cmake), contains('"cherry.ico"'));
-      expect(project.read(_cmake), isNot(contains('"apple.ico"')));
+      expect(_icon(project.read(_cmake), 'cherry'), 'cherry.ico');
+      expect(_icon(project.read(_cmake), 'apple'), isNull);
     });
 
     test('a flavor whose icon is already in the project is built with it, '
@@ -279,8 +307,8 @@ void main() {
 
       await project.run(['apply', '--yes', ..._fullRun]);
 
-      expect(project.read(_cmake), contains('"apple.ico"'));
-      expect(project.read(_cmake), isNot(contains('"banana.ico"')));
+      expect(_icon(project.read(_cmake), 'apple'), 'apple.ico');
+      expect(_icon(project.read(_cmake), 'banana'), isNull);
       expect(project.read('windows/runner/resources/apple.ico'), 'MINE');
     });
 

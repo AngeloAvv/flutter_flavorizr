@@ -46,11 +46,17 @@ class MacOS with BuildSettingsMixin {
   @JsonKey(defaultValue: {})
   final Map<String, dynamic> buildSettings;
 
+  /// The build settings the configuration wrote, without the defaults that
+  /// [buildSettings] starts from: what the user chose.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final Map<String, dynamic> userBuildSettings;
+
   /// Creates a MacOS.
   MacOS({
     Map<String, dynamic> buildSettings = const {},
     List<Include> includes = const [],
   }) : includes = frozenList(includes),
+       userBuildSettings = (freeze(buildSettings) as Map).cast<String, dynamic>(),
        buildSettings =
            (freeze({
                      ...BuildSettingsMixin.macosDefaultBuildSettings,

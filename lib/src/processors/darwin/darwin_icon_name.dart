@@ -30,7 +30,8 @@ import 'dart:io';
 /// A flavor that has an `icon`, or has an `AppIcon-<flavor>.appiconset` that
 /// is already in the project, builds with that set. Any other flavor builds
 /// with the `AppIcon` of the project, so flavorizr makes no icon for it. A
-/// build setting the user wrote is never changed.
+/// build setting the user wrote, even one that spells the default, is never
+/// changed.
 abstract final class DarwinIconName {
   /// The build setting that names the app icon.
   static const setting = 'ASSETCATALOG_COMPILER_APPICON_NAME';
@@ -43,13 +44,15 @@ abstract final class DarwinIconName {
 
   /// [settings] with the icon of the flavor [flavorName]: the set of the flavor
   /// when [hasIcon] or when [assetsPath] has it, [projectDefault] if not.
+  /// [chosen] is whether the user wrote the setting: it is left as it is.
   static Map<String, dynamic> resolve(
     Map<String, dynamic> settings, {
     required String assetsPath,
     required String flavorName,
     required bool hasIcon,
+    bool chosen = false,
   }) {
-    if (settings[setting] != flavorSet) return settings;
+    if (chosen || settings[setting] != flavorSet) return settings;
 
     final exists = Directory(
       '$assetsPath/AppIcon-$flavorName.appiconset',

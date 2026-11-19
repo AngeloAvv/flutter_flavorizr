@@ -39,11 +39,13 @@ void main() {
   Map<String, dynamic> resolve(
     Map<String, dynamic> settings, {
     bool hasIcon = false,
+    bool chosen = false,
   }) => DarwinIconName.resolve(
     settings,
     assetsPath: assets.path,
     flavorName: 'apple',
     hasIcon: hasIcon,
+    chosen: chosen,
   );
 
   final defaults = BuildSettingsMixin.iosDefaultBuildSettings;
@@ -83,6 +85,13 @@ void main() {
 
     expect(resolve(mine), mine);
     expect(resolve(mine, hasIcon: true), mine);
+  });
+
+  test('a user who wrote the default itself keeps it', () {
+    expect(
+      resolve(defaults, chosen: true)[DarwinIconName.setting],
+      DarwinIconName.flavorSet,
+    );
   });
 
   test('settings with no icon name are left as they are', () {

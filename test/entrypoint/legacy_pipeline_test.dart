@@ -317,14 +317,14 @@ flavors:
 
     test('a path that did not exist is not created', () async {
       await dummyAssets({
-        'android/app/src/apple/res/mipmap-xhdpi/ic_launcher.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@3x.png',
       });
 
       expect(
         File(
           p.join(
             project.path,
-            'android/app/src/apple/res/mipmap-xhdpi/ic_launcher.png',
+            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@3x.png',
           ),
         ).existsSync(),
         isFalse,

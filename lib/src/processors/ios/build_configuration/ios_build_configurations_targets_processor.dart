@@ -55,6 +55,14 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                           flavorName: flavorName,
                           hasIcon:
                               flavor.app.icon != null || flavor.ios?.icon != null,
+                          chosen:
+                              (config.app?.ios?.userBuildSettings.containsKey(
+                                    DarwinIconName.setting,
+                                  ) ??
+                                  false) ||
+                              flavor.ios!.buildSettings.containsKey(
+                                DarwinIconName.setting,
+                              ),
                         ),
                         config: config,
                         logger: logger,
