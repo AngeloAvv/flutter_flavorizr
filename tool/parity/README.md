@@ -80,6 +80,10 @@ covered only if it is identical to the golden once they are applied (and, with
   output no longer has.
 * `ignore` removes what matches from both files. It is what the new output has
   more of, in the lines it shares with the golden.
+* `ignore-once` is a list of patterns that remove what matches from both files
+  like `ignore`, but at most once in each: a file where one of them matches
+  twice is not covered. It is for a block the new output has once, so that a
+  copy of it is not taken for the intended one.
 
 What they match is allowed to differ, so a pattern has to name exactly the thing
 it vouches for: anchor it on the whole line, and say what the object is (a file
@@ -97,9 +101,9 @@ happens to have the same attribute). `differ_test.dart` runs the entries of
 
 ## Tests
 
-The unit tests run with `flutter test`. The end-to-end one, which flavorizes
+The unit tests run with `dart test`. The end-to-end one, which flavorizes
 a real project twice and expects identical output, is skipped by default:
 
 ```sh
-flutter test --run-skipped -t parity
+dart test --run-skipped -t parity
 ```

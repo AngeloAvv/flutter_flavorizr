@@ -24,6 +24,7 @@
  */
 
 import 'package:checked_yaml/checked_yaml.dart';
+import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/src/parser/config_path.dart';
 import 'package:flutter_flavorizr/src/parser/flavor_fingerprint.dart';
@@ -48,6 +49,15 @@ part 'flavorizr.g.dart';
 class FlavorizrConfig {
   /// What `app` sets for the flavors, if anything.
   final AppDefaults? app;
+
+  /// Whether the flavors have a badge on their icon, unless they say otherwise.
+  @JsonKey(disallowNullValue: true, defaultValue: false)
+  final bool badge;
+
+  /// The path of the icon the badges are drawn on when a flavor has none of its
+  /// own, if there is one.
+  @JsonKey(disallowNullValue: true)
+  final String? icon;
 
   /// The flavors, by name.
   @JsonKey(required: true)
@@ -117,6 +127,8 @@ class FlavorizrConfig {
   /// Creates the configuration of [flavors] and the rest.
   FlavorizrConfig({
     this.app,
+    this.badge = false,
+    this.icon,
     required Map<String, Flavor> flavors,
     List<IDE>? ide,
     Map<String, List<String>>? recipes,
@@ -162,12 +174,36 @@ class FlavorizrConfig {
 
     return FlavorizrConfig(
       app: parsed.app,
+      badge: parsed.badge,
+      icon: parsed.icon,
       flavors: parsed.flavors,
       ide: parsed.ide,
       recipes: parsed.recipes,
       defaultRecipe: _defaultRecipeFromJson(json['recipes']),
       flavorFingerprints: fingerprintFlavors(json),
       deprecations: _deprecationsOf(json),
+    );
+  }
+
+  /// The badge of the flavor called [flavor]: what it says, over what the root
+  /// says, and what neither says by default. `null` when the flavor has none,
+  /// or is not in the configuration.
+  ///
+  /// The label is the upper-cased name of the flavor, and the colour comes from
+  /// the palette by a stable hash of the name, unless the flavor sets them.
+  ResolvedBadge? badgeOf(String flavor) {
+    final definition = flavors[flavor];
+
+    if (definition == null) return null;
+
+    final setting = definition.badge;
+
+    if (!(setting?.enabled ?? badge)) return null;
+
+    return ResolvedBadge.of(
+      flavor,
+      label: setting?.label,
+      color: setting?.color,
     );
   }
 

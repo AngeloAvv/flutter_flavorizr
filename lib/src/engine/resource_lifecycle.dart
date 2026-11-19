@@ -35,7 +35,7 @@ import 'package:flutter_flavorizr/src/exception/unregistered_resource_exception.
 ///
 /// The context is created for the step alone. When the runner returns, the
 /// artifacts the step tracked on it are tracked on the context of the run too,
-/// and the objects it owned are owned there.
+/// and the objects and keys it owned are owned there.
 typedef StepRunner =
     Future<void> Function(PlanStep step, FlavorizrContext stepContext);
 
@@ -176,6 +176,7 @@ class ResourceLifecycle {
           previousFlavors: ctx.previousFlavors,
           processorId: step.processor.id,
           previousObjects: ctx.previousObjects,
+          previousKeys: ctx.previousKeys,
           selected: ctx.selected,
           resources: {
             for (final key in step.processor.requires) key: open[key],
@@ -189,6 +190,11 @@ class ResourceLifecycle {
           step.processor.id,
           stepContext.ownedObjects[step.processor.id] ?? const {},
         );
+        ctx.ownKeysFor(
+          step.processor.id,
+          stepContext.ownedKeys[step.processor.id] ?? const {},
+        );
+        stepContext.edited.forEach(ctx.reportEdited);
 
         await tearDownAll([
           for (final key in open.keys)

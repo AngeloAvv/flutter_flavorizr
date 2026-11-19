@@ -88,6 +88,7 @@ typedef _Entry = ({
   RegExp? dropFromGolden,
   RegExp? moved,
   RegExp? ignore,
+  List<RegExp> ignoreOnce,
 });
 
 /// Per-file permission to differ from the golden, each with the reason why.
@@ -115,6 +116,13 @@ class Whitelist {
   /// * `ignore` removes what matches from both files before comparing them. It
   ///   is what the new output has more of, in the lines it shares with the
   ///   golden.
+  /// * `ignore-once` is a list of regular expressions, each of which removes
+  ///   what it matches from both files like `ignore`, **at most once** in each:
+  ///   a file where one matches twice is not covered, so that a block that is
+  ///   there twice is not taken for the one that is intended.
+  ///   Each pattern is counted on the text as it is (not after the others took
+  ///   theirs out), and they are taken out together, before `ignore`: the order
+  ///   of the patterns changes nothing.
   factory Whitelist.parse(String yaml) {
     final document = loadYaml(yaml);
     if (document == null) return const Whitelist.empty();
@@ -143,9 +151,24 @@ class Whitelist {
             dropFromGolden: _optionalPattern(entry, 'drop-from-golden', path),
             moved: _optionalPattern(entry, 'moved', path),
             ignore: _optionalPattern(entry, 'ignore', path),
+            ignoreOnce: _patternList(entry, 'ignore-once', path),
           );
         }(),
     ]);
+  }
+
+  static List<RegExp> _patternList(YamlMap entry, String key, String path) {
+    final value = entry[key];
+    if (value == null) return const [];
+    if (value is! YamlList ||
+        value.isEmpty ||
+        value.any((pattern) => pattern is! String || pattern.isEmpty)) {
+      throw FormatException(
+        'Whitelist entry "$path": `$key` must be a list of non-empty '
+        'regular expressions',
+      );
+    }
+    return [for (final pattern in value) RegExp(pattern, multiLine: true)];
   }
 
   static RegExp? _optionalPattern(YamlMap entry, String key, String path) {
@@ -171,7 +194,8 @@ class Whitelist {
           entry.onlyComments ||
           entry.dropFromGolden != null ||
           entry.moved != null ||
-          entry.ignore != null;
+          entry.ignore != null ||
+          entry.ignoreOnce.isNotEmpty;
       if (restricted &&
           (before == null || after == null || !_covers(entry, before, after))) {
         continue;
@@ -209,6 +233,12 @@ class Whitelist {
       right = normalizePbxproj(keptRight);
     }
 
+    // Before `ignore` takes anything out: what a pattern matches is counted
+    // in the text the entry was given, whatever the others do to it.
+    final once = _removeOnce(entry.ignoreOnce, left, right);
+    if (once == null) return false;
+    (left, right) = once;
+
     final ignore = entry.ignore;
     if (ignore != null) {
       left = left.replaceAll(ignore, '');
@@ -218,6 +248,45 @@ class Whitelist {
     return entry.onlyComments
         ? _withoutComments(left) == _withoutComments(right)
         : left == right;
+  }
+
+  /// [left] and [right] without what [patterns] match, or `null` when one of
+  /// the patterns matches more than once in either.
+  ///
+  /// Every pattern is counted on the text as it is, and what they match is taken
+  /// out in one go: the result does not depend on the order of the patterns, and
+  /// a pattern cannot hide the matches of another one by being applied first.
+  static (String, String)? _removeOnce(
+    List<RegExp> patterns,
+    String left,
+    String right,
+  ) {
+    if (patterns.isEmpty) return (left, right);
+
+    for (final text in [left, right]) {
+      for (final pattern in patterns) {
+        if (pattern.allMatches(text).length > 1) return null;
+      }
+    }
+
+    String without(String text) {
+      final ranges = [
+        for (final pattern in patterns)
+          for (final match in pattern.allMatches(text))
+            (match.start, match.end),
+      ]..sort((a, b) => a.$1.compareTo(b.$1));
+      final kept = StringBuffer();
+      var at = 0;
+
+      for (final (start, end) in ranges) {
+        if (start > at) kept.write(text.substring(at, start));
+        if (end > at) at = end;
+      }
+
+      return (kept..write(text.substring(at))).toString();
+    }
+
+    return (without(left), without(right));
   }
 
   static ({String kept, List<int> moved}) _split(String content, RegExp moved) {

@@ -42,8 +42,11 @@ const _fullRun = [
   'ios:podfile',
   'macos:podfile',
   'ios:xcconfig',
+  'ios:schema',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
 ];
 
 final String _pristine = File(

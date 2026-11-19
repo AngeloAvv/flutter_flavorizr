@@ -41,6 +41,8 @@ const _iosRun = [
   'flutter:flavors',
   'ios:plist',
   'ios:xcconfig',
+  'ios:schema',
+  'ios:buildTargets',
   'ios:podfile',
   'ios:firebase',
 ];
@@ -51,6 +53,7 @@ const _macosRun = [
   'macos:plist',
   'macos:xcconfig',
   'macos:configs',
+  'macos:buildTargets',
   'macos:podfile',
   'macos:firebase',
 ];

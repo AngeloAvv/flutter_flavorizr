@@ -47,8 +47,11 @@ const _targets = [
   'ios:plist',
   'macos:plist',
   'ios:xcconfig',
+  'ios:schema',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
   'ios:podfile',
   'macos:podfile',
 ];
@@ -597,7 +600,13 @@ void main() {
         'them: only the lock can tell whose they are', () async {
       final iosBefore = objectUuids(project.read(_iosPbxproj));
 
-      final code = await apply();
+      // Without the build configurations, which are not what is tested here.
+      final code = await project.run([
+        'apply',
+        '--yes',
+        for (final target in _targets)
+          if (!target.endsWith(':buildTargets')) target,
+      ]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       for (final (bundle, path) in [

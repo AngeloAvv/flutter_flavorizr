@@ -34,10 +34,14 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_pr
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/build_settings_owned_content.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/build_targets_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_editor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/google/firebase_processors.dart';
@@ -78,6 +82,10 @@ final class EngineProcessor {
   /// How to read the part of a patched file the processor owns, by path of the
   /// file. It is what the lock hashes, so that whatever else the user edits is
   /// never drift. A file that is not here is hashed whole.
+  ///
+  /// A path may have a `*` in the name of the file, which stands for any
+  /// characters but `/`: it is for the files whose names are the flavors', such
+  /// as the schemes (`ios/Runner.xcodeproj/xcshareddata/xcschemes/*.xcscheme`).
   final Map<String, String Function(String source)> ownedContent;
 
   /// Registers [processor], which works on [paths].
@@ -148,8 +156,8 @@ class ProcessorRegistry {
   }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, Podfile and Info.plist processors that were ported run on the
-  /// engine, every other 2.x
+  /// xcconfig, build targets, Podfile and Info.plist processors that were ported
+  /// run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
@@ -185,6 +193,20 @@ class ProcessorRegistry {
         const MacosConfigsProcessor(),
         paths: {K.macOSConfigsPath},
       ),
+      // The project is read, not written: the processor works in the folder of
+      // the project the resource brings, and the schemes in it are what it owns.
+      EngineProcessor(
+        const IosSchemaProcessor(),
+        paths: const {},
+        ownedContent: {
+          '${XcodeprojResource.iosProject}/xcshareddata/xcschemes/*.xcscheme':
+              SchemeEditor.ownedContent,
+        },
+      ),
+      // They work on the project, which the shared resource brings to the
+      // shadow workspace, and own the build settings of the flavors in it.
+      const EngineProcessor(IosBuildTargetsProcessor(), paths: {}),
+      const EngineProcessor(MacosBuildTargetsProcessor(), paths: {}),
       EngineProcessor(
         const IosInfoPlistPatchProcessor(),
         paths: {K.iOSPListPath},
@@ -278,7 +300,8 @@ class ProcessorRegistry {
     ],
     resources: [
       // The part of the projects the lock hashes is the one the processors
-      // above own: the references to the xcconfigs of the flavors. The 2.x
+      // above own: the references to the xcconfigs of the flavors, the build
+      // settings of their configurations and the Firebase build phase. The 2.x
       // processors that run after the engine change the rest.
       EngineResource(
         XcodeprojResource.ios(),
@@ -286,6 +309,7 @@ class ProcessorRegistry {
         ownedContent: {
           XcodeprojResource.iosArtifact.path: (source) => [
             xcconfigReferencesOwnedContent(source),
+            buildSettingsOwnedContent(source),
             firebaseOwnedContent(source, 'ios'),
           ].join('\n'),
         },
@@ -296,6 +320,7 @@ class ProcessorRegistry {
         ownedContent: {
           XcodeprojResource.macosArtifact.path: (source) => [
             xcconfigReferencesOwnedContent(source),
+            buildSettingsOwnedContent(source),
             firebaseOwnedContent(source, 'macos'),
           ].join('\n'),
         },
@@ -442,8 +467,10 @@ class ProcessorRegistry {
     if (artifact.ownership != Ownership.patched) return digestOf(bytes);
 
     final readers = [
-      ..._engine.values.map((entry) => entry.ownedContent[artifact.path]),
-      ..._resources.values.map((entry) => entry.ownedContent[artifact.path]),
+      ..._engine.values.map((entry) => _readerOf(entry.ownedContent, artifact)),
+      ..._resources.values.map(
+        (entry) => _readerOf(entry.ownedContent, artifact),
+      ),
     ].nonNulls.toList(growable: false);
 
     if (readers.isEmpty) return digestOf(bytes);
@@ -463,5 +490,28 @@ class ProcessorRegistry {
             : [for (final part in parts) '${part.length}:$part'].join(),
       ),
     );
+  }
+
+  /// The reader of [artifact] among [readers], by path: the one of the exact
+  /// path, or else the one of a pattern with a `*` that the path matches.
+  static String Function(String source)? _readerOf(
+    Map<String, String Function(String source)> readers,
+    Artifact artifact,
+  ) {
+    final exact = readers[artifact.path];
+
+    if (exact != null) return exact;
+
+    for (final MapEntry(key: pattern, value: reader) in readers.entries) {
+      if (!pattern.contains('*')) continue;
+
+      final matcher = RegExp(
+        '^${pattern.split('*').map(RegExp.escape).join('[^/]*')}\$',
+      );
+
+      if (matcher.hasMatch(artifact.path)) return reader;
+    }
+
+    return null;
   }
 }

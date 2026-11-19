@@ -41,7 +41,6 @@ import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/icons/ios_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/ios_plist_processor.dart';
@@ -49,7 +48,6 @@ import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_targets_l
 import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_runner_cmake_lists_processor.dart';
-import 'package:flutter_flavorizr/src/processors/macos/build_configuration/macos_build_configurations_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_assets_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/icons/macos_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/macos_plist_processor.dart';
@@ -210,7 +208,10 @@ class Processor extends AbstractProcessor<void> {
   }
 
   static Map<String, AbstractProcessor<void> Function()>
-  _initAvailableProcessors(FlavorizrConfig flavorizr, {required Logger logger}) {
+  _initAvailableProcessors(
+    FlavorizrConfig flavorizr, {
+    required Logger logger,
+  }) {
     return {
       // Android
       'android:androidManifest': () => ExistingFileStringProcessor(
@@ -246,10 +247,8 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'android:dummyAssets': () => AndroidDummyAssetsProcessor(
-        config: flavorizr,
-        logger: logger,
-      ),
+      'android:dummyAssets': () =>
+          AndroidDummyAssetsProcessor(config: flavorizr, logger: logger),
       'android:icons': () =>
           AndroidIconsProcessor(config: flavorizr, logger: logger),
 
@@ -261,17 +260,6 @@ class Processor extends AbstractProcessor<void> {
           config: flavorizr,
           logger: logger,
         ),
-        config: flavorizr,
-        logger: logger,
-      ),
-      'ios:buildTargets': () => IOSBuildConfigurationsTargetsProcessor(
-        K.iOSRunnerProjectPath,
-        K.iOSFlutterPath,
-        config: flavorizr,
-        logger: logger,
-      ),
-      'ios:schema': () => DarwinSchemasProcessor(
-        K.iOSRunnerProjectPath,
         config: flavorizr,
         logger: logger,
       ),
@@ -305,21 +293,13 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'macos:buildTargets': () => MacOSBuildConfigurationsTargetsProcessor(
-        K.macOSRunnerProjectPath,
-        K.macOSConfigsPath,
-        config: flavorizr,
-        logger: logger,
-      ),
       'macos:schema': () => DarwinSchemasProcessor(
         K.macOSRunnerProjectPath,
         config: flavorizr,
         logger: logger,
       ),
-      'macos:dummyAssets': () => MacOSDummyAssetsTargetsProcessor(
-        config: flavorizr,
-        logger: logger,
-      ),
+      'macos:dummyAssets': () =>
+          MacOSDummyAssetsTargetsProcessor(config: flavorizr, logger: logger),
       'macos:icons': () =>
           MacOSIconsProcessor(config: flavorizr, logger: logger),
       'macos:plist': () => ExistingFileStringProcessor(
@@ -368,10 +348,8 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'windows:dummyAssets': () => WindowsDummyAssetsProcessor(
-        config: flavorizr,
-        logger: logger,
-      ),
+      'windows:dummyAssets': () =>
+          WindowsDummyAssetsProcessor(config: flavorizr, logger: logger),
       'windows:icons': () =>
           WindowsIconsProcessor(config: flavorizr, logger: logger),
 

@@ -25,6 +25,8 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/badge/badge_renderer.dart';
+import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
@@ -34,13 +36,21 @@ import 'package:image/image.dart';
 class ImageResizerProcessor extends CopyFileProcessor {
   final Size size;
 
+  /// The badge drawn on the resized icon, at its size, or `null` for none. It
+  /// is drawn on a square icon only, which is what every Darwin icon is.
+  final ResolvedBadge? badge;
+
   ImageResizerProcessor(
     super.source,
     super.destination,
     this.size, {
+    this.badge,
     required super.config,
     required super.logger,
-  });
+  }) : assert(
+         badge == null || size.width == size.height,
+         'a badge is drawn on a square icon',
+       );
 
   @override
   File execute() {
@@ -67,12 +77,15 @@ class ImageResizerProcessor extends CopyFileProcessor {
     logger.detail(
       '[$ImageResizerProcessor] Resizing image from `$source` with size `$size`',
     );
-    final thumbnail = copyResize(
-      image,
-      width: size.width.toInt(),
-      height: size.height.toInt(),
-      interpolation: Interpolation.average,
-    );
+    final badge = this.badge;
+    final thumbnail = badge == null
+        ? copyResize(
+            image,
+            width: size.width.toInt(),
+            height: size.height.toInt(),
+            interpolation: Interpolation.average,
+          )
+        : renderIcon(image, size.width.toInt(), badge: badge);
     final encodedImage = encodeNamedImage(destination, thumbnail);
 
     if (encodedImage == null) {
