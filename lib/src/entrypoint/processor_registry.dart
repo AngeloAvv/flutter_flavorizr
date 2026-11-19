@@ -97,6 +97,23 @@ final class EngineProcessor {
   });
 }
 
+/// The part of the iOS `project.pbxproj` the lock hashes: what the processors
+/// that own objects in it say they own.
+///
+/// The references to the storyboards of the launch screens are in it only when
+/// the project has some, so that the hash of a project without them is the one
+/// it was before they existed.
+String iosProjectOwnedContent(String source) {
+  final launchScreens = launchScreenReferencesOwnedContent(source);
+
+  return [
+    xcconfigReferencesOwnedContent(source),
+    if (launchScreens.isNotEmpty) launchScreens,
+    buildSettingsOwnedContent(source),
+    firebaseOwnedContent(source, 'ios'),
+  ].join('\n');
+}
+
 /// A shared resource of the engine, with what the CLI has to know about it and
 /// the resource cannot tell.
 final class EngineResource {
@@ -314,12 +331,7 @@ class ProcessorRegistry {
         XcodeprojResource.ios(),
         paths: const {XcodeprojResource.iosProject},
         ownedContent: {
-          XcodeprojResource.iosArtifact.path: (source) => [
-            xcconfigReferencesOwnedContent(source),
-            launchScreenReferencesOwnedContent(source),
-            buildSettingsOwnedContent(source),
-            firebaseOwnedContent(source, 'ios'),
-          ].join('\n'),
+          XcodeprojResource.iosArtifact.path: iosProjectOwnedContent,
         },
       ),
       EngineResource(

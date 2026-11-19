@@ -257,5 +257,31 @@ void main() {
       expect(storyboard(), r'$(LAUNCH_SCREEN_NAME)');
       expect(project.logger.warnings, isEmpty);
     });
+
+    test('ios:plist alone does not take a storyboard that is not the one '
+        'ios:xcconfig kept', () async {
+      project.write('flavorizr.yaml', _config(root: 'launchScreen: true\n'));
+      await only('ios:xcconfig');
+
+      // The user changes it after: what is kept is the old one.
+      project.write(
+        _plist,
+        project.read(_plist).replaceFirst('CustomLaunch', 'OtherLaunch'),
+      );
+
+      await only('ios:plist');
+
+      expect(storyboard(), 'OtherLaunch');
+      expect(project.logger.warnings.join(), contains('OtherLaunch'));
+
+      await only('ios:xcconfig');
+      await only('ios:plist');
+
+      expect(storyboard(), r'$(LAUNCH_SCREEN_NAME)');
+      expect(
+        xcconfig('apple'),
+        contains('DEFAULT_LAUNCH_SCREEN_NAME=OtherLaunch\n'),
+      );
+    });
   });
 }
