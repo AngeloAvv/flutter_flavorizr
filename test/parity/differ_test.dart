@@ -199,6 +199,295 @@ void main() {
     });
   });
 
+  group('the whitelist of the schemes, as it ships', () {
+    final whitelist = Whitelist.parse(
+      File('tool/parity/whitelist.yaml').readAsStringSync(),
+    );
+    const schemes = 'ios/Runner.xcodeproj/xcshareddata/xcschemes';
+    const preActions = '''
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Prepare Flutter Framework Script"
+               scriptText = "/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "97C146ED1CF9000F007C117D"
+                     BuildableName = "Runner.app"
+                     BlueprintName = "Runner"
+                     ReferencedContainer = "container:Runner.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
+''';
+    const entries = '''
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "97C146ED1CF9000F007C117D"
+               BuildableName = "Runner.app"
+               BlueprintName = "Runner"
+               ReferencedContainer = "container:Runner.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+''';
+    const open = '''
+<Scheme
+   version = "1.3">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+''';
+    const close = '''
+   </BuildAction>
+   <LaunchAction
+      buildConfiguration = "Debug-apple">
+   </LaunchAction>
+</Scheme>
+''';
+
+    bool clean(String before, String after, {String path = 'apple'}) {
+      write(golden, '$schemes/$path.xcscheme', before);
+      write(actual, '$schemes/$path.xcscheme', after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
+
+    test(
+      'takes the pre-action of Flutter and the entry that builds the app',
+      () {
+        expect(clean('$open$close', '$open$preActions$entries$close'), isTrue);
+        expect(
+          clean('$open$close', '$open$preActions$entries$close', path: 'dev-1'),
+          isTrue,
+        );
+      },
+    );
+
+    test('does not take the schemes of macOS', () {
+      write(
+        golden,
+        'macos/Runner.xcodeproj/xcshareddata/xcschemes/a.xcscheme',
+        '$open$close',
+      );
+      write(
+        actual,
+        'macos/Runner.xcodeproj/xcshareddata/xcschemes/a.xcscheme',
+        '$open$preActions$entries$close',
+      );
+
+      expect(
+        compareTrees(golden, actual, whitelist: whitelist).isClean,
+        isFalse,
+      );
+    });
+
+    test('does not take another script', () {
+      final other = preActions.replaceAll('xcode_backend', 'evil');
+
+      expect(clean('$open$close', '$open$other$entries$close'), isFalse);
+    });
+
+    test('does not take a change of a build configuration', () {
+      expect(
+        clean(
+          '$open$close',
+          '$open$preActions$entries$close'.replaceAll('Debug-apple', 'Debug'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not take another type of action', () {
+      final bogus = preActions.replaceAll(
+        'ExecutionActionType.ShellScriptAction',
+        'ExecutionActionType.BogusShellScriptAction',
+      );
+
+      expect(clean('$open$close', '$open$bogus$entries$close'), isFalse);
+    });
+
+    for (final (name, from, to) in [
+      (
+        'another target',
+        'BlueprintIdentifier = "97C146ED1CF9000F007C117D"',
+        'BlueprintIdentifier = "331C8080294A63A400263BE5"',
+      ),
+      (
+        'another product',
+        'BuildableName = "Runner.app"',
+        'BuildableName = "RunnerTests.xctest"',
+      ),
+      (
+        'another container',
+        'container:Runner.xcodeproj',
+        'container:Other.xcodeproj',
+      ),
+    ]) {
+      test('does not take a build entry for $name', () {
+        final other = entries.replaceAll(from, to);
+
+        expect(other, isNot(entries));
+        expect(clean('$open$close', '$open$preActions$other$close'), isFalse);
+      });
+
+      test('does not take a pre-action for $name', () {
+        final other = preActions.replaceAll(from, to);
+
+        expect(other, isNot(preActions));
+        expect(clean('$open$close', '$open$other$entries$close'), isFalse);
+      });
+    }
+
+    test('does not take a pre-action or an entry that is there twice', () {
+      for (final actual in [
+        '$open$preActions$preActions$entries$close',
+        '$open$preActions$entries$entries$close',
+        '$open$preActions$preActions$close',
+        '$open$entries$entries$close',
+      ]) {
+        expect(clean('$open$close', actual), isFalse, reason: actual);
+      }
+    });
+
+    test('does not take a build entry that repeats a flag and misses one', () {
+      final repeated = entries.replaceAll(
+        'buildForRunning = "YES"',
+        'buildForTesting = "YES"',
+      );
+
+      expect(repeated, isNot(entries));
+      expect(clean('$open$close', '$open$preActions$repeated$close'), isFalse);
+    });
+
+    test('does not take a build entry with a flag more or less', () {
+      final more = entries.replaceAll(
+        'buildForAnalyzing = "YES">',
+        'buildForAnalyzing = "YES"\n            buildForAnalyzing = "YES">',
+      );
+      final less = entries.replaceAll(
+        '            buildForArchiving = "YES"\n',
+        '',
+      );
+
+      for (final other in [more, less]) {
+        expect(other, isNot(entries));
+        expect(clean('$open$close', '$open$preActions$other$close'), isFalse);
+      }
+    });
+
+    test('does not take a build entry that does not build for everything', () {
+      final partial = entries.replaceAll(
+        'buildForTesting = "YES"',
+        'buildForTesting = "NO"',
+      );
+
+      expect(clean('$open$close', '$open$preActions$partial$close'), isFalse);
+    });
+  });
+
+  group('an ignore-once whitelist entry', () {
+    final whitelist = Whitelist.parse(r'''
+- path: a.txt
+  ignore-once:
+    - '^x\n'
+  reason: It has one x line
+''');
+
+    bool clean(String before, String after) {
+      write(golden, 'a.txt', before);
+      write(actual, 'a.txt', after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
+
+    test('takes what it matches once', () {
+      expect(clean('a\n', 'x\na\n'), isTrue);
+    });
+
+    test('does not take what it matches twice', () {
+      expect(clean('a\n', 'x\nx\na\n'), isFalse);
+    });
+
+    test('does not take it in the golden twice either', () {
+      expect(clean('x\nx\na\n', 'a\n'), isFalse);
+    });
+
+    group('with patterns that overlap', () {
+      Whitelist two(String first, String second) => Whitelist.parse('''
+- path: a.txt
+  ignore-once:
+    - '$first'
+    - '$second'
+  reason: It has them once
+''');
+
+      bool cleanWith(Whitelist whitelist, String before, String after) {
+        write(golden, 'a.txt', before);
+        write(actual, 'a.txt', after);
+
+        return compareTrees(golden, actual, whitelist: whitelist).isClean;
+      }
+
+      test('counts each on the text as it is, not after the others', () {
+        // Removing the first would leave the second once.
+        for (final patterns in [(r'^x\ny\n', r'^x\n'), (r'^x\n', r'^x\ny\n')]) {
+          final whitelist = two(patterns.$1, patterns.$2);
+
+          expect(
+            cleanWith(whitelist, 'tail\n', 'x\ny\nx\ntail\n'),
+            isFalse,
+            reason: '$patterns',
+          );
+          expect(
+            cleanWith(whitelist, 'x\ny\nx\ntail\n', 'tail\n'),
+            isFalse,
+            reason: '$patterns',
+          );
+        }
+      });
+
+      test('takes what both match once, whatever their order', () {
+        for (final patterns in [
+          (r'^x\ny\n', r'^y\nz\n'),
+          (r'^y\nz\n', r'^x\ny\n'),
+        ]) {
+          expect(
+            cleanWith(
+              two(patterns.$1, patterns.$2),
+              'tail\n',
+              'x\ny\nz\ntail\n',
+            ),
+            isTrue,
+            reason: '$patterns',
+          );
+        }
+      });
+    });
+
+    test('is rejected when it is not a list of patterns', () {
+      expect(
+        () => Whitelist.parse('''
+- path: a.txt
+  ignore-once: x
+  reason: nope
+'''),
+        throwsFormatException,
+      );
+    });
+  });
+
   group('a moved whitelist entry', () {
     final whitelist = Whitelist.parse(r'''
 - path: ios/Runner.xcodeproj/project.pbxproj

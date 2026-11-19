@@ -76,6 +76,7 @@ void main() {
         'windows:runnerRcTemplate',
         'windows:cmake',
         'ios:xcconfig',
+        'ios:schema',
         'macos:xcconfig',
         'macos:configs',
         'ios:buildTargets',
@@ -145,6 +146,7 @@ void main() {
           'windows:runnerRcTemplate',
           'windows:cmake',
           'ios:xcconfig',
+          'ios:schema',
           'macos:xcconfig',
           'macos:configs',
           'ios:buildTargets',
@@ -190,6 +192,56 @@ void main() {
       expect(path, 'ios/Runner.xcodeproj/project.pbxproj');
     });
 
+    group('hashes a scheme by its build configurations only', () {
+      const scheme = '''
+<Scheme>
+   <LaunchAction buildConfiguration = "Debug-apple" launchStyle = "0"/>
+   <ArchiveAction buildConfiguration = "Release-apple"/>
+</Scheme>
+''';
+      const path = 'ios/Runner.xcodeproj/xcshareddata/xcschemes';
+
+      test('of the scheme of any flavor', () {
+        for (final flavor in ['apple', 'banana']) {
+          final artifact = Artifact.patched('$path/$flavor.xcscheme');
+
+          expect(
+            registry.hash(artifact, _bytes(scheme)),
+            registry.hash(
+              artifact,
+              _bytes('${scheme.replaceAll('"0"', '"1"')}<!-- mine -->'),
+            ),
+          );
+          expect(
+            registry.hash(artifact, _bytes(scheme)),
+            isNot(
+              registry.hash(
+                artifact,
+                _bytes(scheme.replaceAll('Release-apple', 'Release')),
+              ),
+            ),
+          );
+        }
+      });
+
+      test('and only in the schemes of the iOS project', () {
+        final other = Artifact.patched(
+          'macos/Runner.xcodeproj/xcshareddata/'
+          'xcschemes/apple.xcscheme',
+        );
+        final nested = Artifact.patched('$path/sub/apple.xcscheme');
+
+        for (final artifact in [other, nested]) {
+          expect(
+            registry.hash(artifact, _bytes(scheme)),
+            isNot(
+              registry.hash(artifact, _bytes(scheme.replaceAll('"0"', '"1"'))),
+            ),
+          );
+        }
+      });
+    });
+
     group('hashes of an Xcode project only', () {
       String reference(String path) =>
           '\t\t${'A' * 24} /* x */ = {isa = PBXFileReference; path = $path; };';
@@ -226,7 +278,7 @@ void main() {
 
     test('keeps every other 2.x instruction on the legacy pipeline', () {
       expect(registry.legacyIds, contains('huawei:agconnect'));
-      expect(registry.legacyIds, contains('ios:schema'));
+      expect(registry.legacyIds, isNot(contains('ios:schema')));
       expect(registry.legacyIds, contains('macos:schema'));
       expect(registry.legacyIds, contains('android:dummyAssets'));
       expect(registry.legacyIds, contains('windows:icons'));
