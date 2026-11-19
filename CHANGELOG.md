@@ -1,3 +1,32 @@
+## 3.0.0
+
+### Breaking changes
+
+Read the [migration guide](https://docs.page/AngeloAvv/flutter_flavorizr/migration) before you upgrade: following it on a project flavorized with 2.x ends with a clean `flavorizr status`.
+
+* Removed the `instructions` key: `recipes` replaces it, and the recipe `default` is what runs without a target. The error prints the `recipes` to write
+* Removed the `assetsUrl` key and the assets pipeline (`assets:download`, `assets:extract`, `assets:clean`): flavorizr bundles no assets and downloads nothing
+* Deprecated and ignored `generateDummyAssets`, which becomes an error in 4.0. A flavor with no `icon` builds with the default icon of the project
+* `customConfig` is typed: texts are quoted for you (a text with its own quotes is an error), code is written as `{raw: ...}`, and `manifestPlaceholders` is a key of the flavor
+* Unknown keys of the configuration are errors, with their path, line and a suggestion
+* `lib/flavors.dart` is split in `flavors.g.dart`, generated and managed, and `flavors.dart`, which exports it and is yours. `F.appFlavor` is read from Flutter and is not assigned anymore
+* `apply` does not read an answer from a pipe anymore: pass `--yes` and `--on-conflict` in scripts
+* `-f` (`--force`) and `-p` (`--processors`) are deprecated aliases of `--yes` and of the targets after the command, and are removed in 4.0
+* Commit `flavorizr.lock`: it is how flavorizr removes what it generated and tells it from what you edited
+* flutter_flavorizr is a pure Dart package
+
+### Features
+
+* A new engine: runs are declarative and idempotent, go through a shadow workspace, and record what they generated in `flavorizr.lock`
+* New commands: `init`, `plan`, `apply`, `status`, `list` and `doctor`, with exit codes and `--json` output for CI
+* Removing a flavor from `flavorizr.yaml` removes it from the project
+* Conflicts with files edited by hand are reported, and answered with `--on-conflict=keep|overwrite`
+* Recipes, and custom processors registered in `tool/flavorizr.dart`
+* Optional icon badge per flavor (`badge`, `icon`)
+* Build settings of the Xcode projects are edited key by key, and `Info.plist`, `AndroidManifest.xml`, the Podfile and `launch.json` are edited in place
+* Typed `customConfig` and `manifestPlaceholders` for Groovy and Kotlin scripts
+* A new documentation site on [docs.page](https://docs.page/AngeloAvv/flutter_flavorizr), and a single example
+
 ## 2.6.0
 
 * Added support for Linux platform (`linux:cmake`, `linux:runnerCmake`, `linux:myApplication` processors)
