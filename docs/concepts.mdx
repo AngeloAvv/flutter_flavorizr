@@ -1,0 +1,75 @@
+---
+title: "Core concepts"
+description: "The yaml, the lock and the disk; plan and apply; and who owns a file."
+---
+
+flavorizr separates three things that a script that edits files usually mixes up.
+
+## The yaml, the lock and the disk
+
+| | What it is | Who writes it |
+| --- | --- | --- |
+| `flavorizr.yaml` | The **desired state**: the flavors you want. | You |
+| `flavorizr.lock` | The **applied state**: what flavorizr generated the last time, and a hash of it. | flavorizr, after a run that fully succeeded |
+| The project | **Reality**: the files on disk, which you, Xcode, Flutter and CocoaPods also edit. | Everybody |
+
+A run compares the three:
+
+- the yaml and the lock tell **which flavors were added, removed or changed**. A flavor that is in the
+  lock and not in the yaml is removed from the project, together with what flavorizr generated for it;
+- the lock and the disk tell **what changed by hand** since the last run. A file that is not what
+  flavorizr wrote is yours, and flavorizr asks before it changes it: see [Conflicts](/conflicts);
+- the yaml and the disk tell **what is left to do**: that is the plan.
+
+`flavorizr.lock` is meant to be committed. Without it flavorizr cannot remove a flavor, and cannot tell
+a file you edited from one it generated. It is written last, only after the files were written, and
+it is never edited by hand. Its format is in [`flavorizr.lock`](/reference/lock).
+
+## Plan and apply
+
+A run does not touch your project while it works out what to do:
+
+1. flavorizr copies the files it needs into a **shadow workspace**, and the processors of the run
+   write there;
+2. it **diffs** the workspace against the project: files to add, change or delete, and the
+   [conflicts](/conflicts);
+3. `plan` prints that diff and stops. `apply` asks for a confirmation, copies the changes back to the
+   project and writes `flavorizr.lock`.
+
+That gives dry runs, a reviewable diff, and atomic writes: a run that fails does not write the
+changes of the engine to your project. `status` is the same run, which compares and exits with `1`
+when the project and the yaml disagree.
+
+Each step of a run is a **processor**: a unit that makes, patches or removes the files of one area,
+for example `android:buildGradle` or `ios:xcconfig`. Processors declare what they need, so a processor
+that depends on another one pulls it into the run, and a run applies them in the right order. A
+[recipe](/recipes) is a named list of processors, and `all` is the one that runs without a target.
+
+## File ownership
+
+Every file a processor produces has an **owner**, and the owner decides what a run may do to it.
+`plan` shows it next to each file.
+
+| Owner | What it is | What a run does |
+| --- | --- | --- |
+| `managed` | Generated whole, such as `flavors.g.dart`, the xcconfig files of a flavor or `flavorizr.gradle`. | Rewrites it when the configuration changed. The lock holds its hash, so editing it by hand is a [conflict](/conflicts). |
+| `patched` | Shared with you or with a tool, such as `AndroidManifest.xml`, `Info.plist`, `build.gradle`, the Podfile or `project.pbxproj`. | Changes only the part it owns: marked regions, owned keys, owned objects. The lock hashes only that part, so what you edit around it is never drift. |
+| `scaffold` | Created once, such as `lib/flavors.dart`, `lib/main.dart`. | Never overwritten after it exists, except with `--overwrite-scaffold`. It is yours. |
+| `local` | Written by tools or ignored by git, such as `.idea/runConfigurations` or the Firebase files copied for each flavor. | Regenerated silently on every run. Never in the lock, never a conflict, never drift. |
+
+Two things follow from it:
+
+- **Removing is as safe as adding.** A flavor you drop from the yaml has its `managed` files deleted
+  and its share of the `patched` ones (build configurations, Podfile mappings, plist keys) taken out,
+  and nothing else. What you added to a patched file is not touched.
+- **A setting that is yours stays yours.** A build setting flavorizr wrote and you changed is yours:
+  it stays when flavorizr stops setting it. The `DEVELOPMENT_TEAM` you pick in Xcode survives every
+  run.
+
+## Engine and legacy processors
+
+3.0 runs the processors on a new engine that does all of the above. Some of the iOS and macOS
+processors (schemes, launch screens, icons) and `huawei:agconnect` are still the ones of 2.x:
+they are applied to the project after the engine, with no preview, no conflict detection and no entry
+in the lock. `plan` and `list` say which processors run on which, and `status` lists the ones it
+cannot vouch for. See the [command line reference](/reference/cli#processors-that-are-not-on-the-engine-yet).

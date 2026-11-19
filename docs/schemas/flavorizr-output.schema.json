@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "flutter_flavorizr --json output",
-  "description": "The document that `plan`, `apply`, `status` and `list` print on stdout with --json. See doc/json-output.md.",
+  "description": "The document that `plan`, `apply`, `status` and `list` print on stdout with --json. See https://docs.page/AngeloAvv/flutter_flavorizr/reference/json-output.",
   "oneOf": [
     { "$ref": "#/$defs/plan" },
     { "$ref": "#/$defs/apply" },

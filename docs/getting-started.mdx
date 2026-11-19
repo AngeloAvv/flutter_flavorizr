@@ -1,0 +1,128 @@
+---
+title: "Getting started"
+description: "From a Flutter project to a running flavor in a few commands."
+---
+
+## Install
+
+Add flavorizr as a development dependency:
+
+```sh
+flutter pub add --dev flutter_flavorizr
+```
+
+or in `pubspec.yaml`:
+
+```yaml title="pubspec.yaml"
+dev_dependencies:
+  flutter_flavorizr: ^3.0.0
+```
+
+flavorizr works on a project that is under version control: it edits native files in place, and the
+diff of a run is the safest way to review it. Commit before you start.
+
+## 1. Write the configuration
+
+`init` looks at the platform folders of the project (`android`, `ios`, `macos`, `linux`, `windows`),
+asks for the flavors, the identifier the apps are built on and the name of each app, and writes
+`flavorizr.yaml`:
+
+```sh
+dart run flutter_flavorizr init
+```
+
+```yaml title="flavorizr.yaml"
+flavors:
+  "dev":
+    app:
+      name: "Demo Dev"
+    android:
+      applicationId: "com.example.demo.dev"
+    ios:
+      bundleId: "com.example.demo.dev"
+  "prod":
+    app:
+      name: "Demo Prod"
+    android:
+      applicationId: "com.example.demo.prod"
+    ios:
+      bundleId: "com.example.demo.prod"
+```
+
+The options of `init` (`--flavors dev,prod`, `--id com.example.app`, `--yes` for no questions) are in
+the [command line reference](/reference/cli#init). You can write the file by hand: a flavor needs an
+`app.name` and one section for each platform it is built for. See [Configuration](/configuration).
+
+<Info>
+  The configuration may also live in the `flavorizr` section of `pubspec.yaml`, with the same keys
+  below it. A `flavorizr.yaml` (or `.yml`) file is the one to use: the pubspec stays yours.
+</Info>
+
+## 2. Plan
+
+```sh
+dart run flutter_flavorizr plan
+```
+
+`plan` shows what a run would do, and writes nothing: the processors that would run, and the files
+that would be added (`+`), changed (`~`) or deleted (`-`), by platform, with who owns each file.
+
+```text
+android
+  ~ android/app/build.gradle.kts (patched)
+  + android/app/flavorizr.gradle.kts (managed)
+  ~ android/app/src/main/AndroidManifest.xml (patched)
+
+flutter
+  + lib/flavors.dart (scaffold)
+  + lib/flavors.g.dart (managed)
+
+ios
+  + ios/Flutter/devDebug.xcconfig (managed)
+  ...
+  ~ ios/Runner.xcodeproj/project.pbxproj (patched)
+  ~ ios/Runner/Info.plist (patched)
+```
+
+## 3. Apply
+
+```sh
+dart run flutter_flavorizr apply
+```
+
+`apply` shows the same preview, asks for confirmation, and writes the changes together with
+`flavorizr.lock`. With no command, `dart run flutter_flavorizr` is `apply`.
+
+**Commit `flavorizr.lock` with the rest.** It is how a later run knows what flavorizr generated, so
+that it can remove it, and tell it apart from what you wrote. See [Core concepts](/concepts).
+
+## 4. Run a flavor
+
+```sh
+flutter run --flavor dev
+```
+
+In Dart, `F.appFlavor` is the flavor the app was built with, and `F.title` the name of its app. They
+are generated in `lib/flavors.g.dart`: see [Flutter code](/configuration/flutter).
+
+<Warning>
+  Flutter cannot run the macOS flavors from the terminal: run them from Xcode by selecting the scheme
+  of the flavor. See [macOS](/configuration/macos).
+</Warning>
+
+## Check it stays right
+
+```sh
+dart run flutter_flavorizr status   # exits with 1 when the project drifted from flavorizr.yaml
+dart run flutter_flavorizr doctor   # checks the project and the environment
+```
+
+Add a flavor, remove one or change a name by editing `flavorizr.yaml` and running `plan` and `apply`
+again: see [Adding and removing flavors](/flavors).
+
+## Where to go next
+
+- [Core concepts](/concepts): the yaml, the lock and the disk, plan and apply, who owns a file
+- [Configuration](/configuration): every key of `flavorizr.yaml`
+- [CI usage](/ci): keep the project in sync from a pipeline
+- [Migration](/migration): a project that was flavorized with 2.x

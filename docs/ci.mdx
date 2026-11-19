@@ -1,0 +1,98 @@
+---
+title: "CI usage"
+description: "Keep the project in sync with flavorizr.yaml from a pipeline, and read the results in scripts."
+---
+
+flavorizr is built to be run by a machine: every command ends with an exit code a pipeline can rely on,
+nothing is asked when nobody can answer, and `--json` prints one document instead of text.
+
+## Fail on drift
+
+`status` runs the processors on a copy of the project, writes nothing, and exits with `1` when the
+project drifted from `flavorizr.yaml` and `flavorizr.lock`:
+
+```yaml title=".github/workflows/flavors.yml"
+name: Flavors
+on: [pull_request]
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: dart run flutter_flavorizr status
+```
+
+`status` exits with `1` when:
+
+- there is no `flavorizr.lock` (so commit it);
+- the flavors of `flavorizr.yaml` and of the lock differ: a flavor was added, removed or changed without
+  running `apply`;
+- a file is not what `flavorizr.yaml` asks for, or is missing;
+- a file that flavorizr generated was edited by hand.
+
+What you edit in a file flavorizr only patches (the manifest, `build.gradle`) is not drift: only the part
+flavorizr owns is compared. The files of the `local` class (the run configurations of the IDEs, the
+Firebase copies) are never drift, so a fresh clone without `.idea/` is in sync.
+
+`status` can only vouch for the processors that run on the engine: when some do not, it says
+`In sync, as far as the engine can tell` and lists the ones it did not check.
+
+## Apply in a pipeline
+
+```sh
+dart run flutter_flavorizr apply --yes --on-conflict=keep
+```
+
+- `--yes` skips the confirmation. Without a terminal `apply` goes on anyway, **even when an answer is piped
+  to stdin**: in 2.x `echo n | flutter pub run flutter_flavorizr` could cancel, and it does not anymore. Pass
+  `--yes` to say so explicitly.
+- `--on-conflict=keep|overwrite` answers for the files you edited by hand. Without it, a run that has a
+  conflict fails with `1`, since nobody can be asked.
+- Use `plan` or `status` when nothing must be written.
+
+The [pipeline of this repository](https://github.com/AngeloAvv/flutter_flavorizr/blob/master/.github/workflows/drift.yml)
+runs `status` on `example/`, so the example never drifts from what flavorizr generates.
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Everything went well. |
+| `1` | Needs attention: files edited by hand are in the way (`plan`, `apply`), the project drifted (`status`), or a check failed (`doctor`). |
+| `64` | The command line is wrong, for example an unknown target. |
+| `65` | The configuration or `flavorizr.lock` cannot be used, or the configuration asks for what flavorizr cannot undo. |
+| `70` | A processor failed, or the project changed during the run. |
+
+## Output
+
+Anywhere that is not a terminal (a pipe, a file, a CI) the commands print plain lines: no color, no
+animation, nothing is asked. A run is also treated as a CI when `CI` is set, or one of `GITHUB_ACTIONS`,
+`GITLAB_CI`, `BUILDKITE`, `CIRCLECI`, `JENKINS_URL`, `TF_BUILD`, `TEAMCITY_VERSION`, `TRAVIS` or
+`APPVEYOR` is. `NO_COLOR` removes every color. Warnings and errors always go to stderr. The details are in
+[JSON output](/reference/json-output#how-it-decides).
+
+## JSON
+
+`plan`, `apply`, `status` and `list` take `--json`, which prints exactly one line of JSON on stdout:
+
+```sh
+dart run flutter_flavorizr status --json | jq '.drift'
+```
+
+The documents have a schema that is stable in 3.x. See [JSON output](/reference/json-output).
+
+## Customized entry point
+
+When the project has `tool/flavorizr.dart`, `dart run flutter_flavorizr` runs it with the same arguments,
+so the pipeline needs no change: see [Custom processors](/extending/processors).
+
+## From 2.x
+
+The 2.x options still work in a script, with a warning, until 4.0. A command such as
+`flutter pub run flutter_flavorizr -f -p android:buildGradle` runs on 3.x. Prefer
+`dart run flutter_flavorizr apply --yes android:buildGradle`. See [Migration](/migration#the-command-line).

@@ -1,0 +1,307 @@
+---
+title: "iOS"
+description: "The ios keys of flavorizr.yaml and how flavorizr changes the Xcode project."
+---
+
+A flavor with an `ios` section is built for iOS. For each flavor flavorizr writes three xcconfig files
+(`Debug`, `Profile` and `Release`), adds the build configurations `Debug-<flavor>`, `Profile-<flavor>` and
+`Release-<flavor>` to `Runner.xcodeproj`, creates a scheme, maps the configurations in the Podfile, and
+sets the name of the app in `Info.plist`.
+
+## `app.ios`
+
+What every iOS flavor starts from, under the root `app` key.
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `buildSettings` | map | | [Xcode build settings](https://xcodebuildsettings.com) that every flavor gets. They are added to the defaults below. |
+| `includes` | list | `[]` | [xcconfig files to include](#includes) in every iOS flavor. |
+
+The settings every flavor starts from are `ASSETCATALOG_COMPILER_APPICON_NAME`, `LD_RUNPATH_SEARCH_PATHS`
+(`$(inherited) @executable_path/Frameworks`), `SWIFT_OBJC_BRIDGING_HEADER`, `SWIFT_VERSION` (`5.0`),
+`FRAMEWORK_SEARCH_PATHS`, `LIBRARY_SEARCH_PATHS` and `INFOPLIST_FILE`. A key of yours with the same name
+replaces the default.
+
+## `flavors.<name>.ios`
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `bundleId` | string | yes | The bundle identifier of the iOS app. |
+| `buildSettings` | map | `{}` | Build settings of this flavor, over the ones of `app.ios`. |
+| `variables` | map | | [Variables](#variables) the xcconfig files of the flavor set. |
+| `includes` | list | `[]` | [xcconfig files to include](#includes) in the xcconfig files of this flavor. |
+| `icon` | string | | The icon of this flavor for iOS. See [Icons and badge](/icons-and-badge). |
+| `firebase` | map | | A Firebase configuration: see [Firebase](/configuration/services#firebase). |
+| `generateDummyAssets` | bool | `true` | **Deprecated and ignored**: remove it. It will be an error in 4.0. |
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    ios:
+      bundleId: "com.example.apple"
+      buildSettings:
+        SWIFT_VERSION: "5.9"
+```
+
+### Variables
+
+A variable becomes a line of the xcconfig file of the flavor. Without a `target` it is set in the three
+modes; `target` is `debug`, `profile` or `release`.
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `value` | string | yes | The value of the variable. |
+| `target` | string | | The mode the variable is for: `debug`, `profile` or `release`. |
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    ios:
+      bundleId: "com.example.apple"
+      variables:
+        VARIABLE_ONE:
+          value: "variable1"
+        VARIABLE_TWO:
+          target: debug
+          value: "variable2"
+```
+
+### Includes
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `value` | string | yes | | The path of the xcconfig file to include. |
+| `target` | string | | all of them | The mode the include is for: `debug`, `profile` or `release`. |
+| `optional` | bool | | `false` | When `true`, writes `#include?`: the build does not fail if the file is missing. |
+
+The includes of `app.ios` come first, and the ones of the flavor are appended and take precedence for
+any duplicate key.
+
+```yaml
+app:
+  ios:
+    includes:
+      - value: "Shared/base.xcconfig"          # every mode
+      - value: "Shared/debug.xcconfig"
+        target: debug                          # debug only
+
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    ios:
+      bundleId: "com.example.apple"
+      includes:
+        - value: "Apple/flavor.xcconfig"
+        - value: "Apple/optional.xcconfig"
+          optional: true                       # #include? "Apple/optional.xcconfig"
+        - value: "Apple/release.xcconfig"
+          target: release
+```
+
+## The processors
+
+| Processor | What it does | Runs on |
+| --- | --- | --- |
+| `ios:xcconfig` | Writes the xcconfig files of each flavor and adds references to them to the project. | engine |
+| `ios:buildTargets` | Adds the build configurations of each flavor to the project and to its first target. | engine |
+| `ios:podfile` | Maps the build configurations of each flavor in the Podfile. | engine |
+| `ios:plist` | Sets the bundle name keys of `Info.plist` in place. | engine |
+| `ios:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). | engine |
+| `ios:schema` | Creates a scheme for each flavor. | 2.x pipeline |
+| `ios:icons` | Makes the icon set of each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
+| `ios:launchScreen` | Makes a launch screen for each flavor. | 2.x pipeline |
+| `ios:dummyAssets` | Copies the launch image of each flavor. | 2.x pipeline |
+
+"2.x pipeline" processors are not on the new engine yet: they run after it, straight on the project,
+with no preview, no conflict detection and no entry in the lock. See
+[Processors that are not on the engine yet](/reference/cli#processors-that-are-not-on-the-engine-yet).
+
+Run the flavor with `flutter run --flavor <name>`, or from Xcode by selecting its scheme. If
+`appFlavor` is `null` when you launch from Xcode, see
+[appFlavor is null from Xcode](/troubleshooting/app-flavor-null-from-xcode).
+
+## The xcconfig files of the flavors
+
+`ios:xcconfig`, `macos:xcconfig` and `macos:configs` write one `.xcconfig` for
+each flavor and mode (`debug`, `profile`, `release`): `ios/Flutter`,
+`macos/Flutter` and `macos/Runner/Configs`. They are generated files that
+flavorizr owns, written as text, so `#include?` of the Pods xcconfig stays
+optional (it does not exist until `pod install` ran), and a file you edit by
+hand is reported as a conflict. The files of a flavor you remove from
+`flavorizr.yaml` are deleted. The name of a flavor is part of the name of its
+files, so a run refuses (before it writes anything) a flavor that is empty, `.`
+or `..`, or that has whitespace, a control or non-ASCII character, or any of
+`" \ ; * /`: they cannot be told apart in `project.pbxproj`, and the project is
+not read back as it was written when a name is not ASCII.
+
+`ios:xcconfig` and `macos:configs` also add a reference to each file to
+`Runner.xcodeproj`, where `ios:buildTargets` and `macos:buildTargets` use it as
+the base configuration of the flavor. The files are **not** added to the
+Resources build phase, which 2.x did and copied them into the app bundle: a
+run takes the ones 2.x added out of every Resources phase of every target. The
+rule is the name, not the configuration, so it also cleans the flavors that
+`flavorizr.yaml` has not anymore: an entry is removed when it points at
+`Flutter/<flavor>Debug.xcconfig` (iOS) or `Runner/Configs/<flavor>Debug.xcconfig`
+(macOS), or the same with `Profile` or `Release`, whatever the `<flavor>`. The
+other xcconfigs (`Flutter/Debug.xcconfig`, the ones of Pods, your own, anything
+named otherwise, `debug` in lower case included) and the entries of the phases
+that are not Resources are left alone.
+
+The references have a UUID derived from their path, so two runs from scratch
+write the same `project.pbxproj`, and the lock records them (`objects`). When
+you remove a flavor, the references that flavorizr made for it are removed from
+the project too, by UUID, with everything that pointed at them. A reference that
+was there before flavorizr 3 (2.x made it, or you did) is used as it is and never
+removed, because only the lock can tell it is not yours.
+
+## The build configurations of the flavors
+
+`ios:buildTargets` and `macos:buildTargets` add the build configurations
+`Debug-<flavor>`, `Profile-<flavor>` and `Release-<flavor>` to the project and to
+its first target, with the `buildSettings` of the yaml, and point them at the
+xcconfig of the flavor. They are owned: a run finds them again by a UUID of their
+own, and the ones of a flavor you remove are removed with it.
+
+The settings are edited **one by one**, never replaced, so what you or Xcode put
+in a configuration survives a run: the `DEVELOPMENT_TEAM` you pick in Signing &
+Capabilities is not wiped anymore. The settings flavorizr sets are recorded in
+`flavorizr.lock` with the hash of their value:
+
+* a setting you remove from `buildSettings` leaves the project, **unless you
+  changed its value**, which is then yours;
+* a setting you edit by hand and that flavorizr owns is a conflict, like any file
+  you edited: the run asks (or follows `--on-conflict`) before it writes over it.
+  See [`flavorizr.lock`](/reference/lock#owned-build-settings).
+
+The configurations that 2.x made are used as they are, with their UUIDs. They
+are not owned (only a lock can tell they are not yours), so removing a flavor
+leaves its configurations in the project, with the settings that you added.
+
+## The Info.plist of the platforms
+
+`ios:plist` and `macos:plist` edit `ios/Runner/Info.plist` and
+`macos/Runner/Info.plist` in place. Only the value of a few `<string>` entries is
+replaced in the text of the file: `CFBundleName` and `CFBundleDisplayName` on
+iOS, `UILaunchStoryboardName` too when `ios:launchScreen` is one of the
+processors of the run (the targets you give it, or the recipe it resolves to), and `CFBundleName` on
+macOS. 2.x parsed the plist and wrote it
+back pretty printed, which reformatted the whole file: now indentation, line
+endings, comments and the order of every other key are yours, and a plist that
+is up to date is not written at all.
+
+The lock records the owned keys, so editing one by hand is a conflict, while
+anything else you change in the plist is not drift. `UILaunchStoryboardName` is
+owned only while it has the value flavorizr gives it
+(`$(ASSET_PREFIX)LaunchScreen`): with the launch screen off, the storyboard
+Flutter wrote is yours. A plist without one of the keys, or whose value is not
+a plain `<string>`, fails the run and writes nothing.
+
+## The Podfile
+
+The Podfile processors patch a file that belongs to you, so they only touch a
+region between `# ----- BEGIN flavorizr (autogenerated by flutter_flavorizr) -----`
+and `# ----- END flavorizr (autogenerated by flutter_flavorizr) -----`, inside
+the `project 'Runner', {` mapping of `ios/Podfile` and `macos/Podfile`, which
+holds the mapping of every build configuration of every flavor of the platform
+(`'Debug-apple' => :debug,`, `'Profile-apple' => :release,` and
+`'Release-apple' => :release,`). The first run puts the region right after the
+`project 'Runner', {` line, and the following ones regenerate it where it is, so
+a flavor you drop from `flavorizr.yaml` leaves it (as long as another flavor
+still has the platform: dropping the last one is refused, see [Adding and removing flavors](/flavors#what-flavorizr-refuses)). Everything outside the region is yours, and an
+edit of it is neither drift nor a conflict (an edit of the region is a
+conflict). Unlike 2.x, which replaced the mapping, the
+default `Debug`, `Profile` and `Release` mappings stay: when one is not in the
+Podfile outside the region (a Podfile that 2.x flavorized has none), it is put
+inside the region, and it goes out again when you write it back outside.
+
+A Podfile that 2.x flavorized, which has the mappings and no markers, is adopted:
+the lines that are exactly the ones the region would hold are replaced, the first
+one in place, by the region, so what changes is the two marker lines, and the
+default mappings 2.x dropped coming back. A line that is not exactly one of them
+(another flavor, another mode) is yours and stays, and so
+does a line outside of an existing region that repeats one of its mappings: Ruby
+would warn about the duplicated key, and it is yours to delete.
+A project that has no Podfile yet is skipped, as in 2.x: Flutter or CocoaPods
+makes it the first time the project is built, and the next run patches it.
+
+flavorizr does not parse Ruby, so the Podfile has to be written in a way it can
+read, and a Podfile that is not is refused: the run fails with exit code `70`,
+before anything is written, and the message says what to change. It reads a
+small set of Ruby constructs and refuses every other one that could hide the
+mapping line, so what is in the Podfile is never mistaken for it. Everything
+else (`target`, `post_install`, any other code) can be written in any way, and
+the line endings of the file (LF or CRLF), a byte order mark and a missing line
+break at the end of the file are kept.
+
+**The mapping** has to be
+
+* exactly one line `project 'Runner', {` (single or double quotes, indented or
+  not, nothing after the brace), that is code and is not inside a block. A
+  mapping on one line, with parentheses, with `=>`, split over several lines, a
+  second one, one that follows a `;` on its line, or one inside `if`, `unless`,
+  `begin`, `def`, `case`, `while`, `until`, `for`, `class`, `module`, `do`, a
+  lambda or any `{` that ends a line is refused. Blocks are found by counting
+  each opening keyword (including `do` with a body on its line), closing `end`
+  keywords and `}`s that start a line, so a block
+  that is closed before the mapping is fine;
+* a mapping that goes on until a line with only `}` and has nothing but blank
+  lines, comments and entries like `'Debug' => :debug,`, one on each line (any
+  may have a comment after it). Another kind of line, such as a nested block, a
+  heredoc, two entries on one line or an entry that goes on after a `\`, is
+  refused. The entry right above the region, or above the 2.x lines that become
+  it, needs a comma, since the entries of the region follow it and Ruby needs
+  one between entries: the run is refused otherwise, and flavorizr never adds
+  the comma to your line. The last entry of the mapping may have none when the
+  region is not below it;
+* markers, when there are, that form a region in the mapping, and are not in
+  something that is not code (see below).
+
+**What the Podfile may have, which flavorizr reads** (and does not look at what
+is in it, so a `project 'Runner', {` or a marker there is not the mapping):
+
+* comments, `#` outside a string, a `%` literal and a regular expression;
+* strings `'...'`, `"..."` and `` `...` `` that close on their line, with `\`
+  escapes, and a `#{...}` in a `"` or `` ` `` string whose body has no quote, `{`
+  or `<<`;
+* `%q`, `%w` and `%i` literals with a pair of brackets (`[]`, `()`, `{}`, `<>`),
+  nested or not, that close on their line;
+* regular expressions `/.../` that close on their line and have no quote,
+  backtick or `#` in them, but for an interpolated name (`/^\s*#{symbol}/`). A
+  `/` after a word, a `)`, a `]` or a `}` is a division, except that a space
+  before the slash with none after it is ambiguous with a command-argument
+  regular expression and is refused (write division as `total / 2`);
+* heredocs `<<ID`, `<<-ID` and `<<~ID`, any number on a line, whose delimiter is
+  a name (letters, digits, `_` and non-ASCII characters) or any text in quotes
+  (`'`, `"` or `` ` ``, even empty, as in `<<~'POD-TEXT'`). The body ends on a
+  line that is the delimiter and nothing else, as in Ruby: at the start of the
+  line for `<<ID`, after spaces or tabs for `<<-ID` and `<<~ID`;
+* a `=begin` block, which ends on a `=end`, both at the start of a line;
+* everything after a line that is `__END__`;
+* a line that goes on after a `\` at its end.
+
+**What flavorizr refuses**, because it cannot tell it from code without parsing
+Ruby:
+
+* a string, a `%` literal, a regular expression or an interpolation that does
+  not close on its line, and a heredoc that is never closed;
+* a `#{...}` with a quote, a `#`, a `%`, a `/`, a `?`, a `\`, a `{` or a heredoc in it;
+* a loop header line (`while`, `until` or `for`) containing parentheses or
+  going on over more lines with a `\`: blocks and statement separators in its
+  condition cannot be read safely. Write the condition without parentheses, on
+  the line of the loop, so that it is still evaluated on every iteration;
+* a `%` literal that is not `%q`, `%w` or `%i` with a pair of brackets: `%Q`,
+  `%W`, `%I`, `%r`, `%s`, `%x`, `%(...)` and any with the same character on both
+  sides (`%w|a b|`, `%q!x!`);
+* a character literal that starts with a quote or `#` (`?'`, `?"`, `?#`) and
+  the global variables `$'`, `$"` and `` $` ``;
+* a regular expression with a quote, a backtick or a `#` in it that is not an
+  interpolated name.
+
+A marker in a heredoc, a `=begin` block, after `__END__` or on a continued line
+is refused too. A character it cannot read may make an unusual Podfile be
+refused, and that is on purpose: the message names the line.

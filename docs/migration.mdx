@@ -1,0 +1,298 @@
+---
+title: "Migrating from 2.x to 3.0"
+description: "What changed in flavorizr 3.0, and the steps that take a project flavorized with 2.x to a clean flavorizr status."
+---
+
+3.0 is a major release. The engine is new: runs are declarative and idempotent, they go through a shadow
+copy of the project, and they remember what they generated in `flavorizr.lock`. The configuration lost
+the keys that belonged to the old pipeline, and the command line grew commands. A project that was
+flavorized with 2.x keeps working: nothing it contains has to be thrown away.
+
+## Migration steps
+
+<Steps>
+  <Step title="Start from a clean tree">
+    Commit or stash your work. The diff of the migration is the safest way to review it.
+  </Step>
+  <Step title="Upgrade the package">
+    ```yaml title="pubspec.yaml"
+    dev_dependencies:
+      flutter_flavorizr: ^3.0.0
+    ```
+
+    then `flutter pub get`.
+  </Step>
+  <Step title="Update flavorizr.yaml">
+    Replace `instructions` with `recipes`, remove `assetsUrl` and `generateDummyAssets`, and unquote
+    the values of `customConfig`. [The keys that changed](#the-configuration) are listed below, and
+    the error of each of them says what to write instead.
+  </Step>
+  <Step title="Adopt the project">
+    Run [`flavorizr adopt`](#adopting-a-project-flavorized-with-2x) to record the files the project
+    already has as the baseline of `flavorizr.lock`, without writing anything else.
+  </Step>
+  <Step title="Move to flavors.g.dart">
+    Delete the `lib/flavors.dart` of 2.x and the `F.appFlavor` assignment of `main.dart`:
+    [see below](#flavorsdart-and-flavorsgdart).
+  </Step>
+  <Step title="Plan, apply, status">
+    ```sh
+    dart run flutter_flavorizr plan     # review the diff
+    dart run flutter_flavorizr apply
+    dart run flutter_flavorizr status   # in sync
+    ```
+  </Step>
+  <Step title="Commit flavorizr.lock">
+    Commit it together with the changes of the run: [see below](#commit-flavorizrlock).
+  </Step>
+</Steps>
+
+On a project flavorized with 2.6.0 these steps end with `status` exiting with `0`.
+
+## The configuration
+
+| 2.x | 3.0 |
+| --- | --- |
+| `instructions` | **Removed.** Use [`recipes`](#instructions-is-recipes). |
+| `assetsUrl` | **Removed**: an error. Nothing is downloaded anymore. |
+| `generateDummyAssets` | **Deprecated and ignored**, with a warning. An error in 4.0. |
+| `customConfig` with quoted text | The values are typed now: **quotes are an error**. `manifestPlaceholders` is a key of the flavor. |
+| An unknown key | **An error**, with the key it was probably meant to be. |
+
+Every one of them fails the run with exit code `65` and writes nothing, so a migration cannot leave the
+project half done.
+
+### `instructions` is `recipes`
+
+`instructions` was the flat list of what to run, and it had to name every prerequisite. A **recipe** is a
+named list of processors and of other recipes, and the processors it needs are pulled in. `default` is
+the recipe that runs when you give no target, and with no recipes at all `all` runs.
+
+```yaml title="flavorizr.yaml, 2.x"
+instructions:
+  - assets:download
+  - assets:extract
+  - android:androidManifest
+  - android:flavorizrGradle
+  - android:buildGradle
+  - android:dummyAssets
+  - android:icons
+  - flutter:flavors
+  - ios:xcconfig
+  - ios:buildTargets
+  - ios:plist
+  - assets:clean
+```
+
+```yaml title="flavorizr.yaml, 3.0"
+recipes:
+  default:
+    - android:androidManifest
+    - android:flavorizrGradle
+    - android:buildGradle
+    - android:icons
+    - flutter:flavors
+    - ios:xcconfig
+    - ios:buildTargets
+    - ios:plist
+```
+
+- **If `instructions` was the whole default list, or you did not set it, delete it.** The default recipe
+  is `all`, which runs everything for the platforms that have flavors.
+- If it was a short list, copy it into `recipes.default`: the error prints it ready to paste.
+- Remove `assets:download`, `assets:extract` and `assets:clean`: the assets pipeline is gone.
+- The other ids are the same, and so is `google:firebase`, which is now a recipe of three processors.
+  `flutter:app`, `flutter:pages` and `flutter:main` are **not** part of `all`: they are scaffold files.
+  See [Flutter code](/configuration/flutter).
+- A recipe can name other recipes, and you can name more than one: see [Recipes](/recipes).
+
+### `assetsUrl`
+
+2.x downloaded a zip of dummy icons from `assetsUrl`. 3.0 bundles no assets and downloads nothing: what it
+writes, it makes. Remove the key; there is no replacement. See [icon fallback](#icon-fallback).
+
+### `generateDummyAssets`
+
+It made placeholder icons for the flavors that had none. It is deprecated and ignored: remove it from the
+`android`, `ios`, `macos` and `windows` sections of every flavor. The run warns until you do, and it is an
+error in 4.0.
+
+### `customConfig`
+
+2.x wrote the values of `customConfig` to Gradle as they were, so a text needed its own quotes. 3.0 reads
+YAML types and writes them in the language of your script, Groovy or Kotlin:
+
+```yaml title="2.x"
+android:
+  applicationId: "com.example.apple"
+  customConfig:
+    versionNameSuffix: "\"-green-prod\""   # a text had to carry its own quotes
+    signingConfig: flavorSigning.green     # anything else was written as it was
+    versionCode: 1000
+```
+
+```yaml title="3.0"
+android:
+  applicationId: "com.example.apple"
+  customConfig:
+    versionNameSuffix: "-green-prod"           # text: quoted and escaped for you
+    signingConfig: {raw: flavorSigning.green}  # code, written as it is
+    versionCode: 1000                          # numbers and booleans as they are
+  manifestPlaceholders:                        # a key of the flavor, not of customConfig
+    appAuthRedirectScheme: com.example.apple
+```
+
+A text that has its own quotes is an error that tells you what to write, and so is `manifestPlaceholders`
+inside `customConfig`. **A text that was code is not an error: it is now a string.** `signingConfig:
+flavorSigning.green` would be written as `"flavorSigning.green"`, so code that is not a literal has to be
+`{raw: ...}`. Look at the diff of `build.gradle` and `flavorizr.gradle` in `plan` for every flavor that had
+a `customConfig`. See [Android](/configuration/android#customconfig).
+
+### Other changes
+
+- The configuration may still be the `flavorizr` section of `pubspec.yaml`; `flavorizr.yaml` is the place
+  for it.
+- The keys of the configuration are checked: an unknown one is an error, wherever it is. If 2.x ignored a
+  typo, 3.0 reports it.
+
+## The command line
+
+`dart run flutter_flavorizr` is the way to run it. With no command, `apply` runs, so a script that ran
+`flutter pub run flutter_flavorizr` with no arguments keeps doing what it did.
+
+| 2.x | 3.0 |
+| --- | --- |
+| `flutter pub run flutter_flavorizr` | `dart run flutter_flavorizr`, which is `apply` |
+| `-f`, `--force` | `-y`, `--yes`. `-f` still works and warns, until 4.0. |
+| `-p a,b,c`, `--processors a,b,c` | The targets after the command: `apply a b c`. `-p` still works and warns, until 4.0. |
+| | **New:** `init`, `plan`, `status`, `list`, `doctor`, `--json`, `--on-conflict`, `--overwrite-scaffold` |
+
+- `-p` and the targets can be mixed, and an empty `-p ''` (a CI variable that is not set) runs what no `-p`
+  runs, and warns. `assets:download`, `assets:extract` and `assets:clean` in `-p` are skipped with a warning.
+- A 2.x CI command such as `flutter pub run flutter_flavorizr -f -p assets:download,android:buildGradle`
+  runs on 3.x with warnings only. Update it to `dart run flutter_flavorizr apply --yes android:buildGradle`.
+- **`apply` no longer reads an answer from a pipe.** In 2.x `echo n | flutter pub run flutter_flavorizr`
+  could cancel; with no terminal nothing is asked and the run applies. Pass `--yes` in scripts, and use
+  `plan` or `status` when nothing must be written.
+- The exit codes are meaningful: `0`, `1` (conflicts, drift, a failed check), `64` (usage), `65`
+  (configuration or lock) and `70` (a processor failed). See [Command line](/reference/cli#exit-codes).
+
+The commands, their options and the output are in the [command line reference](/reference/cli), and the
+use in a pipeline in [CI usage](/ci).
+
+## Adopting a project flavorized with 2.x
+
+A project flavorized with 2.x has no `flavorizr.lock`, so flavorizr does not know what it generated, and
+2.x put no markers in several of the files it edited: it reformatted `AndroidManifest.xml` and
+`Info.plist`, overwrote `launch.json`, and rewrote the Podfile. `flavorizr adopt` bridges that:
+
+```sh
+dart run flutter_flavorizr adopt
+```
+
+- It runs the processors on a shadow copy of the project, and **records the files the project already has
+  as the baseline of `flavorizr.lock`**: the hash of what is on disk (the owned part, for patched files).
+  It writes nothing else.
+- The next `plan` then shows the 3.0 output as an ordinary, reviewable diff, with no conflict and no
+  deletion of what the project is made of.
+- The placeholder icons that 2.x made for Android are recognised by their hash. A placeholder that you did
+  not touch is recorded as managed, and the next `plan` proposes to delete it, since 3.0 no longer makes
+  it. An icon you replaced stays yours.
+- `adopt` takes the same targets as `plan`, to adopt part of a project.
+
+### The limits of adopt
+
+- **Flavors that were removed from `flavorizr.yaml` before 3.0 cannot be detected.** 2.x kept no record of
+  the flavors it generated, so a flavor that you dropped by hand or from the yaml is not in any file that
+  adopt can read. Its files stay in the project. To have flavorizr remove them, name the flavors that are
+  gone, and the next `plan` deletes what they generated:
+
+  ```sh
+  dart run flutter_flavorizr adopt --flavors old_flavor,other_old_flavor
+  ```
+
+- Only what the processors of the engine own is adopted. The Darwin artifacts that are still 2.x
+  processors (schemes, launch storyboards, iOS and macOS icons) are not tracked, and neither are their
+  objects in `project.pbxproj`.
+
+### Without adopt
+
+If you skip `adopt`, the first run does the sensible thing by itself, with the same review:
+
+- the **patched** files (the manifest, the plists, `build.gradle`, the Podfile, `project.pbxproj`, the
+  CMake lists) are adopted by patching them: what flavorizr owns is changed, and everything else stays;
+- a **managed** file that exists and differs from what 3.0 writes, typically `flavorizr.gradle`, is a
+  [conflict](/conflicts), since there is no telling it from one you wrote. Look at the diff with `d`, and
+  overwrite it, or run `apply --on-conflict=overwrite`;
+- the files of the flavors that the yaml no longer has are not removed, for the same reason as above.
+
+## `flavors.dart` and `flavors.g.dart`
+
+2.x generated a single `lib/flavors.dart`, with the enum `Flavor` and the class `F`, and its generated
+`main.dart` assigned `F.appFlavor`. 3.0 splits them:
+
+| File | Owner | What it is |
+| --- | --- | --- |
+| `lib/flavors.g.dart` | managed | The `Flavor` enum and `F`, generated whole from `flavorizr.yaml`. Do not edit it. |
+| `lib/flavors.dart` | scaffold | Exports `flavors.g.dart`. Created once, and yours: add your colors, URLs and extensions. |
+
+`F.appFlavor` is now a getter that reads `appFlavor` of `package:flutter/services.dart`, so nothing has to
+assign it. Import `flavors.dart`, as before.
+
+A project that kept the `flavors.dart` of 2.x keeps it untouched, and the run warns: it does not follow the
+flavors of `flavorizr.yaml` anymore. To move:
+
+1. Copy out of `lib/flavors.dart` anything you added to it, and delete the file.
+2. Remove the `F.appFlavor = Flavor.values.firstWhere(...)` assignment from your `main.dart`: the generated
+   `F` only has a getter, and a run never edits `main.dart`.
+3. Run `apply`. It writes `flavors.g.dart`, and a new `flavors.dart` that exports it. Paste your additions
+   into it.
+
+An app that is built without a flavor, or with one that is not in `flavorizr.yaml`, fails with an error that
+says how to fix it. See [Flutter code](/configuration/flutter).
+
+## Icon fallback
+
+2.x downloaded dummy icons, and made a set of them for every flavor with no `icon`. 3.0 bundles nothing:
+
+- **A flavor with an `icon`** gets an icon set made from it, at every size, for Android, iOS, macOS and
+  Windows.
+- **A flavor with no `icon`** gets nothing generated, and **builds with the default icon of the project**:
+  the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows.
+- **An icon you put in the project yourself** (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
+  `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
+- The placeholder icons that 2.x made stay in the project until you delete them (or `adopt` proposes it),
+  and are replaced by the icons of an `icon` that you add.
+- A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`.
+
+`android:dummyAssets`, `ios:dummyAssets`, `macos:dummyAssets` and `windows:dummyAssets` still exist, so that
+a recipe that names them runs, and do nothing.
+
+## Commit `flavorizr.lock`
+
+`flavorizr.lock` is new, and it is **meant to be committed**. It is what lets flavorizr:
+
+- remove a flavor you drop from the yaml, with the files generated for it;
+- tell a file you edited from one it generated, so that it asks before it overwrites;
+- report drift: `status` fails when the project and the yaml disagree, which is what a CI wants.
+
+It is written last, after a run fully succeeded, and the same configuration always writes the same bytes.
+Never edit it by hand. See [`flavorizr.lock`](/reference/lock) and [Core concepts](/concepts).
+
+## What else changes
+
+- **Runs are idempotent.** Running flavorizr twice changes nothing the second time: it does not add a new
+  random UUID to `project.pbxproj` on every run, or a new line to `build.gradle`.
+- **Your edits survive.** `AndroidManifest.xml`, `Info.plist`, `build.gradle` and the Podfile are edited in
+  place: indentation, comments and everything flavorizr does not own are left as they are. The build settings
+  of a configuration are set key by key, so the `DEVELOPMENT_TEAM` you pick in Xcode is not wiped.
+- **Removing is supported.** Delete a flavor from the yaml and its files, build configurations and icons go:
+  [Adding and removing flavors](/flavors).
+- **The xcconfig files** of the flavors are no longer added to the Resources build phase, and a run takes
+  the ones 2.x added out.
+- **The Windows templates** are made in the build directory, not over your `main.cpp` and `Runner.rc`.
+- **The run configurations of the IDEs** are local: written again on every run, never in the lock, never
+  drift.
+- **Custom steps** are processors of your own, registered in `tool/flavorizr.dart`: see
+  [Custom processors](/extending/processors).
+- **Pure Dart.** flavorizr needs no Ruby and downloads nothing.

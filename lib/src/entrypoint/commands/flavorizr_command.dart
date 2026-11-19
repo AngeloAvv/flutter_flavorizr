@@ -89,7 +89,7 @@ abstract class FlavorizrCommand extends Command<int> {
     help:
         'Prints one JSON document on stdout instead of text, for CI, IDEs and '
         'agents. Warnings and errors still go to stderr. See '
-        'doc/json-output.md.',
+        'https://docs.page/AngeloAvv/flutter_flavorizr/reference/json-output.',
   );
 
   bool get _json =>

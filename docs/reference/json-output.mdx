@@ -1,4 +1,7 @@
-# Output: terminal, logs and `--json`
+---
+title: "JSON output"
+description: "How the output is chosen, and the documents that --json prints."
+---
 
 Every command prints in one of three ways, and picks it by itself:
 
@@ -32,7 +35,7 @@ does when it enabled them.
   for the files edited by hand (nobody can be asked about them either), and
   `plan` or `status` when it must write nothing.
 * Warnings and errors always go to **stderr**. Exit codes are the ones of
-  [the command line](cli.md#exit-codes), whatever the output.
+  [the command line](/reference/cli#exit-codes), whatever the output.
 
 ## `--json`
 
@@ -63,13 +66,13 @@ Available on `plan`, `apply`, `status` and `list`. `doctor` has no document.
 
 ### The schema
 
-[`doc/schemas/flavorizr-output.schema.json`](schemas/flavorizr-output.schema.json)
+[`docs/schemas/flavorizr-output.schema.json`](https://github.com/AngeloAvv/flutter_flavorizr/blob/master/docs/schemas/flavorizr-output.schema.json)
 is a JSON Schema (2020-12) of the four documents. It is what the tests of this
 package hold the output to. Validate a run with any validator, for example:
 
 ```sh
-flutter pub run flutter_flavorizr plan --json > plan.json
-npx ajv-cli validate --spec=draft2020 -s doc/schemas/flavorizr-output.schema.json -d plan.json
+dart run flutter_flavorizr plan --json > plan.json
+npx ajv-cli validate --spec=draft2020 -s docs/schemas/flavorizr-output.schema.json -d plan.json
 ```
 
 ### What is stable
@@ -144,7 +147,7 @@ On top of the fields of `plan`:
 | Field | Type | |
 | --- | --- | --- |
 | `recipes` | `{name, builtIn, default, members, processors}[]` | The recipes: `members` is what the recipe lists (processors and other recipes), `processors` is what it stands for, with the nested recipes expanded. |
-| `processors` | `{id, platform, runsOn, needs, after, overridden}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after: both are empty for a `legacy` processor. `overridden` is whether a processor of the project replaces the one of flavorizr (see `doc/cli.md`). |
+| `processors` | `{id, platform, runsOn, needs, after, overridden}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after: both are empty for a `legacy` processor. `overridden` is whether a processor of the project replaces the one of flavorizr (see [Custom processors](/extending/processors)). |
 
 ### Examples
 

@@ -1,4 +1,7 @@
-# `flavorizr.lock`
+---
+title: "flavorizr.lock"
+description: "The format of the lock: what flavorizr records, and how."
+---
 
 `flavorizr.lock` is the memory of what flutter_flavorizr applied to a project.
 It lives in the root of the project and **is meant to be committed**: it lets a
@@ -85,8 +88,8 @@ Notes:
   [Owned objects](#owned-objects)), which is enough to find and remove them, but
   not to *hash* what flavorizr owns: a reader of the owned content gets the file
   alone, and the file does not say which of its objects are flavorizr's. So the
-  reader is registered with `EngineResource(..., ownedContent: {path: reader})`
-  and says it by what the processors write. For now that is what `ios:xcconfig`
+  `ownedContent` reader of the project file says it by what the processors
+  write. For now that is what `ios:xcconfig`
   and `macos:configs` own: the file references to the flavor xcconfigs
   (`Flutter/<flavor>Debug.xcconfig` and `Runner/Configs/...`, and the `Profile`
   and `Release` ones, for any flavor) and their entries in a Resources phase,

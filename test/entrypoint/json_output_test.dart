@@ -34,7 +34,7 @@ import 'output/json_schema_validator.dart';
 
 final _schema =
     jsonDecode(
-          File('doc/schemas/flavorizr-output.schema.json').readAsStringSync(),
+          File('docs/schemas/flavorizr-output.schema.json').readAsStringSync(),
         )
         as Map<String, Object?>;
 

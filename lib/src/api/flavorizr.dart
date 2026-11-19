@@ -41,7 +41,7 @@ import 'package:flutter_flavorizr/src/entrypoint/run.dart';
 abstract final class Flavorizr {
   /// Runs the command named by [args] (`plan`, `apply`, `status`, `list`,
   /// `doctor`; `apply` when there is none) and ends the process with its exit
-  /// code when that is not `0`. See `doc/cli.md` for the commands, the options
+  /// code when that is not `0`. See https://docs.page/AngeloAvv/flutter_flavorizr/reference/cli for the commands, the options
   /// and the exit codes.
   ///
   /// The [processors] are the ones of the project, which run along with the

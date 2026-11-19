@@ -1,0 +1,200 @@
+---
+title: "Command line"
+description: "The commands, options and exit codes of flavorizr."
+---
+
+```sh
+dart run flutter_flavorizr [command] [options] [target...]
+```
+
+With no command, `apply` runs, so `dart run flutter_flavorizr` keeps
+doing what it always did. The command can be anywhere in the line, and every
+command has `--help`.
+
+| Command | What it does |
+| --- | --- |
+| `init` | Writes `flavorizr.yaml`: finds the platforms of the project, asks for the flavors, the identifier and the name of each app. |
+| `apply [target...]` | Shows what would change, asks, and applies it. Writes `flavorizr.lock`. |
+| `plan [target...]` | The same preview, writing nothing: the processors that would run, with the ones they need marked `(auto)`, and the files that would be added (`+`), changed (`~`) or deleted (`-`), by platform. |
+| `status [target...]` | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. Exits with `1` on drift. |
+| `list` | The recipes (built-in and the ones of `flavorizr.yaml`) and the processors, with what each needs. |
+| `doctor` | Groovy or Kotlin build scripts, Xcode project layout, Pods, Flutter version, configuration and lock. |
+
+`plan`, `apply`, `status` and `list` also take `--json`, which prints one JSON
+document instead of text: see [the output](/reference/json-output).
+
+A *target* is the name of a recipe (`android`, `all`, or one of yours) or the
+id of a processor (`android:icons`). Without a target the default recipe runs:
+`default` when `flavorizr.yaml` defines one in `recipes`, otherwise `all`.
+
+## `init`
+
+```sh
+flutter create my_app && cd my_app
+flutter pub add --dev flutter_flavorizr
+dart run flutter_flavorizr init    # asks a few questions, writes flavorizr.yaml
+dart run flutter_flavorizr plan    # what would change
+dart run flutter_flavorizr         # apply
+```
+
+`init` looks at the folders of the project (`android`, `ios`, `macos`, `linux`,
+`windows`) and writes a flavor for each of them. It asks, with a default for
+each answer, for the **flavors** (`dev,prod`), the **identifier** the apps are
+built on (`com.example.<project>`, which becomes `com.example.<project>.dev`
+and so on) and the **name of the app** of each flavor. On a project `flutter
+create` has just made it also offers `flutter:scaffold`, the Flutter code that
+uses the flavors: when accepted, the default recipe becomes `start`, which runs
+`all` and `flutter:scaffold`. Scaffold files are never overwritten, so the
+`lib/main.dart` of the new project stays until `apply --overwrite-scaffold`
+replaces it, and every other scaffold file that exists.
+
+| Option | |
+| --- | --- |
+| `--flavors dev,prod` | The flavors: a name starts with a lowercase letter, has letters and digits, is not a word of Dart (`class`, `new`...) and is not another name in other case (`qa`, `qA`) (the Flutter code writes an enum value for each), and is not one Gradle refuses: `main`, `debug`, `release`, `profile`, or a name that starts with `test` or `androidTest`. |
+| `--id com.example.app` | The identifier the apps are built on. |
+| `--scaffold` / `--no-scaffold` | Adds `flutter:scaffold`, or does not ask about it. |
+| `-y`, `--yes` | Asks nothing: the defaults are the answers, and `flutter:scaffold` is not added. For scripts. |
+| `--force` | Replaces a `flavorizr.yaml` that exists. Without it `init` stops with exit code `1`. |
+
+Run it from the root of the project: with no `pubspec.yaml`, or with no platform
+folder, it stops with exit code `64`. Without a terminal to answer, the
+defaults are the answers.
+
+## `apply` options
+
+| Option | |
+| --- | --- |
+| `-y`, `--yes` | Does not ask for confirmation, which is what a CI wants. |
+| `--on-conflict=keep\|overwrite` | What to do with a file edited by hand that the run would change. Without it a terminal asks for each file, and anything else fails. |
+| `--overwrite-scaffold` | Also replaces the scaffold files that exist, which a run never does otherwise: all of them, `flavors.dart` included (see below). |
+| `-v`, `--verbose` | Prints what every processor does (every command has it). |
+
+## Output
+
+On a terminal the commands show a spinner for each processor, grouped by
+platform, a coloured diff of the files and a summary with the counts
+(`+3 ~2 -0`) and the time. Anywhere else (a pipe, a file, a CI) the same words
+are printed as plain lines: no colour, no animation, nothing is asked. `NO_COLOR`
+removes the colour, and warnings and errors always go to stderr. With `--json`
+stdout is one JSON document with a schema that is stable in 3.x. How the output
+decides, and what the documents hold, is in [JSON output](/reference/json-output).
+
+## Deprecated options
+
+The 2.x options still work, hidden from `--help`, and every use of them warns
+(on stderr, so the output and the exit code of the run do not change). Both are
+removed in **4.0**.
+
+| Option | Use instead |
+| --- | --- |
+| `-f`, `--force` | `--yes` |
+| `-p a,b,c`, `--processors a,b,c` | the targets after the command: `apply a b c` |
+
+* `-p` and the targets can be mixed: the run is the sum of both. An empty `-p`
+  (`-p ''`, a CI variable that is not set) runs what no `-p` runs, and warns.
+* The 2.x assets pipeline is gone, since flavorizr makes what it writes (#527):
+  `assets:download`, `assets:extract` and `assets:clean` are skipped in `-p`
+  with a warning, and the rest runs, and `assetsUrl` is an error to remove. When `-p` names nothing else, nothing
+  runs (and not the default recipe), with exit code `0`.
+* `-p list` is the target `list`, which does not exist, and not the `list`
+  command: it exits with `64`.
+
+So a 2.x CI command such as `flutter pub run flutter_flavorizr -f -p
+assets:download,android:buildGradle` runs on 3.x with warnings only.
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Everything went well. |
+| `1` | Needs attention: files edited by hand are in the way (`plan`, `apply`), the project drifted (`status`), or a check failed (`doctor`). |
+| `64` | The command line is wrong, e.g. an unknown target. |
+| `65` | The configuration or `flavorizr.lock` cannot be used, or the configuration asks for what flavorizr cannot undo (see below). |
+| `70` | A processor failed, or the project changed during the run. |
+
+A run that fails does not write the engine's changes to the project, and the
+lock is written last. A lock that cannot even be staged stops the run before
+anything is written. There are three exceptions, and each says so:
+
+* a copy-back that is interrupted lists what was and what was not written;
+* a lock that cannot replace `flavorizr.lock` once the files are written exits
+  with `70`: the engine's changes stay written, so fix what stops the lock from
+  being written (permissions, a folder in its place) and run flavorizr again,
+  which finds nothing to change and writes the lock;
+* a 2.x processor that fails after the engine finished leaves the engine's
+  changes in place.
+
+## Removing flavors, and what flavorizr refuses
+
+Removing flavors from `flavorizr.yaml` works: the files a dropped flavor generated are deleted, and the
+lock follows. `plan` and `apply` refuse to remove **every** flavor, or a whole **platform**, with exit
+code `65`. See [Adding and removing flavors](/flavors#what-flavorizr-refuses).
+
+## `status` and drift
+
+`status` runs the processors on a copy of the project, like `plan`, and exits
+with `1` when any of these holds:
+
+* there is no `flavorizr.lock`, when the selection holds processors of the
+  engine: only a run of the engine writes the lock, so a selection with none
+  (for example `status google:firebase`) has nothing to check, and says so;
+* the flavors of `flavorizr.yaml` and of the lock differ (added, removed or
+  changed);
+* a file is not what `flavorizr.yaml` asks for, or is missing;
+* a file generated by flavorizr was edited by hand.
+
+What a user edits in a file flavorizr only patches (the manifest, `build.gradle`)
+is not drift: only the part flavorizr owns is compared.
+
+## Processors that are not on the engine yet
+
+The engine runs the processors that were ported to it: for these a run is previewed, checked against the
+lock, written atomically and recorded in `flavorizr.lock`. `flavorizr list` tells where each processor
+runs.
+
+| Runs on | Processors |
+| --- | --- |
+| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
+| The 2.x pipeline | `ios:schema`, `ios:icons`, `ios:launchScreen`, `ios:dummyAssets`, `macos:schema`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
+
+The processors of the 2.x pipeline are not dropped: `apply` runs them **after** the engine, straight on
+the project. That means they have no preview in `plan`, no conflict detection, no lock entry and are not
+checked by `status`; the commands say so every time they meet one. When the engine fails nothing else
+runs. Each port moves a processor from the 2.x pipeline to the engine without any change to how you call
+flavorizr.
+
+The `dummyAssets` processors do nothing now: flavorizr makes the icons it writes, and a flavor with no
+`icon` uses the default icon of the project. They stay so that a recipe that names one still runs.
+
+The 2.x processors never overwrite what the engine generated: the files the engine writes whole
+(`flavorizr.gradle`, the launcher icons of `android:icons`) are put back if a 2.x processor changes them.
+
+Known limits of the mix, which go away as processors are ported:
+
+* The engine always runs first, so `android:icons` cannot run *after* `android:dummyAssets` as its `after`
+  edge says. If a flavor got placeholders from an earlier 2.x run and you then give it an `icon`, the
+  placeholders are files the lock does not know and the run reports them as conflicts: answer
+  `--on-conflict=overwrite` once.
+* `status` can only vouch for the processors of the engine. When some are not, it says
+  `In sync, as far as the engine can tell` and lists the ones it did not check.
+
+## Confirmation
+
+`apply` asks `Do you want to proceed?` when stdin and stdout are a terminal, and goes on when there is not:
+nobody is asked, **even when an answer is piped to stdin**. In 2.x `echo n | flutter pub run
+flutter_flavorizr` could cancel; it now applies. Pass `--yes` in a CI and in any script to say so
+explicitly, `--on-conflict=keep|overwrite` for the files edited by hand, and use `plan` or `status` when
+nothing must be written. See [CI usage](/ci).
+
+## Custom processors
+
+When the project has `tool/flavorizr.dart`, `dart run flutter_flavorizr` runs `dart run tool/flavorizr.dart`
+with the same arguments and ends with its exit code, so the command stays a single one. The delegated run
+is started with the environment variable `FLAVORIZR_DELEGATED` set: that is what stops an entry point from
+delegating to itself, so it cannot loop. A processor id that is not known, and a recipe member that nobody
+has, say to register the processor in `tool/flavorizr.dart`. See [Custom processors](/extending/processors).
+
+## Configuration errors
+
+A key that flavorizr does not know fails the run with exit code `65`, and writes nothing. See
+[Configuration](/configuration).

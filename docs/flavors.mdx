@@ -1,0 +1,105 @@
+---
+title: "Adding and removing flavors"
+description: "Change the flavors by editing flavorizr.yaml: what a run adds, updates and removes."
+---
+
+The yaml is the desired state, so changing the flavors of a project is changing the yaml and running
+flavorizr again. There is no command to add or remove a flavor.
+
+```sh
+dart run flutter_flavorizr plan     # review: what is added, changed and deleted
+dart run flutter_flavorizr apply
+```
+
+`plan` starts with the flavors that differ between `flavorizr.yaml` and `flavorizr.lock`:
+
+```text
+- banana (removed)
++ pear (added)
+~ apple (changed)
+```
+
+## Adding a flavor
+
+Add it under `flavors`, with the platforms it is built for:
+
+```yaml
+flavors:
+  pear:
+    app:
+      name: "Pear App"
+    android:
+      applicationId: "com.example.pear"
+    ios:
+      bundleId: "com.example.pear"
+```
+
+A run adds everything the flavor needs: the Android product flavor, the xcconfig files, build
+configurations and scheme of Xcode, the mappings in the Podfile, the entries of the Flutter code and of the
+IDE configurations, and its icons when it has an `icon` or a [badge](/icons-and-badge). The flavors that
+already exist are not touched unless they changed.
+
+## Changing a flavor
+
+A flavor is **changed** when anything of its resolved configuration changed: its name, its identifiers,
+its build settings, an icon. The lock holds a fingerprint of each flavor, so `plan` shows the flavor
+as changed and the files that follow from it. Settings that you set by hand in the project and that
+flavorizr does not own are never changed.
+
+Flavors are told apart by their name, so **renaming a flavor is removing the old one and adding the new
+one**. When a removed and an added flavor have exactly the same configuration, `plan` points it out
+(`old -> new is a rename`), and applies it as the removal plus the addition all the same.
+
+## Removing a flavor
+
+Delete it from the yaml. A run removes what flavorizr generated for it, which the lock knows:
+
+- the files that are **managed**: its xcconfig files, its icons, its entry in `flavorizr.gradle` and in the
+  Flutter code;
+- its part of the **patched** files, and nothing else: its build configurations and the references to
+  its xcconfig files in `project.pbxproj`, its mappings in the Podfile, its regions in the Linux and
+  Windows CMake lists, its keys and entries;
+- its **local** files, such as its run configuration of IntelliJ and Android Studio.
+
+What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
+stays, and a build configuration of the flavor that holds a setting of yours stays in the project.
+Files that you put in the project yourself, such as an icon in `src/<flavor>/res`, are never deleted.
+
+Removing goes through the [conflict](/conflicts) check like any other change: a generated file you
+edited asks before it is deleted.
+
+<Info>
+  The processors that are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet))
+  do not track what they write, so they cannot remove it: the schemes and icon sets of iOS and macOS, and
+  the Windows icons of a flavor you remove stay in the project, and you delete them.
+</Info>
+
+## What flavorizr refuses
+
+`plan` and `apply` **refuse** two things, with exit code `65`, before any processor runs, so nothing is
+written, not even the lock:
+
+- removing **every** flavor, when `flavorizr.lock` records flavors;
+- dropping a **platform** that `flavorizr.lock` shows was flavorized: no flavor has an `android` (`ios`,
+  `macos`, ...) section anymore, and the lock records files of the processors of that platform. The message
+  names the platform and lists the files the lock records for it.
+
+The reason is that flavorizr overwrites values it owns (`android:label` in the manifest, `CFBundleName`
+in a plist) and does not store the originals, so it cannot put them back. Fully un-flavorizing a project, or
+a platform, is out of scope for 3.0. To do it:
+
+1. restore the files flavorizr changed from version control, or put the original values back;
+2. delete the files it generated, and `flavorizr.lock`;
+3. run flavorizr again with what remains in `flavorizr.yaml`.
+
+The check compares `flavorizr.yaml` with the lock only, whatever the targets, and it only knows what the
+lock records: a project with no `flavorizr.lock` is never refused. `status`, `list` and `doctor` do not
+run it.
+
+## When the lock is lost
+
+If `flavorizr.lock` is deleted or never was committed, flavorizr cannot know which flavors it generated:
+a flavor that was removed from the yaml in the meantime is not removed from the project. The next run
+treats the files it finds as it does on a project flavorized with 2.x: a patched file is adopted by
+patching it, and a generated (managed) file that exists and differs from what the run would write is a
+[conflict](/conflicts), since there is no telling it from one you wrote. Commit the lock to avoid it.
