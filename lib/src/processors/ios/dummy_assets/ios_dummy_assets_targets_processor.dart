@@ -41,7 +41,6 @@ class IOSDummyAssetsTargetsProcessor extends QueueProcessor {
                     source,
                     destination,
                     flavorName,
-                    flavor.ios!,
                     config: config,
                     logger: logger,
                   ),

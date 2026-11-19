@@ -89,7 +89,7 @@
   only-comments: true
   drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
   moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]|ASSETCATALOG_COMPILER_APPICON_NAME = (?:"AppIcon-\$\(ASSET_PREFIX\)"|AppIcon);'
   reason: >-
     dart_xcodeproj 0.4.0 (#513) prints only the annotations of its object model,
     as Ruby's xcodeproj does, where 0.3.0 guessed them from the shape of the
@@ -102,6 +102,9 @@
     lost, as DarwinAddFileProcessor looked the extension up with its dot). Nothing
     else changes: the golden, once those entries are taken out and its UUIDs
     named again, is identical to the new file once the comments are stripped.
+    A flavor with no `icon` builds with the `AppIcon` of the project, where
+    2.6.0 pointed it at the `AppIcon-<flavor>` set it copied (#529): the value
+    of `ASSETCATALOG_COMPILER_APPICON_NAME` is not compared.
     ios:firebase on the engine (#521) adds the reference to
     `Runner/GoogleService-Info.plist` before the legacy `ios:launchScreen` adds
     the storyboards, where 2.6.0 added it after them, so the reference and its
@@ -114,7 +117,7 @@
   only-comments: true
   drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
   moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
-  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]'
+  ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]|ASSETCATALOG_COMPILER_APPICON_NAME = (?:"AppIcon-\$\(ASSET_PREFIX\)"|AppIcon);'
   reason: >-
     Same as ios/Runner.xcodeproj/project.pbxproj: the comments are the ones
     Ruby's xcodeproj writes (#513), and macos:configs on the engine (#518) does
@@ -146,3 +149,29 @@
     of `com.android.build.gradle`, the legacy one, which resolves only while
     Flutter forces `android.newDsl=false` (#537). `flavorDimensions` is
     appended to with `+=` as the new DSL has it. The flavors are the golden ones.
+- path: android/app/src/apple/res/**
+  reason: &dummy-android >-
+    A flavor with no `icon` has no source set of its own and builds with the
+    `res` of `main`, the default icon of the project (#529). 2.6.0 copied dummy
+    launcher icons into `src/<flavor>/res`. The golden fixture has no icons.
+- path: android/app/src/banana/res/**
+  reason: *dummy-android
+- path: ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/**
+  reason: &dummy-icons >-
+    A flavor with no `icon` builds with the `AppIcon` of the project, and
+    flavorizr makes no `AppIcon-<flavor>.appiconset` for it (#529), where 2.6.0
+    copied dummy ones. `ASSETCATALOG_COMPILER_APPICON_NAME` of the flavor is
+    `AppIcon` then (see the `project.pbxproj` entries).
+- path: ios/Runner/Assets.xcassets/AppIcon-banana.appiconset/**
+  reason: *dummy-icons
+- path: macos/Runner/Assets.xcassets/AppIcon-apple.appiconset/**
+  reason: *dummy-icons
+- path: macos/Runner/Assets.xcassets/AppIcon-banana.appiconset/**
+  reason: *dummy-icons
+- path: windows/runner/resources/apple.ico.sha256
+  reason: &dummy-ico >-
+    A flavor with no `icon` builds with the `app_icon.ico` of the project, and
+    windows:cmake does not point at an `<flavor>.ico` that does not exist
+    (#529), where 2.6.0 built a dummy one.
+- path: windows/runner/resources/banana.ico.sha256
+  reason: *dummy-ico

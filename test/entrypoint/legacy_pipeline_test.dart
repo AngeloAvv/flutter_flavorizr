@@ -34,10 +34,18 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 
 import '../test_utils.dart';
-import 'cli_fixture.dart';
 
 void main() {
-  final config = FlavorizrConfig.parse(CliFixture.config(['apple']));
+  final config = FlavorizrConfig.parse('''
+flavors:
+  apple:
+    app:
+      name: Apple
+    android:
+      applicationId: com.example.apple
+    ios:
+      bundleId: com.example.apple
+''');
 
   test('refuses to run on a project that is not the working directory', () {
     final elsewhere = Directory.systemTemp.createTempSync('flavorizr_legacy_');
@@ -99,19 +107,24 @@ void main() {
         project.deleteSync(recursive: true);
       });
       Directory.current = project;
-      File(p.join(project.path, '.tmp/android/res/values/custom.xml'))
+      File(
+          p.join(
+            project.path,
+            '.tmp/ios/Assets.xcassets/LaunchImage.imageset/Contents.json',
+          ),
+        )
         ..parent.createSync(recursive: true)
         ..writeAsStringSync('<resources/>');
 
       await StandardLegacyPipeline(project).run(
-        [LegacyStep('android:dummyAssets', config)],
+        [LegacyStep('ios:dummyAssets', config)],
         logger: logger,
         observer: observer,
       );
 
       expect(observer.events, [
-        'started android:dummyAssets',
-        'finished android:dummyAssets',
+        'started ios:dummyAssets',
+        'finished ios:dummyAssets',
       ]);
       expect(logger.progresses, 0, reason: 'the observer shows the step');
     });
@@ -122,14 +135,22 @@ void main() {
     late Directory previous;
 
     String placed() => File(
-      p.join(project.path, 'android/app/src/apple/res/values/custom.xml'),
+      p.join(
+        project.path,
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/Contents.json',
+      ),
     ).existsSync().toString();
 
     setUp(() {
       project = Directory.systemTemp.createTempSync('flavorizr_throwing_');
       previous = Directory.current;
       Directory.current = project;
-      File(p.join(project.path, '.tmp/android/res/values/custom.xml'))
+      File(
+          p.join(
+            project.path,
+            '.tmp/ios/Assets.xcassets/LaunchImage.imageset/Contents.json',
+          ),
+        )
         ..parent.createSync(recursive: true)
         ..writeAsStringSync('<resources/>');
     });
@@ -142,8 +163,8 @@ void main() {
     Future<void> run(StepObserver observer) =>
         StandardLegacyPipeline(project).run(
           [
-            LegacyStep('android:dummyAssets', config),
-            LegacyStep('android:dummyAssets', config),
+            LegacyStep('ios:dummyAssets', config),
+            LegacyStep('ios:dummyAssets', config),
           ],
           logger: TestUtils.quietLogger(),
           observer: observer,
@@ -199,11 +220,23 @@ void main() {
       previous = Directory.current;
       Directory.current = project;
       // What the assets hold, a custom `assetsUrl` included.
-      write('.tmp/android/res/mipmap-mdpi/ic_launcher.png', 'PLACEHOLDER');
-      write('.tmp/android/res/mipmap-hdpi/ic_launcher.png', 'PLACEHOLDER');
-      write('.tmp/android/res/values/custom.xml', '<resources/>');
+      write(
+        '.tmp/ios/Assets.xcassets/LaunchImage.imageset/launch@1x.png',
+        'PLACEHOLDER',
+      );
+      write(
+        '.tmp/ios/Assets.xcassets/LaunchImage.imageset/launch@2x.png',
+        'PLACEHOLDER',
+      );
+      write(
+        '.tmp/ios/Assets.xcassets/LaunchImage.imageset/Contents.json',
+        '<resources/>',
+      );
       // What the engine generated for the flavor.
-      write('android/app/src/apple/res/mipmap-mdpi/ic_launcher.png', 'ICON');
+      write(
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+        'ICON',
+      );
     });
 
     tearDown(() {
@@ -213,33 +246,39 @@ void main() {
 
     Future<void> dummyAssets(Set<String> preserve) =>
         StandardLegacyPipeline(project).run(
-          [LegacyStep('android:dummyAssets', config)],
+          [LegacyStep('ios:dummyAssets', config)],
           logger: TestUtils.quietLogger(),
           preserve: preserve,
         );
 
     test('a file of the engine survives what is copied over it', () async {
       await dummyAssets({
-        'android/app/src/apple/res/mipmap-mdpi/ic_launcher.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
       });
 
       expect(
-        read('android/app/src/apple/res/mipmap-mdpi/ic_launcher.png'),
+        read(
+          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+        ),
         'ICON',
       );
     });
 
     test('the rest of the assets still reaches the flavor', () async {
       await dummyAssets({
-        'android/app/src/apple/res/mipmap-mdpi/ic_launcher.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
       });
 
       expect(
-        read('android/app/src/apple/res/mipmap-hdpi/ic_launcher.png'),
+        read(
+          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@2x.png',
+        ),
         'PLACEHOLDER',
       );
       expect(
-        read('android/app/src/apple/res/values/custom.xml'),
+        read(
+          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/Contents.json',
+        ),
         '<resources/>',
       );
     });
@@ -250,7 +289,9 @@ void main() {
         await dummyAssets({});
 
         expect(
-          read('android/app/src/apple/res/mipmap-mdpi/ic_launcher.png'),
+          read(
+            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@1x.png',
+          ),
           'PLACEHOLDER',
         );
       },
@@ -276,14 +317,14 @@ void main() {
 
     test('a path that did not exist is not created', () async {
       await dummyAssets({
-        'android/app/src/apple/res/mipmap-xhdpi/ic_launcher.png',
+        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@3x.png',
       });
 
       expect(
         File(
           p.join(
             project.path,
-            'android/app/src/apple/res/mipmap-xhdpi/ic_launcher.png',
+            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@3x.png',
           ),
         ).existsSync(),
         isFalse,

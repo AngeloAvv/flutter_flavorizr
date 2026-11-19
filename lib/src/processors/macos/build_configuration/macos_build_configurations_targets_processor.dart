@@ -27,6 +27,8 @@ import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/build_configuration/darwin_build_configurations_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_icon_name.dart';
+import 'package:flutter_flavorizr/src/utils/constants.dart';
 
 class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
   MacOSBuildConfigurationsTargetsProcessor(
@@ -43,11 +45,26 @@ class MacOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                         project,
                         file,
                         flavorName,
-                        {}
-                          ..addAll(config.app?.macos != null
-                              ? config.app!.macos!.buildSettings
-                              : BuildSettingsMixin.macosDefaultBuildSettings)
-                          ..addAll(flavor.macos?.buildSettings ?? {}),
+                        DarwinIconName.resolve(
+                          {}
+                            ..addAll(config.app?.macos != null
+                                ? config.app!.macos!.buildSettings
+                                : BuildSettingsMixin.macosDefaultBuildSettings)
+                            ..addAll(flavor.macos?.buildSettings ?? {}),
+                          assetsPath: K.macOSAssetsPath,
+                          flavorName: flavorName,
+                          hasIcon:
+                              flavor.app.icon != null ||
+                              flavor.macos?.icon != null,
+                          chosen:
+                              (config.app?.macos?.userBuildSettings
+                                      .containsKey(DarwinIconName.setting) ??
+                                  false) ||
+                              (flavor.macos?.buildSettings.containsKey(
+                                    DarwinIconName.setting,
+                                  ) ??
+                                  false),
+                        ),
                         config: config,
                         logger: logger,
                       ),

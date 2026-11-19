@@ -46,43 +46,77 @@ void main() {
   });
 
   test(
-      'IOSDummyAssetsProcessor.execute copies AppIcon and LaunchImage asset sets into flavor-specific folders when dummy assets are enabled',
-      () {
-    TestUtils.withTempDir((dir) async {
-      final flavor = flavorizr.iosFlavors.values.first;
+    'IOSDummyAssetsProcessor.execute copies the LaunchImage set into a flavor-specific folder and no AppIcon set',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final source = p.join(dir.path, 'source');
+        final destination = p.join(dir.path, 'destination');
+        Directory(source).createSync(recursive: true);
 
-      final source = p.join(dir.path, 'source');
-      final destination = p.join(dir.path, 'destination');
-      Directory(source).createSync(recursive: true);
+        copyPathSync(
+          'test_resources/ios/dummy_assets_processor_test/AppIcon.appiconset',
+          p.join(source, 'AppIcon.appiconset'),
+        );
+        copyPathSync(
+          'test_resources/ios/dummy_assets_processor_test/LaunchImage.imageset',
+          p.join(source, 'LaunchImage.imageset'),
+        );
 
-      copyPathSync(
-        'test_resources/ios/dummy_assets_processor_test/AppIcon.appiconset',
-        p.join(source, 'AppIcon.appiconset'),
-      );
-      copyPathSync(
-        'test_resources/ios/dummy_assets_processor_test/LaunchImage.imageset',
-        p.join(source, 'LaunchImage.imageset'),
-      );
+        final processor = IOSDummyAssetsProcessor(
+          source,
+          destination,
+          'apple',
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final processor = IOSDummyAssetsProcessor(
-        source,
-        destination,
-        'apple',
-        flavor.ios!,
-        config: flavorizr,
-        logger: logger,
-      );
+        await processor.execute();
 
-      await processor.execute();
+        expect(
+          Directory(
+            p.join(destination, 'AppIcon-apple.appiconset'),
+          ).existsSync(),
+          isFalse,
+        );
+        expect(
+          Directory(
+            p.join(destination, 'appleLaunchImage.imageset'),
+          ).existsSync(),
+          isTrue,
+        );
+      });
+    },
+  );
 
-      expect(
-        Directory(p.join(destination, 'AppIcon-apple.appiconset')).existsSync(),
-        isTrue,
-      );
-      expect(
-        Directory(p.join(destination, 'appleLaunchImage.imageset')).existsSync(),
-        isTrue,
-      );
-    });
-  });
+  test(
+    'IOSDummyAssetsProcessor leaves a launch image the project has for the flavor',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final source = p.join(dir.path, 'source');
+        final destination = p.join(dir.path, 'destination');
+        final mine = p.join(destination, 'appleLaunchImage.imageset');
+
+        copyPathSync(
+          'test_resources/ios/dummy_assets_processor_test/LaunchImage.imageset',
+          p.join(source, 'LaunchImage.imageset'),
+        );
+        Directory(mine).createSync(recursive: true);
+        File(p.join(mine, 'Contents.json')).writeAsStringSync('MINE');
+
+        final processor = IOSDummyAssetsProcessor(
+          source,
+          destination,
+          'apple',
+          config: flavorizr,
+          logger: logger,
+        );
+
+        expect(processor.processors, isEmpty);
+
+        await processor.execute();
+
+        expect(File(p.join(mine, 'Contents.json')).readAsStringSync(), 'MINE');
+      });
+    },
+  );
 }

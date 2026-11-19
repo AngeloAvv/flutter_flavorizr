@@ -23,32 +23,19 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/src/processors/commons/dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 
+/// Used to copy a dummy launcher icon into the source set of each flavor.
+///
+/// It does nothing now: a flavor with no `icon` has no source set of its own,
+/// so it uses the `res` of `main`, which is the default icon of the project, and
+/// the icons that exist in a source set are the user's. The id
+/// `android:dummyAssets` stays so that a recipe that names it still runs.
 class AndroidDummyAssetsProcessor extends QueueProcessor {
-  AndroidDummyAssetsProcessor(
-    String source,
-    String destination, {
+  AndroidDummyAssetsProcessor({
     required super.config,
     required super.logger,
-  }) : super(
-          config.androidFlavors
-              .map(
-                (String flavorName, Flavor flavor) => MapEntry(
-                  flavorName,
-                  DummyAssetsProcessor(
-                    source,
-                    '$destination/$flavorName/res',
-                    flavor.android!,
-                    config: config,
-                    logger: logger,
-                  ),
-                ),
-              )
-              .values,
-        );
+  }) : super(const []);
 
   @override
   String toString() => 'AndroidDummyAssetsProcessor';

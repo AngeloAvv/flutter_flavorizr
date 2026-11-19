@@ -23,68 +23,28 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
 
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_dummy_assets_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mason_logger/mason_logger.dart';
 
 import '../../test_utils.dart';
 
 void main() {
-  late FlavorizrConfig flavorizr;
-  late Logger logger;
+  test('AndroidDummyAssetsProcessor does nothing: a flavor with no icon uses '
+      'the `res` of main', () async {
+    final processor = AndroidDummyAssetsProcessor(
+      config: TestUtils.parseFlavorizr('test_resources/pubspec'),
+      logger: TestUtils.quietLogger(),
+    );
 
-  setUp(() {
-    logger = TestUtils.quietLogger();
-    flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
-  });
+    expect(processor.processors, isEmpty);
 
-  test(
-      'Test AndroidDummyAssetsProcessor builds one DummyAssetsProcessor per android flavor',
-      () {
-    TestUtils.withTempDir((dir) {
-      final source = '${dir.path}/source';
-      final destination = '${dir.path}/destination';
-
-      final processor = AndroidDummyAssetsProcessor(
-        source,
-        destination,
-        config: flavorizr,
-        logger: logger,
-      );
-
-      expect(processor.processors.length, flavorizr.androidFlavors.length);
-    });
-  });
-
-  test(
-      'Test AndroidDummyAssetsProcessor copies dummy assets for every android flavor when executed',
-      () async {
     await TestUtils.withTempDir((dir) async {
-      final source = '${dir.path}/source';
-      final destination = '${dir.path}/destination';
-
-      Directory(source).createSync(recursive: true);
-      File('$source/dummy.txt').writeAsStringSync('dummy content');
-
-      final processor = AndroidDummyAssetsProcessor(
-        source,
-        destination,
-        config: flavorizr,
-        logger: logger,
-      );
+      final before = dir.listSync();
 
       await processor.execute();
 
-      for (final flavorName in flavorizr.androidFlavors.keys) {
-        expect(
-          File('$destination/$flavorName/res/dummy.txt').existsSync(),
-          isTrue,
-        );
-      }
+      expect(dir.listSync(), before);
     });
   });
-
 }

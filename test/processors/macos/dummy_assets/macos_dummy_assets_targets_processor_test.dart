@@ -23,73 +23,21 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
-import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_assets_targets_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:io/io.dart';
-import 'package:mason_logger/mason_logger.dart';
-import 'package:path/path.dart' as p;
 
 import '../../../test_utils.dart';
 
 void main() {
-  late FlavorizrConfig flavorizr;
-  late Logger logger;
-
-  setUp(() {
-    logger = TestUtils.quietLogger();
-    flavorizr = TestUtils.parseFlavorizr(
-      'test_resources/macos/dummy_assets_processor_test/pubspec',
-    );
-  });
-
-  test(
-      'MacOSDummyAssetsTargetsProcessor wires one MacOSDummyAssetsProcessor per macOS flavor',
-      () {
+  test('MacOSDummyAssetsTargetsProcessor does nothing: a flavor with no icon '
+      'builds with AppIcon', () async {
     final processor = MacOSDummyAssetsTargetsProcessor(
-      'source',
-      'destination',
-      config: flavorizr,
-      logger: logger,
+      config: TestUtils.parseFlavorizr('test_resources/pubspec'),
+      logger: TestUtils.quietLogger(),
     );
 
-    expect(processor.processors.length, flavorizr.macosFlavors.length);
-    expect(
-        processor.processors, everyElement(isA<MacOSDummyAssetsProcessor>()));
-  });
+    expect(processor.processors, isEmpty);
 
-  test(
-      'MacOSDummyAssetsTargetsProcessor.execute generates dummy assets for every macOS flavor',
-      () {
-    TestUtils.withTempDir((dir) async {
-      final source = p.join(dir.path, 'source');
-      final destination = p.join(dir.path, 'destination');
-      Directory(source).createSync(recursive: true);
-
-      copyPathSync(
-        'test_resources/macos/dummy_assets_processor_test/AppIcon.appiconset',
-        p.join(source, 'AppIcon.appiconset'),
-      );
-
-      final processor = MacOSDummyAssetsTargetsProcessor(
-        source,
-        destination,
-        config: flavorizr,
-        logger: logger,
-      );
-
-      await processor.execute();
-
-      for (final flavorName in flavorizr.macosFlavors.keys) {
-        expect(
-          Directory(p.join(destination, 'AppIcon-$flavorName.appiconset'))
-              .existsSync(),
-          isTrue,
-        );
-      }
-    });
+    await processor.execute();
   });
 }

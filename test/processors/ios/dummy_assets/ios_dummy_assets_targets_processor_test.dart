@@ -47,58 +47,64 @@ void main() {
   });
 
   test(
-      'IOSDummyAssetsTargetsProcessor wires one IOSDummyAssetsProcessor per iOS flavor',
-      () {
-    final processor = IOSDummyAssetsTargetsProcessor(
-      'source',
-      'destination',
-      config: flavorizr,
-      logger: logger,
-    );
-
-    expect(processor.processors.length, flavorizr.iosFlavors.length);
-    expect(processor.processors, everyElement(isA<IOSDummyAssetsProcessor>()));
-  });
-
-  test(
-      'IOSDummyAssetsTargetsProcessor.execute generates dummy assets for every iOS flavor',
-      () {
-    TestUtils.withTempDir((dir) async {
-      final source = p.join(dir.path, 'source');
-      final destination = p.join(dir.path, 'destination');
-      Directory(source).createSync(recursive: true);
-
-      copyPathSync(
-        'test_resources/ios/dummy_assets_processor_test/AppIcon.appiconset',
-        p.join(source, 'AppIcon.appiconset'),
-      );
-      copyPathSync(
-        'test_resources/ios/dummy_assets_processor_test/LaunchImage.imageset',
-        p.join(source, 'LaunchImage.imageset'),
-      );
-
+    'IOSDummyAssetsTargetsProcessor wires one IOSDummyAssetsProcessor per iOS flavor',
+    () {
       final processor = IOSDummyAssetsTargetsProcessor(
-        source,
-        destination,
+        'source',
+        'destination',
         config: flavorizr,
         logger: logger,
       );
 
-      await processor.execute();
+      expect(processor.processors.length, flavorizr.iosFlavors.length);
+      expect(
+        processor.processors,
+        everyElement(isA<IOSDummyAssetsProcessor>()),
+      );
+    },
+  );
 
-      for (final flavorName in flavorizr.iosFlavors.keys) {
-        expect(
-          Directory(p.join(destination, 'AppIcon-$flavorName.appiconset'))
-              .existsSync(),
-          isTrue,
+  test(
+    'IOSDummyAssetsTargetsProcessor.execute copies the launch image of every iOS flavor, and no icon',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final source = p.join(dir.path, 'source');
+        final destination = p.join(dir.path, 'destination');
+        Directory(source).createSync(recursive: true);
+
+        copyPathSync(
+          'test_resources/ios/dummy_assets_processor_test/AppIcon.appiconset',
+          p.join(source, 'AppIcon.appiconset'),
         );
-        expect(
-          Directory(
-                  p.join(destination, '${flavorName}LaunchImage.imageset'))
-              .existsSync(),
-          isTrue,
+        copyPathSync(
+          'test_resources/ios/dummy_assets_processor_test/LaunchImage.imageset',
+          p.join(source, 'LaunchImage.imageset'),
         );
-      }
-    });
-  });
+
+        final processor = IOSDummyAssetsTargetsProcessor(
+          source,
+          destination,
+          config: flavorizr,
+          logger: logger,
+        );
+
+        await processor.execute();
+
+        for (final flavorName in flavorizr.iosFlavors.keys) {
+          expect(
+            Directory(
+              p.join(destination, 'AppIcon-$flavorName.appiconset'),
+            ).existsSync(),
+            isFalse,
+          );
+          expect(
+            Directory(
+              p.join(destination, '${flavorName}LaunchImage.imageset'),
+            ).existsSync(),
+            isTrue,
+          );
+        }
+      });
+    },
+  );
 }

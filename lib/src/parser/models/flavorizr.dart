@@ -25,6 +25,7 @@
 
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
+import 'package:flutter_flavorizr/src/parser/config_path.dart';
 import 'package:flutter_flavorizr/src/parser/flavor_fingerprint.dart';
 import 'package:flutter_flavorizr/src/parser/models/frozen.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -115,6 +116,11 @@ class FlavorizrConfig {
   @JsonKey(includeFromJson: false)
   final Map<String, Flavor> macosFirebaseFlavors;
 
+  /// What the configuration says that is deprecated, as warnings to show: it
+  /// still reads, and does nothing, or less than it did.
+  @JsonKey(includeFromJson: false)
+  final List<String> deprecations;
+
   /// Creates the configuration of [flavors] and the rest.
   FlavorizrConfig({
     this.app,
@@ -124,7 +130,9 @@ class FlavorizrConfig {
     Map<String, List<String>>? recipes,
     this.defaultRecipe,
     Map<String, String> flavorFingerprints = const {},
+    List<String> deprecations = const [],
   }) : flavors = frozenMap(flavors),
+       deprecations = frozenList(deprecations),
        ide = ide == null ? null : frozenList(ide),
        recipes = recipes == null
            ? null
@@ -168,7 +176,29 @@ class FlavorizrConfig {
       recipes: parsed.recipes,
       defaultRecipe: _defaultRecipeFromJson(json['recipes']),
       flavorFingerprints: fingerprintFlavors(json),
+      deprecations: _deprecationsOf(json),
     );
+  }
+
+  /// The platforms of a flavor that had `generateDummyAssets`.
+  static const _dummyAssetsPlatforms = ['android', 'ios', 'macos', 'windows'];
+
+  static List<String> _deprecationsOf(Map json) {
+    final flavors = json['flavors'];
+
+    if (flavors is! Map) return const [];
+
+    return [
+      for (final MapEntry(key: name, value: flavor) in flavors.entries)
+        if (flavor is Map)
+          for (final platform in _dummyAssetsPlatforms)
+            if (flavor[platform] case final Map settings
+                when settings.containsKey('generateDummyAssets'))
+              '`${joinConfigPath(['flavors', '$name', platform, 'generateDummyAssets'])}` '
+                  'is deprecated and ignored: a flavor with no `icon` uses the '
+                  'default icon of the project, and the icons that exist are '
+                  'left alone. Remove it: it will be an error in 4.0.',
+    ];
   }
 
   static Map<String, Flavor> _where(
