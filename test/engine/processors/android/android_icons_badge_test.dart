@@ -235,6 +235,47 @@ void main() {
       }
     });
 
+    test('gives flavors that share a source icon the badge of each one, from '
+        'a single run', () async {
+      Uint8List of(String flavor, String path) => File(
+        p.join(root.path, 'android/app/src/$flavor/res', path),
+      ).readAsBytesSync();
+
+      String flavor(String name, String badge) =>
+          '''
+  $name:
+    app:
+      name: "App"
+    badge: $badge
+    android:
+      applicationId: "com.example.$name"
+      icon: "assets/dev.png"
+''';
+
+      await run(
+        'flavors:\n'
+        '${flavor('dev', '{ label: DEV, color: "#E53935" }')}'
+        '${flavor('qa', '{ label: QA, color: "#1E88E5" }')}'
+        '${flavor('same', '{ label: DEV, color: "#E53935" }')}'
+        '${flavor('plain', 'false')}',
+      );
+
+      for (final path in [
+        'mipmap-mdpi/ic_launcher.png',
+        'mipmap-xxxhdpi/ic_launcher.png',
+      ]) {
+        final dev = of('dev', path);
+        final qa = of('qa', path);
+        final plain = of('plain', path);
+
+        expect(dev, isNot(equals(qa)), reason: 'label and colour: $path');
+        expect(dev, isNot(equals(plain)), reason: 'badged or not: $path');
+        expect(qa, isNot(equals(plain)), reason: 'badged or not: $path');
+        // The same badge on the same source is the same icon.
+        expect(of('same', path), dev, reason: path);
+      }
+    });
+
     test('is deterministic', () async {
       const yaml = 'badge: true\n';
 
