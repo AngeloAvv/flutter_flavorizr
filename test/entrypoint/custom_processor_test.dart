@@ -32,7 +32,7 @@ import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_processor_registration_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 

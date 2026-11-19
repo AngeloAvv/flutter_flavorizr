@@ -34,7 +34,7 @@ import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_fl
 import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 

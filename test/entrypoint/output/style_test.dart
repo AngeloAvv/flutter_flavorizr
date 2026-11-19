@@ -26,7 +26,7 @@
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/style.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 FileChange change(
   ChangeKind kind, {

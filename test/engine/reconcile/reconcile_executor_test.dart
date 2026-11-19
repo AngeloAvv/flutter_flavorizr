@@ -40,7 +40,7 @@ import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 import '../../test_utils.dart';

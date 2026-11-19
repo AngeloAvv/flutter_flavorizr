@@ -27,7 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_template_editors.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
 const _suffix = 'packages/flutter_tools/templates/app/windows.tmpl/runner';

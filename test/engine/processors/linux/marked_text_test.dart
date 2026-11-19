@@ -25,7 +25,7 @@
 
 import 'package:flutter_flavorizr/src/engine/processors/linux/marked_text.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 const _marker = RegionMarker('X', comment: '#');
 const _other = RegionMarker('Y', comment: '//');

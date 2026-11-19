@@ -25,7 +25,7 @@
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/pbxproj_seed.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('PbxprojSeed', () {

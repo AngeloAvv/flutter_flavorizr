@@ -35,7 +35,7 @@ import 'package:flutter_flavorizr/src/engine/resource_lifecycle.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_resource_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unregistered_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 import '../test_utils.dart';

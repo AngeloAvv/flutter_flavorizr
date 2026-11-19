@@ -27,7 +27,7 @@ import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
 import 'package:flutter_flavorizr/src/exception/unresolved_conflicts_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 import 'conflict_fakes.dart';
 

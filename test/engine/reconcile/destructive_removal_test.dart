@@ -28,7 +28,7 @@ import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/destructive_removal.dart';
 import 'package:flutter_flavorizr/src/exception/last_flavor_removal_exception.dart';
 import 'package:flutter_flavorizr/src/exception/platform_drop_exception.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 FlavorizrLock lockOf({
   Map<String, String> flavors = const {'dev': 'h1', 'prod': 'h2'},
