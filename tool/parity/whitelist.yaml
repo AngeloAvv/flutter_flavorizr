@@ -127,7 +127,9 @@
     lists: both files are compared without it, once they are known to hold the
     same reference (`moved`).
 - path: ios/Runner.xcodeproj/xcshareddata/xcschemes/*.xcscheme
-  ignore: '^ {6}<PreActions>\n {9}<ExecutionAction\n {12}ActionType = "Xcode\.IDEStandardExecutionActionsCore\.ExecutionActionType\.ShellScriptAction">\n {12}<ActionContent\n {15}title = "Run Prepare Flutter Framework Script"\n {15}scriptText = "/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend\.sh&quot; prepare&#10;">\n {15}<EnvironmentBuildable>\n {18}<BuildableReference\n {21}BuildableIdentifier = "primary"\n {21}BlueprintIdentifier = "97C146ED1CF9000F007C117D"\n {21}BuildableName = "Runner\.app"\n {21}BlueprintName = "Runner"\n {21}ReferencedContainer = "container:Runner\.xcodeproj">\n {18}</BuildableReference>\n {15}</EnvironmentBuildable>\n {12}</ActionContent>\n {9}</ExecutionAction>\n {6}</PreActions>\n|^ {6}<BuildActionEntries>\n {9}<BuildActionEntry\n {12}buildForTesting = "YES"\n {12}buildForRunning = "YES"\n {12}buildForProfiling = "YES"\n {12}buildForArchiving = "YES"\n {12}buildForAnalyzing = "YES">\n {12}<BuildableReference\n {15}BuildableIdentifier = "primary"\n {15}BlueprintIdentifier = "97C146ED1CF9000F007C117D"\n {15}BuildableName = "Runner\.app"\n {15}BlueprintName = "Runner"\n {15}ReferencedContainer = "container:Runner\.xcodeproj">\n {12}</BuildableReference>\n {9}</BuildActionEntry>\n {6}</BuildActionEntries>\n'
+  ignore-once:
+    - '^ {6}<PreActions>\n {9}<ExecutionAction\n {12}ActionType = "Xcode\.IDEStandardExecutionActionsCore\.ExecutionActionType\.ShellScriptAction">\n {12}<ActionContent\n {15}title = "Run Prepare Flutter Framework Script"\n {15}scriptText = "/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend\.sh&quot; prepare&#10;">\n {15}<EnvironmentBuildable>\n {18}<BuildableReference\n {21}BuildableIdentifier = "primary"\n {21}BlueprintIdentifier = "97C146ED1CF9000F007C117D"\n {21}BuildableName = "Runner\.app"\n {21}BlueprintName = "Runner"\n {21}ReferencedContainer = "container:Runner\.xcodeproj">\n {18}</BuildableReference>\n {15}</EnvironmentBuildable>\n {12}</ActionContent>\n {9}</ExecutionAction>\n {6}</PreActions>\n'
+    - '^ {6}<BuildActionEntries>\n {9}<BuildActionEntry\n {12}buildForTesting = "YES"\n {12}buildForRunning = "YES"\n {12}buildForProfiling = "YES"\n {12}buildForArchiving = "YES"\n {12}buildForAnalyzing = "YES">\n {12}<BuildableReference\n {15}BuildableIdentifier = "primary"\n {15}BlueprintIdentifier = "97C146ED1CF9000F007C117D"\n {15}BuildableName = "Runner\.app"\n {15}BlueprintName = "Runner"\n {15}ReferencedContainer = "container:Runner\.xcodeproj">\n {12}</BuildableReference>\n {9}</BuildActionEntry>\n {6}</BuildActionEntries>\n'
   reason: >-
     ios:schema on the engine (#517) makes the scheme of a flavor with the
     `Run Prepare Flutter Framework Script` pre-action that Flutter adds when
@@ -140,7 +142,8 @@
     `flutter create` (`Runner`, `Runner.app`, the UUID its template gives it)
     are spelled out, so that a block that points elsewhere is a difference. The
     rest of the scheme, the build configuration of each action included, is the
-    golden one.
+    golden one. Each block is taken once (`ignore-once`): a scheme that has one
+    of them twice differs.
 - path: flavorizr.yaml
   reason: >-
     The configuration is the input of the run, and 3.0 reads `recipes` where

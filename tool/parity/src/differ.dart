@@ -88,6 +88,7 @@ typedef _Entry = ({
   RegExp? dropFromGolden,
   RegExp? moved,
   RegExp? ignore,
+  List<RegExp> ignoreOnce,
 });
 
 /// Per-file permission to differ from the golden, each with the reason why.
@@ -115,6 +116,10 @@ class Whitelist {
   /// * `ignore` removes what matches from both files before comparing them. It
   ///   is what the new output has more of, in the lines it shares with the
   ///   golden.
+  /// * `ignore-once` is a list of regular expressions, each of which removes
+  ///   what it matches from both files like `ignore`, **at most once** in each:
+  ///   a file where one matches twice is not covered, so that a block that is
+  ///   there twice is not taken for the one that is intended.
   factory Whitelist.parse(String yaml) {
     final document = loadYaml(yaml);
     if (document == null) return const Whitelist.empty();
@@ -143,9 +148,24 @@ class Whitelist {
             dropFromGolden: _optionalPattern(entry, 'drop-from-golden', path),
             moved: _optionalPattern(entry, 'moved', path),
             ignore: _optionalPattern(entry, 'ignore', path),
+            ignoreOnce: _patternList(entry, 'ignore-once', path),
           );
         }(),
     ]);
+  }
+
+  static List<RegExp> _patternList(YamlMap entry, String key, String path) {
+    final value = entry[key];
+    if (value == null) return const [];
+    if (value is! YamlList ||
+        value.isEmpty ||
+        value.any((pattern) => pattern is! String || pattern.isEmpty)) {
+      throw FormatException(
+        'Whitelist entry "$path": `$key` must be a list of non-empty '
+        'regular expressions',
+      );
+    }
+    return [for (final pattern in value) RegExp(pattern, multiLine: true)];
   }
 
   static RegExp? _optionalPattern(YamlMap entry, String key, String path) {
@@ -171,7 +191,8 @@ class Whitelist {
           entry.onlyComments ||
           entry.dropFromGolden != null ||
           entry.moved != null ||
-          entry.ignore != null;
+          entry.ignore != null ||
+          entry.ignoreOnce.isNotEmpty;
       if (restricted &&
           (before == null || after == null || !_covers(entry, before, after))) {
         continue;
@@ -213,6 +234,16 @@ class Whitelist {
     if (ignore != null) {
       left = left.replaceAll(ignore, '');
       right = right.replaceAll(ignore, '');
+    }
+
+    for (final once in entry.ignoreOnce) {
+      if (once.allMatches(left).length > 1 ||
+          once.allMatches(right).length > 1) {
+        return false;
+      }
+
+      left = left.replaceAll(once, '');
+      right = right.replaceAll(once, '');
     }
 
     return entry.onlyComments

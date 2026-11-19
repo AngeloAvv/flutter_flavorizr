@@ -350,6 +350,17 @@ void main() {
       });
     }
 
+    test('does not take a pre-action or an entry that is there twice', () {
+      for (final actual in [
+        '$open$preActions$preActions$entries$close',
+        '$open$preActions$entries$entries$close',
+        '$open$preActions$preActions$close',
+        '$open$entries$entries$close',
+      ]) {
+        expect(clean('$open$close', actual), isFalse, reason: actual);
+      }
+    });
+
     test('does not take a build entry that repeats a flag and misses one', () {
       final repeated = entries.replaceAll(
         'buildForRunning = "YES"',
@@ -383,6 +394,45 @@ void main() {
       );
 
       expect(clean('$open$close', '$open$preActions$partial$close'), isFalse);
+    });
+  });
+
+  group('an ignore-once whitelist entry', () {
+    final whitelist = Whitelist.parse(r'''
+- path: a.txt
+  ignore-once:
+    - '^x\n'
+  reason: It has one x line
+''');
+
+    bool clean(String before, String after) {
+      write(golden, 'a.txt', before);
+      write(actual, 'a.txt', after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
+
+    test('takes what it matches once', () {
+      expect(clean('a\n', 'x\na\n'), isTrue);
+    });
+
+    test('does not take what it matches twice', () {
+      expect(clean('a\n', 'x\nx\na\n'), isFalse);
+    });
+
+    test('does not take it in the golden twice either', () {
+      expect(clean('x\nx\na\n', 'a\n'), isFalse);
+    });
+
+    test('is rejected when it is not a list of patterns', () {
+      expect(
+        () => Whitelist.parse('''
+- path: a.txt
+  ignore-once: x
+  reason: nope
+'''),
+        throwsFormatException,
+      );
     });
   });
 
