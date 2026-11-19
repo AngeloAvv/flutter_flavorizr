@@ -14,6 +14,7 @@ command has `--help`.
 | `apply [target...]` | Shows what would change, asks, and applies it. Writes `flavorizr.lock`. |
 | `plan [target...]` | The same preview, writing nothing: the processors that would run, with the ones they need marked `(auto)`, and the files that would be added (`+`), changed (`~`) or deleted (`-`), by platform. |
 | `status [target...]` | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. Exits with `1` on drift. |
+| `adopt [target...]` | Records a project flavorized with 2.x as the baseline of `flavorizr.lock` and writes nothing else, so that the next `plan` shows an ordinary diff. `--flavors a,b,c` names flavors the project had and `flavorizr.yaml` no longer has. See [adopting a 2.x project](adopt.md). |
 | `list` | The recipes (built-in and the ones of `flavorizr.yaml`) and the processors, with what each needs. |
 | `doctor` | Groovy or Kotlin build scripts, Xcode project layout, Pods, Flutter version, configuration and lock. |
 
