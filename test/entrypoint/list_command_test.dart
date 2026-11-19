@@ -77,7 +77,9 @@ recipes:
       expect(project.logger.output, contains('android:dummyAssets [legacy]'));
       expect(project.logger.output, contains('huawei:agconnect [legacy]'));
       expect(project.logger.output, contains('ios:podfile [engine]'));
-      expect(project.logger.output, contains('ios:buildTargets [legacy]'));
+      expect(project.logger.output, contains('ios:buildTargets [engine]'));
+      expect(project.logger.output, contains('ios:schema [engine]'));
+      expect(project.logger.output, contains('macos:schema [legacy]'));
     });
 
     test('draws what a processor needs and what it runs after', () async {

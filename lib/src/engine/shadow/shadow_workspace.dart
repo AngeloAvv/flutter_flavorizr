@@ -168,12 +168,15 @@ class ShadowWorkspace {
   /// declared and [recordedHashes] the hashes in the lock, by path. [hasher]
   /// computes the hash of the owned content of a file, and defaults to the
   /// digest of the whole file. [overwriteScaffold] is the
-  /// `--overwrite-scaffold` flag. A change to a file nobody tracked is
+  /// `--overwrite-scaffold` flag. A file in [edited] was found edited by hand
+  /// by the processor that owns part of it: writing it is a conflict, whatever
+  /// its hash says. A change to a file nobody tracked is
   /// reported as untracked and is never copied back.
   Future<WorkspaceDiff> diff({
     Iterable<Artifact> tracked = const [],
     Map<String, String> recordedHashes = const {},
     bool overwriteScaffold = false,
+    Set<String> edited = const {},
     ArtifactHasher? hasher,
   }) async {
     final artifacts = {
@@ -220,6 +223,7 @@ class ShadowWorkspace {
                   recordedHash: recorded[path],
                   overwriteScaffold: overwriteScaffold,
                   hashOwned: hashOwned,
+                  edited: edited.map(canonicalPath).contains(path),
                 ),
           before: before,
           after: after,
@@ -243,6 +247,7 @@ class ShadowWorkspace {
     required String? recordedHash,
     required bool overwriteScaffold,
     required ArtifactHasher hashOwned,
+    bool edited = false,
   }) async {
     final path = canonicalPath(artifact.path);
     final real = File(resolveIn(projectRoot, path));
@@ -287,6 +292,8 @@ class ShadowWorkspace {
       state,
       overwriteScaffold: overwriteScaffold,
     )) {
+      ArtifactAction.overwrite ||
+      ArtifactAction.patch when edited && exists => ChangeDisposition.conflict,
       ArtifactAction.create ||
       ArtifactAction.overwrite ||
       ArtifactAction.patch => ChangeDisposition.apply,

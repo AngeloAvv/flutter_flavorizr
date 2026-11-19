@@ -229,9 +229,30 @@ write the same `project.pbxproj`, and the lock records them (`objects`). When
 you remove a flavor, the references that flavorizr made for it are removed from
 the project too, by UUID, with everything that pointed at them. A reference that
 was there before flavorizr 3 (2.x made it, or you did) is used as it is and never
-removed, because only the lock can tell it is not yours; neither are the build
-configurations of the flavor until `ios:buildTargets` and `macos:buildTargets`
-are ported, so they lose their base configuration when its reference goes.
+removed, because only the lock can tell it is not yours.
+
+## The build configurations of the flavors
+
+`ios:buildTargets` and `macos:buildTargets` add the build configurations
+`Debug-<flavor>`, `Profile-<flavor>` and `Release-<flavor>` to the project and to
+its first target, with the `buildSettings` of the yaml, and point them at the
+xcconfig of the flavor. They are owned: a run finds them again by a UUID of their
+own, and the ones of a flavor you remove are removed with it.
+
+The settings are edited **one by one**, never replaced, so what you or Xcode put
+in a configuration survives a run: the `DEVELOPMENT_TEAM` you pick in Signing &
+Capabilities is not wiped anymore. The settings flavorizr sets are recorded in
+`flavorizr.lock` with the hash of their value:
+
+* a setting you remove from `buildSettings` leaves the project, **unless you
+  changed its value**, which is then yours;
+* a setting you edit by hand and that flavorizr owns is a conflict, like any file
+  you edited: the run asks (or follows `--on-conflict`) before it writes over it.
+  See [`flavorizr.lock`](flavorizr-lock.md#owned-build-settings).
+
+The configurations that 2.x made are used as they are, with their UUIDs. They
+are not owned (only a lock can tell they are not yours), so removing a flavor
+leaves its configurations in the project, with the settings that you added.
 
 ## The Info.plist of the platforms
 
@@ -416,7 +437,8 @@ Android ones (`android:androidManifest`, `android:flavorizrGradle`,
 (`windows:mainCppTemplate`, `windows:runnerRcTemplate` and `windows:cmake`), the Flutter ones
 (`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`), the
 xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
-`macos:configs`), the schemes of iOS (`ios:schema`), the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
+`macos:configs`), their build configurations (`ios:buildTargets` and
+`macos:buildTargets`), the schemes of iOS (`ios:schema`), the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
 ones (`ios:plist` and `macos:plist`), the one of the IDEs (`ide:config`) and the Firebase
 ones (`android:firebase`, `ios:firebase` and `macos:firebase`). For these a run is previewed, checked
 against the lock, written atomically and recorded in `flavorizr.lock`.

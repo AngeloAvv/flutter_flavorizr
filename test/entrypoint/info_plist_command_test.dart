@@ -45,6 +45,8 @@ const _run = [
   'ios:schema',
   'macos:xcconfig',
   'macos:configs',
+  'ios:buildTargets',
+  'macos:buildTargets',
   'ios:podfile',
   'macos:podfile',
 ];

@@ -62,8 +62,8 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   group('ProcessorRegistry', () {
-    test('runs the ported Android, Linux, Windows, Flutter, xcconfig, Podfile '
-        'and Info.plist processors on the engine', () {
+    test('runs the ported Android, Linux, Windows, Flutter, xcconfig, build '
+        'targets, Podfile and Info.plist processors on the engine', () {
       expect(registry.engineIds, {
         'android:androidManifest',
         'android:flavorizrGradle',
@@ -79,6 +79,8 @@ void main() {
         'ios:schema',
         'macos:xcconfig',
         'macos:configs',
+        'ios:buildTargets',
+        'macos:buildTargets',
         'ios:podfile',
         'macos:podfile',
         'ios:plist',
@@ -147,6 +149,8 @@ void main() {
           'ios:schema',
           'macos:xcconfig',
           'macos:configs',
+          'ios:buildTargets',
+          'macos:buildTargets',
           'ios:podfile',
           'macos:podfile',
           'ios:plist',
@@ -274,8 +278,8 @@ void main() {
 
     test('keeps every other 2.x instruction on the legacy pipeline', () {
       expect(registry.legacyIds, contains('huawei:agconnect'));
-      expect(registry.legacyIds, contains('ios:buildTargets'));
-      expect(registry.legacyIds, contains('macos:buildTargets'));
+      expect(registry.legacyIds, isNot(contains('ios:schema')));
+      expect(registry.legacyIds, contains('macos:schema'));
       expect(registry.legacyIds, contains('android:dummyAssets'));
       expect(registry.legacyIds, contains('windows:icons'));
       expect(registry.legacyIds, contains('windows:dummyAssets'));
@@ -285,6 +289,8 @@ void main() {
       expect(registry.legacyIds, isNot(contains('linux:myApplication')));
       expect(registry.legacyIds, isNot(contains('android:icons')));
       expect(registry.legacyIds, isNot(contains('ios:xcconfig')));
+      expect(registry.legacyIds, isNot(contains('ios:buildTargets')));
+      expect(registry.legacyIds, isNot(contains('macos:buildTargets')));
       expect(registry.legacyIds, isNot(contains('macos:xcconfig')));
       expect(registry.legacyIds, isNot(contains('ios:podfile')));
       expect(registry.legacyIds, isNot(contains('macos:podfile')));

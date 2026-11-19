@@ -130,6 +130,7 @@ final class OwnedObjects {
   final String platform;
 
   final Set<String> _owned = {};
+  final Set<String> _released = {};
 
   /// Owns the objects of [project], which `ctx` was given through the resource
   /// of [artifact], for the platform [platform].
@@ -254,6 +255,17 @@ final class OwnedObjects {
     return object;
   }
 
+  /// Gives [object] up: it stays in the project, and [settle] neither removes
+  /// it nor records it, so the lock forgets it and it is the user's from now on.
+  ///
+  /// It is for an object that flavorizr made and does not want anymore but that
+  /// holds something that is not flavorizr's, such as a build configuration
+  /// the user put a `DEVELOPMENT_TEAM` in. It is never owned again in this run.
+  void release(AbstractObject object) {
+    _owned.remove(object.uuid);
+    _released.add(object.uuid);
+  }
+
   /// Ends the run of the processor on the project, and returns the UUIDs it
   /// removed, sorted.
   ///
@@ -268,7 +280,10 @@ final class OwnedObjects {
   /// Then it tells the context what the processor owns now, for the lock to
   /// record. Call it once, after the last [ensure].
   List<String> settle() {
-    final stale = ctx.previousObjectsOf(artifact.path).difference(_owned);
+    final stale = ctx
+        .previousObjectsOf(artifact.path)
+        .difference(_owned)
+        .difference(_released);
     final removed = <String>[];
 
     for (final uuid in stale.toList()..sort()) {
@@ -295,7 +310,7 @@ final class OwnedObjects {
       project.objectsByUuid[uuid]?.removeFromProject();
     }
 
-    ctx.ownObjects(artifact.path, _owned);
+    ctx.ownObjects(artifact.path, _owned.difference(_released));
 
     return removed;
   }
