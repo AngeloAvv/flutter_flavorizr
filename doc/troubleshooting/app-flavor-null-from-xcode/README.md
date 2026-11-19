@@ -46,10 +46,14 @@ so flavorizr does not generate it.
    configuration that was renamed by hand is not found.
 3. Do not use `-` or a space in the name of a flavor. Flutter splits the configuration on the first
    of them and takes the second piece, so for `Debug-my-app` it looks for a scheme named `my`, finds
-   none, and falls back to the `FLAVOR` environment variable, which Xcode does not set. Use a name
-   such as `myApp` or `my_app`.
-4. As a last resort, set `DART_DEFINES` in the xcconfig of the flavor (through `variables`, as in
-   [#394](https://github.com/AngeloAvv/flutter_flavorizr/issues/394)) to the base64 of
-   `FLUTTER_APP_FLAVOR=<flavor>`, for example `echo -n 'FLUTTER_APP_FLAVOR=apple' | base64`. It
-   replaces every other define of the build, so this is only worth it when the app has none, and it
-   is yours to keep in step with the flavor.
+   none, and falls back to the `FLAVOR` environment variable. Xcode passes `FLAVOR` from
+   `Generated.xcconfig`, which can keep a value from an earlier `flutter run --flavor`: check that
+   setting when the flavor is not the one you expect. Use a name such as `myApp` or `my_app`.
+4. Only when Flutter does not derive the flavor (Flutter older than 3.32, or a configuration it
+   cannot match to a scheme), set `DART_DEFINES` in the xcconfig of the flavor (through
+   `variables`, as in [#394](https://github.com/AngeloAvv/flutter_flavorizr/issues/394)) to the
+   base64 of `FLUTTER_APP_FLAVOR=<flavor>`, for example
+   `echo -n 'FLUTTER_APP_FLAVOR=apple' | base64`. It replaces every other define of the build, so
+   this is only worth it when the app has none, and it is yours to keep in step with the flavor.
+   After upgrading to Flutter 3.32 or later, remove any `FLUTTER_APP_FLAVOR` entry from
+   `DART_DEFINES`, so that it does not override the flavor Flutter derives.
