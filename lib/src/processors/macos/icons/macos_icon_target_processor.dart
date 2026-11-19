@@ -45,13 +45,14 @@ class MacOSIconTargetProcessor extends DarwinIconTargetProcessor {
   MacOSIconTargetProcessor(
     super.source,
     String flavorName, {
+    super.badge,
     required super.config,
     required super.logger,
   }) : super(
-          flavorName: flavorName,
-          iconSet: _entries,
-          appIconPath: K.macOSAppIconPath,
-        );
+         flavorName: flavorName,
+         iconSet: _entries,
+         appIconPath: K.macOSAppIconPath,
+       );
 
   @override
   String toString() => 'MacOSIconProcessor';

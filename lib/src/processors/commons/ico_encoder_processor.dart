@@ -25,6 +25,8 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/badge/badge_renderer.dart';
+import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/processors/commons/copy_file_processor.dart';
@@ -36,18 +38,21 @@ import 'package:image/image.dart';
 class IcoEncoderProcessor extends CopyFileProcessor {
   static const List<int> _sizes = [16, 32, 48, 256];
 
+  /// The badge drawn on every size of the icon, at that size, or `null` for
+  /// none.
+  final ResolvedBadge? badge;
+
   IcoEncoderProcessor(
     super.source,
     super.destination, {
+    this.badge,
     required super.config,
     required super.logger,
   });
 
   @override
   File execute() {
-    logger.detail(
-      '[$IcoEncoderProcessor] Decoding image from file `$source`',
-    );
+    logger.detail('[$IcoEncoderProcessor] Decoding image from file `$source`');
 
     if (!file.existsSync()) {
       throw FileNotFoundException(source);
@@ -69,14 +74,7 @@ class IcoEncoderProcessor extends CopyFileProcessor {
     );
 
     final frames = _sizes
-        .map(
-          (size) => copyResize(
-            image,
-            width: size,
-            height: size,
-            interpolation: Interpolation.average,
-          ),
-        )
+        .map((size) => renderIcon(image, size, badge: badge))
         .toList(growable: false);
 
     final bytes = IcoEncoder().encodeImages(frames);

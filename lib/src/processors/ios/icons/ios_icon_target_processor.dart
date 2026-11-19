@@ -54,13 +54,14 @@ class IOSIconTargetProcessor extends DarwinIconTargetProcessor {
   IOSIconTargetProcessor(
     super.source,
     String flavorName, {
+    super.badge,
     required super.config,
     required super.logger,
   }) : super(
-          flavorName: flavorName,
-          iconSet: _entries,
-          appIconPath: K.iOSAppIconPath,
-        );
+         flavorName: flavorName,
+         iconSet: _entries,
+         appIconPath: K.iOSAppIconPath,
+       );
 
   @override
   String toString() => 'IOSIconProcessor';

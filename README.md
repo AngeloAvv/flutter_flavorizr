@@ -115,7 +115,7 @@ flavorizr:
 | key                                     | type   | default                                                                                    | required | description                                                                                   |
 |:----------------------------------------|:-------|:-------------------------------------------------------------------------------------------|:---------|:----------------------------------------------------------------------------------------------|
 | app                                     | Object |                                                                                            | false    | An object describing the general capabilities of an app                                       |
-| badge                                   | Bool   | false                                                                                      | false    | Turns on the [badge](#icon-badge) of every flavor, unless a flavor says otherwise (configuration only for now) |
+| badge                                   | Bool   | false                                                                                      | false    | Turns on the [badge](#icon-badge) of every flavor, unless a flavor says otherwise |
 | icon                                    | String |                                                                                            | false    | The source icon of the [badges](#icon-badge) when a flavor has no `icon` of its own           |
 | flavors                                 | Array  |                                                                                            | true     | An array of items. Each of them describes a flavor configuration                              |
 | recipes                                 | Map    |                                                                                            | false    | Named lists of [instructions](#available-instructions): `default` is what runs without a target |
@@ -397,13 +397,6 @@ project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
 A badge is a band with the name of the flavor on its icon, to tell a `dev` build
 from a `prod` one at a glance.
 
-> **Configuration only, for now.** These keys are read and checked, and an
-> invalid `badge` fails the parsing of the configuration. The label, the colour
-> and the source icon are resolved by the APIs when they are called
-> (`FlavorizrConfig.badgeOf`, `resolveBadgeSourceIcon`); a valid `badge` does not
-> draw anything, nor choose a source icon, in a normal run until the rendering
-> lands.
-
 ```yaml
 badge: true                       # root default (default: false)
 flavors:
@@ -427,8 +420,27 @@ flavors:
 * There are no font or style options.
 * The source icon of a badge is the first of these that is 512 px or more: the
   `icon` of the flavor, the `icon` of the root, the larger of the `AppIcon` of
-  the iOS and the macOS project. When there is none, choosing it fails with a
-  hint to set `icon:`.
+  the iOS and the macOS project. When there is none, the run fails with a hint
+  to set `icon:`. A flavor with a badge has icons made for it even when it has
+  no `icon`.
+* The band is across the bottom of the icon, with the label in the `arial48`
+  bitmap font. It is drawn at each size of the icon, not scaled from a larger
+  one, on the Android legacy mipmaps, the iOS and macOS icon sets and the
+  Windows `.ico`. That font has no `…`: a label that was cut is drawn with `...`.
+* On Android, the band of an adaptive icon is on its foreground, inside the
+  safe zone (the 66 dp circle at the middle), so that no launcher mask cuts it.
+  The background and the monochrome layer are left as they are.
+* On Android only the icons made from a raster image are badged. A flavor
+  without an `adaptiveIcon` of its own is **not** badged, and a warning says
+  why, when `main` has `mipmap-anydpi-v26/ic_launcher.xml`: a device from
+  Android 8 shows that adaptive icon (its foreground may be a vector) instead of
+  the legacy mipmaps. Give the flavor a raster `adaptiveIcon`, or set
+  `badge: false`.
+* Changing the label or the colour makes the icons again on the next run, and
+  `badge: false` makes the icons of the `icon` without it. The icons of the
+  iOS, macOS and Windows flavors that have a badge and no `icon` stay in the
+  project when the badge goes: they are those of the 2.x processors, which do
+  not track what they write.
 
 #### customConfig and manifestPlaceholders (for Android only)
 
