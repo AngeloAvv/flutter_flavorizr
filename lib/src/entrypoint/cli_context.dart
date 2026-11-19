@@ -115,14 +115,19 @@ class CliContext {
   );
 
   /// The context of the real thing: the project is the working directory, and
-  /// the [processors] of the project run along with the ones of flavorizr.
+  /// the [processors] of the project run along with the ones of flavorizr, and
+  /// its [overrides] replace the ones that have their ids.
   factory CliContext.standard({
     required Logger logger,
     Iterable<FlavorizrProcessor> processors = const [],
+    Iterable<FlavorizrProcessor> overrides = const [],
   }) => CliContext(
     projectRoot: Directory.current,
     logger: logger,
-    registry: ProcessorRegistry.standard().withProcessors(processors),
+    registry: ProcessorRegistry.standard().withProcessors(
+      processors,
+      overrides: overrides,
+    ),
   );
 }
 

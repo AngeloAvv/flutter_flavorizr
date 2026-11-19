@@ -144,7 +144,7 @@ On top of the fields of `plan`:
 | Field | Type | |
 | --- | --- | --- |
 | `recipes` | `{name, builtIn, default, members, processors}[]` | The recipes: `members` is what the recipe lists (processors and other recipes), `processors` is what it stands for, with the nested recipes expanded. |
-| `processors` | `{id, platform, runsOn, needs, after}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after: both are empty for a `legacy` processor. |
+| `processors` | `{id, platform, runsOn, needs, after, overridden}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after: both are empty for a `legacy` processor. `overridden` is whether a processor of the project replaces the one of flavorizr (see `doc/cli.md`). |
 
 ### Examples
 
@@ -169,7 +169,7 @@ A `status` that is in sync:
 A `list`:
 
 ```json
-{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[]},{"id":"flutter:flavors","platform":"flutter","runsOn":"legacy","needs":[],"after":[]}],"warnings":[],"errors":[],"durationMs":8}
+{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[],"overridden":false},{"id":"flutter:flavors","platform":"flutter","runsOn":"legacy","needs":[],"after":[],"overridden":false}],"warnings":[],"errors":[],"durationMs":8}
 ```
 
 A command that fails before it got far, here a `plan` with an unknown target:

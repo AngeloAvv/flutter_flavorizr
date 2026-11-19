@@ -158,6 +158,7 @@ List<Map<String, Object?>> recipeFields(Iterable<RecipeListing> recipes) => [
 List<Map<String, Object?>> listedProcessorFields({
   required Iterable<String> ids,
   required Map<String, FlavorizrProcessor> engine,
+  Set<String> overridden = const {},
 }) => [
   for (final id in ids.toList()..sort())
     {
@@ -166,6 +167,7 @@ List<Map<String, Object?>> listedProcessorFields({
       'runsOn': engine.containsKey(id) ? 'engine' : 'legacy',
       'needs': _sorted(engine[id]?.dependsOn),
       'after': _sorted(engine[id]?.after),
+      'overridden': overridden.contains(id),
     },
 ];
 

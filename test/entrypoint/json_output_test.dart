@@ -650,6 +650,7 @@ void main() {
           'runsOn': 'legacy',
           'needs': <String>[],
           'after': <String>[],
+          'overridden': false,
         });
         expect(
           (processors.firstWhere(
