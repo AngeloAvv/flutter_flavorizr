@@ -61,7 +61,7 @@ void main() {
   });
 
   test(
-      'IOSDummyAssetsTargetsProcessor.execute generates dummy assets for every iOS flavor',
+      'IOSDummyAssetsTargetsProcessor.execute copies the launch image of every iOS flavor, and no icon',
       () {
     TestUtils.withTempDir((dir) async {
       final source = p.join(dir.path, 'source');
@@ -90,7 +90,7 @@ void main() {
         expect(
           Directory(p.join(destination, 'AppIcon-$flavorName.appiconset'))
               .existsSync(),
-          isTrue,
+          isFalse,
         );
         expect(
           Directory(

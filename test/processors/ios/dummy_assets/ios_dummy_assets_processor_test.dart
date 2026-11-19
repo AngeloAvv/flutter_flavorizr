@@ -46,11 +46,9 @@ void main() {
   });
 
   test(
-      'IOSDummyAssetsProcessor.execute copies AppIcon and LaunchImage asset sets into flavor-specific folders when dummy assets are enabled',
+      'IOSDummyAssetsProcessor.execute copies the LaunchImage set into a flavor-specific folder and no AppIcon set',
       () {
     TestUtils.withTempDir((dir) async {
-      final flavor = flavorizr.iosFlavors.values.first;
-
       final source = p.join(dir.path, 'source');
       final destination = p.join(dir.path, 'destination');
       Directory(source).createSync(recursive: true);
@@ -68,7 +66,6 @@ void main() {
         source,
         destination,
         'apple',
-        flavor.ios!,
         config: flavorizr,
         logger: logger,
       );
@@ -77,7 +74,7 @@ void main() {
 
       expect(
         Directory(p.join(destination, 'AppIcon-apple.appiconset')).existsSync(),
-        isTrue,
+        isFalse,
       );
       expect(
         Directory(p.join(destination, 'appleLaunchImage.imageset')).existsSync(),

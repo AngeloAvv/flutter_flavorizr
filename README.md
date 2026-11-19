@@ -130,7 +130,7 @@ flavorizr:
 | android:flavorizrGradle | Android       | Adds the flavors to the Android flavorizr.gradle file                   |
 | android:buildGradle     | Android       | Imports the Android flavorizr.gradle file into build.gradle file        |
 | android:androidManifest | Android       | Changes the reference of the app name in the AndroidManifest.xml        |
-| android:dummyAssets     | Android       | Generates some default icons for your custom flavors                    |
+| android:dummyAssets     | Android       | Does nothing now: a flavor with no `icon` uses the default icon         |
 | android:icons           | Android       | Creates a set of icons for each flavor according to the icon directive  |
 | flutter:flavors         | Flutter       | Generates lib/flavors.g.dart and, once, lib/flavors.dart               |
 | flutter:app             | Flutter       | Creates lib/app.dart if it does not exist (`flutter:scaffold`)          |
@@ -143,7 +143,7 @@ flavorizr:
 | ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
 | ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
-| ios:dummyAssets         | iOS           | Generates some default icons for your custom flavors                    |
+| ios:dummyAssets         | iOS           | Copies the launch image of each flavor (no dummy icons anymore)         |
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Sets the bundle name keys of Info.plist in place, keeping its format    |
 | ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
@@ -152,7 +152,7 @@ flavorizr:
 | macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:buildTargets      | macOS         | Creates a set of build targets for each flavor and build configuration  |
 | macos:schema            | macOS         | Creates a set of schemas for each flavor                                |
-| macos:dummyAssets       | macOS         | Generates some default icons for your custom flavors                    |
+| macos:dummyAssets       | macOS         | Does nothing now: a flavor with no `icon` uses the default `AppIcon`    |
 | macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
 | macos:plist             | macOS         | Sets the bundle name keys of Info.plist in place, keeping its format    |
 | linux:cmake             | Linux         | Sets the application ID for each flavor in CMakeLists.txt               |
@@ -161,7 +161,7 @@ flavorizr:
 | windows:mainCppTemplate | Windows       | Templates main.cpp into main.cpp.in so its window title can be set per flavor |
 | windows:runnerRcTemplate| Windows       | Templates Runner.rc into Runner.rc.in so its icon/window title can be set per flavor |
 | windows:cmake           | Windows       | Sets the icon/window title for each flavor in runner/CMakeLists.txt and builds the .in templates into the build directory with configure_file |
-| windows:dummyAssets     | Windows       | Generates a default icon for your custom flavors                        |
+| windows:dummyAssets     | Windows       | Does nothing now: a flavor with no `icon` uses `app_icon.ico`           |
 | windows:icons           | Windows       | Creates an icon for each flavor according to the icon directive          |
 
 #### android (under app)
@@ -202,7 +202,7 @@ flavorizr:
 | resValues           | Array  |         | false    | An array which contains a set of resValues configurations                  |
 | buildConfigFields   | Array  |         | false    | An array which contains a set of buildConfigFields configurations          |
 | customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig* |
-| generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)         |
+| generateDummyAssets | bool   | true    | false    | **Deprecated and ignored** (see Icons): it will be an error in 4.0 |
 | icon                | String |         | false    | The icon path for this android flavor                                      |
 | adaptiveIcon        | Array  |         | false    | An array which contains foreground, background, monochrome (optional) of adaptive icon   |
 
@@ -215,7 +215,7 @@ flavorizr:
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
 | variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
 | includes            | Array      | []      | false    | A list of xcconfig files to include in the generated xcconfig for this flavor                                 |
-| generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
+| generateDummyAssets | bool   | true    | false    | **Deprecated and ignored** (see Icons): it will be an error in 4.0 |
 | icon                | String     |         | false    | The icon path for this iOS flavor                                                                             |
 
 #### macos (under *flavorname*)
@@ -227,7 +227,7 @@ flavorizr:
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
 | variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
 | includes            | Array      | []      | false    | A list of xcconfig files to include in the generated xcconfig for this flavor                                 |
-| generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
+| generateDummyAssets | bool   | true    | false    | **Deprecated and ignored** (see Icons): it will be an error in 4.0 |
 | icon                | String     |         | false    | The icon path for this macOS flavor                                                                           | 
 
 #### linux (under *flavorname*)
@@ -240,7 +240,7 @@ flavorizr:
 
 | key                 | type   | default | required | description                                                         |
 |:--------------------|:-------|:--------|:---------|:---------------------------------------------------------------------|
-| generateDummyAssets | bool   | true    | false    | True if you want to generate a dummy icon (.ico) for this flavor     |
+| generateDummyAssets | bool   | true    | false    | **Deprecated and ignored** (see Icons): it will be an error in 4.0 |
 | icon                | String |         | false    | The icon path for this Windows flavor                                |
 
 #### firebase
@@ -374,6 +374,16 @@ flavorizr:
           - value: "Apple/release.xcconfig"
             target: release
 ```
+
+#### Icons
+
+A flavor with an `icon` (`app.icon`, or the `icon` of a platform) gets an icon
+set of its own. **A flavor with no `icon` gets nothing generated, and builds with
+the default icon of the project**: the `main` resources on Android,
+`AppIcon` on iOS and macOS, `app_icon.ico` on Windows. An icon you put in the
+project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
+`<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
+`generateDummyAssets` is deprecated and ignored.
 
 #### customConfig and manifestPlaceholders (for Android only)
 

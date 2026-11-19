@@ -250,7 +250,38 @@ void main() {
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_cmake), contains('"Cherry App"'));
+      // It has no icon: it builds with the app_icon.ico of the project.
+      expect(project.read(_cmake), isNot(contains('"cherry.ico"')));
+    });
+
+    test('a flavor with an icon of its own is built with it', () async {
+      project.write(
+        'flavorizr.yaml',
+        '${_config(['apple'])}'
+            '  cherry:\n    app:\n      name: Cherry\n    windows:\n'
+            '      icon: assets/cherry.png\n',
+      );
+
+      await project.run(['plan']);
+
+      // The icon is made by a processor that is not on the engine yet, which
+      // runs after this one: only the choice is checked here.
+      final code = await project.run(['apply', '--yes', 'windows:cmake']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_cmake), contains('"cherry.ico"'));
+      expect(project.read(_cmake), isNot(contains('"apple.ico"')));
+    });
+
+    test('a flavor whose icon is already in the project is built with it, '
+        'and the file is left alone', () async {
+      project.write('windows/runner/resources/apple.ico', 'MINE');
+
+      await project.run(['apply', '--yes', ..._fullRun]);
+
+      expect(project.read(_cmake), contains('"apple.ico"'));
+      expect(project.read(_cmake), isNot(contains('"banana.ico"')));
+      expect(project.read('windows/runner/resources/apple.ico'), 'MINE');
     });
 
     test('what the user writes outside the region is no drift and survives '

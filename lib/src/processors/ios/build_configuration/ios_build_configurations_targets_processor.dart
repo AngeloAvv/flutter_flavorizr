@@ -27,6 +27,8 @@ import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/build_configuration/darwin_build_configurations_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_icon_name.dart';
+import 'package:flutter_flavorizr/src/utils/constants.dart';
 
 class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
   IOSBuildConfigurationsTargetsProcessor(
@@ -43,11 +45,17 @@ class IOSBuildConfigurationsTargetsProcessor extends QueueProcessor {
                         project,
                         file,
                         flavorName,
-                        {}
-                          ..addAll(config.app?.ios != null
-                              ? config.app!.ios!.buildSettings
-                              : BuildSettingsMixin.iosDefaultBuildSettings)
-                          ..addAll(flavor.ios!.buildSettings),
+                        DarwinIconName.resolve(
+                          {}
+                            ..addAll(config.app?.ios != null
+                                ? config.app!.ios!.buildSettings
+                                : BuildSettingsMixin.iosDefaultBuildSettings)
+                            ..addAll(flavor.ios!.buildSettings),
+                          assetsPath: K.iOSAssetsPath,
+                          flavorName: flavorName,
+                          hasIcon:
+                              flavor.app.icon != null || flavor.ios?.icon != null,
+                        ),
                         config: config,
                         logger: logger,
                       ),

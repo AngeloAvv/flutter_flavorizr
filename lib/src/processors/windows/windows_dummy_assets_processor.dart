@@ -23,37 +23,18 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icon_target_processor.dart';
 
-/// Builds the default `.ico` for flavors that don't configure a custom icon,
-/// so every flavor still gets a distinct (if generic) taskbar icon. Gated per
-/// flavor by `Windows.generateDummyAssets` (from `DummyAssetsMixin`).
+/// Used to build a default `.ico` for each flavor with no icon.
+///
+/// It does nothing now: such a flavor builds with the `app_icon.ico` of the
+/// project, and an `.ico` that exists is the user's. The id `windows:dummyAssets`
+/// stays so that a recipe that names it still runs.
 class WindowsDummyAssetsProcessor extends QueueProcessor {
-  WindowsDummyAssetsProcessor(
-    String source, {
+  WindowsDummyAssetsProcessor({
     required super.config,
     required super.logger,
-  }) : super(
-          config.windowsFlavors
-              .where((_, flavor) =>
-                  flavor.app.icon == null &&
-                  flavor.windows?.icon == null &&
-                  (flavor.windows?.generateDummyAssets ?? true))
-              .map(
-                (flavorName, flavor) => MapEntry(
-                  flavorName,
-                  WindowsIconTargetProcessor(
-                    source,
-                    flavorName,
-                    config: config,
-                    logger: logger,
-                  ),
-                ),
-              )
-              .values,
-        );
+  }) : super(const []);
 
   @override
   String toString() => 'WindowsDummyAssetsProcessor';

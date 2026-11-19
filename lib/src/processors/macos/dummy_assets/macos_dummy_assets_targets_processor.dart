@@ -24,31 +24,17 @@
  */
 
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_assets_processor.dart';
 
+/// Used to copy a dummy `AppIcon-<flavor>.appiconset` for each flavor.
+///
+/// It does nothing now: a flavor with no `icon` builds with the `AppIcon` of the
+/// project (see `DarwinIconName`), and an appiconset that exists is the user's.
+/// The id `macos:dummyAssets` stays so that a recipe that names it still runs.
 class MacOSDummyAssetsTargetsProcessor extends QueueProcessor {
-  MacOSDummyAssetsTargetsProcessor(
-    String source,
-    String destination, {
+  MacOSDummyAssetsTargetsProcessor({
     required super.config,
     required super.logger,
-  }) : super(
-          config.macosFlavors
-              .map(
-                (flavorName, flavor) => MapEntry(
-                  flavorName,
-                  MacOSDummyAssetsProcessor(
-                    source,
-                    destination,
-                    flavorName,
-                    flavor.macos!,
-                    config: config,
-                    logger: logger,
-                  ),
-                ),
-              )
-              .values,
-        );
+  }) : super(const []);
 
   @override
   String toString() => 'MacOSDummyAssetsTargetsProcessor';

@@ -103,7 +103,15 @@ abstract final class WindowsRunnerCMakeListsEditor {
   /// Throws an [UnsupportedRunnerLayoutException] when [source] does not add the
   /// executable the way `flutter create` does, and a
   /// `MalformedResourceException` when the markers do not form a region.
-  static String withFlavors(String source, Map<String, String> windowTitles) {
+  ///
+  /// The flavors of [icons] have an `.ico` of their own, named after them: it
+  /// is the icon of the window. The others, which have none, keep the
+  /// `app_icon.ico` of the project. Without [icons] every flavor has one.
+  static String withFlavors(
+    String source,
+    Map<String, String> windowTitles, {
+    Set<String>? icons,
+  }) {
     windowTitles.forEach(WindowsTitleEncoding.check);
 
     var text = MarkedText(source, [marker]);
@@ -119,7 +127,11 @@ abstract final class WindowsRunnerCMakeListsEditor {
       end = _callEnd(text);
     }
 
-    return text.upsert(marker, _body(windowTitles), anchor: (_) => end);
+    return text.upsert(
+      marker,
+      _body(windowTitles, icons),
+      anchor: (_) => end,
+    );
   }
 
   /// Returns the content of [source] flavorizr owns, which is the region. It is
@@ -248,7 +260,10 @@ abstract final class WindowsRunnerCMakeListsEditor {
     return close;
   }
 
-  static List<String> _body(Map<String, String> windowTitles) {
+  static List<String> _body(
+    Map<String, String> windowTitles,
+    Set<String>? icons,
+  ) {
     final entries = windowTitles.entries.toList(growable: false);
 
     return [
@@ -262,7 +277,8 @@ abstract final class WindowsRunnerCMakeListsEditor {
       'if(DEFINED FLUTTER_APP_FLAVOR)',
       for (final (index, entry) in entries.indexed) ...[
         '  ${index == 0 ? 'if' : 'elseif'}(FLUTTER_APP_FLAVOR STREQUAL "${WindowsTitleEncoding.cmake(entry.key)}")',
-        '    set(RUNNER_APP_ICON "${WindowsTitleEncoding.cmake('${entry.key}.ico')}")',
+        if (icons == null || icons.contains(entry.key))
+          '    set(RUNNER_APP_ICON "${WindowsTitleEncoding.cmake('${entry.key}.ico')}")',
         '    set(WINDOW_TITLE_CPP "${WindowsTitleEncoding.cmake(WindowsTitleEncoding.cpp(entry.value))}")',
         '    set(WINDOW_TITLE_RC "${WindowsTitleEncoding.cmake(WindowsTitleEncoding.rc(entry.value))}")',
       ],

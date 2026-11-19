@@ -173,7 +173,11 @@ abstract class FlavorizrCommand extends Command<int> {
     );
 
     try {
-      return parser.parse();
+      final config = parser.parse();
+
+      config.deprecations.forEach(output.warn);
+
+      return config;
     } on Object catch (error) {
       final noConfiguration =
           error is ConfigurationNotFoundException ||

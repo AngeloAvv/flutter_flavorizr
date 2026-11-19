@@ -34,6 +34,7 @@ import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_t
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_rc_template_processor.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
+import 'package:path/path.dart' as p;
 
 /// Wires `FLUTTER_APP_FLAVOR` to a per-flavor icon and window title in
 /// `windows/runner/CMakeLists.txt`, and builds `Runner.rc` and `main.cpp` from
@@ -71,11 +72,31 @@ class WindowsRunnerCMakeListsPatchProcessor extends FlavorizrProcessor {
     }
 
     final (:text, :hasBom) = await WindowsRunnerText.read(file, path);
-    final patched = WindowsRunnerCMakeListsEditor.withFlavors(text, {
-      for (final MapEntry(key: name, value: flavor)
-          in ctx.config.windowsFlavors.entries)
-        name: flavor.app.name,
-    });
+    final patched = WindowsRunnerCMakeListsEditor.withFlavors(
+      text,
+      {
+        for (final MapEntry(key: name, value: flavor)
+            in ctx.config.windowsFlavors.entries)
+          name: flavor.app.name,
+      },
+      // A flavor has an icon of its own when it asks for one, or when the
+      // project already has it: it is the user's. Any other flavor builds with
+      // the `app_icon.ico` of the project.
+      icons: {
+        for (final MapEntry(key: name, value: flavor)
+            in ctx.config.windowsFlavors.entries)
+          if (flavor.app.icon != null ||
+              flavor.windows?.icon != null ||
+              File(
+                p.join(
+                  ctx.projectRoot.path,
+                  K.windowsIconsPath,
+                  '$name.ico',
+                ),
+              ).existsSync())
+            name,
+      },
+    );
 
     if (patched != text) {
       ctx.logger.detail('[$id] Patching `$path`');

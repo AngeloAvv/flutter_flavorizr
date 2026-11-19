@@ -23,36 +23,29 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/parser/models/flavors/darwin.dart';
-import 'package:flutter_flavorizr/src/processors/commons/dummy_assets_processor.dart';
+import 'package:flutter_flavorizr/src/processors/commons/copy_folder_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 
+/// Copies the `LaunchImage.imageset` that the launch screen of a flavor uses.
+///
+/// It used to copy a dummy `AppIcon-<flavor>.appiconset` too, which it does not
+/// anymore: a flavor with no `icon` builds with the `AppIcon` of the project
+/// (see `DarwinIconName`), and an appiconset that exists is the user's.
 class IOSDummyAssetsProcessor extends QueueProcessor {
   IOSDummyAssetsProcessor(
     String source,
     String destination,
-    String flavorName,
-    Darwin os, {
+    String flavorName, {
     required super.config,
     required super.logger,
-  }) : super(
-          [
-            DummyAssetsProcessor(
-              '$source/AppIcon.appiconset',
-              '$destination/AppIcon-$flavorName.appiconset',
-              os,
-              config: config,
-              logger: logger,
-            ),
-            DummyAssetsProcessor(
-              '$source/LaunchImage.imageset',
-              '$destination/${flavorName}LaunchImage.imageset',
-              os,
-              config: config,
-              logger: logger,
-            ),
-          ],
-        );
+  }) : super([
+         CopyFolderProcessor(
+           '$source/LaunchImage.imageset',
+           '$destination/${flavorName}LaunchImage.imageset',
+           config: config,
+           logger: logger,
+         ),
+       ]);
 
   @override
   String toString() => 'IOSDummyAssetsProcessor';

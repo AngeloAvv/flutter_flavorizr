@@ -283,8 +283,6 @@ class Processor extends AbstractProcessor<void> {
         logger: logger,
       ),
       'android:dummyAssets': () => AndroidDummyAssetsProcessor(
-        K.tempAndroidResPath,
-        K.androidSrcPath,
         config: flavorizr,
         logger: logger,
       ),
@@ -357,8 +355,6 @@ class Processor extends AbstractProcessor<void> {
         logger: logger,
       ),
       'macos:dummyAssets': () => MacOSDummyAssetsTargetsProcessor(
-        K.tempMacOSAssetsPath,
-        K.macOSAssetsPath,
         config: flavorizr,
         logger: logger,
       ),
@@ -411,7 +407,6 @@ class Processor extends AbstractProcessor<void> {
         logger: logger,
       ),
       'windows:dummyAssets': () => WindowsDummyAssetsProcessor(
-        K.tempWindowsIconPath,
         config: flavorizr,
         logger: logger,
       ),

@@ -23,115 +23,21 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
-
 import 'package:flutter_flavorizr/src/processors/windows/windows_dummy_assets_processor.dart';
-import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mason_logger/mason_logger.dart';
-import 'package:path/path.dart' as p;
 
 import '../../test_utils.dart';
 
 void main() {
-  late Logger logger;
-  late Directory originalDir;
+  test('WindowsDummyAssetsProcessor does nothing: a flavor with no icon uses '
+      'app_icon.ico', () async {
+    final processor = WindowsDummyAssetsProcessor(
+      config: TestUtils.parseFlavorizr('test_resources/pubspec'),
+      logger: TestUtils.quietLogger(),
+    );
 
-  final sourceFixture = p.absolute(
-    'test_resources/commons/image_resizer_processor_test/source.png',
-  );
+    expect(processor.processors, isEmpty);
 
-  String buildPubspecYaml() => '''
-name: flutterflavorizr_example
-publish_to: 'none'
-
-environment:
-  sdk: "<4.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-flavorizr:
-  flavors:
-    apple:
-      app:
-        name: "Apple App"
-      windows: {}
-
-    banana:
-      app:
-        name: "Banana App"
-      windows:
-        icon: '$sourceFixture'
-
-    cherry:
-      app:
-        name: "Cherry App"
-      windows:
-        generateDummyAssets: false
-
-flutter:
-  uses-material-design: true
-''';
-
-  setUp(() {
-    logger = TestUtils.quietLogger();
-    originalDir = Directory.current;
+    await processor.execute();
   });
-
-  tearDown(() {
-    Directory.current = originalDir;
-  });
-
-  test(
-    'Test WindowsDummyAssetsProcessor builds one WindowsIconTargetProcessor per flavor without a custom icon and with dummy assets enabled',
-    () {
-      TestUtils.withTempDir((dir) {
-        final pubspecPath = '${dir.path}/pubspec.yaml';
-        File(pubspecPath).writeAsStringSync(buildPubspecYaml());
-
-        final flavorizr = TestUtils.parseFlavorizr(
-          pubspecPath.replaceAll('.yaml', ''),
-        );
-
-        final processor = WindowsDummyAssetsProcessor(
-          sourceFixture,
-          config: flavorizr,
-          logger: logger,
-        );
-
-        // apple has no icon and generateDummyAssets defaults to true.
-        // banana has a custom icon, so it's excluded.
-        // cherry opted out of dummy assets, so it's excluded too.
-        expect(processor.processors.length, 1);
-      });
-    },
-  );
-
-  test(
-    'Test WindowsDummyAssetsProcessor writes the dummy .ico only for eligible flavors',
-    () async {
-      await TestUtils.withTempDir((dir) async {
-        final pubspecPath = '${dir.path}/pubspec.yaml';
-        File(pubspecPath).writeAsStringSync(buildPubspecYaml());
-
-        final flavorizr = TestUtils.parseFlavorizr(
-          pubspecPath.replaceAll('.yaml', ''),
-        );
-
-        Directory.current = dir;
-
-        await WindowsDummyAssetsProcessor(
-          sourceFixture,
-          config: flavorizr,
-          logger: logger,
-        ).execute();
-
-        expect(File('${K.windowsIconsPath}/apple.ico').existsSync(), isTrue);
-        expect(File('${K.windowsIconsPath}/banana.ico').existsSync(), isFalse);
-        expect(File('${K.windowsIconsPath}/cherry.ico').existsSync(), isFalse);
-      });
-    },
-  );
 }
