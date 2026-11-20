@@ -275,7 +275,7 @@ void main() {
       },
     );
 
-    test('does not take the schemes of macOS', () {
+    test('does not take the blocks of iOS in the schemes of macOS', () {
       write(
         golden,
         'macos/Runner.xcodeproj/xcshareddata/xcschemes/a.xcscheme',
@@ -394,6 +394,140 @@ void main() {
       );
 
       expect(clean('$open$close', '$open$preActions$partial$close'), isFalse);
+    });
+  });
+
+  group('the whitelist of the schemes of macOS, as it ships', () {
+    final whitelist = Whitelist.parse(
+      File('tool/parity/whitelist.yaml').readAsStringSync(),
+    );
+    const schemes = 'macos/Runner.xcodeproj/xcshareddata/xcschemes';
+    const preActions = '''
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Prepare Flutter Framework Script"
+               scriptText = "&quot;\$FLUTTER_ROOT&quot;/packages/flutter_tools/bin/macos_assemble.sh prepare&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+                     BuildableName = "Runner.app"
+                     BlueprintName = "Runner"
+                     ReferencedContainer = "container:Runner.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
+''';
+    const entries = '''
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+               BuildableName = "Runner.app"
+               BlueprintName = "Runner"
+               ReferencedContainer = "container:Runner.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+''';
+    const open = '''
+<Scheme
+   version = "1.3">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+''';
+
+    String close(String product) =>
+        '''
+   </BuildAction>
+   <LaunchAction
+      buildConfiguration = "Debug-apple">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+            BuildableName = "$product"
+            BlueprintName = "Runner"
+            ReferencedContainer = "container:Runner.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+</Scheme>
+''';
+
+    bool clean(String before, String after) {
+      write(golden, '$schemes/apple.xcscheme', before);
+      write(actual, '$schemes/apple.xcscheme', after);
+
+      return compareTrees(golden, actual, whitelist: whitelist).isClean;
+    }
+
+    final before = '$open${close('Runner.app')}';
+    final after = '$open$preActions$entries${close('Runner.app')}';
+
+    test('takes the pre-action and the build entry', () {
+      expect(clean(before, after), isTrue);
+    });
+
+    test('does not take another script', () {
+      expect(
+        clean(before, after.replaceAll('macos_assemble', 'evil')),
+        isFalse,
+      );
+    });
+
+    test('does not take the pre-action of iOS', () {
+      expect(
+        clean(
+          before,
+          after.replaceAll(
+            '&quot;\$FLUTTER_ROOT&quot;/packages/flutter_tools/bin/'
+                'macos_assemble.sh',
+            '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/'
+                'xcode_backend.sh&quot;',
+          ),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not take another product in the actions', () {
+      for (final product in ['other.app', 'parity_app.app']) {
+        expect(
+          clean(before, '$open$preActions$entries${close(product)}'),
+          isFalse,
+          reason: product,
+        );
+      }
+    });
+
+    test('does not take a Runner.app that only one side has', () {
+      expect(clean('$open${close('parity_app.app')}', after), isFalse);
+    });
+
+    test('does not take a change of a build configuration', () {
+      expect(clean(before, after.replaceAll('Debug-apple', 'Debug')), isFalse);
+    });
+
+    test('does not take a pre-action or an entry that is there twice', () {
+      for (final twice in [
+        '$open$preActions$preActions$entries${close('Runner.app')}',
+        '$open$preActions$entries$entries${close('Runner.app')}',
+      ]) {
+        expect(clean(before, twice), isFalse, reason: twice);
+      }
     });
   });
 

@@ -50,6 +50,7 @@ const _targets = [
   'ios:schema',
   'macos:xcconfig',
   'macos:configs',
+  'macos:schema',
   'ios:buildTargets',
   'macos:buildTargets',
   'ios:podfile',

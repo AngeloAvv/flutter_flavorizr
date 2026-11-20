@@ -45,6 +45,7 @@ const _fullRun = [
   'ios:schema',
   'macos:xcconfig',
   'macos:configs',
+  'macos:schema',
   'ios:buildTargets',
   'macos:buildTargets',
 ];

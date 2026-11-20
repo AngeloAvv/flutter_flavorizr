@@ -274,10 +274,11 @@ owned only while it has the value flavorizr gives it
 Flutter wrote is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
-## The schemes of the iOS flavors
+## The schemes of the iOS and macOS flavors
 
-`ios:schema` writes one scheme for each flavor,
-`ios/Runner.xcodeproj/xcshareddata/xcschemes/<flavor>.xcscheme`. A scheme is a
+`ios:schema` and `macos:schema` write one scheme for each flavor,
+`ios/Runner.xcodeproj/xcshareddata/xcschemes/<flavor>.xcscheme` and its macOS
+twin. A scheme is a
 file you, Xcode and Flutter all edit, so flavorizr owns two things only: that
 the file exists, and the `buildConfiguration` of its Launch, Test, Profile,
 Analyze and Archive actions (`Debug-<flavor>`, `Profile-<flavor>` and
@@ -299,8 +300,12 @@ the file are yours.
 
 The pre-action is added unless the `pubspec.yaml` turns Swift Package Manager
 off (`flutter: config: enable-swift-package-manager: false`). The global
-`flutter config` setting and the version of Xcode are not looked at. `macos:schema`
-still is a 2.x processor.
+`flutter config` setting and the version of Xcode are not looked at.
+
+The two differ in the script of the pre-action (`xcode_backend.sh prepare` on
+iOS, `macos_assemble.sh prepare` on macOS). Both build the app named after its
+target (`Runner.app`), which is what the configurations of the flavors build.
+macOS has no launch screen.
 
 ## Firebase
 
@@ -439,7 +444,7 @@ Android ones (`android:androidManifest`, `android:flavorizrGradle`,
 (`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`), the
 xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
 `macos:configs`), their build configurations (`ios:buildTargets` and
-`macos:buildTargets`), the schemes of iOS (`ios:schema`), the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
+`macos:buildTargets`), the schemes of Apple platforms (`ios:schema` and `macos:schema`), the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
 ones (`ios:plist` and `macos:plist`), the one of the IDEs (`ide:config`) and the Firebase
 ones (`android:firebase`, `ios:firebase` and `macos:firebase`). For these a run is previewed, checked
 against the lock, written atomically and recorded in `flavorizr.lock`.
