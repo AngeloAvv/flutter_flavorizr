@@ -78,7 +78,10 @@ Future<void> main() async {
   of the phases of the target, and a re-run does not change `project.pbxproj`
   (2.x made it again, with a random UUID, on every run). The phase of 2.x is
   replaced by it the first time. When no flavor of the platform has a
-  configuration any more, the phase is removed.
+  configuration any more, the phase that 3.0 made is removed.
+  **The phase of 2.x is not**: no lock names it, so it is not flavorizr's to remove. If you take every
+  `firebase` map out of a project before the first run of 3.0, delete the `Firebase Setup` build phase
+  of the `Runner` target by hand.
 
 ## Huawei AppGallery Connect
 

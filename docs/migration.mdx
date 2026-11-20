@@ -47,7 +47,7 @@ flavorized with 2.x keeps working: nothing it contains has to be thrown away.
   </Step>
 </Steps>
 
-On a project flavorized with 2.6.0 these steps end with `status` exiting with `0`.
+On a project flavorized with 2.6.0 these steps end with `status` exiting with `0`, provided the first `adopt` and `apply` are full runs: a project that keeps a [short recipe](#instructions-is-recipes) runs them with the target `all` once.
 
 ## The configuration
 
@@ -99,7 +99,21 @@ recipes:
 
 - **If `instructions` was the whole default list, or you did not set it, delete it.** The default recipe
   is `all`, which runs everything for the platforms that have flavors.
-- If it was a short list, copy it into `recipes.default`: the error prints it ready to paste.
+- If it was a short list, copy it into `recipes.default`: the error prints it ready to paste. **A run
+  of a short list is a partial run**, and a partial run does not record the flavors in
+  `flavorizr.lock`: only a run that covers every processor a full run covers does (`all`, minus the
+  platforms with no flavors, and the IDE and Firebase processors that have nothing to make). So
+  `status` keeps reporting the flavors as drift, even after `apply`, until you do one full run as the
+  baseline:
+
+  ```sh
+  dart run flutter_flavorizr plan all     # review what a full run would change
+  dart run flutter_flavorizr apply all
+  dart run flutter_flavorizr status       # in sync
+  ```
+
+  Keep the short recipe as `default` for the runs after that: they leave the flavors of the lock as they
+  are. The same goes for `adopt`: run `adopt all` (with no target, it adopts the default recipe).
 - Remove `assets:download`, `assets:extract` and `assets:clean`: the assets pipeline is gone.
 - The other ids are the same, and so is `google:firebase`, which is now a recipe of three processors.
   `flutter:app`, `flutter:pages` and `flutter:main` are **not** part of `all`: they are scaffold files.

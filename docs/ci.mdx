@@ -39,6 +39,11 @@ What you edit in a file flavorizr only patches (the manifest, `build.gradle`) is
 flavorizr owns is compared. The files of the `local` class (the run configurations of the IDEs, the
 Firebase copies) are never drift, so a fresh clone without `.idea/` is in sync.
 
+`status` checks what the run it is given would do, and without targets that is the default recipe: a
+`default` that lists fewer processors than `all` checks only those, and the flavors of the lock are
+recorded by a full run only (see [Recipes](/recipes#partial-runs)). Use `status all` in a pipeline when
+you want everything checked.
+
 `status` can only vouch for the processors that run on the engine: when some do not, it says
 `In sync, as far as the engine can tell` and lists the ones it did not check.
 

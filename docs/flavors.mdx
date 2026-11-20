@@ -34,7 +34,7 @@ flavors:
       bundleId: "com.example.pear"
 ```
 
-A run adds everything the flavor needs: the Android product flavor, the xcconfig files, build
+A run adds everything the flavor needs from the processors it runs: the Android product flavor, the xcconfig files, build
 configurations and scheme of Xcode, the mappings in the Podfile, the entries of the Flutter code and of the
 IDE configurations, and its icons when it has an `icon` or a [badge](/icons-and-badge). The flavors that
 already exist are not touched unless they changed.
@@ -73,6 +73,13 @@ edited asks before it is deleted.
   do not track what they write, so they cannot remove it: the schemes of macOS, the icon sets of iOS and macOS, and
   the Windows icons of a flavor you remove stay in the project, and you delete them.
 </Info>
+
+## Partial runs
+
+A run of fewer processors than a full one (a `default` recipe that is a short list, or targets such as
+`apply android`) changes the files of those processors only, and does **not** update the flavors of
+`flavorizr.lock`: only a run that covers every processor a full run covers records them. After you add or
+remove a flavor, finish with a full run (`apply all`), or `status` reports the flavors as drift.
 
 ## What flavorizr refuses
 

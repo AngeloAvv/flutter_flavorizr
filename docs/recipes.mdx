@@ -98,6 +98,16 @@ Everything that can be wrong with a recipe is reported before anything runs, wit
   built-in recipe, or like a processor;
 - a recipe name that is blank or has a `:`, which is reserved for the ids of the processors.
 
+## Partial runs
+
+A recipe that lists fewer processors than `all`, and a run with targets, are **partial runs**: they change
+the files of their processors and nothing else. The lock records the flavors only after a **full** run, one
+that covers every processor of `all` that the project has something to make (the platforms with no
+flavors, `ide:config` with no `ide` and the Firebase processors with no Firebase configuration are not
+counted). Until one has run, and after you add or remove a flavor with a partial one, `status` exits with
+`1` and reports the flavors as drift: run `apply all` to settle it. A `default` that is a short list is a
+fine way to run often, as long as `all` runs when the flavors change.
+
 ## Dependencies
 
 A processor declares the processors it **needs** (`dependsOn`) and the ones it only runs **after** when
