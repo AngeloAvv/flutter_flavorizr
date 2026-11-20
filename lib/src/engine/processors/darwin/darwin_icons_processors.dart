@@ -156,7 +156,7 @@ abstract class DarwinIconsProcessor extends FlavorizrProcessor {
         ..removeAll(pngs.keys);
 
       if (sizes.isNotEmpty) {
-        final image = await loadIconSource(ctx, source);
+        final image = await files.loadSource(source);
 
         for (final size in sizes) {
           pngs[size] = image.renderPng(size, size, badge: badge);

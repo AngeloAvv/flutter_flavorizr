@@ -134,7 +134,7 @@ class WindowsIconsProcessor extends FlavorizrProcessor {
       if (await files.keepIfUpToDate(path, inputs)) continue;
 
       if (!rendered.containsKey(key)) {
-        final image = await loadIconSource(ctx, source);
+        final image = await files.loadSource(source);
 
         rendered[key] = image.renderIco(sizes, badge: badge);
       }

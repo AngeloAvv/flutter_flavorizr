@@ -37,7 +37,6 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_adaptive_icon_xml.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_inputs.dart';
-import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:sprintf/sprintf.dart';
@@ -150,7 +149,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
       if (stale.isEmpty) return;
 
       final pngs = await _render(
-        ctx,
+        files,
         rendered,
         sourcePath,
         stale.values.map((file) => file.size),
@@ -263,7 +262,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
   /// The PNGs of [sizes] (squares) of the source at [path], from [rendered] or,
   /// for the sizes it does not hold yet, rendered and stored there.
   static Future<Map<int, Uint8List>> _render(
-    FlavorizrContext ctx,
+    GeneratedIcons files,
     Map<String, Map<int, Uint8List>> rendered,
     String path,
     Iterable<int> sizes, {
@@ -279,7 +278,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
     final missing = sizes.where((size) => !pngs.containsKey(size)).toList();
 
     if (missing.isNotEmpty) {
-      final source = await loadIconSource(ctx, path);
+      final source = await files.loadSource(path);
 
       for (final size in missing) {
         pngs[size] = source.renderPng(size, size, badge: badge, area: area);

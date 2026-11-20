@@ -429,6 +429,11 @@ void main() {
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.read('flavorizr.lock'), contains(appHash));
         expect(project.read('flavorizr.lock'), isNot(contains(pageHash)));
+        // What the user wrote is no baseline for a deletion: no hash at all.
+        expect(
+          project.read('flavorizr.lock'),
+          contains('lib/pages/my_home_page.dart:\n        ownership: scaffold'),
+        );
         expect(project.read('flavorizr.lock'), contains('schemaVersion: 2'));
         expect(project.read('lib/pages/my_home_page.dart'), '// mine\n');
       });

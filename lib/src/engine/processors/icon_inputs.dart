@@ -25,13 +25,16 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_flavorizr/src/badge/badge_renderer.dart';
 import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
+import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
+import 'package:path/path.dart' as p;
 
 /// The version of the way the icons are rendered, which is part of every inputs
 /// hash (see [iconInputs]).
@@ -85,21 +88,37 @@ String iconInputs({
 /// it was.
 final class GeneratedIcons {
   final FlavorizrContext _ctx;
+  final Map<String, Future<Uint8List>> _sources = {};
   final Map<String, Future<String>> _digests = {};
   final Map<String, ({List<int>? bytes, String? inputs})> _files = {};
 
   /// Creates the files of the run of the processor [_ctx] is for.
   GeneratedIcons(this._ctx);
 
-  /// The digest of the source image at [path], relative to the project.
+  /// The bytes of the source image at [path], relative to the project: read
+  /// once for the run, with the checks of `loadIconSource`, which throws what it
+  /// does for a file that is missing, too big or outside the project.
   ///
-  /// The image is read with the checks of `loadIconSource`, which throws what
-  /// it does for a file that is missing, too big or outside the project, and
-  /// once for every path: it is not decoded.
-  Future<String> sourceDigest(String path) => _digests.putIfAbsent(
-    path,
-    () async => digestOf(await readIconSourceBytes(_ctx, path)),
+  /// The digest ([sourceDigest]) and the decoded image ([loadSource]) are both
+  /// made from these bytes, so the hash that is recorded is the one of what was
+  /// rendered, even if the file changes while the run goes on.
+  Future<Uint8List> _bytesOf(String path) => _sources.putIfAbsent(
+    p.normalize(path),
+    () => readIconSourceBytes(_ctx, path),
   );
+
+  /// The digest of the source image at [path], relative to the project.
+  Future<String> sourceDigest(String path) => _digests.putIfAbsent(
+    p.normalize(path),
+    () async => digestOf(await _bytesOf(path)),
+  );
+
+  /// The source image at [path], decoded from the bytes [sourceDigest] hashed.
+  ///
+  /// Throws what `AndroidIconSource.decode` throws for bytes that are not an
+  /// image.
+  Future<AndroidIconSource> loadSource(String path) async =>
+      AndroidIconSource.decode(await _bytesOf(path), name: path);
 
   /// Whether the file at [path] is up to date with [inputs]: it was generated
   /// from them and nobody changed it (see `FlavorizrContext.isGeneratedFrom`).

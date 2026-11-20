@@ -38,6 +38,7 @@ import 'package:flutter_flavorizr/src/engine/processors/windows/windows_icons_pr
 import 'package:flutter_flavorizr/src/engine/recorded_output.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -418,6 +419,39 @@ ${badge ? '    badge: { label: DEV, color: "#E53935" }\n' : ''}    android:
         ),
         isNull,
       );
+    });
+  });
+
+  group('GeneratedIcons', () {
+    List<int> solid(int red) => img.encodePng(
+      img.Image(width: 8, height: 8)..clear(img.ColorRgb8(red, 0, 0)),
+    );
+
+    FlavorizrContext context() => FlavorizrContext(
+      config: FlavorizrConfig.parse(
+        'flavors:\n  apple:\n    app:\n      name: apple\n',
+      ),
+      root: shadow,
+      projectRoot: project,
+      logger: TestUtils.quietLogger(),
+      processorId: 'android:icons',
+    );
+
+    test('hashes and renders the same snapshot of a source that changes in '
+        'between, which is read once', () async {
+      writeSource('assets/a.png', solid(10));
+
+      final files = GeneratedIcons(context());
+      final digest = await files.sourceDigest('assets/a.png');
+
+      writeSource('assets/a.png', solid(200));
+
+      final image = await files.loadSource('assets/a.png');
+      final pixel = img.decodePng(image.renderPng(4, 4))!.getPixel(0, 0);
+
+      expect(pixel.r, 10);
+      expect(digest, digestOf(solid(10)));
+      expect(await files.sourceDigest('./assets/a.png'), digest);
     });
   });
 
