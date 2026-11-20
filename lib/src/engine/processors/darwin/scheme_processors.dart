@@ -176,13 +176,23 @@ abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
     final scheme = XCScheme.create();
     final container = 'container:${project.name}.xcodeproj';
 
-    BuildableReference reference(PBXNativeTarget target, String extension) =>
-        BuildableReference()..setReferenceTarget(
-          target.uuid,
-          '${target.productName ?? target.name}.$extension',
-          target.name!,
-          container,
-        );
+    // The product of the app is named after its target: `ios:buildTargets` and
+    // `macos:buildTargets` set `PRODUCT_NAME` of the configurations of the
+    // flavors to `$(TARGET_NAME)`, which is what the scheme builds. It is not
+    // the name of the product reference of the project, which is the one of the
+    // app on macOS (`my_app.app`) and is what the configurations of the flavors
+    // override.
+    BuildableReference reference(
+      PBXNativeTarget target,
+      String extension,
+    ) => BuildableReference()
+      ..setReferenceTarget(
+        target.uuid,
+        '${extension == 'app' ? target.name : target.productName ?? target.name}'
+        '.$extension',
+        target.name!,
+        container,
+      );
 
     SchemeEditor.setBuildConfigurations(scheme, flavor);
 
@@ -250,4 +260,33 @@ class IosSchemaProcessor extends DarwinSchemeProcessor {
 
   @override
   Map<String, Flavor> flavors(FlavorizrConfig config) => config.iosFlavors;
+}
+
+/// `macos:schema`: the schemes of the macOS flavors, in
+/// `macos/Runner.xcodeproj/xcshareddata/xcschemes`. See [DarwinSchemeProcessor].
+///
+/// It differs from `ios:schema` in the project it reads and in the script of the
+/// pre-action only. macOS has no launch screen, and no other part of a scheme
+/// depends on the platform.
+class MacosSchemaProcessor extends DarwinSchemeProcessor {
+  /// Creates the processor.
+  const MacosSchemaProcessor();
+
+  @override
+  String get id => 'macos:schema';
+
+  @override
+  Set<String> get after => const {'macos:buildTargets'};
+
+  @override
+  String get projectPath => XcodeprojResource.macosProject;
+
+  @override
+  ResourceKey<XcodeProject> get projectKey => XcodeprojResource.macosKey;
+
+  @override
+  PrepareScript get prepareScript => PrepareScript.macos;
+
+  @override
+  Map<String, Flavor> flavors(FlavorizrConfig config) => config.macosFlavors;
 }

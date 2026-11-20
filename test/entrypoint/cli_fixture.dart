@@ -25,6 +25,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/engine/step_observer.dart';
@@ -211,6 +212,9 @@ class CliFixture {
   /// The processors the commands know, the standard ones unless a test says so.
   ProcessorRegistry? registry;
 
+  /// The placeholder assets of 2.x, the real ones unless a test says so.
+  DummyAssets? dummyAssets;
+
   CliFixture({
     bool android = true,
     Iterable<String> flavors = const ['apple', 'banana'],
@@ -257,6 +261,7 @@ class CliFixture {
     environment: environment,
     sink: stdout,
     version: '3.0.0',
+    dummyAssets: dummyAssets,
   );
 
   /// Runs the command line [args] and returns its exit code.

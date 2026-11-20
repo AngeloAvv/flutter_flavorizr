@@ -27,6 +27,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
@@ -92,6 +93,9 @@ class CliContext {
   /// The version of flavorizr, which the lock records.
   final String version;
 
+  /// The placeholder assets 2.x wrote, which `adopt` recognises by hash.
+  final DummyAssets dummyAssets;
+
   /// Creates a context.
   CliContext({
     required this.projectRoot,
@@ -105,6 +109,7 @@ class CliContext {
     OutputEnvironment? environment,
     StringSink? sink,
     this.version = flavorizrVersion,
+    DummyAssets? dummyAssets,
   }) : terminal = terminal ?? const ConsoleConflictTerminal(),
        environment = environment ?? OutputEnvironment.current(),
        sink = sink ?? stdout,
@@ -112,6 +117,7 @@ class CliContext {
        _prompt = prompt,
        registry = registry ?? ProcessorRegistry.standard(),
        legacy = legacy ?? StandardLegacyPipeline(projectRoot),
+       dummyAssets = dummyAssets ?? DummyAssets.v2,
        flutterVersion = flutterVersion ?? probeFlutterVersion;
 
   Future<String> _askForText(

@@ -14,6 +14,7 @@ command has `--help`.
 | `apply [target...]` | Shows what would change, asks, and applies it. Writes `flavorizr.lock`. |
 | `plan [target...]` | The same preview, writing nothing: the processors that would run, with the ones they need marked `(auto)`, and the files that would be added (`+`), changed (`~`) or deleted (`-`), by platform. |
 | `status [target...]` | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. Exits with `1` on drift. |
+| `adopt [target...]` | Records a project flavorized with 2.x as the baseline of `flavorizr.lock` and writes nothing else, so that the next `plan` shows an ordinary diff. `--flavors a,b,c` names flavors the project had and `flavorizr.yaml` no longer has. See [adopting a 2.x project](adopt.md). |
 | `list` | The recipes (built-in and the ones of `flavorizr.yaml`) and the processors, with what each needs. |
 | `doctor` | Groovy or Kotlin build scripts, Xcode project layout, Pods, Flutter version, configuration and lock. |
 
@@ -274,10 +275,11 @@ last launch screen goes, it goes back to the storyboard the project had (kept
 in the xcconfig of the flavors as `DEFAULT_LAUNCH_SCREEN_NAME`), which is yours. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
-## The schemes of the iOS flavors
+## The schemes of the iOS and macOS flavors
 
-`ios:schema` writes one scheme for each flavor,
-`ios/Runner.xcodeproj/xcshareddata/xcschemes/<flavor>.xcscheme`. A scheme is a
+`ios:schema` and `macos:schema` write one scheme for each flavor,
+`ios/Runner.xcodeproj/xcshareddata/xcschemes/<flavor>.xcscheme` and its macOS
+twin. A scheme is a
 file you, Xcode and Flutter all edit, so flavorizr owns two things only: that
 the file exists, and the `buildConfiguration` of its Launch, Test, Profile,
 Analyze and Archive actions (`Debug-<flavor>`, `Profile-<flavor>` and
@@ -299,8 +301,12 @@ the file are yours.
 
 The pre-action is added unless the `pubspec.yaml` turns Swift Package Manager
 off (`flutter: config: enable-swift-package-manager: false`). The global
-`flutter config` setting and the version of Xcode are not looked at. `macos:schema`
-still is a 2.x processor.
+`flutter config` setting and the version of Xcode are not looked at.
+
+The two differ in the script of the pre-action (`xcode_backend.sh prepare` on
+iOS, `macos_assemble.sh prepare` on macOS). Both build the app named after its
+target (`Runner.app`), which is what the configurations of the flavors build.
+macOS has no launch screen.
 
 ## Firebase
 
@@ -439,7 +445,7 @@ Android ones (`android:androidManifest`, `android:flavorizrGradle`,
 (`flutter:flavors`, `flutter:app`, `flutter:pages` and `flutter:main`), the
 xcconfig ones of Apple platforms (`ios:xcconfig`, `macos:xcconfig` and
 `macos:configs`), their build configurations (`ios:buildTargets` and
-`macos:buildTargets`), the schemes of iOS (`ios:schema`), the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
+`macos:buildTargets`), the schemes of Apple platforms (`ios:schema` and `macos:schema`), the Podfile ones (`ios:podfile` and `macos:podfile`), the `Info.plist`
 ones (`ios:plist` and `macos:plist`), the one of the IDEs (`ide:config`) and the Firebase
 ones (`android:firebase`, `ios:firebase` and `macos:firebase`). For these a run is previewed, checked
 against the lock, written atomically and recorded in `flavorizr.lock`.

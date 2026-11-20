@@ -37,7 +37,6 @@ import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart
 import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_existing_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
@@ -280,11 +279,6 @@ class Processor extends AbstractProcessor<void> {
           config: flavorizr,
           logger: logger,
         ),
-        config: flavorizr,
-        logger: logger,
-      ),
-      'macos:schema': () => DarwinSchemasProcessor(
-        K.macOSRunnerProjectPath,
         config: flavorizr,
         logger: logger,
       ),

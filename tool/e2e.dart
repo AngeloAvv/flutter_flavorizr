@@ -35,9 +35,9 @@
 // 3. a flavor that is dropped from flavorizr.yaml is removed by `apply`, and a
 //    second `plan` has nothing to do again;
 // 4. the flavor that is left builds;
-// 5. on iOS, the build, which makes Flutter inject its Swift Package Manager
-//    pre-action into the schemes it finds without one, changes nothing for
-//    flavorizr, and the scheme of the flavor has that pre-action once.
+// 5. on iOS and macOS, the build, which makes Flutter inject its Swift Package
+//    Manager pre-action into the schemes it finds without one, changes nothing
+//    for flavorizr, and the scheme of the flavor has that pre-action once.
 //
 // On iOS the flavors have a launch screen (`launchScreen: true`), so the build
 // also compiles the storyboard and the image sets flavorizr generated, and the
@@ -178,16 +178,18 @@ Future<void> _e2e(String platform, Directory checkout) async {
 
     // Before Flutter had a chance to inject its own: it is flavorizr that made
     // the pre-action.
-    if (platform == 'ios') _expectOnePrepareAction(project, 'apple');
+    if (_prepareScripts.containsKey(platform)) {
+      _expectOnePrepareAction(project, platform, 'apple');
+    }
 
     _step('build apple');
     await _run(project, 'flutter', [..._build[platform]!, '--flavor', 'apple']);
 
-    if (platform == 'ios') {
-      _expectOnePrepareAction(project, 'apple');
+    if (_prepareScripts.containsKey(platform)) {
+      _expectOnePrepareAction(project, platform, 'apple');
       await _expectNothingToDo(project, 'the build');
       await _flavorizr(project, ['apply', '--yes']);
-      _expectOnePrepareAction(project, 'apple');
+      _expectOnePrepareAction(project, platform, 'apple');
     }
   } finally {
     workspace.deleteSync(recursive: true);
@@ -257,17 +259,28 @@ Future<void> _run(
 Future<void> _flavorizr(Directory project, List<String> arguments) =>
     _run(project, 'dart', ['run', 'flutter_flavorizr', ...arguments]);
 
+/// The script the pre-action of Flutter runs in the schemes of each platform
+/// that has them.
+const _prepareScripts = {
+  'ios': 'xcode_backend.sh',
+  'macos': 'macos_assemble.sh',
+};
+
 /// Fails unless the scheme of [flavor] runs the prepare script of Flutter once:
 /// flavorizr makes it with the pre-action, and Flutter adds none of its own
 /// when it finds it.
-void _expectOnePrepareAction(Directory project, String flavor) {
+void _expectOnePrepareAction(
+  Directory project,
+  String platform,
+  String flavor,
+) {
   final scheme = File(
     p.join(
       project.path,
-      'ios/Runner.xcodeproj/xcshareddata/xcschemes/$flavor.xcscheme',
+      '$platform/Runner.xcodeproj/xcshareddata/xcschemes/$flavor.xcscheme',
     ),
   ).readAsStringSync();
-  final count = 'xcode_backend.sh'.allMatches(scheme).length;
+  final count = _prepareScripts[platform]!.allMatches(scheme).length;
 
   if (count != 1) {
     _fail('The scheme of $flavor runs the prepare script $count times, not 1.');

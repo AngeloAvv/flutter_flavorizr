@@ -79,7 +79,7 @@ recipes:
       expect(project.logger.output, contains('ios:podfile [engine]'));
       expect(project.logger.output, contains('ios:buildTargets [engine]'));
       expect(project.logger.output, contains('ios:schema [engine]'));
-      expect(project.logger.output, contains('macos:schema [legacy]'));
+      expect(project.logger.output, contains('macos:schema [engine]'));
     });
 
     test('draws what a processor needs and what it runs after', () async {

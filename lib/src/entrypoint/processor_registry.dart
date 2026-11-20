@@ -174,7 +174,7 @@ class ProcessorRegistry {
   }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, build targets, launch screen, Podfile and Info.plist processors that were ported
+  /// xcconfig, build targets, schema, launch screen, Podfile and Info.plist processors that were ported
   /// run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
@@ -218,6 +218,14 @@ class ProcessorRegistry {
         paths: const {},
         ownedContent: {
           '${XcodeprojResource.iosProject}/xcshareddata/xcschemes/*.xcscheme':
+              SchemeEditor.ownedContent,
+        },
+      ),
+      EngineProcessor(
+        const MacosSchemaProcessor(),
+        paths: const {},
+        ownedContent: {
+          '${XcodeprojResource.macosProject}/xcshareddata/xcschemes/*.xcscheme':
               SchemeEditor.ownedContent,
         },
       ),

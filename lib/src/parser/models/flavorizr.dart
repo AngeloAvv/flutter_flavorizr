@@ -182,6 +182,25 @@ class FlavorizrConfig {
          (flavor) => flavor.macos?.firebase != null,
        );
 
+  /// This configuration with [flavors] instead of its own, and everything else
+  /// as it is: the root settings, the recipes, the fingerprints.
+  ///
+  /// Every field of the configuration is carried here, so that a field added to
+  /// the constructor is added to this one, and a copy never loses a root
+  /// setting.
+  FlavorizrConfig withFlavors(Map<String, Flavor> flavors) => FlavorizrConfig(
+    app: app,
+    badge: badge,
+    icon: icon,
+    launchScreen: launchScreen,
+    flavors: flavors,
+    ide: ide,
+    recipes: recipes,
+    defaultRecipe: defaultRecipe,
+    flavorFingerprints: flavorFingerprints,
+    deprecations: deprecations,
+  );
+
   /// The configuration of [json], with what is told from the document as a
   /// whole: the fingerprints of the flavors and the default recipe.
   factory FlavorizrConfig.fromJson(Map json) {
