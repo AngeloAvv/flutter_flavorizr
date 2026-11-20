@@ -37,7 +37,7 @@ import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/darwin/enums.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_icon_name.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_icon_name.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:path/path.dart' as p;
 

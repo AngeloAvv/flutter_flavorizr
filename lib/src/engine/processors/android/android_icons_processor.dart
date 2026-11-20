@@ -34,10 +34,9 @@ import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/android/android_adaptive_icon_xml.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
-import 'package:flutter_flavorizr/src/parser/models/flavors/android/adaptive_icon.dart';
-import 'package:flutter_flavorizr/src/processors/android/icons/android_generate_iclauncher_xml_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:sprintf/sprintf.dart';
@@ -226,7 +225,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
         outputs[sprintf(K.androidAdaptiveIconXmlPath, [
           flavor,
         ])] = Uint8List.fromList(
-          utf8.encode(_adaptiveIconXml(ctx, adaptiveIcon)),
+          utf8.encode(androidAdaptiveIconXml(adaptiveIcon)),
         );
       }
     }
@@ -281,13 +280,6 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
 
     return FileSystemEntity.isFileSync(ctx.resolveProject(path)) ? path : null;
   }
-
-  static String _adaptiveIconXml(FlavorizrContext ctx, AdaptiveIcon icon) =>
-      AndroidGenerateIclauncherXmlProcessor(
-        adaptiveIcon: icon,
-        config: ctx.config,
-        logger: ctx.logger,
-      ).execute();
 
   /// A flavor name becomes a directory, so it must be a single path segment:
   /// `../main` or `a/b` would write somewhere else in the project.

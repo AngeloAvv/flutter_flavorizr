@@ -33,10 +33,10 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/project_config_copy.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_file_reference.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart';
 
@@ -268,11 +268,10 @@ abstract class _AppleFirebaseProcessor extends FlavorizrProcessor {
     ctx.track(Artifact.local(path));
   }
 
-  void _ensureFileReference(XcodeProject project) =>
-      DarwinAddFileProcessor.addTo(
-        project,
-        flatPath('$runnerPath/GoogleService-Info.plist'),
-      );
+  void _ensureFileReference(XcodeProject project) => addFileToProject(
+    project,
+    flatPath('$runnerPath/GoogleService-Info.plist'),
+  );
 
   PBXNativeTarget _runner(XcodeProject project) =>
       project.targets.first as PBXNativeTarget;

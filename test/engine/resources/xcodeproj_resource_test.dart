@@ -35,7 +35,7 @@ import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_file_reference.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 
@@ -218,11 +218,11 @@ void main() {
         final report = await run([
           onIos(
             'test:first',
-            (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+            (project) => addFileToProject(project, 'one.xcconfig'),
           ),
           onIos(
             'test:second',
-            (project) => DarwinAddFileProcessor.addTo(project, 'two.xcconfig'),
+            (project) => addFileToProject(project, 'two.xcconfig'),
             after: {'test:first'},
           ),
         ]);
@@ -331,11 +331,11 @@ void main() {
       final report = await run([
         onIos(
           'test:first',
-          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          (project) => addFileToProject(project, 'one.xcconfig'),
         ),
         onIos(
           'test:second',
-          (project) => DarwinAddFileProcessor.addTo(project, 'two.xcconfig'),
+          (project) => addFileToProject(project, 'two.xcconfig'),
           error: StateError('boom'),
           after: {'test:first'},
         ),
@@ -354,7 +354,7 @@ void main() {
       final report = await run([
         onIos(
           'test:only',
-          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          (project) => addFileToProject(project, 'one.xcconfig'),
           error: StateError('boom'),
         ),
       ]);
@@ -368,11 +368,11 @@ void main() {
         'at the end', () async {
       final report = await run([
         onIos('test:first', (project) {
-          DarwinAddFileProcessor.addTo(project, 'one.xcconfig');
+          addFileToProject(project, 'one.xcconfig');
         }),
         _Unrelated('test:between', after: {'test:first'}),
         onIos('test:last', (project) {
-          DarwinAddFileProcessor.addTo(project, 'two.xcconfig');
+          addFileToProject(project, 'two.xcconfig');
         }, after: {'test:between'}),
       ]);
 
@@ -389,7 +389,7 @@ void main() {
             resolveExecutionPlan(
               [
                 onIos('test:first', (project) {
-                  DarwinAddFileProcessor.addTo(project, 'one.xcconfig');
+                  addFileToProject(project, 'one.xcconfig');
                 }),
                 _Unrelated(
                   'test:later',
@@ -421,7 +421,7 @@ void main() {
       final report = await run([
         onIos(
           'test:forgetful',
-          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          (project) => addFileToProject(project, 'one.xcconfig'),
           tracks: false,
         ),
       ]);
@@ -451,7 +451,7 @@ void main() {
       final report = await run([
         onIos(
           'test:ios',
-          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          (project) => addFileToProject(project, 'one.xcconfig'),
         ),
         onMacos('test:macos', (project) => project.targets.first.name),
       ]);
@@ -466,11 +466,11 @@ void main() {
       final report = await run([
         onIos(
           'test:ios',
-          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          (project) => addFileToProject(project, 'one.xcconfig'),
         ),
         onMacos(
           'test:macos',
-          (project) => DarwinAddFileProcessor.addTo(project, 'one.xcconfig'),
+          (project) => addFileToProject(project, 'one.xcconfig'),
         ),
       ]);
 
@@ -496,7 +496,7 @@ void main() {
                   onIos(
                     'test:ios',
                     (project) =>
-                        DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
+                        addFileToProject(project, 'a.xcconfig'),
                   ),
                 ],
                 requested: ['test:ios'],
@@ -541,13 +541,13 @@ void main() {
         await run([
           onIos(
             'test:a',
-            (project) => DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
+            (project) => addFileToProject(project, 'a.xcconfig'),
           ),
         ]);
         await run([
           onIos(
             'test:b',
-            (project) => DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
+            (project) => addFileToProject(project, 'a.xcconfig'),
           ),
         ]);
 
@@ -568,7 +568,7 @@ void main() {
                   onIos(
                     'test:ios',
                     (project) =>
-                        DarwinAddFileProcessor.addTo(project, 'a.xcconfig'),
+                        addFileToProject(project, 'a.xcconfig'),
                   ),
                 ],
                 requested: ['test:ios'],
