@@ -155,8 +155,8 @@ runs.
 
 | Runs on | Processors |
 | --- | --- |
-| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:schema`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
-| The 2.x pipeline | `ios:icons`, `ios:launchScreen`, `ios:dummyAssets`, `macos:schema`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
+| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:schema`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:schema`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
+| The 2.x pipeline | `ios:icons`, `ios:launchScreen`, `ios:dummyAssets`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
 
 The processors of the 2.x pipeline are not dropped: `apply` runs them **after** the engine, straight on
 the project. That means they have no preview in `plan`, no conflict detection, no lock entry and are not

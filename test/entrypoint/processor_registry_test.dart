@@ -79,6 +79,7 @@ void main() {
         'ios:schema',
         'macos:xcconfig',
         'macos:configs',
+        'macos:schema',
         'ios:buildTargets',
         'macos:buildTargets',
         'ios:podfile',
@@ -149,6 +150,7 @@ void main() {
           'ios:schema',
           'macos:xcconfig',
           'macos:configs',
+          'macos:schema',
           'ios:buildTargets',
           'macos:buildTargets',
           'ios:podfile',
@@ -200,10 +202,14 @@ void main() {
 </Scheme>
 ''';
       const path = 'ios/Runner.xcodeproj/xcshareddata/xcschemes';
+      const macosPath = 'macos/Runner.xcodeproj/xcshareddata/xcschemes';
 
-      test('of the scheme of any flavor', () {
-        for (final flavor in ['apple', 'banana']) {
-          final artifact = Artifact.patched('$path/$flavor.xcscheme');
+      test('of the scheme of any flavor, on iOS and on macOS', () {
+        for (final (dir, flavor) in [
+          for (final dir in [path, macosPath])
+            for (final flavor in ['apple', 'banana']) (dir, flavor),
+        ]) {
+          final artifact = Artifact.patched('$dir/$flavor.xcscheme');
 
           expect(
             registry.hash(artifact, _bytes(scheme)),
@@ -224,14 +230,15 @@ void main() {
         }
       });
 
-      test('and only in the schemes of the iOS project', () {
+      test('and only in the schemes of the iOS and macOS projects', () {
         final other = Artifact.patched(
-          'macos/Runner.xcodeproj/xcshareddata/'
+          'linux/Runner.xcodeproj/xcshareddata/'
           'xcschemes/apple.xcscheme',
         );
         final nested = Artifact.patched('$path/sub/apple.xcscheme');
+        final macosNested = Artifact.patched('$macosPath/sub/apple.xcscheme');
 
-        for (final artifact in [other, nested]) {
+        for (final artifact in [other, nested, macosNested]) {
           expect(
             registry.hash(artifact, _bytes(scheme)),
             isNot(
@@ -279,7 +286,7 @@ void main() {
     test('keeps every other 2.x instruction on the legacy pipeline', () {
       expect(registry.legacyIds, contains('huawei:agconnect'));
       expect(registry.legacyIds, isNot(contains('ios:schema')));
-      expect(registry.legacyIds, contains('macos:schema'));
+      expect(registry.legacyIds, isNot(contains('macos:schema')));
       expect(registry.legacyIds, contains('android:dummyAssets'));
       expect(registry.legacyIds, contains('windows:icons'));
       expect(registry.legacyIds, contains('windows:dummyAssets'));

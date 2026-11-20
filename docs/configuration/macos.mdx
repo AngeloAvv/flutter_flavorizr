@@ -53,7 +53,7 @@ flavors:
 | `macos:podfile` | Maps the build configurations of each flavor in the Podfile. | engine |
 | `macos:plist` | Sets `CFBundleName` of `Info.plist` in place. | engine |
 | `macos:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). | engine |
-| `macos:schema` | Creates a scheme for each flavor. | 2.x pipeline |
+| `macos:schema` | Creates a scheme for each flavor, keeping the edits made to it, which builds the app named after its target. See [The schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors). | engine |
 | `macos:icons` | Makes the icon set of each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
 | `macos:dummyAssets` | Does nothing now: a flavor with no `icon` uses the default `AppIcon`. | 2.x pipeline |
 

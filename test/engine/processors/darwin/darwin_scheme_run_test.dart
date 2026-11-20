@@ -28,7 +28,6 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
-import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';
 
@@ -381,16 +380,6 @@ void main() {
         'AnalyzeAction': 'Debug-citrus',
         'ArchiveAction': 'Release-citrus',
       });
-    });
-  });
-
-  group('the schemes of macOS', () {
-    test('still run on the legacy pipeline', () {
-      final registry = ProcessorRegistry.standard();
-
-      expect(registry.isEngine('ios:schema'), isTrue);
-      expect(registry.isEngine('macos:schema'), isFalse);
-      expect(registry.legacyIds, contains('macos:schema'));
     });
   });
 }
