@@ -228,7 +228,14 @@ Future<Adoption> adoptProject({
       final bytes = path == null ? null : _read(projectRoot, path);
 
       if (path == null || bytes == null) continue;
-      if (synthetic.any(path.startsWith)) continue;
+      // A folder (it ends with `/`) holds what is below it; a file is only
+      // itself: `apple.ico` is not a prefix of the file of `apple.ico2`.
+      if (synthetic.any(
+        (target) =>
+            target.endsWith('/') ? path.startsWith(target) : path == target,
+      )) {
+        continue;
+      }
 
       found.add(artifact);
       hashes[path] = hasher(artifact, bytes);

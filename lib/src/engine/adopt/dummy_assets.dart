@@ -83,7 +83,9 @@ final class DummyAssets {
       if (platform != null && !asset.startsWith('$platform/')) continue;
 
       for (final (from, to) in _placement) {
-        if (asset.startsWith(from)) {
+        // A folder (with the trailing `/`) holds what is below it; a file is
+        // only itself.
+        if (from.endsWith('/') ? asset.startsWith(from) : asset == from) {
           paths[to.replaceAll('{f}', flavor) + asset.substring(from.length)] =
               hash;
           break;

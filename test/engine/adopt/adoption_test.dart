@@ -571,6 +571,24 @@ void main() {
       expect(adoption.recorded['windows:icons'], [ico]);
     });
 
+    test('of a historical flavor do not hide the file of a flavor whose name '
+        'continues theirs', () async {
+      const configured = 'windows/runner/resources/apple.ico2.ico';
+
+      write(configured, 'my own icon');
+
+      final adoption = await adopt(
+        produced: {
+          'windows:icons': [const Artifact.managed(configured)],
+        },
+        windowsFlavors: ['apple', 'apple.ico2'],
+        historical: {'apple'},
+      );
+
+      expect(adoption.recorded['windows:icons'], [configured]);
+      expect(adoption.userOwned, isEmpty);
+    });
+
     test(
       'of a flavor with a name that is no folder is never looked for',
       () async {
