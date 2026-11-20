@@ -1,0 +1,91 @@
+---
+title: "Conflicts"
+description: "What happens when a run has to write over a file you edited, and how to answer."
+---
+
+A **conflict** is a file that a run has to change, and that was edited by hand since flavorizr last wrote
+it: writing it would lose your edit. flavorizr does not overwrite such a file without your say, when it is a
+`managed` or `patched` file. The `local` files (the run configurations of the IDEs, the copies of the Firebase
+and AppGallery Connect configurations) are never checked: a run writes them again whatever you changed in
+them. That holds for every processor, the generated icons of every platform included.
+
+## When a file is a conflict
+
+The lock holds a hash of what flavorizr wrote. A run compares it with the file on disk:
+
+| Owner | A conflict is... |
+| --- | --- |
+| `managed` | A file that is not what the lock recorded, when the run would write something else. A managed file that exists and that the lock does not know is one too: there is no telling it from a file you wrote, unless the project has files that only flavorizr makes (2.x), which a run [adopts as the baseline](/reference/adopt#the-first-run-without-a-lock) first. |
+| `patched` | The **owned part** of the file (the region, the keys, the objects flavorizr put in it) was edited since the last run. What you edit around it is not a conflict, and a patched file that the lock does not know yet is adopted by patching it. |
+| `scaffold` | Never, while a processor still makes it: it is created once and then it is yours, and `--overwrite-scaffold` is the only way to replace it. It is a conflict when a processor **stops** making it and the run would delete it: see [Deleting a file that is not made anymore](#deleting-a-file-that-is-not-made-anymore). |
+| `local` | Never: it is regenerated silently. |
+
+A file that already is what the run would write is not a conflict, whatever its history.
+
+Deleting is a change like any other: a generated file that you edited and that the run would delete,
+because its flavor was removed, is a conflict too.
+
+## Deleting a file that is not made anymore
+
+A processor that runs and no longer produces a file the lock attributes to it (a custom processor that stops
+writing a file, a flavor that goes, an `icon` that is removed) makes that file **stale**. A run proposes to
+delete it, and decides by what the lock recorded for it:
+
+| Owner | What the run does with a stale file |
+| --- | --- |
+| `managed` | Deletes it when it is still what the lock recorded, and asks (a conflict) when you edited it. |
+| `scaffold` | Deletes it **silently** when it is still exactly what flavorizr wrote, which the lock records as a hash. A scaffold you edited, one the lock has no hash for (it was yours before, or the lock is a version 1 one that never recorded it), is a **conflict**: the plan shows it as `- <file> (scaffold) [conflict]`. |
+| `patched` | **Released, not cleaned**: the file is not changed, the lock stops recording it, and the plan lists it under `Left in place (shared with you, no longer owned by flavorizr)`. What the processor put in it (its region, its keys) stays on disk: removing it, if the processor does that at all, is the work of the processor, as the built-in ones do for a flavor that goes. A patched file flavorizr created (a scheme) is the one exception: it is deleted like a managed one, see [Adding and removing flavors](/flavors#removing-a-flavor). |
+| `local` | Not in the lock, so never stale. The processor that wrote it removes it itself: the run configuration of a flavor that goes, and a copy of a service configuration while it is untouched. |
+
+A conflict of this kind is answered like any other: `o` deletes the file, `k` keeps it, and `--on-conflict=keep`
+leaves it. A kept file stays in the lock, so the next run asks again for as long as the processor runs and
+does not make it. Only the processors that run, and only the paths they declare (see [Custom processors](/extending/processors#what-a-custom-processor-gets-for-free)), are looked at: a partial run, a processor that the recipe does
+not name, or one that is not registered anymore (it is gone from `tool/flavorizr.dart`) leaves its files, and
+its lock entries, as they are. Delete them by hand if you do not need them.
+
+## Answering
+
+**On a terminal**, `apply` asks for each file:
+
+```text
+[o]verwrite / [k]eep / [d]iff / overwrite [a]ll:
+```
+
+- `o` replaces (or deletes) the file with what flavorizr wants;
+- `k` keeps your file, and the run goes on without it. The lock keeps what it recorded, so the file is
+  asked again next time;
+- `d` shows a diff of your file and what flavorizr would write, and asks again;
+- `a` overwrites this and every remaining conflict, after listing them and asking for a confirmation.
+
+**With no terminal** nothing can be asked, and a run that has a conflict fails with exit code `1`, with
+nothing written. `--yes` asks nothing either, on a terminal too: with it a conflict fails the run unless
+`--on-conflict` says what to do. Say it up front:
+
+```sh
+dart run flutter_flavorizr apply --yes --on-conflict=keep        # leave the files you edited
+dart run flutter_flavorizr apply --yes --on-conflict=overwrite   # replace them
+```
+
+`plan` shows every conflict before `apply` does, and exits with `1` when there is one:
+
+```text
+~ android/app/flavorizr.gradle.kts (managed) [conflict]
+```
+
+## Avoiding conflicts
+
+- Put your code where flavorizr leaves it alone. `lib/flavors.dart` is a scaffold made for it, and the
+  files you share with flavorizr (manifests, plists, `build.gradle`, the Podfile) keep whatever you write
+  outside of the parts it owns.
+- Do not edit `managed` files (`flavors.g.dart`, the xcconfig files of a flavor, `flavorizr.gradle`):
+  change `flavorizr.yaml` instead. For a setting in a generated xcconfig file, use `variables` and
+  `includes` ([iOS](/configuration/ios)), or `buildSettings`.
+- Commit `flavorizr.lock`, so that every checkout knows what flavorizr wrote.
+
+## Build settings of Xcode
+
+`ios:buildTargets` and `macos:buildTargets` edit build settings one by one, so the
+`DEVELOPMENT_TEAM` you pick in Xcode is never wiped. A setting that flavorizr owns and you edit by hand
+is a conflict, answered like any other. See
+[The build configurations of the flavors](/configuration/ios#the-build-configurations-of-the-flavors).

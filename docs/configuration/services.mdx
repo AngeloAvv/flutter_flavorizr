@@ -1,0 +1,164 @@
+---
+title: "Firebase, AppGallery and IDEs"
+description: "Per-flavor Firebase and AppGallery Connect configurations, and the run configurations of the IDEs."
+---
+
+## Firebase
+
+To enable Firebase in a flavor, give each platform of the flavor a `firebase` map with the path of the
+configuration file: `google-services.json` for Android, `GoogleService-Info.plist` for iOS and macOS.
+The path is read from the project, and has to stay inside it, links included.
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `config` | string | yes | The path of the Firebase configuration file. |
+
+The `firebase` map itself is optional, but when it is there it must have `config`: `firebase: {}` is an error.
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    android:
+      applicationId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/google-services.json"
+    ios:
+      bundleId: "com.example.apple"
+      firebase:
+        config: ".firebase/apple/GoogleService-Info.plist"
+  banana:
+    app:
+      name: "Banana App"
+    android:
+      applicationId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/google-services.json"
+    ios:
+      bundleId: "com.example.banana"
+      firebase:
+        config: ".firebase/banana/GoogleService-Info.plist"
+```
+
+`google:firebase` of 2.x is now three processors, one for each platform, that the recipes `firebase` and
+`google:firebase` run together: `android:firebase`, `ios:firebase` and `macos:firebase`. They only do
+something for the flavors that have a `firebase.config`.
+
+After running flavorizr, add the native dependencies of each platform: flavorizr only applies the
+configuration. You can take advantage of [flutterfire_cli](https://firebase.google.com/docs/flutter/setup)
+to do so. Ignore the `firebase_options.dart` file it generates, as it conflicts with the flavors
+configuration, and do not pass options when you initialize Firebase:
+
+```dart
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Do not pass the options here
+
+  runApp(const App());
+}
+```
+
+### What flavorizr does
+
+* The copy of each flavor (`android/app/src/<flavor>/google-services.json`,
+  `ios/Runner/<flavor>/GoogleService-Info.plist` and the macOS one) is *local*:
+  written again silently on every run, never a conflict or drift, and not hashed as
+  a file in `flavorizr.lock`. The lock keeps one thing about it, the hash of the
+  bytes that were copied, so that the copy goes with its flavor: when a flavor is
+  dropped, or loses its `firebase` map, its copy is deleted **only while it still
+  holds exactly those bytes**. A copy you edited, or one the lock does not know,
+  stays, and you delete it. The empty `Runner/GoogleService-Info.plist` the build
+  phase writes to is local too, and only made when the project has none: a build
+  that changes it, or a flavor you built, is not drift, and it is not removed
+  with a flavor, since it is the copy of none.
+* `ios/firebaseScript.sh` and `macos/firebaseScript.sh` are generated from the
+  flavors that have a configuration, so they are managed. A flavor that loses
+  its `firebase` is out of the script, and the script goes when none is left.
+* The `Firebase Setup` build phase of the Xcode project is **owned**: it has a
+  UUID that is the same on every run, so a run updates it in place, it is first
+  of the phases of the target, and a re-run does not change `project.pbxproj`
+  (2.x made it again, with a random UUID, on every run). The phase of 2.x is
+  replaced by it the first time. When no flavor of the platform has a
+  configuration any more, the phase that 3.0 made is removed.
+  **The phase of 2.x is not**: no lock names it, so it is not flavorizr's to remove. If you take every
+  `firebase` map out of a project before the first run of 3.0, delete the `Firebase Setup` build phase
+  of the `Runner` target by hand.
+
+## Huawei AppGallery Connect
+
+To enable AppGallery Connect in a flavor, give its `android` section an `agconnect` map with the path of
+`agconnect-services.json`.
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `config` | string | yes | The path of the AGConnect configuration file. |
+
+The `agconnect` map itself is optional, but when it is there it must have `config`.
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    android:
+      applicationId: "com.example.apple"
+      agconnect:
+        config: ".agconnect/apple/agconnect-services.json"
+  banana:
+    app:
+      name: "Banana App"
+    android:
+      applicationId: "com.example.banana"
+      agconnect:
+        config: ".agconnect/banana/agconnect-services.json"
+```
+
+The `huawei:agconnect` processor runs on the engine, like the Firebase ones. It copies the file of each
+flavor to `android/app/src/<flavor>/agconnect-services.json`. The copy is *local*, as the Firebase ones are:
+written again on every run, over whatever is there, and never a conflict or drift. A source that is missing
+fails the run (exit `70`) and writes nothing. The lock keeps the hash of what was copied, so the copy of a
+flavor you drop, or that loses its `agconnect`, is deleted along with it **only while it still holds exactly
+those bytes**: one you edited stays. Add the native dependencies of AppGallery Connect yourself: flavorizr only
+applies the configuration.
+
+## IDEs
+
+`ide` lists the IDEs to write run configurations for: `vscode`, `idea`, or both.
+
+```yaml
+ide: [vscode, idea]
+```
+
+`ide:config` writes what `ide` asks for. Everything it writes is *local*: the
+IDEs write to it, and git ignores `.idea/`, so it is written again silently on
+every run, is never recorded in `flavorizr.lock`, and is never a conflict or
+drift (`status` does not mention it, and a fresh clone without `.idea/` is in
+sync). That also means a change of yours in what it writes is lost at the next
+run, without a question.
+
+* `idea`: `.idea/runConfigurations/<flavor>.xml`, one file for each flavor,
+  written whole, every run: options you added to the run configuration of a
+  flavor are overwritten. The file of a flavor you drop is removed, and the
+  other files of the folder are yours.
+* `vscode`: `.vscode/launch.json` is created when there is none. When it exists
+  only the entries named after a flavor (`<flavor> Debug`, `<flavor> Profile`
+  and `<flavor> Release`) are added, replaced or, for a flavor you drop,
+  removed. An entry with one of those names is replaced by the one flavorizr
+  makes (when it differs from it), so options you added to it, **and the
+  comments inside it**, are lost, and the second entry of a name is deleted
+  with its comments. An entry that is the same as the one flavorizr makes is
+  not touched. The file is JSONC, as VS Code's own template is: the comments
+  outside those entries, the trailing commas, the layout and your other entries
+  stay as they are, and a new entry is laid out like the ones that are there. A
+  file that cannot be parsed (a syntax error, or a `configurations` that is not a
+  list) is left alone, with a warning that prints the entries to add by hand,
+  and the run goes on with exit code `0`. **Fix the syntax error first**: while
+  it is there VS Code cannot parse the file either, whatever you add to it. Then
+  run flavorizr again, which adds the entries of the flavors it misses, or add
+  the printed entries yourself. A flavor you dropped meanwhile is no longer
+  known as dropped once a run has updated the lock: remove its
+  `<flavor> Debug`, `<flavor> Profile` and `<flavor> Release` entries by hand.

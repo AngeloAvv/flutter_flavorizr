@@ -1,0 +1,131 @@
+---
+title: "Recipes"
+description: "Named lists of processors: what a run does, and how to change it."
+---
+
+A **processor** is one step of a run: `android:buildGradle` edits the Gradle script, `ios:xcconfig` writes
+the xcconfig files, and so on. A **recipe** is a named list of processors and of other recipes.
+
+Recipes replace the `instructions` of 2.x. `instructions` was a flat list that had to name every
+processor and every prerequisite of it. A recipe only names what you want: the processors it needs are
+pulled in, in the right order. See [Migration](/migration).
+
+## Targets
+
+The words you give a command (`plan`, `apply`, `status`) after its name are **targets**. A target is the
+name of a recipe or the id of a processor:
+
+```sh
+dart run flutter_flavorizr apply android              # the android recipe
+dart run flutter_flavorizr apply android:icons        # one processor
+dart run flutter_flavorizr apply android ios:icons    # both
+```
+
+Without a target the **default recipe** runs: the `default` recipe of `flavorizr.yaml` when it defines
+one, `all` otherwise. A target that is neither a recipe nor a processor is a usage error (exit code
+`64`).
+
+## The built-in recipes
+
+| Recipe | What it runs |
+| --- | --- |
+| `all` | `android`, `flutter`, `ios`, `macos`, `linux`, `windows`, `firebase`, `huawei:agconnect` and `ide`. The scaffold files are not part of it. |
+| `android` | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:dummyAssets`, `android:icons` |
+| `ios` | `ios:podfile`, `ios:xcconfig`, `ios:buildTargets`, `ios:schema`, `ios:dummyAssets`, `ios:icons`, `ios:plist`, `ios:launchScreen` |
+| `macos` | `macos:podfile`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:schema`, `macos:dummyAssets`, `macos:icons`, `macos:plist` |
+| `linux` | `linux:cmake`, `linux:runnerCmake`, `linux:myApplication` |
+| `windows` | `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `windows:dummyAssets`, `windows:icons` |
+| `flutter` | `flutter:flavors` |
+| `flutter:scaffold` | `flutter:app`, `flutter:pages`, `flutter:main`: the starting files of a new app |
+| `icons` | `android:icons`, `ios:icons`, `macos:icons`, `windows:icons` |
+| `firebase` | `android:firebase`, `ios:firebase`, `macos:firebase` |
+| `google:firebase` | The name of 2.x for `firebase` |
+| `ide` | `ide:config` |
+
+The recipe of a platform is skipped when no flavor is built for it: a project with only Android and iOS
+flavors runs nothing for macOS, Linux and Windows, and the run says so.
+
+`flavorizr list` prints every recipe, with what it contains and what it expands to, and every processor,
+with the processors it needs and the ones it runs after. `list --json` is the same for scripts.
+
+## Your own recipes
+
+`recipes` in `flavorizr.yaml` maps a name to a list of processor ids and recipes:
+
+```yaml title="flavorizr.yaml"
+recipes:
+  mobile:
+    - android
+    - ios
+    - flutter
+  icons-only:
+    - icons
+  default: mobile
+```
+
+```sh
+dart run flutter_flavorizr apply mobile
+dart run flutter_flavorizr apply        # the default: mobile
+```
+
+`default` is the recipe `flavorizr` runs when it is given no target. It is either the **name** of a recipe
+(`default: mobile`) or a list of its own:
+
+```yaml
+recipes:
+  default:
+    - android
+    - ios
+    - flutter
+```
+
+A recipe can name the processors of your own [tool/flavorizr.dart](/extending/processors), too:
+
+```yaml
+recipes:
+  release:
+    - all
+    - acme:sentry
+```
+
+Everything that can be wrong with a recipe is reported before anything runs, with exit code `65`:
+
+- a member that is neither a recipe nor a processor, with the hint to register the processor in
+  `tool/flavorizr.dart`;
+- recipes that contain each other in a cycle;
+- a recipe named like a command (`init`, `plan`, `apply`, `status`, `list`, `doctor`, `adopt`), like a
+  built-in recipe, or like a processor;
+- a recipe name that is blank or has a `:`, which is reserved for the ids of the processors.
+
+## Partial runs
+
+A recipe that lists fewer processors than `all`, and a run with targets, are **partial runs**: they change
+the files of their processors and nothing else. The lock records the flavors only after a **full** run, one
+that covers every processor of `all` that the project has something to make (the platforms with no
+flavors, `ide:config` with no `ide`, `ios:launchScreen` with no flavor that has a launch screen and the
+Firebase processors with no Firebase configuration are not counted). Until one has run, and after you add or remove a flavor with a partial one, `status` exits with
+`1` and reports the flavors as drift: run `apply all` to settle it. A `default` that is a short list is a
+fine way to run often, as long as `all` runs when the flavors change.
+
+## Dependencies
+
+A processor declares the processors it **needs** (`dependsOn`) and the ones it only runs **after** when
+they are part of the run. A needed processor is added to the run when it is missing, and shown with
+`(auto)` by `plan`. So `apply android:buildGradle` also runs `android:flavorizrGradle`, which writes
+the script it imports, and `apply flutter:main` runs `flutter:app`, `flutter:pages` and `flutter:flavors`.
+`flavorizr list` shows the edges.
+
+That is what 2.x lacked: leaving a prerequisite out of `instructions` broke the run. With recipes the
+engine resolves them.
+
+## The default of `init`
+
+On a new project, `init` can add `flutter:scaffold` to the configuration. It does so with a recipe:
+
+```yaml
+recipes:
+  start:
+    - all
+    - flutter:scaffold
+  default: start
+```

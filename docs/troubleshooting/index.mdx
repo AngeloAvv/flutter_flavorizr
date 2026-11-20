@@ -1,0 +1,25 @@
+---
+title: "Troubleshooting"
+description: "Fixes for the errors that a flavorized project may meet."
+---
+
+Two problems come from outside flavorizr, in the way Xcode, CocoaPods and Flutter work with the files
+it generates.
+
+* [Unable to load contents of file list](/troubleshooting/unable-to-load-contents-of-file-list):
+  Xcode fails to build a flavor after `pod install` ran before the project was flavorized.
+* [`appFlavor` is null from Xcode](/troubleshooting/app-flavor-null-from-xcode): the app launched
+  with the Run button of Xcode does not know its flavor.
+
+For problems with flavorizr itself, start with the checks it has:
+
+```sh
+dart run flutter_flavorizr doctor    # Groovy or Kotlin, Xcode project, Pods, Flutter version
+dart run flutter_flavorizr status    # does the project match flavorizr.yaml?
+dart run flutter_flavorizr plan -v   # what would change, and what every processor does
+```
+
+If none of them points at the cause, search the
+[issues](https://github.com/AngeloAvv/flutter_flavorizr/issues), or ask in the
+[Discussions](https://github.com/AngeloAvv/flutter_flavorizr/discussions). Issues opened as questions
+are closed automatically.

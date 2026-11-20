@@ -1,4 +1,7 @@
-# Adopting a project flavorized with 2.x
+---
+title: "Adopting a 2.x project"
+description: "What flavorizr adopt records, what it leaves alone, and its limits."
+---
 
 2.x left no `flavorizr.lock`, and it put no markers in most of what it wrote:
 the Podfile, the `Info.plist`, the manifest and the project file are plain
@@ -9,8 +12,8 @@ conflict.
 `adopt` solves this without touching the project:
 
 ```sh
-flutter pub run flutter_flavorizr adopt
-flutter pub run flutter_flavorizr plan
+dart run flutter_flavorizr adopt
+dart run flutter_flavorizr plan
 ```
 
 `adopt` runs the processors on a copy of the project to learn which files 3.x
@@ -43,10 +46,19 @@ specific to flavorizr counts: a project that was flavorized by hand has schemes,
 are yours, so a run asks about them as it always did. A project with none of the
 files above is a new one, and its first run is the one it always was.
 
-The baseline covers every processor of the default recipe, whatever the targets
-of the run, so a first `apply android:icons` leaves the project ready for the run
-of the rest. When one of them cannot read the project (a file it needs is
-missing), only the processors of the run are adopted, and the run says so.
+The baseline covers every processor of `all`, whatever the default recipe and the
+targets of the run, so a first `apply android:icons` leaves the project ready for
+the run of the rest. (The explicit `adopt` is not the same: with no target it adopts
+the default recipe, and records the flavors only when that covers every processor
+a full run covers.) When one of them cannot read the project (a file it needs is
+missing), only the processors of the run are adopted, and the run says so. When even
+those cannot read it, the run fails with the error of the processor, as a failed
+processor does, and writes nothing.
+
+The baseline lives in memory until the lock is written. If the run that writes it fails after the files were
+written (see [what a retry does not restore](/concepts#plan-and-apply)), there is still no lock, and the next
+run adopts the project again from the files on disk, which now hold what the failed run wrote: it has nothing
+left to change, no conflict, and writes the lock.
 
 A lock that exists is never replaced by an adoption, whatever it records. A
 project whose lock was lost is read the same way: the files that are there are
@@ -57,7 +69,7 @@ the baseline.
 For every file the processors of the default recipe (or of the `target`s you
 give) make, and the project has:
 
-* a file flavorizr generates whole (`flavors.dart`, `flavorizr.gradle(.kts)`, the
+* a file flavorizr generates whole (`flavors.g.dart`, `flavorizr.gradle(.kts)`, the
   xcconfigs of the flavors) is recorded with the hash of what is on disk;
 * a file that is shared with you (the marked blocks of `build.gradle`, the keys
   of the manifest and of the `Info.plist`, the Podfile) is recorded with the
@@ -69,23 +81,23 @@ configurations of the IDEs are regenerated silently: neither is recorded.
 
 ### The dummy icons
 
-2.x copied dummy launcher icons and app icons for a flavor. 3.x does not make them: a flavor
-with no icon uses the default icon of the project. `adopt` recognises them by
+2.x copied dummy launcher icons, app icons and `.ico` files for a flavor. 3.x does not make them: a flavor
+with no icon uses the default icon of the project, or the one the project already has for it. `adopt` recognises them by
 comparing each file with a table of the hashes of the dummy assets of 2.x:
 
 * a file that still has the bytes 2.x wrote is **managed**: it is recorded, and
   since 3.x no longer makes it, the next `plan` proposes to delete it;
 * a file that has other bytes is **yours**: it is not recorded, it is listed as
-  such, and no run deletes or overwrites it.
+  `Yours, left alone: <path>`, and no run deletes it or overwrites it without asking (a flavor that gets an `icon` or a badge finds it in the way, which is a [conflict](/conflicts)).
 
-This covers the Android icons (`android/app/src/<flavor>/res/mipmap-*`) and the
+This covers the Android icons (`android/app/src/<flavor>/res/mipmap-*`), the
 iOS and macOS app icons (`ios/Runner/Assets.xcassets/AppIcon-<flavor>.appiconset`
-and the one of macOS). The launch images and storyboards of 2.x are not icons:
-they are **yours**, as `ios:launchScreen` treats them. `adopt` lists them
+and the one of macOS) and the Windows icon (`windows/runner/resources/<flavor>.ico`). The launch images and storyboards of 2.x are not icons:
+they are **yours**, as `ios:launchScreen` treats them (see [the launch screen](/configuration/ios#what-2x-made-is-yours)). `adopt` lists them
 (`ios/Runner/<flavor>LaunchScreen.storyboard` and
 `ios/Runner/Assets.xcassets/<flavor>LaunchImage.imageset/`), records none, and no
 run deletes them, not even when the flavor goes. The run that deletes the dummy
-set of a flavor also points the flavor at the `AppIcon` of the project.
+set of a flavor also points the flavor at the `AppIcon` of the project (and at `app_icon.ico` on Windows).
 
 ## The Xcode projects
 
@@ -108,7 +120,7 @@ is not recorded: `apply` makes it.
 ## Flavors that are not in `flavorizr.yaml` anymore
 
 The flavors in `flavorizr.yaml` (and the ones of `--flavors`) are recorded in the
-lock only when `adopt` covers every processor of the engine that a full run
+lock only when `adopt` covers every processor that a full run
 covers. An `adopt` limited to targets, such as `adopt android:icons`, or one
 whose default recipe leaves processors out, records the files of the processors
 it ran and no flavor names, and says so. A flavor you removed from
@@ -120,7 +132,7 @@ a file it does not know.
 When you know such a flavor, name it:
 
 ```sh
-flutter pub run flutter_flavorizr adopt --flavors cherry,lemon
+dart run flutter_flavorizr adopt --flavors cherry,lemon
 ```
 
 A name that `flavorizr.yaml` already has (case aside) is an error, with exit code

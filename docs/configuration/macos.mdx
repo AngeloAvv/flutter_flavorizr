@@ -1,0 +1,84 @@
+---
+title: "macOS"
+description: "The macos keys of flavorizr.yaml and how flavorizr changes the Xcode project."
+---
+
+A flavor with a `macos` section is built for macOS. flavorizr works on `macos/Runner.xcodeproj` the same
+way it does on the iOS one: xcconfig files, build configurations, a scheme, the Podfile and
+`Info.plist`. The pages [iOS](/configuration/ios) and this one share their keys, and the rules of the
+[Podfile](/configuration/ios#the-podfile) and of the [`Info.plist`](/configuration/ios#the-infoplist-of-the-platforms)
+apply to both.
+
+## `app.macos`
+
+What every macOS flavor starts from, under the root `app` key.
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `buildSettings` | map | | [Xcode build settings](https://xcodebuildsettings.com) that every flavor gets. They are added to the defaults below. |
+| `includes` | list | `[]` | xcconfig files to include in every macOS flavor. |
+
+The settings every flavor starts from are `ASSETCATALOG_COMPILER_APPICON_NAME`, `LD_RUNPATH_SEARCH_PATHS`
+(`$(inherited) @executable_path/../Frameworks`), `SWIFT_VERSION` (`5.0`), `FRAMEWORK_SEARCH_PATHS`,
+`LIBRARY_SEARCH_PATHS` and `INFOPLIST_FILE`.
+
+## `flavors.<name>.macos`
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `bundleId` | string | yes | The bundle identifier of the macOS app. |
+| `buildSettings` | map | `{}` | Build settings of this flavor, over the ones of `app.macos`. |
+| `variables` | map | | Variables of the xcconfig files of the flavor, as for [iOS](/configuration/ios#variables). |
+| `includes` | list | `[]` | xcconfig files to include, as for [iOS](/configuration/ios#includes). |
+| `icon` | string | | The icon of this flavor for macOS. See [Icons and badge](/icons-and-badge). |
+| `firebase` | map | | A Firebase configuration: see [Firebase](/configuration/services#firebase). |
+| `generateDummyAssets` | bool | `true` | **Deprecated and ignored**: remove it. It will be an error in 4.0. |
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    macos:
+      bundleId: "com.example.apple"
+```
+
+## The processors
+
+| Processor | What it does |
+| --- | --- |
+| `macos:xcconfig` | Writes the xcconfig files of each flavor in `macos/Flutter`. |
+| `macos:configs` | Writes the xcconfig files of each flavor in `macos/Runner/Configs` and adds references to them to the project. |
+| `macos:buildTargets` | Adds the build configurations of each flavor to the project and to its first target. |
+| `macos:podfile` | Maps the build configurations of each flavor in the Podfile. |
+| `macos:plist` | Sets `CFBundleName` of `Info.plist` in place. |
+| `macos:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). |
+| `macos:schema` | Creates a scheme for each flavor, keeping the edits made to it, which builds the app named after its target. See [The schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors). |
+| `macos:icons` | Makes `AppIcon-<flavor>.appiconset` for each flavor that has an `icon` or a [badge](/icons-and-badge#ios-and-macos), and removes the one of a flavor that has neither anymore. |
+| `macos:dummyAssets` | Does nothing: a flavor with no `icon` and no badge uses the default `AppIcon`, unless the project already has an `AppIcon-<flavor>.appiconset` that flavorizr did not generate: the flavor then uses that set. It stays so that a recipe that names it runs. |
+
+## Running a flavor
+
+Run a flavor from the terminal with the name of its scheme, which is the name of the flavor:
+
+```sh
+flutter run -d macos --flavor apple
+flutter build macos --flavor apple
+```
+
+or from Xcode, by selecting the scheme of the flavor and pressing play. flavorizr creates a scheme named after
+each flavor and the build configurations `Debug-<flavor>`, `Profile-<flavor>` and `Release-<flavor>`, which
+are the names Flutter looks for with `--flavor`. The default `LD_RUNPATH_SEARCH_PATHS` of a macOS flavor is
+`$(inherited) @executable_path/../Frameworks`, so the terminal needs no setting of yours. Both commands
+were run on a project flavorized with flavorizr with Flutter 3.47.9.
+
+If `appFlavor` is `null` when you launch from Xcode, see
+[appFlavor is null from Xcode](/troubleshooting/app-flavor-null-from-xcode).
+
+## The xcconfig files, the build configurations and the Podfile
+
+They work as they do for iOS: see
+[the xcconfig files](/configuration/ios#the-xcconfig-files-of-the-flavors),
+[the build configurations](/configuration/ios#the-build-configurations-of-the-flavors) and
+[the Podfile](/configuration/ios#the-podfile). The xcconfig files of macOS are in `macos/Flutter` and in
+`macos/Runner/Configs`.

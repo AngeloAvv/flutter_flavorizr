@@ -43,10 +43,10 @@ String _config({String root = '', Map<String, String> flavors = const {}}) => [
   ],
 ].join('\n');
 
-/// The first YAML example of the section `Icon badge` of a README.
+/// The first YAML example of the section `Icon badge` of a docs page.
 String _badgeExampleOf(String readme) {
   final text = readme.replaceAll('\r\n', '\n');
-  final section = text.substring(text.indexOf('#### Icon badge'));
+  final section = text.substring(text.indexOf('## Icon badge'));
 
   return RegExp(
     r'```yaml\n(.*?)```',
@@ -182,15 +182,17 @@ void main() {
     });
   });
 
-  test('finds the example in a README with either line ending', () {
-    const lf = '#### Icon badge\n\n```yaml\nbadge: true\n```\n';
+  test('finds the example in a docs page with either line ending', () {
+    const lf = '## Icon badge\n\n```yaml\nbadge: true\n```\n';
 
     expect(_badgeExampleOf(lf), 'badge: true\n');
     expect(_badgeExampleOf(lf.replaceAll('\n', '\r\n')), 'badge: true\n');
   });
 
-  test('the example of the README parses, and means what it says', () {
-    final example = _badgeExampleOf(File('README.md').readAsStringSync());
+  test('the example of the docs page parses, and means what it says', () {
+    final example = _badgeExampleOf(
+      File('docs/icons-and-badge.mdx').readAsStringSync(),
+    );
 
     final config = FlavorizrConfig.parse(example);
 

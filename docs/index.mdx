@@ -1,0 +1,77 @@
+---
+title: "flutter_flavorizr"
+description: "Flavors for Flutter projects: Android, iOS, macOS, Linux and Windows, declared in one file and kept in sync with the project."
+---
+
+Setting up flavors by hand means touching a dozen files per platform: Gradle scripts, Xcode build
+configurations, schemes, xcconfig files, plists, CMake lists, launcher icons, and then doing it again
+for every flavor you add, rename or drop.
+
+`flutter_flavorizr` turns that into a declaration. You describe the flavors of the app in
+`flavorizr.yaml`, and flavorizr makes the project match: it shows what it would change, applies it
+atomically, and remembers what it generated in `flavorizr.lock`, so that running it again is safe and
+removing a flavor from the yaml removes it from the project.
+
+```yaml title="flavorizr.yaml"
+flavors:
+  dev:
+    app:
+      name: "My App Dev"
+    android:
+      applicationId: "com.example.app.dev"
+    ios:
+      bundleId: "com.example.app.dev"
+  prod:
+    app:
+      name: "My App"
+    android:
+      applicationId: "com.example.app"
+    ios:
+      bundleId: "com.example.app"
+```
+
+```sh
+dart run flutter_flavorizr plan    # what would change, nothing is written
+dart run flutter_flavorizr apply   # do it
+flutter run --flavor dev
+```
+
+## Features
+
+- **Five platforms**: Android, iOS, macOS, Linux and Windows, plus the Dart code that uses the flavors
+- **Declarative**: the yaml is the desired state, `flavorizr.lock` the applied one, the disk is reality
+- **Safe to re-run**: runs are idempotent, and what you edit by hand in shared files (manifests,
+  plists, `build.gradle`, the Podfile) is left alone
+- **Plan and apply**: every run goes through a shadow copy of the project, which gives dry runs,
+  diffs and writes that are all or nothing in practice
+- **Removes what it made**: drop a flavor from the yaml and its files, configurations, schemes and icons go,
+  and what you made yourself stays: see [Adding and removing flavors](/flavors#removing-a-flavor)
+- **Conflicts, not overwrites**: a generated file you edited is reported, and you choose what wins. It holds
+  for the managed and patched files, not for local files such as the IDE run configurations: see
+  [Concepts](/concepts#file-ownership)
+- **Adopts what 2.x made**: a project flavorized with 2.x is taken as the baseline on its first run, with no
+  conflicts: see [Migration](/migration)
+- **Icons and badge**: per-flavor launcher icons, with an optional band that names the flavor
+- **Recipes**: named lists of steps, instead of a flat list of instructions
+- **CI friendly**: `status` fails on drift, every command has stable exit codes, and `plan`, `apply`, `status` and `list` print `--json`
+- **Extensible**: custom processors run in the same pipeline from `tool/flavorizr.dart`
+- **Pure Dart**: it runs with `dart run`, needs no Ruby and downloads nothing
+
+## Installation
+
+```sh
+flutter pub add --dev flutter_flavorizr
+```
+
+<Info>
+  flavorizr changes native files of your project. Commit your work before the first run, and review
+  the result of `plan` before `apply`.
+</Info>
+
+## Where to go next
+
+- [Getting started](/getting-started) goes from an empty project to a running flavor
+- [Core concepts](/concepts) explains the yaml, the lock and the disk, plan and apply, and file ownership
+- [Configuration](/configuration) is the reference of every key, one page per platform
+- [Migration](/migration) moves a project flavorized with 2.x to 3.0
+- [Extending](/extending/processors) adds your own steps to a run

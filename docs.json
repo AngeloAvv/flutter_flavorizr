@@ -1,0 +1,156 @@
+{
+  "$schema": "https://docs.page/schema.json",
+  "name": "flutter_flavorizr",
+  "description": "Flavors for Flutter projects: Android, iOS, macOS, Linux and Windows, declared in one file and kept in sync with the project.",
+  "theme": {
+    "primary": "#0175C2"
+  },
+  "social": {
+    "github": "https://github.com/AngeloAvv/flutter_flavorizr"
+  },
+  "sidebar": [
+    {
+      "group": "Overview",
+      "pages": [
+        {
+          "title": "Introduction",
+          "href": "/"
+        },
+        {
+          "title": "Getting started",
+          "href": "/getting-started"
+        },
+        {
+          "title": "Core concepts",
+          "href": "/concepts"
+        }
+      ]
+    },
+    {
+      "group": "Configuration",
+      "pages": [
+        {
+          "title": "Overview",
+          "href": "/configuration"
+        },
+        {
+          "title": "Android",
+          "href": "/configuration/android"
+        },
+        {
+          "title": "iOS",
+          "href": "/configuration/ios"
+        },
+        {
+          "title": "macOS",
+          "href": "/configuration/macos"
+        },
+        {
+          "title": "Linux",
+          "href": "/configuration/linux"
+        },
+        {
+          "title": "Windows",
+          "href": "/configuration/windows"
+        },
+        {
+          "title": "Flutter code",
+          "href": "/configuration/flutter"
+        },
+        {
+          "title": "Firebase, AppGallery and IDEs",
+          "href": "/configuration/services"
+        }
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        {
+          "title": "Recipes",
+          "href": "/recipes"
+        },
+        {
+          "title": "Adding and removing flavors",
+          "href": "/flavors"
+        },
+        {
+          "title": "Conflicts",
+          "href": "/conflicts"
+        },
+        {
+          "title": "Icons and badge",
+          "href": "/icons-and-badge"
+        },
+        {
+          "title": "CI usage",
+          "href": "/ci"
+        }
+      ]
+    },
+    {
+      "group": "Reference",
+      "pages": [
+        {
+          "title": "Command line",
+          "href": "/reference/cli"
+        },
+        {
+          "title": "Adopting a 2.x project",
+          "href": "/reference/adopt"
+        },
+        {
+          "title": "JSON output",
+          "href": "/reference/json-output"
+        },
+        {
+          "title": "flavorizr.lock",
+          "href": "/reference/lock"
+        }
+      ]
+    },
+    {
+      "group": "Extending",
+      "pages": [
+        {
+          "title": "Custom processors",
+          "href": "/extending/processors"
+        },
+        {
+          "title": "Resources",
+          "href": "/extending/resources"
+        },
+        {
+          "title": "Building blocks (experimental)",
+          "href": "/extending/building-blocks"
+        }
+      ]
+    },
+    {
+      "group": "Migration",
+      "pages": [
+        {
+          "title": "From 2.x to 3.0",
+          "href": "/migration"
+        }
+      ]
+    },
+    {
+      "group": "Troubleshooting",
+      "pages": [
+        {
+          "title": "Overview",
+          "href": "/troubleshooting"
+        },
+        {
+          "title": "Unable to load contents of file list",
+          "href": "/troubleshooting/unable-to-load-contents-of-file-list"
+        },
+        {
+          "title": "appFlavor is null from Xcode",
+          "href": "/troubleshooting/app-flavor-null-from-xcode"
+        }
+      ]
+    }
+  ]
+}

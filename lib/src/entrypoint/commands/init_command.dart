@@ -370,7 +370,7 @@ class InitCommand extends FlavorizrCommand {
     required bool scaffold,
   }) {
     final lines = [
-      '# The flavors of the app: see https://github.com/AngeloAvv/flutter_flavorizr',
+      '# The flavors of the app: see https://docs.page/AngeloAvv/flutter_flavorizr',
       'flavors:',
       for (final MapEntry(key: flavor, value: name) in flavors.entries) ...[
         '  ${_quote(flavor)}:',

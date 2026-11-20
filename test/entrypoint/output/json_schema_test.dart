@@ -45,10 +45,12 @@ List<String> jsonExamples(String markdown) => [
 void main() {
   final schema =
       jsonDecode(
-            File('doc/schemas/flavorizr-output.schema.json').readAsStringSync(),
+            File(
+              'docs/schemas/flavorizr-output.schema.json',
+            ).readAsStringSync(),
           )
           as Map<String, Object?>;
-  final doc = File('doc/json-output.md').readAsStringSync();
+  final doc = File('docs/reference/json-output.mdx').readAsStringSync();
   final examples = jsonExamples(doc);
 
   test('the document shows an example of every command and of a failure', () {

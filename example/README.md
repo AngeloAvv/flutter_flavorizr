@@ -10,7 +10,7 @@ A Flutter app flavorized with `flutter_flavorizr`: two flavors, `apple` and
 * [tool/flavorizr.dart](tool/flavorizr.dart) is the entry point of the project,
   and [tool/flavors_doc_processor.dart](tool/flavors_doc_processor.dart) a
   small custom processor, which writes [FLAVORS.md](FLAVORS.md). See
-  [Extending flavorizr](../doc/extending.md).
+  [Extending flavorizr](https://docs.page/AngeloAvv/flutter_flavorizr/extending/processors).
 
 ```sh
 flutter pub get

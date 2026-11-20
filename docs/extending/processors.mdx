@@ -1,0 +1,172 @@
+---
+title: "Custom processors"
+description: "Register your own steps in tool/flavorizr.dart: they run in the same pipeline as the ones of flavorizr."
+---
+
+A project that needs a step flavorizr does not have writes a **processor** and
+registers it in its own entry point. [`example/`](https://github.com/AngeloAvv/flutter_flavorizr/tree/master/example) does it: its
+`tool/flavors_doc_processor.dart` writes `FLAVORS.md`, a table of the flavors.
+
+## 1. The processor
+
+```dart
+import 'dart:io';
+
+import 'package:flutter_flavorizr/experimental.dart';
+import 'package:flutter_flavorizr/flutter_flavorizr.dart';
+
+class FlavorsDocProcessor extends FlavorizrProcessor {
+  const FlavorsDocProcessor();
+
+  @override
+  String get id => 'acme:flavorsDoc';
+
+  @override
+  Set<String> get paths => const {'FLAVORS.md'};
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {
+    final rows = [
+      for (final MapEntry(key: name, value: flavor) in ctx.config.flavors.entries)
+        '| `$name` | ${flavor.app.name} |',
+    ];
+
+    await File('${ctx.root.path}/FLAVORS.md').writeAsString(rows.join('\n'));
+    ctx.track(const Artifact.managed('FLAVORS.md'));
+  }
+}
+```
+
+* `id` is namespaced and yours. The namespaces of flavorizr are reserved
+  (`android`, `ios`, `macos`, `linux`, `windows`, `flutter`, `google`, `huawei`
+  and `ide`).
+* `paths` is what the processor reads or writes, relative to the project.
+  Nothing outside of it is copied to the workspace of the run, diffed, written
+  back or deleted (see [what a custom processor gets for free](#what-a-custom-processor-gets-for-free)).
+* `apply` writes below `ctx.root`, the workspace of the run, never to the
+  project; it reads the configuration from `ctx.config`; it says what it owns
+  with `ctx.track`. The owner of a file decides what a run may do to it:
+  `Artifact.managed` is written whole and hashed in the lock,
+  `Artifact.patched` is a file the user also edits (declare what part is
+  yours with `ownedContent`), `Artifact.scaffold` is created once and
+  `Artifact.local` is regenerated and never hashed.
+* A file that is costly to generate the same way everywhere, such as an image
+  rendered from another one, can say what it is made from:
+  `Artifact.managed(path, inputs: hash)`, where `hash` is computed from the
+  inputs alone (the bytes of the source, the options), never from the output.
+  The lock records it (see [Inputs of generated files](/reference/lock#inputs-of-generated-files)),
+  and a later run asks `await ctx.isGeneratedFrom(path, hash)`: when it is
+  `true` the file is still what was generated from those inputs, and the
+  processor leaves it as it is and tracks it again with the same `inputs`.
+* `dependsOn` and `after` order the processor with the others, and `requires`
+  names the shared resources it uses.
+
+The processor files **must be pure Dart**: `tool/flavorizr.dart` runs with
+`dart run`, not inside Flutter, so nothing it imports can import
+`package:flutter` or `dart:ui`.
+
+## 2. The entry point
+
+```dart
+// tool/flavorizr.dart
+import 'package:flutter_flavorizr/flutter_flavorizr.dart';
+
+import 'flavors_doc_processor.dart';
+
+Future<void> main(List<String> args) =>
+    Flavorizr.run(args, processors: const [FlavorsDocProcessor()]);
+```
+
+When the project has `tool/flavorizr.dart`, `dart run flutter_flavorizr` runs it
+with the same arguments: the command stays a single one. See
+[Ids, targets and overrides](#ids-targets-and-overrides) for how the delegation avoids
+looping, and for `overrides`, which replace a processor of flavorizr.
+
+## 3. The recipe
+
+Processors that are not part of `all` run when something names them: a recipe
+of `flavorizr.yaml`, or the command line (`flavorizr apply acme:flavorsDoc`).
+
+```yaml
+recipes:
+  flavorized:
+    - all
+    - acme:flavorsDoc
+  default: flavorized
+```
+
+`default` is the recipe `flavorizr` runs when it is given none.
+
+## What a custom processor gets for free
+
+* `plan` previews what it would write, and `apply` writes it atomically, with
+  the same conflicts and `--on-conflict` as the processors of flavorizr.
+* What it tracks is in `flavorizr.lock`: `status` reports it when it was edited
+  or is out of date, and a flavor that is removed from `flavorizr.yaml` is
+  cleaned up with the files of the other processors.
+* A file it tracked once and stops tracking is deleted by the next run that
+  includes it, the same way: a managed file that is as the lock recorded, and a
+  scaffold that is as it was written, go; one you edited is a
+  [conflict](/conflicts#deleting-a-file-that-is-not-made-anymore). A processor
+  that is not in the run, or that you took out of `tool/flavorizr.dart`, leaves
+  its files and its entries in the lock as they are. An ordinary patched file is not
+  deleted: the lock stops recording it, and what your processor put in it stays,
+  unless the processor takes it out itself. The exception is a processor that
+  overrides `ios:schema`: it inherits the built-in `foreignContent` cleanup, so a
+  file it created that is no longer tracked, and whose foreign content is
+  unchanged, is deleted.
+* **Cleanup only reaches what is in `paths`.** A deletion outside the `paths`
+  of the processors of the run is never made: the plan shows it as
+  `[blocked]` and the file, and its record in the lock, stay. So when a
+  processor moves a file (say `FLAVORS.md` becomes `FLAVORS.txt`), keep the old
+  path in `paths` for one run, so that the run deletes the old file, and remove
+  it from `paths` after that. If you changed `paths` at once, delete the old file
+  yourself: its entry stays in the lock.
+* `flavorizr list` shows it, with the processors it needs.
+
+The pipeline of this repository checks that `example/` is in sync with its lock
+(`flavorizr status`), custom processor included.
+
+## Ids, targets and overrides
+
+The id of a processor is what recipes and the command line name, as for the
+ones of flavorizr:
+
+```yaml
+recipes:
+  release:
+    - flutter:flavors
+    - acme:sentry
+```
+
+* A processor declares what it works on itself, in the class: `paths`, the
+  files and folders of the project it reads or writes, and `ownedContent` for
+  the part of a patched file it owns. Nothing else has to be registered.
+* An id that another processor has is an error (exit code 65), and so is a
+  recipe member that nobody has: the message says to register the processor in
+  `tool/flavorizr.dart`.
+* A target on the command line that is neither a recipe nor a processor id is a
+  usage error (exit code 64), with the same hint.
+* The namespaces of flavorizr are reserved: `android`, `ios`, `macos`,
+  `linux`, `windows`, `flutter`, `google`, `huawei` and `ide`. A new processor
+  cannot have an id in one (exit code 65): use one of your own, `acme:sentry`.
+* To replace a processor of flavorizr, pass yours in `overrides`, with its id.
+  Without it, an id that flavorizr has is an error. This is how the Flutter code
+  that is generated is customized:
+
+  ```dart
+  void main(List<String> args) =>
+      Flavorizr.run(args, overrides: [MyAppProcessor()]); // id: flutter:app
+  ```
+
+  The override takes the place of the processor in the recipes and in the
+  `needs` of the other processors, and it works on the paths of the processor it
+  replaces as well as on its own. An override that patches a file declares
+  what it owns in it, with `ownedContent`: that replaces the one of the
+  processor for that file, and without it the lock would hash what the replaced
+  processor owned, not what the override changes. `flavorizr list` marks it `(overridden)`, and
+  `overridden` is `true` in its JSON. An id that flavorizr does not have cannot
+  be overridden.
+* **The files of your processors must be pure Dart.** `tool/flavorizr.dart` runs
+  with `dart run`, not inside Flutter, so a processor, or anything it imports,
+  cannot import `package:flutter` or `dart:ui`.

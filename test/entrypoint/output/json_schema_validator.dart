@@ -46,7 +46,7 @@ const _checked = {
 /// What is wrong with [instance] according to [schema], one line each: empty
 /// when it is valid.
 ///
-/// It is the part of JSON Schema (2020-12) that `doc/schemas` uses, which is
+/// It is the part of JSON Schema (2020-12) that `docs/schemas` uses, which is
 /// enough to hold the documents of `--json` to their schema without a
 /// dependency.
 List<String> validateJson(

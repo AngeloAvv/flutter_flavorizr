@@ -1,0 +1,112 @@
+---
+title: "Resources"
+description: "State that several processors share in one run, such as the opened Xcode project."
+---
+
+A **resource** is state that several processors read in one run and that is expensive, or wrong, to build
+more than once. The Xcode project is the one flavorizr has: 2.x processors each opened and saved
+`project.pbxproj` on their own, and the processors of 3.0 share one opened project, which is saved once.
+
+A resource is not an instruction of the configuration: a processor lists the resources it needs, and the
+engine drives their lifecycle.
+
+## The pieces
+
+| Type | What it is |
+| --- | --- |
+| `ResourceKey<T>` | The name of a resource and the type of its value, such as `xcodeproj:ios`. Two keys are equal when they have the same name and the same type. |
+| `Resource<T>` | The resource itself: how to `setup` its value and how to `teardown` it. |
+| `FlavorizrProcessor.requires` | The keys of the resources a processor reads. |
+| `FlavorizrContext.resource(key)` | The value of a resource, inside `apply`. |
+
+`ResourceKey`, `Resource`, `FlavorizrProcessor` and `FlavorizrContext` are exported by
+`package:flutter_flavorizr/flutter_flavorizr.dart`, which follows semver.
+
+## The lifecycle
+
+```dart
+abstract class Resource<T> {
+  ResourceKey<T> get key;
+
+  Future<T> setup(FlavorizrContext ctx);
+
+  Future<void> teardown(FlavorizrContext ctx, T value, {required bool success});
+}
+```
+
+- `setup` runs **at most once per run**, right before the first processor that requires the resource.
+  It makes the value the consumers share, such as an opened project. The context it is given has no
+  resources: a resource cannot depend on another one. When `setup` throws, there is no value and
+  `teardown` is not called, so `setup` must clean up after itself before throwing.
+- The processors that require the resource get the same value from `ctx.resource(key)`, and mutate it in
+  memory.
+- `teardown` runs **once, right after the last consumer**, whatever happens in between. `success` is
+  `true` when nothing has failed in the run so far: it lets the resource persist its state only when the run
+  went well, and discard it otherwise. When `teardown` throws, the other resources are still torn down, and
+  its error fails the run only when nothing had failed before.
+
+Everything happens in the shadow workspace of the run, so a `plan` writes nothing to the project, and what
+a run changed reaches it through the usual diff, conflict check and copy back.
+
+## The Xcode project
+
+`XcodeprojResource` (in `package:flutter_flavorizr/experimental.dart`) is the resource of the Xcode
+projects, with the keys `XcodeprojResource.iosKey` (`xcodeproj:ios`) and `XcodeprojResource.macosKey`
+(`xcodeproj:macos`). It opens `<platform>/Runner.xcodeproj` right before the first consumer, and saves it
+once after the last one, only when the run succeeded so far **and** the project is different from what
+was opened: a run with no change leaves `project.pbxproj` byte identical, and a failed run saves nothing.
+
+A processor of yours can use it:
+
+```dart
+import 'package:flutter_flavorizr/experimental.dart';
+import 'package:flutter_flavorizr/flutter_flavorizr.dart';
+
+class IosSomethingProcessor extends FlavorizrProcessor {
+  const IosSomethingProcessor();
+
+  @override
+  String get id => 'acme:iosSomething';
+
+  @override
+  Set<ResourceKey<Object?>> get requires => {XcodeprojResource.iosKey};
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {
+    final project = ctx.resource(XcodeprojResource.iosKey);
+
+    // ... mutate the project, idempotently, and never call save ...
+
+    ctx.track(XcodeprojResource.iosArtifact);
+  }
+}
+```
+
+The processor must track the project file (`XcodeprojResource.iosArtifact`, a patched artifact), and say
+which of the objects in it are its own with `OwnedObjects`: see
+[Building blocks](/extending/building-blocks#owned-objects-of-the-xcode-project).
+
+`OwnedObjects` records the identities of the objects, which is what lets a later run remove them. It does
+**not** say what the lock hashes. The hash of the project file covers only what the registered readers of
+flavorizr read (the references to the xcconfig files, the build settings of the flavors and the Firebase
+build phase), so a change of yours that is outside of them, such as a build phase of your own, would be
+invisible to `status` and to the conflict check. Declare it with `ownedContent`, which adds to the readers
+of flavorizr for that file:
+
+```dart
+@override
+Map<String, String Function(String source)> get ownedContent => {
+  XcodeprojResource.iosArtifact.path: (source) => sentryPhaseOf(source),
+};
+```
+
+where `sentryPhaseOf` returns the text of the objects that your processor owns, in the order that is the
+same on every run.
+
+<Warning>
+  A processor that requires a resource nobody registered fails the plan with `Processor "acme:..."
+  requires the resource "...", which is not registered`. The entry point `Flavorizr.run` registers the
+  resources of flavorizr, which are the two Xcode projects. It does not take resources of your own yet:
+  a custom `Resource` is for the engine and its tests, and the API to register one from
+  `tool/flavorizr.dart` is not part of 3.0.
+</Warning>

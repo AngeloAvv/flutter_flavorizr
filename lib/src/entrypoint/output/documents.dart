@@ -35,8 +35,8 @@ import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 
 /// The fields of the JSON documents of `plan`, `apply`, `status` and `list`.
 ///
-/// The documents are the contract of `--json`: `doc/json-output.md` describes
-/// them and `doc/schemas/flavorizr-output.schema.json` validates them. A field
+/// The documents are the contract of `--json`: `docs/reference/json-output.mdx` describes
+/// them and `docs/schemas/flavorizr-output.schema.json` validates them. A field
 /// is never removed, renamed or given another type before 4.0.
 
 /// How [preview] changes the files: what a run would add, change and delete,

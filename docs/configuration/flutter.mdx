@@ -1,0 +1,99 @@
+---
+title: "Flutter code"
+description: "flavors.g.dart, flavors.dart and the scaffold files flavorizr writes in lib."
+---
+
+The `flutter` processors make the Dart code that knows about the flavors. They have no keys of their own:
+they read the flavors and their app names from `flavorizr.yaml`.
+
+| Processor | Writes | Owner |
+| --- | --- | --- |
+| `flutter:flavors` | `lib/flavors.g.dart`, and `lib/flavors.dart` once | managed, scaffold |
+| `flutter:app` | `lib/app.dart` | scaffold |
+| `flutter:pages` | `lib/pages/my_home_page.dart` | scaffold |
+| `flutter:main` | `lib/main.dart` | scaffold |
+
+`flutter:flavors` is part of the `all` recipe. The other three are not: only the `flutter:scaffold` recipe
+(or the processors by name) runs them.
+
+## `flavors.g.dart` and `flavors.dart`
+
+`flutter:flavors` writes two files in `lib`:
+
+- **`flavors.g.dart`** holds the `Flavor` enum and `F`. It is **managed**: written whole from
+  `flavorizr.yaml` and recorded in the lock, so do not edit it: a hand edit is a
+  [conflict](/conflicts).
+- **`flavors.dart`** exports `flavors.g.dart`. It is a **scaffold**: created when it does not exist and
+  kept as it is by every ordinary run, so it is yours to extend with a color palette per flavor, the URL
+  of each environment, and so on. Only `--overwrite-scaffold` replaces it.
+
+Import `flavors.dart` in your code, not the generated file.
+
+```dart title="lib/flavors.g.dart"
+enum Flavor {
+  apple('apple'),
+  banana('banana');
+
+  const Flavor(this.flavorName);
+
+  /// The name of the flavor in flavorizr.yaml: what `--flavor` takes and
+  /// `appFlavor` returns, casing included.
+  final String flavorName;
+}
+
+class F {
+  F._();
+
+  static Flavor get appFlavor { /* ... */ }
+
+  static String get name => appFlavor.name;
+
+  static String get title {
+    switch (appFlavor) {
+      case Flavor.apple:
+        return 'Apple App';
+      case Flavor.banana:
+        return 'Banana App';
+    }
+  }
+}
+```
+
+`F.appFlavor` reads the flavor the app was built with (`flutter run --flavor apple`) from `appFlavor` of
+`package:flutter/services.dart`, and finds it by the name the flavor has in `flavorizr.yaml`, casing
+included. Nothing has to be initialized. An app built without a flavor, or with one that is not in
+`flavorizr.yaml`, fails with an error that says how to fix it.
+
+If `appFlavor` is `null` when the app is launched from Xcode, see
+[appFlavor is null from Xcode](/troubleshooting/app-flavor-null-from-xcode).
+
+## The scaffold files
+
+flavorizr does not touch your `main.dart`, `app.dart` or pages. A new app can start from a ready made
+set of them with the `flutter:scaffold` recipe:
+
+```sh
+dart run flutter_flavorizr apply flutter:scaffold
+```
+
+The recipe creates `lib/main.dart`, `lib/app.dart` and `lib/pages/my_home_page.dart`, which show how to
+use the getters above. A file that exists is left alone, so an ordinary `apply` never modifies the
+`main.dart` of a project. A project that was just created with `flutter create` has one: add
+`--overwrite-scaffold` to replace it. `plan` takes the flag too, to show the change without applying it.
+
+<Warning>
+  The flag replaces **every** scaffold file of the run that exists, not only the ones you named:
+  `flutter:scaffold` pulls `flutter:flavors` in as a dependency, so `lib/flavors.dart` is replaced too,
+  and so are an edited `app.dart` or page. Use it on a fresh project, or commit first, and look at
+  `plan --overwrite-scaffold` before you apply it.
+</Warning>
+
+`init` offers the scaffold on a project that `flutter create` has just made: when accepted, the default
+recipe becomes `start`, which runs `all` and `flutter:scaffold`.
+
+## A project flavorized with 2.x
+
+In 2.x `flavors.dart` held the enum and `F`, and `main.dart` assigned `F.appFlavor`. A project that
+kept it keeps the `flavors.dart` it has, and the run warns: delete the file, so that flavorizr writes the
+one that exports `flavors.g.dart`, and remove the `F.appFlavor` assignment of your `main.dart`, which the
+generated `F` does not allow. See [Migration](/migration#flavorsdart-and-flavorsgdart).

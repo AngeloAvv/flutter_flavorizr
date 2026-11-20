@@ -1,0 +1,173 @@
+---
+title: "Android"
+description: "The android keys of flavorizr.yaml and how flavorizr changes the Android project."
+---
+
+A flavor with an `android` section is built for Android. flavorizr generates a product flavor for each
+of them in `android/app/flavorizr.gradle` (or `flavorizr.gradle.kts`, for a Kotlin script), imports it from
+`android/app/build.gradle(.kts)`, and points the label in `AndroidManifest.xml` at the name of the app of
+the flavor.
+
+The same file, in Groovy or in Kotlin, also turns on the features of the Android Gradle Plugin that the
+flavors need and that are off by default: `buildFeatures.resValues = true` always (every flavor has a
+`resValue` for the name of the app), and `buildFeatures.buildConfig = true` when `app.android` or a flavor
+declares `buildConfigFields`.
+
+## `app.android`
+
+What every Android flavor starts from, under the root `app` key.
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `flavorDimensions` | string | `"flavor-type"` | The value of `flavorDimensions` in the Gradle script. |
+| `resValues` | map | `{}` | [`resValues`](#resvalues) that every flavor gets. |
+| `buildConfigFields` | map | `{}` | [`buildConfigFields`](#buildconfigfields) that every flavor gets. |
+
+## `flavors.<name>.android`
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `applicationId` | string | yes | The `applicationId` of the Android app. |
+| `icon` | string | | The icon of this flavor for Android. See [Icons and badge](/icons-and-badge). |
+| `adaptiveIcon` | map | | The layers of an [adaptive icon](#adaptiveicon). |
+| `resValues` | map | `{}` | [`resValues`](#resvalues) of the flavor, added to the ones of `app.android`. |
+| `buildConfigFields` | map | `{}` | [`buildConfigFields`](#buildconfigfields) of the flavor, added to the ones of `app.android`. |
+| `customConfig` | map | `{}` | Any other property of the flavor in Gradle. See [`customConfig`](#customconfig). |
+| `manifestPlaceholders` | map | `{}` | The `manifestPlaceholders` of the flavor. |
+| `firebase` | map | | A Firebase configuration: see [Firebase](/configuration/services#firebase). |
+| `agconnect` | map | | An AppGallery Connect configuration: see [AppGallery Connect](/configuration/services#huawei-appgallery-connect). |
+| `generateDummyAssets` | bool | `true` | **Deprecated and ignored**: remove it. It will be an error in 4.0. |
+
+### `resValues`
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `type` | string | yes | The type of the [resValue](https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/variant/ResValue). |
+| `value` | string | yes | The value of the resValue. |
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    android:
+      applicationId: "com.example.apple"
+      resValues:
+        variable_one:
+          type: "string"
+          value: "example variable one"
+```
+
+### `buildConfigFields`
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `type` | string | yes | The type of the [buildConfigField](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/variant/BuildConfigField). |
+| `value` | string | yes | The value of the buildConfigField. |
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    android:
+      applicationId: "com.example.apple"
+      buildConfigFields:
+        field_one:
+          type: "String"
+          value: "example field one"
+        field_two:
+          type: "char"
+          value: "y"
+        field_three:
+          type: "double"
+          value: "20.0"
+```
+
+### `customConfig`
+
+Any property of the flavor in Gradle. Values are written in the language of the script, Groovy or
+Kotlin, whichever your `build.gradle` is, and `manifestPlaceholders` is a key of the flavor, not of
+`customConfig`:
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    android:
+      applicationId: "com.example.apple"
+      customConfig:
+        versionNameSuffix: "-green-prod"            # text: quoted and escaped for you
+        versionCode: 1000                           # numbers and booleans as they are
+        resourceConfigurations: [en, it]            # a list: its items are added
+        signingConfig: {raw: flavorSigning.green}   # code, written as it is
+      manifestPlaceholders:
+        appAuthRedirectScheme: com.example.apple
+```
+
+```kotlin title="build.gradle.kts"
+create("apple") {
+    versionNameSuffix = "-green-prod"
+    versionCode = 1000
+    resourceConfigurations += listOf("en", "it")
+    signingConfig = flavorSigning.green
+    manifestPlaceholders["appAuthRedirectScheme"] = "com.example.apple"
+}
+```
+
+```groovy title="build.gradle"
+apple {
+    versionNameSuffix "-green-prod"
+    versionCode 1000
+    resourceConfigurations.addAll(["en", "it"])
+    signingConfig flavorSigning.green
+    manifestPlaceholders = ["appAuthRedirectScheme": "com.example.apple"]
+}
+```
+
+- A text is always a string, so it needs no escaped quotes. 2.x asked for `"\"-green-prod\""`: that is
+  an error now.
+- Code that is not a literal, such as `flavorSigning.green`, is written as `{raw: ...}`.
+- A list adds its items to the property (`+=` in Kotlin, `addAll` in Groovy), which is what the
+  collections of a flavor take: most of them cannot be assigned.
+- `manifestPlaceholders` inside `customConfig` is an error that says where to move it.
+
+### `adaptiveIcon`
+
+```yaml
+flavors:
+  apple:
+    app:
+      name: "Apple App"
+    android:
+      applicationId: "com.example.apple"
+      icon: "assets/icon/appleApp/ic_launcher.png"
+      adaptiveIcon:
+        foreground: "assets/adaptive_icon/appleApp/ic_launcher_foreground.png"
+        background: "assets/adaptive_icon/appleApp/ic_launcher_background.png"
+        monochrome: "assets/adaptive_icon/appleApp/ic_launcher_monochrome.png"
+```
+
+`monochrome` (the themed icon of Android 13 and later) is optional. The icons that were generated are
+tracked in the lock, so removing `adaptiveIcon` removes them on the next run.
+
+## The processors
+
+| Processor | What it does |
+| --- | --- |
+| `android:flavorizrGradle` | Writes `android/app/flavorizr.gradle(.kts)` with the product flavors. Managed. |
+| `android:buildGradle` | Imports it from `build.gradle(.kts)`, in a marked block. Patched: the rest of the script is yours. |
+| `android:androidManifest` | Sets the label of the application to the name of the app of the flavor. Patched. |
+| `android:icons` | Makes the launcher icons of each flavor that has an `icon`, or a [badge](/icons-and-badge), and removes the ones of a flavor that has neither anymore. |
+| `android:dummyAssets` | Does nothing: a flavor with no `icon` and no badge uses the default icon of the project, unless the project already has a `src/<flavor>/res` of its own that flavorizr did not generate: Gradle then uses it. It stays so that a recipe that names it runs (see [Command line](/reference/cli#the-dummyassets-processors)). |
+| `android:firebase` | Copies `google-services.json` for each flavor that has one. See [Firebase](/configuration/services#firebase). |
+
+`huawei:agconnect`, which copies `agconnect-services.json` for each flavor, is described in
+[Firebase, AppGallery and IDEs](/configuration/services#huawei-appgallery-connect).
+
+`AndroidManifest.xml` and the Gradle scripts are edited in place, as text: indentation, comments and
+everything flavorizr does not own stay as they are, and a file that is up to date is not written at all.
+`flavorizr doctor` tells whether the project uses Groovy or Kotlin scripts.
+
+Run the flavor with `flutter run --flavor <name>`.

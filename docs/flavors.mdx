@@ -1,0 +1,138 @@
+---
+title: "Adding and removing flavors"
+description: "Change the flavors by editing flavorizr.yaml: what a run adds, updates and removes."
+---
+
+The yaml is the desired state, so changing the flavors of a project is changing the yaml and running
+flavorizr again. There is no command to add or remove a flavor.
+
+```sh
+dart run flutter_flavorizr plan     # review: what is added, changed and deleted
+dart run flutter_flavorizr apply
+```
+
+`plan` starts with the flavors that differ between `flavorizr.yaml` and `flavorizr.lock`:
+
+```text
+- banana (removed)
++ pear (added)
+~ apple (changed)
+```
+
+## Adding a flavor
+
+Add it under `flavors`, with the platforms it is built for:
+
+```yaml
+flavors:
+  pear:
+    app:
+      name: "Pear App"
+    android:
+      applicationId: "com.example.pear"
+    ios:
+      bundleId: "com.example.pear"
+```
+
+A run adds everything the flavor needs from the processors it runs: the Android product flavor, the xcconfig files, build
+configurations and scheme of Xcode, the mappings in the Podfile, the entries of the Flutter code and of the
+IDE configurations, and its icons when it has an `icon` or a [badge](/icons-and-badge). The flavors that
+already exist are not touched unless they changed, with one exception: the run configurations of the
+IDEs are *local* files, written again on every run (a `.idea/runConfigurations/<flavor>.xml` of an existing
+flavor is rewritten whole, and so are its entries `<flavor> Debug`, `<flavor> Profile` and `<flavor> Release`
+in `.vscode/launch.json`, so options you added to them are lost).
+
+## Changing a flavor
+
+A flavor is **changed** when anything of its resolved configuration changed: its name, its identifiers,
+its build settings, an icon. The lock holds a fingerprint of each flavor, so `plan` shows the flavor
+as changed and the files that follow from it. Settings that you set by hand in the project and that
+flavorizr does not own are never changed.
+
+Flavors are told apart by their name, so **renaming a flavor is removing the old one and adding the new
+one**. When a removed and an added flavor have exactly the same configuration, `plan` points it out
+(`old -> new is a rename`), and applies it as the removal plus the addition all the same.
+
+## Removing a flavor
+
+Delete it from the yaml. A run removes what flavorizr generated for it, which the lock knows:
+
+- the files that are **managed**: its xcconfig files, its icons on Android, iOS, macOS and Windows
+  (`<flavor>.ico`), its launch screen, its entry in `flavorizr.gradle` and in the Flutter code;
+- its part of the **patched** files, and nothing else: its build configurations and the references to
+  its xcconfig files in `project.pbxproj`, its mappings in the Podfile, its regions in the Linux and
+  Windows CMake lists, its keys and entries;
+- its **local** files, such as its run configuration of IntelliJ and Android Studio, and its entries in
+  `.vscode/launch.json`. They are regenerated and removed without a conflict check, so a change of yours in
+  them goes too. A `launch.json` that cannot be parsed is left as it is, with a warning (see
+  [IDEs](/configuration/services#ides)): the entries of the flavor stay in it, and **only the run that
+  finds the flavor dropped removes them**, so remove them by hand;
+- the **copies of its Firebase and AppGallery Connect configurations** (`google-services.json`,
+  `GoogleService-Info.plist`, `agconnect-services.json`), which are local too, but the lock records what
+  was copied: a copy goes only while it still holds exactly that. One you edited is yours, and stays;
+- its **scheme**, on iOS and macOS (`xcschemes/<flavor>.xcscheme`). A scheme is a file you and Xcode
+  edit too, so it is deleted only when the lock says flavorizr created it **and** what it holds, apart
+  from the build configurations flavorizr owns and the pre-action Flutter adds, is as flavorizr made it.
+  A scheme you changed is a [conflict](/conflicts). A scheme the lock does not say flavorizr created (it was
+  there before, or 2.x made it: 2.x kept no record) stays, and the plan lists it under `Left in place` with
+  `flavorizr did not make it`: delete it yourself if you do not need it.
+
+What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
+stays, and a build configuration of the flavor that holds a setting of yours stays in the project.
+A file you put in a folder of the flavor yourself, such as `src/<flavor>/res/drawable/mine.xml`, is not
+deleted: the folders that end up empty go, the others stay.
+
+Removing goes through the [conflict](/conflicts) check like any other change: a managed or patched file you
+edited asks before it is deleted. Local files are not checked: the ones of the IDEs go as they are, and a
+copy of a service configuration that you edited stays, as above.
+
+A flavor that loses its `icon` but keeps a badge (or the other way round) keeps its icons, made again: see
+[Every case](/icons-and-badge#every-case).
+
+## Partial runs
+
+A run of fewer processors than a full one (a `default` recipe that is a short list, or targets such as
+`apply android`) changes the files of those processors only, and does **not** update the flavors of
+`flavorizr.lock`: only a run that covers every processor a full run covers records them. After you add or
+remove a flavor, finish with a full run (`apply all`), or `status` reports the flavors as drift.
+
+`status` checks the same selection, so a `status` with no target of a project whose `default` is short reports
+the flavors it has not recorded. Run `status all` to compare the whole project.
+
+## What flavorizr refuses
+
+`plan` and `apply` **refuse** two things, with exit code `65`, before any processor runs, so nothing is
+written, not even the lock:
+
+- removing **every** flavor, when `flavorizr.lock` records flavors;
+- dropping a **platform** that `flavorizr.lock` shows was flavorized: no flavor has an `android` (`ios`,
+  `macos`, ...) section anymore, and the lock records files of the processors of that platform. The message
+  names the platform and lists the files the lock records for it.
+
+The reason is that flavorizr overwrites values it owns (`android:label` in the manifest, `CFBundleName`
+in a plist) and does not store the originals, so it cannot put them back. Fully un-flavorizing a project, or
+a platform, is out of scope for 3.0. To do it:
+
+1. restore the files flavorizr changed from version control, or put the original values back;
+2. delete the files it generated, and `flavorizr.lock`;
+3. if flavors remain in `flavorizr.yaml`, run flavorizr again with them. If none remain, stop at step 2 and
+   remove the flavorizr configuration instead: a run with `flavors: {}` writes `lib/flavors.g.dart` and
+   `lib/flavors.dart` again.
+
+The check compares `flavorizr.yaml` with the lock only, whatever the targets, and it only knows what the
+lock records: a project with no `flavorizr.lock` is never refused. `status`, `list` and `doctor` do not
+run it.
+
+## When the lock is lost
+
+If `flavorizr.lock` is deleted or never was committed, flavorizr cannot know which flavors it generated:
+a flavor that was removed from the yaml in the meantime is not removed from the project (`adopt --flavors`
+can name it: see [Adopting a 2.x project](/reference/adopt#flavors-that-are-not-in-flavorizryaml-anymore)).
+The next run treats the project as one flavorized with 2.x: when it has files that only flavorizr makes
+(`flavorizr.gradle`, the marked blocks of `build.gradle`, the xcconfig files of a flavor...), they are the
+baseline and the run shows what 3.0 changes in them, with no conflict
+(see [the first run without a lock](/reference/adopt#the-first-run-without-a-lock)). Otherwise a patched
+file is adopted by patching it, and a generated (managed) file that exists and differs from what the run
+would write is a [conflict](/conflicts), since there is no telling it from one you wrote. A lost lock also
+forgets which schemes flavorizr created: they stay when their flavor is dropped, and the plan lists them as
+`flavorizr did not make it`. Commit the lock to avoid all of it.

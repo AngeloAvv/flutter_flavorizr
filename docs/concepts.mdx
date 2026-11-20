@@ -1,0 +1,124 @@
+---
+title: "Core concepts"
+description: "The yaml, the lock and the disk; plan and apply; and who owns a file."
+---
+
+flavorizr separates three things that a script that edits files usually mixes up.
+
+## The yaml, the lock and the disk
+
+| | What it is | Who writes it |
+| --- | --- | --- |
+| `flavorizr.yaml` | The **desired state**: the flavors you want. | You |
+| `flavorizr.lock` | The **applied state**: what flavorizr generated the last time, and a hash of it. | flavorizr, once the changes are written |
+| The project | **Reality**: the files on disk, which you, Xcode, Flutter and CocoaPods also edit. | Everybody |
+
+A run compares the three:
+
+- the yaml and the lock tell **which flavors were added, removed or changed**. A flavor that is in the
+  lock and not in the yaml is removed from the project, together with what flavorizr generated for it;
+- the lock and the disk tell **what changed by hand** since the last run. A file that is not what
+  flavorizr wrote is yours, and flavorizr asks before it changes it: see [Conflicts](/conflicts). That holds
+  for the `managed` and `patched` files. It does not hold for the `local` files (the run configurations of
+  the IDEs, the Firebase copies), which are written again whatever you changed;
+- when there is no lock, the files that flavorizr made before there was one (2.x) are the baseline, so that
+  they are not conflicts: see [the first run without a lock](/reference/adopt#the-first-run-without-a-lock);
+- the yaml and the disk tell **what is left to do**: that is the plan.
+
+`flavorizr.lock` is meant to be committed. Without it flavorizr cannot remove a flavor, and cannot tell
+a file you edited from one it generated. It is written last, only after the files were written, and
+it is never edited by hand. Its format is in [`flavorizr.lock`](/reference/lock).
+
+## Plan and apply
+
+A run does not touch your project while it works out what to do:
+
+1. flavorizr copies the files it needs into a **shadow workspace**, and the processors of the run
+   write there;
+2. it **diffs** the workspace against the project: files to add, change or delete, and the
+   [conflicts](/conflicts);
+3. `plan` prints that diff and stops. `apply` asks for a confirmation, copies the changes back to the
+   project and writes `flavorizr.lock`.
+
+That gives dry runs, a reviewable diff, and writes that are all or nothing in practice: a processor
+that fails does not write the changes to your project, and the lock is written last.
+Two failures can still leave a run half done, and each says so, with exit code `70` (see
+[the exit codes](/reference/cli#exit-codes)):
+
+- the copy back of the files is interrupted: the message lists what was and what was not written, and the
+  lock keeps the previous state. Fix what stopped it, and run flavorizr again: it finds the files that
+  were written and does the rest;
+- the files are written, but the lock cannot replace `flavorizr.lock` (permissions, a folder in its place):
+  the changes stay written and the lock is the previous one. Fix what stops it and run flavorizr again: it
+  finds nothing to change and writes the lock.
+
+A file of the project that changes while the run works is caught twice, and the two are not the same:
+
+- when the change is found **before the first file is written** (the run checks every file it is about to write
+  once more, right after staging them), the run stops with `70` and says `Aborted: ... changed while
+  flutter_flavorizr was running, so nothing was written`. Run it again;
+- when it is found **after copy-back began** (each file is checked once more right before its own
+  replacement, so another process can still edit a file that is waiting its turn), the run stops as the
+  interrupted copy-back above does: the files written before it stay, the message lists them under `Already
+  applied`, and the lock is the previous one. Follow the steps below as for any interruption: it is not a
+  case of "nothing was written".
+
+The filesystem offers no lock, so a process that writes a file between its last check and its replacement still
+loses that write. Run flavorizr while nothing else edits the project.
+
+**What a retry does not restore.** In the two cases above the files are written and the lock is the previous
+one, so the retry finds the files as they are and writes the lock with what it can tell from them: the hash of
+each generated file, the keys, the objects of the Xcode project (found again by their UUID), the inputs of the
+icons (they are rendered again, to the same bytes) and the copies of the service configurations (written on
+every run). The one record that is made only when a file is **created** is lost: that a scheme
+(`xcschemes/<flavor>.xcscheme`) was made by flavorizr. A retry finds the scheme already there, so it does
+not record it, and when you drop the flavor later the scheme stays and the plan lists it as `flavorizr did
+not make it`.
+
+To keep the record, delete the schemes **the failed run created** and run flavorizr again: it creates them
+and the lock records them. Do not pick them with `git status`, which also shows a scheme of yours that was
+untracked before the run. Use what the run printed: the preview lists a scheme the run adds with `+`
+(`+ ios/Runner.xcodeproj/xcshareddata/xcschemes/pear.xcscheme (patched)`), and a scheme it only changes with `~`.
+Delete the ones marked `+`, and, when the copy-back was interrupted, only those that the message lists under
+`Already applied` (the others were not written, and the retry creates them). Before deleting a scheme, review it or keep a copy:
+it may hold edits you made after the failed run, and you have to put them back once the retry has created it again. If you no longer have that
+output, leave the schemes where they are: it costs one scheme to delete by hand when the flavor goes. See [`flavorizr.lock`](/reference/lock#what-the-lock-keeps-to-delete-safely).
+
+`status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
+
+Each step of a run is a **processor**: a unit that makes, patches or removes the files of one area,
+for example `android:buildGradle` or `ios:xcconfig`. Processors declare what they need, so a processor
+that depends on another one pulls it into the run, and a run applies them in the right order. A
+[recipe](/recipes) is a named list of processors. Without a target a run uses the recipe `default` of
+`flavorizr.yaml` when it defines one (`default: name` picks another recipe), and `all` otherwise: a
+`default` that lists fewer processors than `all` makes a plain `apply` run fewer.
+
+## File ownership
+
+Every file a processor produces has an **owner**, and the owner decides what a run may do to it.
+`plan` shows it next to each file.
+
+| Owner | What it is | What a run does |
+| --- | --- | --- |
+| `managed` | Generated whole, such as `flavors.g.dart`, the xcconfig files of a flavor or `flavorizr.gradle`. | Rewrites it when the configuration changed. The lock holds its hash, so editing it by hand is a [conflict](/conflicts). |
+| `patched` | Shared with you or with a tool, such as `AndroidManifest.xml`, `Info.plist`, `build.gradle`, the Podfile or `project.pbxproj`. | Changes only the part it owns: marked regions, owned keys, owned objects. The lock hashes only that part, so what you edit around it is never drift. |
+| `scaffold` | Created once, such as `lib/flavors.dart`, `lib/main.dart`. | Never overwritten after it exists, except with `--overwrite-scaffold`. It is yours. |
+| `local` | Written by tools or ignored by git, such as `.idea/runConfigurations` or the Firebase and AppGallery Connect files copied for each flavor. | Regenerated silently on every run. Never a conflict, never drift, and not hashed as a file in the lock. For the copies of a service configuration the lock keeps the hash of what was copied, so that the copy of a flavor you drop is deleted only while it is untouched. |
+
+Two things follow from it:
+
+- **Removing is as safe as adding.** A flavor you drop from the yaml has its `managed` files deleted
+  (one you edited asks first) and its share of the `patched` ones (build configurations, Podfile
+  mappings, plist keys) taken out. The scheme flavorizr made for it and the copies it made of its
+  service configurations go too, but only while they are as flavorizr left them. Nothing else is
+  removed, and what you added to a patched file is not touched. See [Adding and removing
+  flavors](/flavors#removing-a-flavor).
+- **A setting that is yours stays yours.** A build setting flavorizr wrote and you changed is yours:
+  it stays when flavorizr stops setting it. The `DEVELOPMENT_TEAM` you pick in Xcode survives every
+  run.
+
+## Where a run starts from
+
+A project that was flavorized with 2.x has no lock. The first `plan`, `apply` or `status` finds the files that
+flavorizr made before and takes them as the baseline, so the run shows what 3.0 changes in them and not a
+conflict on each one: see [Migration](/migration) and [Adopting a 2.x project](/reference/adopt).
