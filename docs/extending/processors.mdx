@@ -109,9 +109,12 @@ recipes:
   scaffold that is as it was written, go; one you edited is a
   [conflict](/conflicts#deleting-a-file-that-is-not-made-anymore). A processor
   that is not in the run, or that you took out of `tool/flavorizr.dart`, leaves
-  its files and its entries in the lock as they are. A patched file is not
+  its files and its entries in the lock as they are. An ordinary patched file is not
   deleted: the lock stops recording it, and what your processor put in it stays,
-  unless the processor takes it out itself.
+  unless the processor takes it out itself. The exception is a processor that
+  overrides `ios:schema`: it inherits the built-in `foreignContent` cleanup, so a
+  file it created that is no longer tracked, and whose foreign content is
+  unchanged, is deleted.
 * **Cleanup only reaches what is in `paths`.** A deletion outside the `paths`
   of the processors of the run is never made: the plan shows it as
   `[blocked]` and the file, and its record in the lock, stay. So when a

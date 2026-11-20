@@ -80,7 +80,8 @@ and the lock records them. Do not pick them with `git status`, which also shows 
 untracked before the run. Use what the run printed: the preview lists a scheme the run adds with `+`
 (`+ ios/Runner.xcodeproj/xcshareddata/xcschemes/pear.xcscheme (patched)`), and a scheme it only changes with `~`.
 Delete the ones marked `+`, and, when the copy-back was interrupted, only those that the message lists under
-`Already applied` (the others were not written, and the retry creates them). If you no longer have that
+`Already applied` (the others were not written, and the retry creates them). Before deleting a scheme, review it or keep a copy:
+it may hold edits you made after the failed run, and you have to put them back once the retry has created it again. If you no longer have that
 output, leave the schemes where they are: it costs one scheme to delete by hand when the flavor goes. See [`flavorizr.lock`](/reference/lock#what-the-lock-keeps-to-delete-safely).
 
 `status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
