@@ -63,7 +63,7 @@ void main() {
 
   group('ProcessorRegistry', () {
     test('runs the ported Android, Linux, Windows, Flutter, xcconfig, build '
-        'targets, Podfile and Info.plist processors on the engine', () {
+        'targets, icons, Podfile and Info.plist processors on the engine', () {
       expect(registry.engineIds, {
         'android:androidManifest',
         'android:flavorizrGradle',
@@ -75,6 +75,8 @@ void main() {
         'windows:mainCppTemplate',
         'windows:runnerRcTemplate',
         'windows:cmake',
+        'windows:dummyAssets',
+        'windows:icons',
         'ios:xcconfig',
         'ios:schema',
         'macos:xcconfig',
@@ -151,6 +153,8 @@ void main() {
           'windows:mainCppTemplate',
           'windows:runnerRcTemplate',
           'windows:cmake',
+          'windows:dummyAssets',
+          'windows:icons',
           'ios:xcconfig',
           'ios:schema',
           'macos:xcconfig',
@@ -298,8 +302,8 @@ void main() {
       expect(registry.legacyIds, isNot(contains('ios:schema')));
       expect(registry.legacyIds, isNot(contains('macos:schema')));
       expect(registry.legacyIds, contains('android:dummyAssets'));
-      expect(registry.legacyIds, contains('windows:icons'));
-      expect(registry.legacyIds, contains('windows:dummyAssets'));
+      expect(registry.legacyIds, isNot(contains('windows:icons')));
+      expect(registry.legacyIds, isNot(contains('windows:dummyAssets')));
       expect(registry.legacyIds, isNot(contains('windows:cmake')));
       expect(registry.legacyIds, isNot(contains('linux:cmake')));
       expect(registry.legacyIds, isNot(contains('linux:runnerCmake')));

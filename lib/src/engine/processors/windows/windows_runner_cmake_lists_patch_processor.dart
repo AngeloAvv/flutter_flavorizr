@@ -29,12 +29,13 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/bom_text_file.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_text.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_rc_template_processor.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
-import 'package:path/path.dart' as p;
 
 /// Wires `FLUTTER_APP_FLAVOR` to a per-flavor icon and window title in
 /// `windows/runner/CMakeLists.txt`, and builds `Runner.rc` and `main.cpp` from
@@ -44,6 +45,12 @@ import 'package:path/path.dart' as p;
 /// only part flavorizr owns is its marked region (see
 /// [WindowsRunnerCMakeListsEditor]). The rest of the file is written back byte
 /// for byte, and a file that is already up to date is not written at all.
+///
+/// A flavor is pointed at its `<flavor>.ico` when `windows:icons` makes one for
+/// it (see [windowsMakesIcon]: the same condition that processor decides by), or
+/// when the project has one that the lock does not know, which is the user's.
+/// One that the lock recorded is `windows:icons`'s own, and goes when the flavor
+/// makes none: the flavor builds with `app_icon.ico` instead.
 ///
 /// Like in 2.x, the file has to exist: it is made by `flutter create`, and
 /// flavorizr does not scaffold it.
@@ -79,24 +86,16 @@ class WindowsRunnerCMakeListsPatchProcessor extends FlavorizrProcessor {
             in ctx.config.windowsFlavors.entries)
           name: flavor.app.name,
       },
-      // A flavor has an icon of its own when it asks for one, has a badge (the
-      // icon is made for it), or when the project already has it: it is the
-      // user's. Any other flavor builds with the `app_icon.ico` of the
-      // project.
+      // A flavor has an icon of its own when `windows:icons` makes one for it
+      // (it asks for one, or has a badge), or when the project has it and it is
+      // the user's. An `.ico` that the lock recorded is not: it is the one
+      // `windows:icons` made, and removes when the flavor makes none, so the
+      // flavor is not pointed at it. Any other flavor builds with the
+      // `app_icon.ico` of the project.
       icons: {
         for (final MapEntry(key: name, value: flavor)
             in ctx.config.windowsFlavors.entries)
-          if (flavor.app.icon != null ||
-              flavor.windows?.icon != null ||
-              ctx.config.badgeOf(name) != null ||
-              File(
-                p.join(
-                  ctx.projectRoot.path,
-                  K.windowsIconsPath,
-                  '$name.ico',
-                ),
-              ).existsSync())
-            name,
+          if (windowsMakesIcon(ctx, name, flavor) || _isUsers(ctx, name)) name,
       },
     );
 
@@ -107,5 +106,17 @@ class WindowsRunnerCMakeListsPatchProcessor extends FlavorizrProcessor {
     }
 
     ctx.track(Artifact.patched(path));
+  }
+
+  /// Whether the project has an `.ico` for [flavor] that is the user's: the lock
+  /// does not know it.
+  static bool _isUsers(FlavorizrContext ctx, String flavor) {
+    final path = windowsIcoPath(flavor);
+
+    // A name that is not one of a file is not looked for: it would lead
+    // somewhere else in the project.
+    return isValidFlavorName(flavor) &&
+        File(ctx.resolveProject(path)).existsSync() &&
+        !ctx.hasPreviousFile(path);
   }
 }

@@ -30,7 +30,6 @@ import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:image/image.dart' as img;
 import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
@@ -43,25 +42,32 @@ flavors:
   apple:
     app:
       name: Apple
-      icon: assets/icon.png
     android:
       applicationId: com.example.apple
-    windows: {}
+      agconnect:
+        config: .huawei/apple/agconnect-services.json
   banana:
     app:
       name: Banana
-      icon: assets/icon.png
-    windows: {}
+    android:
+      applicationId: com.example.banana
+      agconnect:
+        config: .huawei/banana/agconnect-services.json
 ''');
 
-  /// What 'windows:icons' writes for the flavors, the first of which is a file of
-  /// the engine in some tests and a file a 2.x processor writes in the others.
-  const contents = 'windows/runner/resources/apple.ico';
-  const icon20 = 'windows/runner/resources/banana.ico';
+  /// What 'huawei:agconnect' writes for the flavors, the first of which is a
+  /// file of the engine in some tests and a file a 2.x processor writes in the
+  /// others.
+  const contents = 'android/app/src/apple/agconnect-services.json';
+  const icon20 = 'android/app/src/banana/agconnect-services.json';
 
-  void writeIcon() => File('assets/icon.png')
-    ..parent.createSync(recursive: true)
-    ..writeAsBytesSync(img.encodePng(img.Image(width: 16, height: 16)));
+  void writeIcon() {
+    for (final flavor in ['apple', 'banana']) {
+      File('.huawei/$flavor/agconnect-services.json')
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync('{"flavor": "$flavor"}');
+    }
+  }
 
   test('refuses to run on a project that is not the working directory', () {
     final elsewhere = Directory.systemTemp.createTempSync('flavorizr_legacy_');
@@ -126,14 +132,14 @@ flavors:
       writeIcon();
 
       await StandardLegacyPipeline(project).run(
-        [LegacyStep('windows:icons', config)],
+        [LegacyStep('huawei:agconnect', config)],
         logger: logger,
         observer: observer,
       );
 
       expect(observer.events, [
-        'started windows:icons',
-        'finished windows:icons',
+        'started huawei:agconnect',
+        'finished huawei:agconnect',
       ]);
       expect(logger.progresses, 0, reason: 'the observer shows the step');
     });
@@ -161,8 +167,8 @@ flavors:
     Future<void> run(StepObserver observer) =>
         StandardLegacyPipeline(project).run(
           [
-            LegacyStep('windows:icons', config),
-            LegacyStep('windows:icons', config),
+            LegacyStep('huawei:agconnect', config),
+            LegacyStep('huawei:agconnect', config),
           ],
           logger: TestUtils.quietLogger(),
           observer: observer,
@@ -229,7 +235,7 @@ flavors:
 
     Future<void> icons(Set<String> preserve) =>
         StandardLegacyPipeline(project).run(
-          [LegacyStep('windows:icons', config)],
+          [LegacyStep('huawei:agconnect', config)],
           logger: TestUtils.quietLogger(),
           preserve: preserve,
         );
@@ -255,27 +261,23 @@ flavors:
       );
     });
 
-    test(
-      'a file the step did not change is not written again',
-      () async {
-        write('android/app/flavorizr.gradle', 'GRADLE');
-        Process.runSync('chmod', [
-          '444',
+    test('a file the step did not change is not written again', () async {
+      write('android/app/flavorizr.gradle', 'GRADLE');
+      Process.runSync('chmod', [
+        '444',
+        p.join(project.path, 'android/app/flavorizr.gradle'),
+      ]);
+      addTearDown(
+        () => Process.runSync('chmod', [
+          '644',
           p.join(project.path, 'android/app/flavorizr.gradle'),
-        ]);
-        addTearDown(
-          () => Process.runSync('chmod', [
-            '644',
-            p.join(project.path, 'android/app/flavorizr.gradle'),
-          ]),
-        );
+        ]),
+      );
 
-        await icons({'android/app/flavorizr.gradle'});
+      await icons({'android/app/flavorizr.gradle'});
 
-        expect(read('android/app/flavorizr.gradle'), 'GRADLE');
-      },
-      skip: Platform.isWindows ? 'needs POSIX permissions' : false,
-    );
+      expect(read('android/app/flavorizr.gradle'), 'GRADLE');
+    }, skip: Platform.isWindows ? 'needs POSIX permissions' : false);
 
     test('a path that did not exist is not created, and what the step writes '
         'there stays', () async {
@@ -284,7 +286,7 @@ flavors:
       expect(File(p.join(project.path, icon20)).existsSync(), isTrue);
 
       // A path the step does not write is not made by preserving it.
-      const absent = 'windows/runner/resources/cherry.ico';
+      const absent = 'android/app/src/cherry/agconnect-services.json';
 
       await icons({absent});
 

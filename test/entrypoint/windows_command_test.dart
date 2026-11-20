@@ -26,6 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
+import 'package:image/image.dart' as img;
 import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
@@ -38,8 +39,7 @@ const _mainIn = 'windows/runner/main.cpp.in';
 const _templates = [_rcIn, _mainIn];
 
 /// What a full run of a project with only Windows flavors covers: the Windows
-/// recipe and the `flutter:flavors` of the `all` recipe. The two processors
-/// that make icons are 2.x ones, and the fixture does not run them.
+/// recipe and the `flutter:flavors` of the `all` recipe.
 const _fullRun = ['flutter:flavors', 'windows'];
 
 String _resource(String path) =>
@@ -122,9 +122,16 @@ void main() {
       final code = await project.run(['plan', 'windows']);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.logger.output, contains('1. windows:mainCppTemplate'));
-      expect(project.logger.output, contains('windows:runnerRcTemplate'));
-      expect(project.logger.output, contains('windows:cmake'));
+      for (final id in [
+        'windows:mainCppTemplate',
+        'windows:runnerRcTemplate',
+        'windows:cmake',
+        'windows:dummyAssets',
+        'windows:icons',
+      ]) {
+        expect(project.logger.output, contains(id));
+      }
+      expect(project.logger.output, contains('Processors on the engine'));
       expect(project.snapshot(), before);
     });
 
@@ -133,7 +140,7 @@ void main() {
       final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ids, ['windows:dummyAssets', 'windows:icons']);
+      expect(project.legacy.ids, isEmpty);
 
       templates.forEach(
         (path, template) => expect(project.read(path), template, reason: path),
@@ -182,8 +189,6 @@ void main() {
       await project.run(['apply', '--yes', ..._fullRun]);
       final before = project.snapshot();
 
-      // `--yes`: the two 2.x processors of the recipe, which have no preview,
-      // are what asks for a confirmation.
       final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
@@ -290,15 +295,159 @@ void main() {
             '      icon: assets/cherry.png\n',
       );
 
-      await project.run(['plan']);
-
-      // The icon is made by a processor that is not on the engine yet, which
-      // runs after this one: only the choice is checked here.
+      // The icon is made by `windows:icons`, which is not part of this run: only
+      // the choice is checked here.
       final code = await project.run(['apply', '--yes', 'windows:cmake']);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(_icon(project.read(_cmake), 'cherry'), 'cherry.ico');
       expect(_icon(project.read(_cmake), 'apple'), isNull);
+    });
+
+    group('with the icons of the flavors', () {
+      const icon = 'windows/runner/resources/cherry.ico';
+      const withIcon =
+          'flavors:\n  apple:\n    app:\n      name: "Apple App"\n'
+          '    windows: {}\n'
+          '  cherry:\n    app:\n      name: Cherry\n    windows:\n'
+          '      icon: assets/cherry.png\n';
+      const withoutIcon =
+          'flavors:\n  apple:\n    app:\n      name: "Apple App"\n'
+          '    windows: {}\n'
+          '  cherry:\n    app:\n      name: Cherry\n    windows: {}\n';
+      const withBadge =
+          'badge: true\nicon: assets/cherry.png\n'
+          'flavors:\n  apple:\n    app:\n      name: "Apple App"\n'
+          '    badge: false\n    windows: {}\n'
+          '  cherry:\n    app:\n      name: Cherry\n    windows: {}\n';
+      const run = ['windows:cmake', 'windows:dummyAssets', 'windows:icons'];
+
+      setUp(() {
+        File(project.abs('assets/cherry.png'))
+          ..parent.createSync(recursive: true)
+          ..writeAsBytesSync(
+            img.encodePng(
+              img.Image(width: 1024, height: 1024)
+                ..clear(img.ColorRgb8(200, 30, 30)),
+            ),
+          );
+      });
+
+      test('the .ico is made, and the flavor is built with it', () async {
+        project.write('flavorizr.yaml', withIcon);
+
+        final code = await project.run(['apply', '--yes', ...run]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists(icon), isTrue);
+        expect(_icon(project.read(_cmake), 'cherry'), 'cherry.ico');
+        expect(_icon(project.read(_cmake), 'apple'), isNull);
+      });
+
+      test('a re-run produces an empty diff', () async {
+        project.write('flavorizr.yaml', withIcon);
+        await project.run(['apply', '--yes', ...run]);
+        final cmake = project.read(_cmake);
+        final lock = project.read('flavorizr.lock');
+        final bytes = File(project.abs(icon)).readAsBytesSync();
+
+        final code = await project.run(['apply', '--yes', ...run]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.read(_cmake), cmake);
+        expect(project.read('flavorizr.lock'), lock);
+        expect(File(project.abs(icon)).readAsBytesSync(), bytes);
+        expect(project.logger.output, contains('up to date'));
+      });
+
+      test('the .ico of a badge is made, and the flavor is built with it, '
+          'without an icon of its own', () async {
+        project.write('flavorizr.yaml', withBadge);
+
+        final code = await project.run(['apply', '--yes', ...run]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists(icon), isTrue);
+        expect(_icon(project.read(_cmake), 'cherry'), 'cherry.ico');
+        expect(_icon(project.read(_cmake), 'apple'), isNull);
+        expect(project.exists('windows/runner/resources/apple.ico'), isFalse);
+      });
+
+      test('a flavor that loses its icon is built with the icon of the project '
+          'in the run that removes its .ico', () async {
+        project.write('flavorizr.yaml', withIcon);
+        await project.run(['apply', '--yes', ...run]);
+
+        project.write('flavorizr.yaml', withoutIcon);
+        final code = await project.run(['apply', '--yes', ...run]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists(icon), isFalse);
+        expect(_icon(project.read(_cmake), 'cherry'), isNull);
+      });
+
+      test(
+        'the same goes when the processors run apart, in either order',
+        () async {
+          project.write('flavorizr.yaml', withIcon);
+          await project.run(['apply', '--yes', ...run]);
+
+          project.write('flavorizr.yaml', withoutIcon);
+          await project.run(['apply', '--yes', 'windows:cmake']);
+
+          expect(_icon(project.read(_cmake), 'cherry'), isNull);
+          expect(project.exists(icon), isTrue);
+
+          await project.run(['apply', '--yes', 'windows:icons']);
+
+          expect(project.exists(icon), isFalse);
+          expect(_icon(project.read(_cmake), 'cherry'), isNull);
+        },
+      );
+
+      test('a flavor that loses its badge is built with the icon of the '
+          'project too', () async {
+        project.write('flavorizr.yaml', withBadge);
+        await project.run(['apply', '--yes', ...run]);
+
+        project.write(
+          'flavorizr.yaml',
+          withBadge.replaceFirst('badge: true', ''),
+        );
+        final code = await project.run(['apply', '--yes', ...run]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists(icon), isFalse);
+        expect(_icon(project.read(_cmake), 'cherry'), isNull);
+      });
+
+      test('a flavor that is dropped loses its .ico and its branch', () async {
+        project.write('flavorizr.yaml', withIcon);
+        await project.run(['apply', '--yes', ...run]);
+
+        project.write('flavorizr.yaml', _config(['apple', 'banana']));
+        final code = await project.run(['apply', '--yes', ...run]);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists(icon), isFalse);
+        expect(project.read(_cmake), isNot(contains('cherry')));
+      });
+
+      test('the .ico of the user stays the icon of the flavor, whatever the '
+          'flavor does, while the lock does not know it', () async {
+        project.write('windows/runner/resources/apple.ico', 'MINE');
+        project.write('flavorizr.yaml', withoutIcon);
+
+        await project.run(['apply', '--yes', ...run]);
+
+        expect(_icon(project.read(_cmake), 'apple'), 'apple.ico');
+        expect(project.read('windows/runner/resources/apple.ico'), 'MINE');
+
+        await project.run(['apply', '--yes', ...run]);
+
+        expect(_icon(project.read(_cmake), 'apple'), 'apple.ico');
+        expect(project.read('windows/runner/resources/apple.ico'), 'MINE');
+      });
     });
 
     test('a flavor whose icon is already in the project is built with it, '
