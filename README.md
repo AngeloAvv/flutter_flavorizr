@@ -117,6 +117,7 @@ flavorizr:
 | app                                     | Object |                                                                                            | false    | An object describing the general capabilities of an app                                       |
 | badge                                   | Bool   | false                                                                                      | false    | Turns on the [badge](#icon-badge) of every flavor, unless a flavor says otherwise |
 | icon                                    | String |                                                                                            | false    | The source icon of the [badges](#icon-badge) when a flavor has no `icon` of its own           |
+| launchScreen                            | Bool   | false                                                                                      | false    | Turns on the iOS [launch screen](#launch-screen) of every flavor, unless a flavor says otherwise |
 | flavors                                 | Array  |                                                                                            | true     | An array of items. Each of them describes a flavor configuration                              |
 | recipes                                 | Map    |                                                                                            | false    | Named lists of [instructions](#available-instructions): `default` is what runs without a target |
 | ide                                     | Array  |                                                                                            | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
@@ -141,10 +142,10 @@ flavorizr:
 | ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
 | ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
 | ios:schema              | iOS           | Creates a scheme for each flavor, keeping the edits made to it          |
-| ios:dummyAssets         | iOS           | Copies the launch image of each flavor (no dummy icons anymore)         |
+| ios:dummyAssets         | iOS           | Does nothing now: the launch image is made by `ios:launchScreen`        |
 | ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
 | ios:plist               | iOS           | Sets the bundle name keys of Info.plist in place, keeping its format    |
-| ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
+| ios:launchScreen        | iOS           | Creates the launch screen of each flavor that has `launchScreen: true`, from its icon |
 | macos:podfile           | macOS         | Maps the build configurations of each flavor in the Podfile             |
 | macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
 | macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
@@ -199,6 +200,12 @@ flavorizr:
 | color | String | from the palette, by the flavor name | false | The colour of the band, as `#RRGGBB`                                |
 
 `badge` is `true`, `false`, or this map. See [Icon badge](#icon-badge).
+
+#### launchScreen (under *flavorname*)
+
+| key          | type | default                    | required | description                                                      |
+|:-------------|:-----|:---------------------------|:---------|:-----------------------------------------------------------------|
+| launchScreen | Bool | what the root says (`false`) | false  | Whether the iOS flavor has a [launch screen](#launch-screen) made from its icon |
 
 #### android (under *flavorname*)
 
@@ -443,6 +450,65 @@ flavors:
   iOS, macOS and Windows flavors that have a badge and no `icon` stay in the
   project when the badge goes: they are those of the 2.x processors, which do
   not track what they write.
+
+#### Launch screen
+
+On iOS a flavor can have a launch screen of its own: its icon, centred on the
+system background (white, or black in the dark appearance). It is opt-in.
+
+```yaml
+launchScreen: true                # root default (default: false)
+flavors:
+  dev:
+    app: { name: "App Dev", icon: "assets/icon/dev.png" }
+    ios: { bundleId: "com.example.dev" }
+    badge: true                   # the launch screen shows the badged icon
+  prod:
+    app: { name: "App", icon: "assets/icon/prod.png" }
+    ios: { bundleId: "com.example.prod" }
+    launchScreen: false           # opt-out: the launch screen of the project
+```
+
+* `launchScreen: true` or `false` in a flavor wins over the root, and a flavor
+  that says nothing does as the root does. It only applies to the flavors built
+  for iOS.
+* The image is the same icon `ios:icons` uses: the `icon` of the iOS platform or
+  of the app and, when the flavor has none, the `icon` of the root and then the
+  `AppIcon` of the project. With a [badge](#icon-badge), it is the badged icon,
+  and the source is the one of the badge. The storyboard
+  `ios/Runner/<flavor>LaunchScreen.storyboard` and the image set
+  `ios/Runner/Assets.xcassets/<flavor>LaunchImage.imageset` (the same image at
+  1x, 2x and 3x) are generated in code, and the storyboard is added to the
+  project as a resource of the app.
+* `UILaunchStoryboardName` of `Info.plist` is `$(LAUNCH_SCREEN_NAME)`, and every
+  flavor defines `LAUNCH_SCREEN_NAME` in its xcconfig (`<flavor>LaunchScreen`).
+  It is a property of the configuration: it does not depend on the processors
+  you run, so a run of `ios:plist` and `ios:xcconfig` alone is enough to point
+  the app at the storyboard. The launch storyboard the project had (the
+  `UILaunchStoryboardName` of `Info.plist` before flavorizr changed it: the
+  `LaunchScreen` of `flutter create`, a storyboard of your own, or the one 2.x
+  set) is kept in every flavor as `DEFAULT_LAUNCH_SCREEN_NAME`, and the flavors
+  without a launch screen define `LAUNCH_SCREEN_NAME` as that. Without
+  `launchScreen` nowhere, nothing is defined and the project keeps its launch
+  screen. To never lose a storyboard of your own, `ios:plist` run on its own
+  leaves `UILaunchStoryboardName` as it is (and warns) until `ios:xcconfig` has
+  kept it: run them together, or `ios:xcconfig` first.
+* The files are generated: edit the icon, not them. A hand edit of one is a
+  conflict. Turning `launchScreen` off removes the storyboards, the image sets
+  and their references in the project, and `UILaunchStoryboardName` goes back
+  to the storyboard the project had.
+* What 2.x made is yours. A `<flavor>LaunchScreen.storyboard` that flavorizr did
+  not generate, and the `<flavor>LaunchImage.imageset` of that flavor, are never
+  overwritten or deleted: flavorizr points the flavor at the storyboard and says
+  so. Delete them to have the generated launch screen instead.
+* If you list your own processors, `ios:launchScreen` is the one that makes the
+  files. Without it `LAUNCH_SCREEN_NAME` still points at
+  `<flavor>LaunchScreen`: add that storyboard to the project yourself.
+* **Android parity:** nothing to generate there. Android 12 and later show the
+  splash screen with the launcher icon of the flavor, which `android:icons`
+  makes (with its badge, if any), so each flavor already has its own. Older
+  versions show the launch background of the project, which flavorizr does not
+  touch.
 
 #### customConfig and manifestPlaceholders (for Android only)
 

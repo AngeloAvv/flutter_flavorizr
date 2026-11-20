@@ -12,9 +12,17 @@ FlavorizrConfig _$FlavorizrConfigFromJson(Map json) => $checkedCreate(
   ($checkedConvert) {
     $checkKeys(
       json,
-      allowedKeys: const ['app', 'badge', 'icon', 'flavors', 'ide', 'recipes'],
+      allowedKeys: const [
+        'app',
+        'badge',
+        'icon',
+        'launchScreen',
+        'flavors',
+        'ide',
+        'recipes',
+      ],
       requiredKeys: const ['flavors'],
-      disallowNullValues: const ['badge', 'icon'],
+      disallowNullValues: const ['badge', 'icon', 'launchScreen'],
     );
     final val = FlavorizrConfig(
       app: $checkedConvert(
@@ -23,6 +31,7 @@ FlavorizrConfig _$FlavorizrConfigFromJson(Map json) => $checkedCreate(
       ),
       badge: $checkedConvert('badge', (v) => v as bool? ?? false),
       icon: $checkedConvert('icon', (v) => v as String?),
+      launchScreen: $checkedConvert('launchScreen', (v) => v as bool? ?? false),
       flavors: $checkedConvert(
         'flavors',
         (v) => (v as Map).map(

@@ -38,6 +38,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/build_settings_ow
 import 'package:flutter_flavorizr/src/engine/processors/darwin/build_targets_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/launch_screen_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/podfile_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_editor.dart';
@@ -94,6 +95,23 @@ final class EngineProcessor {
     required this.paths,
     this.ownedContent = const {},
   });
+}
+
+/// The part of the iOS `project.pbxproj` the lock hashes: what the processors
+/// that own objects in it say they own.
+///
+/// The references to the storyboards of the launch screens are in it only when
+/// the project has some, so that the hash of a project without them is the one
+/// it was before they existed.
+String iosProjectOwnedContent(String source) {
+  final launchScreens = launchScreenReferencesOwnedContent(source);
+
+  return [
+    xcconfigReferencesOwnedContent(source),
+    if (launchScreens.isNotEmpty) launchScreens,
+    buildSettingsOwnedContent(source),
+    firebaseOwnedContent(source, 'ios'),
+  ].join('\n');
 }
 
 /// A shared resource of the engine, with what the CLI has to know about it and
@@ -156,7 +174,7 @@ class ProcessorRegistry {
   }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, build targets, schema, Podfile and Info.plist processors that were ported
+  /// xcconfig, build targets, schema, launch screen, Podfile and Info.plist processors that were ported
   /// run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
@@ -219,6 +237,12 @@ class ProcessorRegistry {
         const IosInfoPlistPatchProcessor(),
         paths: {K.iOSPListPath},
         ownedContent: {K.iOSPListPath: InfoPlistEditor.iosOwnedContent},
+      ),
+      // The storyboards and the launch images of the flavors, in the asset
+      // catalog of the app, and their references in the project.
+      EngineProcessor(
+        const IosLaunchScreenProcessor(),
+        paths: {K.iOSRunnerPath},
       ),
       EngineProcessor(
         const MacosInfoPlistPatchProcessor(),
@@ -315,11 +339,7 @@ class ProcessorRegistry {
         XcodeprojResource.ios(),
         paths: const {XcodeprojResource.iosProject},
         ownedContent: {
-          XcodeprojResource.iosArtifact.path: (source) => [
-            xcconfigReferencesOwnedContent(source),
-            buildSettingsOwnedContent(source),
-            firebaseOwnedContent(source, 'ios'),
-          ].join('\n'),
+          XcodeprojResource.iosArtifact.path: iosProjectOwnedContent,
         },
       ),
       EngineResource(

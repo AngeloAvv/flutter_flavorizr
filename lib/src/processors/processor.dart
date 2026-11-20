@@ -43,7 +43,6 @@ import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/icons/ios_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/ios_plist_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_targets_launchscreen_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_runner_cmake_lists_processor.dart';
@@ -262,21 +261,12 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'ios:dummyAssets': () => IOSDummyAssetsTargetsProcessor(
-        K.iOSAssetsPath,
-        config: flavorizr,
-        logger: logger,
-      ),
+      'ios:dummyAssets': () =>
+          IOSDummyAssetsTargetsProcessor(config: flavorizr, logger: logger),
       'ios:icons': () => IOSIconsProcessor(config: flavorizr, logger: logger),
       'ios:plist': () => ExistingFileStringProcessor(
         K.iOSPListPath,
         IOSPListProcessor(config: flavorizr, logger: logger),
-        config: flavorizr,
-        logger: logger,
-      ),
-      'ios:launchScreen': () => IOSTargetsLaunchScreenFileProcessor(
-        K.iOSRunnerProjectPath,
-        K.iOSRunnerPath,
         config: flavorizr,
         logger: logger,
       ),

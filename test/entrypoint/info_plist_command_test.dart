@@ -228,9 +228,9 @@ void main() {
       expect(project.read(_ios), flavorized);
     });
 
-    test('the launch storyboard follows the launch screen of the run, not '
-        'the default recipe of the file', () async {
-      // The file asks for it, the run does not: nothing generates it.
+    test('the launch storyboard follows the launch screen of the flavors, not '
+        'the processors of the run', () async {
+      // The run asks for the launch screen, the flavors do not.
       project.write(
         'flavorizr.yaml',
         'recipes:\n  default:\n    - ios:plist\n    - ios:launchScreen\n'
@@ -238,20 +238,22 @@ void main() {
       );
 
       expect(await project.run(['apply', '--yes', 'ios:plist']), ExitCodes.ok);
-      expect(project.read(_ios), isNot(contains('ASSET_PREFIX')));
+      expect(project.read(_ios), isNot(contains('LAUNCH_SCREEN_NAME')));
 
-      // The run asks for it, the file does not.
-      project.write('flavorizr.yaml', _config(['apple', 'banana']));
+      // The flavors ask for it, the run is only the plist.
+      project.write(
+        'flavorizr.yaml',
+        'launchScreen: true\n${_config(['apple', 'banana'])}',
+      );
 
       expect(
-        await project.run(['apply', '--yes', 'ios:plist', 'ios:launchScreen']),
+        await project.run(['apply', '--yes', 'ios:plist']),
         ExitCodes.ok,
         reason: project.logger.output,
       );
-      expect(project.legacy.ids, contains('ios:launchScreen'));
       expect(
         project.read(_ios),
-        contains(r'<string>$(ASSET_PREFIX)LaunchScreen</string>'),
+        contains(r'<string>$(LAUNCH_SCREEN_NAME)</string>'),
       );
     });
 

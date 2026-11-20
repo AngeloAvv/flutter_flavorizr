@@ -35,8 +35,12 @@
     ios:plist runs on the engine (#520), which replaces only the value of the
     owned keys in the text of the file and keeps the rest byte for byte, where
     2.6.0 serialized the whole document again, reindenting it with two spaces.
-    The two documents are equivalent: the same keys, in the same order, with
-    the same values.
+    The two documents have the same keys, in the same order, with the same
+    values but one: `UILaunchStoryboardName`. 2.6.0 set it to
+    `$(ASSET_PREFIX)LaunchScreen` for every project, where the launch screen of
+    a flavor is opt-in now (`launchScreen`, #522) and the fixture has none, so
+    the key keeps the `LaunchScreen` of `flutter create`. With a launch screen
+    it is `$(LAUNCH_SCREEN_NAME)`, which every flavor defines in its xcconfig.
 - path: macos/Runner/Info.plist
   reason: >-
     macos:plist runs on the engine (#520), which replaces only the value of
@@ -87,7 +91,7 @@
     needed anymore.
 - path: ios/Runner.xcodeproj/project.pbxproj
   only-comments: true
-  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
+  drop-from-golden: '^\s*\w{24} /\* Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$|^\s*\w{24} /\* Runner/(?:apple|banana)LaunchScreen\.storyboard(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
   moved: '^\s*\w{24} /\* (?:Runner/)?GoogleService-Info\.plist(?: in Resources)? \*/(?: = \{isa = PBX(?:BuildFile|FileReference); .*\};|,)$'
   ignore: '(?<=includeInIndex = 1; )lastKnownFileType = text\.xcconfig; (?=path = "?Flutter/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig"?; )|(?<=== \\"Debug-([\w./-]+)\\" \]) \|\| \[ \\"\$CONFIGURATION\\" == \\"Profile-\1\\" \]|ASSETCATALOG_COMPILER_APPICON_NAME = (?:"AppIcon-\$\(ASSET_PREFIX\)"|AppIcon);'
   reason: >-
@@ -113,6 +117,11 @@
     are known to hold the same references (`moved`). The
     script of its `Firebase Setup` phase also copies the configuration for the
     Profile build configurations (see ios/firebaseScript.sh).
+    The launch screen of a flavor is opt-in (`launchScreen`, #522) and the
+    fixture has none, so the project has no reference to
+    `Runner/appleLaunchScreen.storyboard` and `Runner/bananaLaunchScreen.storyboard`
+    (nor their entries in Resources), which 2.6.0 added for every flavor
+    (`drop-from-golden`).
 - path: macos/Runner.xcodeproj/project.pbxproj
   only-comments: true
   drop-from-golden: '^\s*\w{24} /\* Runner/Configs/[^\s";*/\x00-\x1f\x7f-\uffff\\]+(?:Debug|Profile|Release)\.xcconfig in Resources \*/(?: = \{isa = PBXBuildFile; .*\};|,)$'
@@ -212,10 +221,18 @@
     (#529), where 2.6.0 built a dummy one.
 - path: windows/runner/resources/banana.ico.sha256
   reason: *dummy-ico
-- path: ios/Runner/Assets.xcassets/appleLaunchImage.imageset/README.md
-  reason: &launch-readme >-
-    The launch image set is written in code (#528), with its `Contents.json` and
-    its three images. 2.6.0 copied the folder of the downloaded assets, which also
-    held a `README.md` about the set.
-- path: ios/Runner/Assets.xcassets/bananaLaunchImage.imageset/README.md
-  reason: *launch-readme
+- path: ios/Runner/Assets.xcassets/appleLaunchImage.imageset/**
+  reason: &launch-image >-
+    The launch screen of a flavor is opt-in (`launchScreen`, #522), and the
+    fixture has none: 2.6.0 copied a launch image set for every flavor, and
+    flavorizr makes it from the icon of the flavor only when it has a launch
+    screen.
+- path: ios/Runner/Assets.xcassets/bananaLaunchImage.imageset/**
+  reason: *launch-image
+- path: ios/Runner/appleLaunchScreen.storyboard
+  reason: &launch-storyboard >-
+    The launch screen of a flavor is opt-in (`launchScreen`, #522), and the
+    fixture has none: 2.6.0 made a storyboard for every flavor, and flavorizr
+    generates it only when the flavor has a launch screen.
+- path: ios/Runner/bananaLaunchScreen.storyboard
+  reason: *launch-storyboard

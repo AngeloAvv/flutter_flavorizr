@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/launch_storyboard_name.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_sources.dart';
@@ -64,7 +65,7 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
 
   /// The text of the file of [flavorName] for [target].
   String render(
-    FlavorizrConfig config,
+    FlavorizrContext ctx,
     String flavorName,
     Flavor flavor,
     Target target,
@@ -82,7 +83,7 @@ abstract class _XcconfigProcessor extends FlavorizrProcessor {
 
       for (final target in Target.values) {
         sources[p.posix.join(folder, xcconfigName(flavorName, target))] =
-            render(ctx.config, flavorName, flavor, target);
+            render(ctx, flavorName, flavor, target);
       }
     }
 
@@ -137,11 +138,21 @@ class IosXcconfigProcessor extends _XcconfigProcessor {
 
   @override
   String render(
-    FlavorizrConfig config,
+    FlavorizrContext ctx,
     String flavorName,
     Flavor flavor,
     Target target,
-  ) => iosXcconfigSource(config, flavorName, flavor, target);
+  ) => iosXcconfigSource(
+    ctx.config,
+    flavorName,
+    flavor,
+    target,
+    defaultLaunchScreen: originalLaunchStoryboardName(ctx.projectRoot),
+    // `ios:plist` in the run puts the storyboard back by itself.
+    launchScreenPointedAt:
+        !ctx.selected.contains('ios:plist') &&
+        launchStoryboardIsPointedAtFlavors(ctx.projectRoot),
+  );
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
@@ -182,11 +193,11 @@ class MacosXcconfigProcessor extends _XcconfigProcessor {
 
   @override
   String render(
-    FlavorizrConfig config,
+    FlavorizrContext ctx,
     String flavorName,
     Flavor flavor,
     Target target,
-  ) => macosFlutterXcconfigSource(config, flavorName, flavor, target);
+  ) => macosFlutterXcconfigSource(ctx.config, flavorName, flavor, target);
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
@@ -221,11 +232,11 @@ class MacosConfigsProcessor extends _XcconfigProcessor {
 
   @override
   String render(
-    FlavorizrConfig config,
+    FlavorizrContext ctx,
     String flavorName,
     Flavor flavor,
     Target target,
-  ) => macosConfigsXcconfigSource(config, flavorName, flavor, target);
+  ) => macosConfigsXcconfigSource(ctx.config, flavorName, flavor, target);
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
