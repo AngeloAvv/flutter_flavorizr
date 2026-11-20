@@ -43,7 +43,8 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// * [produced] are the artifacts each processor tracked, and [ownedHashes] the
 ///   hash of the owned content of each of them, by canonical path: it must have
 ///   one for every managed and patched artifact. Local artifacts are never
-///   recorded.
+///   recorded as files (see [ownedKeys] for what a processor may remember of
+///   them).
 /// * [stale] are the files of the processors of the run that were not produced
 ///   again (see `findStaleArtifacts`).
 /// * [retained] are the paths whose file the run left as it was although it
@@ -66,7 +67,9 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// the value it wrote, by key. They are recorded the way the objects are: what
 /// is recorded for a processor is exactly what it says, a file it tracks and
 /// said nothing about keeps what the lock had, and so does a file in
-/// [retained], where the keys the run meant to write are not.
+/// [retained], where the keys the run meant to write are not. A local file a
+/// processor tracks is the exception: it is recorded as the processor says, and
+/// it is how the processor remembers the copies it made.
 ///
 /// [written] are the paths the run writes to the project (the changes that
 /// are applied, and the conflicts that were approved). A file that several
@@ -102,11 +105,15 @@ FlavorizrLock updateLock({
   for (final MapEntry(key: id, value: artifacts) in produced.entries) {
     final before = previousProcessors[id]?.files ?? const {};
     final files = <String, LockedFile>{};
+    final copies = <String>{};
 
     for (final artifact in artifacts) {
-      if (artifact.ownership == Ownership.local) continue;
-
       final path = canonicalPath(artifact.path);
+
+      if (artifact.ownership == Ownership.local) {
+        copies.add(path);
+        continue;
+      }
 
       if (retained.contains(path)) {
         final recorded = _sameClass(before[path], artifact.ownership);
@@ -143,6 +150,7 @@ FlavorizrLock updateLock({
       before: previousProcessors[id]?.keys ?? const {},
       reported: ownedKeys[id] ?? const {},
       files: files.keys.toSet(),
+      copies: copies,
       retained: retained,
       isEmpty: (hashes) => hashes.isEmpty,
     );
@@ -176,12 +184,18 @@ FlavorizrLock updateLock({
 
 /// What to record for a processor, by file, of what it owns inside the files
 /// (the objects of a project, the keys of a file): see `updateLock`.
+///
+/// What a processor says about a local file it tracks ([copies]) is recorded as
+/// it says it, and never carried over: the lock does not hold local files, only
+/// what a processor asks it to remember about the copies it made, so that it
+/// can tell them from the ones of the user when it stops making them.
 Map<String, V> _recordedOf<V>({
   required Map<String, V> before,
   required Map<String, V> reported,
   required Set<String> files,
   required Set<String> retained,
   required bool Function(V value) isEmpty,
+  Set<String> copies = const {},
 }) {
   final recorded = <String, V>{};
 
@@ -201,7 +215,7 @@ Map<String, V> _recordedOf<V>({
     // not kept: the file is not owned (not tracked, or kept as the user has it).
     if (canonical == null ||
         retained.contains(canonical) ||
-        !files.contains(canonical)) {
+        !(files.contains(canonical) || copies.contains(canonical))) {
       continue;
     }
 

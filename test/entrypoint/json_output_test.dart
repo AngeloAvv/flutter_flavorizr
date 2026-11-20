@@ -154,12 +154,12 @@ void main() {
           'plan',
           '--json',
           ...engineTargets,
-          'huawei:agconnect',
+          'android:dummyAssets',
         ]);
 
         expect((document()['processors'] as List).last, {
-          'id': 'huawei:agconnect',
-          'platform': 'huawei',
+          'id': 'android:dummyAssets',
+          'platform': 'android',
           'runsOn': 'legacy',
           'auto': false,
         });
@@ -424,21 +424,26 @@ void main() {
       });
 
       test('lists what a failed legacy step kept from running', () async {
-        project.legacy.failAt = 'huawei:agconnect';
+        project.write(
+          'flavorizr.yaml',
+          '${CliFixture.config(['apple'])}'
+              '    windows: {}\n',
+        );
+        project.legacy.failAt = 'android:dummyAssets';
 
         final code = await project.run([
           'apply',
           '--json',
-          'huawei:agconnect',
           'android:dummyAssets',
+          'windows:dummyAssets',
         ]);
         final steps = (document()['steps'] as List)
             .cast<Map<String, Object?>>();
 
         expect(code, ExitCodes.software);
         expect(steps.map((s) => '${s['id']} ${s['status']}'), [
-          'huawei:agconnect failed',
-          'android:dummyAssets skipped',
+          'android:dummyAssets failed',
+          'windows:dummyAssets skipped',
         ]);
         expect(steps.last['durationMs'], isNull);
       });
@@ -454,12 +459,16 @@ void main() {
             'apply',
             '--json',
             'android:androidManifest',
-            'huawei:agconnect',
+            'android:dummyAssets',
           ]);
 
           expect(
             (document()['steps'] as List).cast<Map<String, Object?>>().last,
-            {'id': 'huawei:agconnect', 'status': 'skipped', 'durationMs': null},
+            {
+              'id': 'android:dummyAssets',
+              'status': 'skipped',
+              'durationMs': null,
+            },
           );
         },
       );
@@ -469,14 +478,14 @@ void main() {
         project.write('android/app/flavorizr.gradle', '// mine\n');
         project.write('flavorizr.yaml', CliFixture.config(['apple', 'pear']));
         project.stdout.clear();
-        project.legacy.failAt = 'huawei:agconnect';
+        project.legacy.failAt = 'android:dummyAssets';
 
         final code = await project.run([
           'apply',
           '--json',
           '--on-conflict=overwrite',
           ...engineTargets,
-          'huawei:agconnect',
+          'android:dummyAssets',
         ]);
         final doc = document();
         final modified = changes(doc).where((c) => c['change'] == 'modified');
@@ -494,11 +503,11 @@ void main() {
             'apply',
             '--json',
             ...engineTargets,
-            'huawei:agconnect',
+            'android:dummyAssets',
           ]);
 
           expect((document()['steps'] as List).last, {
-            'id': 'huawei:agconnect',
+            'id': 'android:dummyAssets',
             'status': 'completed',
             'durationMs': 1,
           });
@@ -606,17 +615,17 @@ void main() {
           'status',
           '--json',
           ...engineTargets,
-          'huawei:agconnect',
+          'android:dummyAssets',
         ]);
 
-        expect(document()['notChecked'], ['huawei:agconnect']);
+        expect(document()['notChecked'], ['android:dummyAssets']);
       });
 
       test('has nothing to check without a processor of the engine', () async {
         final code = await project.run([
           'status',
           '--json',
-          'huawei:agconnect',
+          'android:dummyAssets',
         ]);
         final doc = document();
 
@@ -644,9 +653,9 @@ void main() {
           processors.firstWhere((p) => p['id'] == 'android:icons'),
           containsPair('runsOn', 'engine'),
         );
-        expect(processors.firstWhere((p) => p['id'] == 'huawei:agconnect'), {
-          'id': 'huawei:agconnect',
-          'platform': 'huawei',
+        expect(processors.firstWhere((p) => p['id'] == 'android:dummyAssets'), {
+          'id': 'android:dummyAssets',
+          'platform': 'android',
           'runsOn': 'legacy',
           'needs': <String>[],
           'after': <String>[],

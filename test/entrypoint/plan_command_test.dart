@@ -89,9 +89,9 @@ void main() {
     });
 
     test('names the processors that are not on the engine', () async {
-      await project.run(['plan', ...engineTargets, 'huawei:agconnect']);
+      await project.run(['plan', ...engineTargets, 'android:dummyAssets']);
 
-      expect(project.logger.output, contains('huawei:agconnect'));
+      expect(project.logger.output, contains('android:dummyAssets'));
       expect(project.logger.output, contains('not on the engine yet'));
       expect(project.legacy.ran, isEmpty);
     });

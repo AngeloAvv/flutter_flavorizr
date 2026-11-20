@@ -31,62 +31,29 @@ import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/pbxproj_seed.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/project_config_copy.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
-import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart';
-import 'package:path/path.dart' as p;
 
 /// The name Xcode shows for the build phase that copies the Firebase
 /// configuration of the flavor that is built.
 const firebaseBuildPhaseName = 'Firebase Setup';
 
-/// What [ctx] copies of the Firebase configuration of a flavor: the file at
-/// [source], a path of the project, to [destination], below the workspace.
-///
-/// The source is an input of the user, read from the real project and kept inside
-/// it, links included. The copy is [Artifact.local]: the IDEs and the builds
-/// work with it, so it is written again silently on every run, never hashed in
-/// the lock, and never a conflict or drift.
 Future<void> _copyConfig(
   FlavorizrContext ctx,
   String source,
   String destination,
-) async {
-  final resolved = ctx.resolveProject(source);
-
-  switch (FileSystemEntity.typeSync(resolved)) {
-    case FileSystemEntityType.notFound:
-      throw FileNotFoundException(source);
-    case FileSystemEntityType.file:
-      break;
-    default:
-      throw MalformedResourceException(source);
-  }
-
-  // `resolve` is lexical: a link inside the project may still lead out of it.
-  final real = await File(resolved).resolveSymbolicLinks();
-  final realProject = await ctx.projectRoot.resolveSymbolicLinks();
-
-  if (!p.isWithin(realProject, real)) {
-    throw ArgumentError.value(
-      source,
-      'firebase.config',
-      'must stay within `${ctx.projectRoot.path}`, links included',
-    );
-  }
-
-  final target = File(ctx.resolve(destination));
-
-  await target.parent.create(recursive: true);
-  await File(real).copy(target.path);
-  ctx.track(Artifact.local(destination));
-}
+) => copyProjectConfig(
+  ctx,
+  source: source,
+  destination: destination,
+  option: 'firebase.config',
+);
 
 /// `android:firebase`: the `google-services.json` of each Android flavor that
 /// has a Firebase configuration, in `android/app/src/<flavor>`, where the Google
@@ -102,7 +69,7 @@ class AndroidFirebaseProcessor extends FlavorizrProcessor {
   Future<void> apply(FlavorizrContext ctx) async {
     for (final MapEntry(key: flavor, value: definition)
         in ctx.config.androidFirebaseFlavors.entries) {
-      _checkFlavorName(flavor);
+      checkFlavorName(flavor);
 
       await _copyConfig(
         ctx,
@@ -256,7 +223,7 @@ abstract class _AppleFirebaseProcessor extends FlavorizrProcessor {
     final owned = this.owned(ctx);
 
     for (final MapEntry(key: flavor, value: source) in flavors.entries) {
-      _checkFlavorName(flavor);
+      checkFlavorName(flavor);
 
       await _copyConfig(
         ctx,
@@ -414,17 +381,4 @@ class MacosFirebaseProcessor extends _AppleFirebaseProcessor {
         in config.macosFirebaseFlavors.entries)
       flavor: macos!.firebase!.config,
   };
-}
-
-void _checkFlavorName(String flavor) {
-  if (flavor.isEmpty ||
-      flavor == '.' ||
-      flavor == '..' ||
-      flavor.contains(RegExp(r'[/\\\x00]'))) {
-    throw ArgumentError.value(
-      flavor,
-      'flavor',
-      'cannot be used as the name of a directory',
-    );
-  }
 }

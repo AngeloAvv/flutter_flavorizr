@@ -99,6 +99,7 @@ void main() {
         'android:firebase',
         'ios:firebase',
         'macos:firebase',
+        'huawei:agconnect',
       });
     });
 
@@ -172,6 +173,7 @@ void main() {
           'android:firebase',
           'ios:firebase',
           'macos:firebase',
+          'huawei:agconnect',
         });
       },
     );
@@ -294,7 +296,7 @@ void main() {
     });
 
     test('keeps every other 2.x instruction on the legacy pipeline', () {
-      expect(registry.legacyIds, contains('huawei:agconnect'));
+      expect(registry.legacyIds, isNot(contains('huawei:agconnect')));
       expect(registry.legacyIds, isNot(contains('ios:schema')));
       expect(registry.legacyIds, isNot(contains('macos:schema')));
       expect(registry.legacyIds, contains('android:dummyAssets'));

@@ -151,18 +151,18 @@ void main() {
       final code = await project.run([
         'status',
         ...engineTargets,
-        'huawei:agconnect',
+        'android:dummyAssets',
       ]);
 
       expect(code, ExitCodes.ok);
       expect(project.logger.output, contains('Not checked'));
       expect(project.logger.output, contains('as far as the engine can tell'));
-      expect(project.logger.output, contains('huawei:agconnect'));
+      expect(project.logger.output, contains('android:dummyAssets'));
     });
 
     group('when no processor of the engine is selected', () {
       test('does not claim the project is in sync', () async {
-        final code = await project.run(['status', 'huawei:agconnect']);
+        final code = await project.run(['status', 'android:dummyAssets']);
 
         expect(code, ExitCodes.ok);
         expect(project.logger.output, contains('Nothing to check'));
@@ -177,7 +177,7 @@ void main() {
           // failure `apply` cannot fix.
           expect(project.exists('flavorizr.lock'), isFalse);
           expect(
-            await project.run(['status', 'huawei:agconnect']),
+            await project.run(['status', 'android:dummyAssets']),
             ExitCodes.ok,
           );
           expect(project.logger.output, contains('Nothing to check'));

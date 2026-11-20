@@ -280,6 +280,13 @@ class FlavorizrContext {
     );
   }
 
+  /// The canonical paths of the files the lock recorded keys for, for the
+  /// processor of this context: where [previousKeysOf] has something to say.
+  ///
+  /// Throws a [StateError] on a context that is not for a processor.
+  Set<String> get previousKeyFiles =>
+      Set.unmodifiable(_previousKeys[_requireProcessor()]?.keys ?? const []);
+
   /// The keys the processors declared through [ownKeys] so far, by processor
   /// id and then by canonical path of the file: the hash of the value, by key.
   ///
