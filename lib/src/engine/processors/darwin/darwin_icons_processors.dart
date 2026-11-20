@@ -27,15 +27,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_flavorizr/src/badge/badge_source_icon.dart';
-import 'package:flutter_flavorizr/src/badge/project_badge_source_files.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_icon_sets.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
-import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.dart';
 import 'package:flutter_flavorizr/src/models/darwin/icon/darwin_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
@@ -100,25 +97,8 @@ abstract class DarwinIconsProcessor extends FlavorizrProcessor {
   ///
   /// A flavor with a badge always has one, which is the first of the choices of
   /// `resolveBadgeSourceIcon`, and the run fails with a hint when there is none.
-  String? sourceOf(FlavorizrContext ctx, String flavorName, Flavor flavor) {
-    final icon = platformIcon(flavor) ?? flavor.app.icon;
-
-    if (ctx.config.badgeOf(flavorName) == null) return icon;
-
-    try {
-      return resolveBadgeSourceIcon(
-        flavorIcon: icon,
-        rootIcon: ctx.config.icon,
-        files: ProjectBadgeSourceFiles(ctx.projectRoot),
-      ).path;
-    } on BadgeSourceIconException catch (error) {
-      throw InvalidConfigurationException(
-        'The flavor `$flavorName` has a badge, and there is no icon to draw it '
-        'on: set `icon` for the flavor, or `icon` at the root (1024 px is '
-        'best). ${error.tried.isEmpty ? 'No icon was found in the project.' : 'Looked at: ${error.tried.join(', ')}.'}',
-      );
-    }
-  }
+  String? sourceOf(FlavorizrContext ctx, String flavorName, Flavor flavor) =>
+      iconSourceOf(ctx, flavorName, platformIcon(flavor) ?? flavor.app.icon);
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {

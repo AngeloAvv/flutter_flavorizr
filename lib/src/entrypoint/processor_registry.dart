@@ -56,6 +56,7 @@ import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_applicati
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_main_cpp_template_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_patch_processor.dart';
@@ -176,7 +177,7 @@ class ProcessorRegistry {
   }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, build targets, schema, icons, dummy assets, launch screen, Podfile and Info.plist processors that were ported
+  /// xcconfig, build targets, schema, icons (Windows included), dummy assets, launch screen, Podfile and Info.plist processors that were ported
   /// run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
@@ -296,6 +297,13 @@ class ProcessorRegistry {
           K.windowsRunnerCMakeListsPath:
               WindowsRunnerCMakeListsEditor.ownedContent,
         },
+      ),
+      // The `.ico` of the flavors, next to the icon of the project. The
+      // placeholders of 2.x are not made anymore, but the ids stay.
+      const EngineProcessor(WindowsDummyAssetsProcessor(), paths: {}),
+      EngineProcessor(
+        const WindowsIconsProcessor(),
+        paths: {K.windowsIconsPath},
       ),
       EngineProcessor(
         const IosPodfilePatchProcessor(),

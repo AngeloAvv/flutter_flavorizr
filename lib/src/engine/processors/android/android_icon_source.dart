@@ -156,6 +156,16 @@ final class AndroidIconSource {
     return width > 0 && height > 0 && width <= maxSide && height <= maxSide;
   }
 
+  /// Renders the icon as a multi-resolution `.ico`: one square frame for each
+  /// of [sizes], in that order.
+  ///
+  /// With a [badge], it is drawn on every frame, at the size of the frame. The
+  /// encoder is deterministic, as the one of the PNGs is.
+  Uint8List renderIco(Iterable<int> sizes, {ResolvedBadge? badge}) =>
+      img.IcoEncoder().encodeImages([
+        for (final size in sizes) renderIcon(_image, size, badge: badge),
+      ]);
+
   /// Renders the icon as a PNG of [width] x [height] pixels.
   ///
   /// With a [badge], the icon is a square and the badge is drawn on it, at
