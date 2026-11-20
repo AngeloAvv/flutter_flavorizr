@@ -27,6 +27,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_editor.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:test/test.dart';
@@ -447,6 +448,32 @@ void main() {
       expect(code, ExitCodes.attention, reason: project.logger.output);
       expect(project.exists('$_schemes/dates.xcscheme'), isTrue);
       expect(project.logger.output, contains('$_schemes/dates.xcscheme'));
+    });
+
+    test('has its own pre-action taken for the one of Flutter, and a script of '
+        'the user that mentions it is a conflict', () async {
+      await apply();
+
+      expect(scheme('dates'), contains('ExecutionAction'));
+      expect(
+        SchemeEditor.foreignContent(scheme('dates')),
+        isNot(contains('ExecutionAction')),
+      );
+
+      project.write(
+        '$_schemes/dates.xcscheme',
+        scheme('dates').replaceFirst(
+          '</PreActions>',
+          '''<ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent title = "Mine" scriptText = "echo xcode_backend.sh prepare&#10;"></ActionContent>
+         </ExecutionAction></PreActions>''',
+        ),
+      );
+
+      final code = await drop();
+
+      expect(code, ExitCodes.attention, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isTrue);
     });
 
     test(

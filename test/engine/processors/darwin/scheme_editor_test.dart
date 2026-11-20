@@ -162,6 +162,160 @@ void main() {
       }
     });
 
+    /// A pre-action that is [script] of the title [title], in a scheme that has
+    /// none.
+    String withAction(
+      String script, {
+      String title = SchemeEditor.prepareTitle,
+      String after = '',
+      String container = 'BuildAction',
+    }) {
+      final action =
+          '''<PreActions>
+         <ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent title = "$title" scriptText = "$script">$after</ActionContent>
+         </ExecutionAction>
+      </PreActions>''';
+
+      return container == 'BuildAction'
+          ? _pristine.replaceFirst(
+              '<BuildActionEntries>',
+              '$action\n<BuildActionEntries>',
+            )
+          : _pristine.replaceFirst(
+              '<$container',
+              '<$container>$action</$container><$container',
+            );
+    }
+
+    test('keeps a script of the user that only mentions the one of Flutter', () {
+      for (final edited in [
+        withAction('echo xcode_backend.sh prepare&#10;', title: 'Mine'),
+        withAction('echo xcode_backend.sh prepare&#10;'),
+        withAction(
+          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;echo mine&#10;',
+        ),
+        withAction(
+          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;',
+          title: 'Mine',
+        ),
+        withAction(
+          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;',
+          after: '<!-- mine -->',
+        ),
+        withAction(
+          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;',
+          after: '<Mine/>',
+        ),
+      ]) {
+        expect(
+          SchemeEditor.foreignContent(edited),
+          isNot(foreign),
+          reason: edited,
+        );
+      }
+    });
+
+    test('keeps the pre-action of Flutter outside of the build action', () {
+      final edited = _pristine.replaceFirst(
+        '<LaunchAction',
+        '''<LaunchAction''',
+      );
+      final injected = withFlutterPreAction(_pristine);
+      final action = RegExp(
+        r'<PreActions>[\s\S]*?</PreActions>',
+      ).firstMatch(injected)!.group(0)!;
+      final moved = edited.replaceFirst(
+        RegExp(r'(<LaunchAction[^>]*>)'),
+        r'$1'
+        '\n$action',
+      );
+
+      expect(SchemeEditor.foreignContent(moved), isNot(foreign));
+    });
+
+    test('keeps a comment in a pre-actions container, with or without the '
+        'action of Flutter', () {
+      final bare = _pristine.replaceFirst(
+        '<BuildActionEntries>',
+        '<PreActions><!-- deployment note --></PreActions>\n<BuildActionEntries>',
+      );
+      final injected = withFlutterPreAction(bare);
+
+      expect(SchemeEditor.foreignContent(bare), isNot(foreign));
+      expect(
+        SchemeEditor.foreignContent(injected),
+        SchemeEditor.foreignContent(bare),
+      );
+      expect(
+        SchemeEditor.foreignContent(
+          bare.replaceFirst('deployment note', 'another note'),
+        ),
+        isNot(SchemeEditor.foreignContent(bare)),
+      );
+    });
+
+    test('does not depend on the whitespace around the pre-action of '
+        'Flutter', () {
+      final injected = withFlutterPreAction(_pristine);
+
+      expect(
+        SchemeEditor.foreignContent(
+          injected.replaceFirst('<PreActions>', '<PreActions>\n\n   '),
+        ),
+        foreign,
+      );
+    });
+
+    test('keeps a comment outside of the root element', () {
+      for (final edited in [
+        _pristine.replaceFirst('<Scheme', '<!-- deployment note -->\n<Scheme'),
+        '$_pristine\n<!-- deployment note -->\n',
+      ]) {
+        expect(SchemeEditor.foreignContent(edited), isNot(foreign));
+      }
+
+      expect(
+        SchemeEditor.foreignContent(
+          _pristine.replaceFirst('<Scheme', '<!--  note  -->\n<Scheme'),
+        ),
+        SchemeEditor.foreignContent(
+          _pristine.replaceFirst('<Scheme', '<!-- note -->\n<Scheme'),
+        ),
+      );
+    });
+
+    test('does not depend on line endings, nor on the order of the '
+        'attributes', () {
+      expect(
+        SchemeEditor.foreignContent(_pristine.replaceAll('\n', '\r\n')),
+        foreign,
+      );
+      expect(
+        SchemeEditor.foreignContent(
+          _pristine.replaceFirst(
+            RegExp(r'LastUpgradeVersion = "1510"\s+version = "1.3"'),
+            'version = "1.3" LastUpgradeVersion = "1510"',
+          ),
+        ),
+        foreign,
+      );
+    });
+
+    test('tells a comment from text, and does not depend on CDATA', () {
+      String scheme(String child) =>
+          _pristine.replaceFirst('</Scheme>', '<Mine>$child</Mine>\n</Scheme>');
+
+      expect(
+        SchemeEditor.foreignContent(scheme('<![CDATA[a]]>')),
+        SchemeEditor.foreignContent(scheme('a')),
+      );
+      expect(
+        SchemeEditor.foreignContent(scheme('<!--a-->')),
+        isNot(SchemeEditor.foreignContent(scheme('a'))),
+      );
+    });
+
     test('is the whole text when the scheme is not XML', () {
       expect(SchemeEditor.foreignContent('<Scheme'), '<Scheme');
     });
