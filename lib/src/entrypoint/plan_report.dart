@@ -25,6 +25,7 @@
 
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
+import 'package:flutter_flavorizr/src/entrypoint/adopt_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/style.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
@@ -93,6 +94,28 @@ String renderPreview(
       'Ignored in the lock (not a path of the project):\n'
           '${[for (final path in preview.reconciliation.invalid) '  - ${path.path} (${path.processorId})'].join('\n')}',
   ].where((section) => section.isNotEmpty).join('\n\n');
+}
+
+/// What to tell when a run adopted the project first (see
+/// `FirstRunAdoption`): there is no `flavorizr.lock`, and the files that tell
+/// flavorizr made them before are taken as the baseline.
+///
+/// With [writes], the run is one that writes (`apply`), which puts the baseline
+/// in the lock with its changes. Without it the run is a dry one, and `flavorizr
+/// adopt` is what records the baseline.
+String renderAdoptionNotice(FirstRunAdoption adopted, {required bool writes}) {
+  const shown = 3;
+  final evidence = adopted.evidence;
+  final others = evidence.length - shown;
+  final files =
+      '${evidence.take(shown).join(', ')}'
+      '${others > 0 ? ' and $others more' : ''}';
+
+  return 'There is no flavorizr.lock, and the project has files flavorizr made '
+      'before there was one ($files). They are taken as the baseline, so that '
+      'what follows is what 3.x changes in them. '
+      '${adopted.partial ? 'A processor of the default recipe could not read the project, so only the ones of this run were adopted, and the files of the others have no baseline. ' : ''}'
+      '${writes ? 'The lock is written with the changes, once you approve them: nothing is written otherwise.' : 'Nothing is written: `flavorizr adopt` records the baseline, and `flavorizr apply` does too, with its changes.'}';
 }
 
 /// The platform a file of the project belongs to, which is how a preview

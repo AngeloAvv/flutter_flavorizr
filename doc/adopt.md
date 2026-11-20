@@ -21,6 +21,37 @@ writes it or not.
 
 It fails when `flavorizr.lock` exists: the project has been run by 3.x already.
 
+## The first run without a lock
+
+You do not have to run `adopt` first. When `plan`, `apply` or `status` find no
+`flavorizr.lock` and the project has files flavorizr made before there was a
+lock, they adopt the project themselves, in memory, and go on from there:
+
+* `plan` and `status` write nothing, not even the lock. They say that the
+  project was adopted, and show what 3.x would change against it, as after an
+  `adopt`. `status` exits with `1` until the lock exists.
+* `apply` shows the same plan. Once you approve it, it writes the changes and
+  `flavorizr.lock`, with the baseline in it. If you do not approve it, nothing is
+  written.
+
+What tells that a project was flavorized by flavorizr before: `flavorizr.gradle(.kts)`
+or the marked blocks of `build.gradle(.kts)`, of the CMake files of Linux and
+Windows and of `my_application.cc`, and, for each flavor of `flavorizr.yaml`, its
+xcconfigs (`<flavor>Debug.xcconfig`) and its launch storyboard. Only what is
+specific to flavorizr counts: a project that was flavorized by hand has schemes,
+`Debug-<flavor>` build configurations and app icon sets of its own, and its files
+are yours, so a run asks about them as it always did. A project with none of the
+files above is a new one, and its first run is the one it always was.
+
+The baseline covers every processor of the default recipe, whatever the targets
+of the run, so a first `apply android:icons` leaves the project ready for the run
+of the rest. When one of them cannot read the project (a file it needs is
+missing), only the processors of the run are adopted, and the run says so.
+
+A lock that exists is never replaced by an adoption, whatever it records. A
+project whose lock was lost is read the same way: the files that are there are
+the baseline.
+
 ## What is recorded
 
 For every file the processors of the default recipe (or of the `target`s you
@@ -50,9 +81,29 @@ comparing each file with a table of the hashes of the dummy assets of 2.x:
 This covers the Android icons (`android/app/src/<flavor>/res/mipmap-*`) and the
 iOS and macOS app icons (`ios/Runner/Assets.xcassets/AppIcon-<flavor>.appiconset`
 and the one of macOS). The launch images and storyboards of 2.x are not icons:
-`ios:launchScreen` treats them as yours. The Xcode project is never rewritten,
-and neither are its object identifiers. The run that deletes the dummy set of a
-flavor also points the flavor at the `AppIcon` of the project.
+they are **yours**, as `ios:launchScreen` treats them. `adopt` lists them
+(`ios/Runner/<flavor>LaunchScreen.storyboard` and
+`ios/Runner/Assets.xcassets/<flavor>LaunchImage.imageset/`), records none, and no
+run deletes them, not even when the flavor goes. The run that deletes the dummy
+set of a flavor also points the flavor at the `AppIcon` of the project.
+
+## The Xcode projects
+
+`adopt` never rewrites `project.pbxproj`, and neither does a run rename an
+object: the UUIDs that 2.x gave to its objects are the identity of them.
+`adopt` records the UUIDs of the objects 2.x made, so that the next runs find
+them again and remove them with their flavor:
+
+* the build configurations `<Mode>-<flavor>` of the project and of its first
+  target, and the references to the xcconfigs of the flavors;
+* for the build settings flavorizr sets in those configurations, the value they
+  have now, so that `plan` shows a change of one of them as a change, and never
+  as a conflict.
+
+The schemes and the xcconfig files of the flavors are recorded as the files they
+are, so `plan` shows what 3.x would change in them, if anything. What 3.x would
+create and the project does not have, such as an object with a UUID of its own,
+is not recorded: `apply` makes it.
 
 ## Flavors that are not in `flavorizr.yaml` anymore
 

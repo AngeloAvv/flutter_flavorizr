@@ -148,6 +148,16 @@ FlavorizrLock updateLock({
     }
   }
 
+  _refreshSharedFiles(processors, produced.keys.toSet(), retained, {
+    for (final entry in processors.entries)
+      if (produced.containsKey(entry.key))
+        for (final file in entry.value.files.entries)
+          if (file.value.ownership == Ownership.patched &&
+              file.value.hash != null &&
+              !retained.contains(file.key))
+            file.key: file.value.hash!,
+  });
+
   return FlavorizrLock(
     flavorizrVersion: flavorizrVersion,
     flavors: isFullRun ? desiredFlavors : (previous?.flavors ?? const {}),
@@ -210,4 +220,52 @@ String _hashOf(Map<String, String> ownedHashes, String path) {
   }
 
   return hash;
+}
+
+/// A file that several processors patch (the project of Xcode) is hashed as a
+/// whole: the hash of each processor's record is the one of what is in the file.
+/// So when a run wrote it, the processors that did not run have the hash of what
+/// is there now, and not the one of what was there before, which the next run
+/// would take for an edit by hand.
+///
+/// [written] maps each patched file the processors of [ran] recorded to its hash.
+/// Only the records of the processors that did not run change, and only for the
+/// files they patch too.
+void _refreshSharedFiles(
+  Map<String, ProcessorLock> processors,
+  Set<String> ran,
+  Set<String> retained,
+  Map<String, String> written,
+) {
+  if (written.isEmpty) return;
+
+  for (final id in processors.keys.toList()) {
+    if (ran.contains(id)) continue;
+
+    final record = processors[id]!;
+    final files = {
+      for (final entry in record.files.entries)
+        entry.key:
+            entry.value.ownership == Ownership.patched &&
+                written.containsKey(entry.key) &&
+                !retained.contains(entry.key)
+            ? LockedFile(
+                ownership: entry.value.ownership,
+                hash: written[entry.key],
+              )
+            : entry.value,
+    };
+
+    if (files.entries.every(
+      (entry) => record.files[entry.key] == entry.value,
+    )) {
+      continue;
+    }
+
+    processors[id] = ProcessorLock(
+      files: files,
+      keys: record.keys,
+      objects: record.objects,
+    );
+  }
 }

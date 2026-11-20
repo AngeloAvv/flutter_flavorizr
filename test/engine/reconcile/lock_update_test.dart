@@ -157,6 +157,60 @@ void main() {
       expect(lock.flavors, {'dev': 'f1', 'prod': 'f2'});
     });
 
+    test('a file several processors patch is recorded as it is now for the '
+        'ones that did not run too: they share the hash of what is there', () {
+      LockedFile patched(String hash) =>
+          LockedFile(ownership: Ownership.patched, hash: hash);
+
+      final other = ProcessorLock(
+        files: {
+          pbxproj: patched('old'),
+          'ios/Flutter/a.xcconfig': managed('x'),
+        },
+      );
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:xcconfig': ProcessorLock(files: {pbxproj: patched('old')}),
+            'ios:firebase': other,
+          },
+        ),
+        produced: {
+          'ios:xcconfig': [patchedPbxproj],
+        },
+        hashes: {pbxproj: 'new'},
+      );
+
+      expect(lock.processors['ios:xcconfig']!.files[pbxproj]!.hash, 'new');
+      expect(lock.processors['ios:firebase']!.files[pbxproj]!.hash, 'new');
+      expect(
+        lock.processors['ios:firebase']!.files['ios/Flutter/a.xcconfig'],
+        managed('x'),
+      );
+    });
+
+    test('a file the run kept as the user has it is not refreshed for the '
+        'others', () {
+      LockedFile patched(String hash) =>
+          LockedFile(ownership: Ownership.patched, hash: hash);
+
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:xcconfig': ProcessorLock(files: {pbxproj: patched('old')}),
+            'ios:firebase': ProcessorLock(files: {pbxproj: patched('old')}),
+          },
+        ),
+        produced: {
+          'ios:xcconfig': [patchedPbxproj],
+        },
+        hashes: {pbxproj: 'new'},
+        retained: {pbxproj},
+      );
+
+      expect(lock.processors['ios:firebase']!.files[pbxproj]!.hash, 'old');
+    });
+
     test('a run of every processor records the desired flavors', () {
       final lock = update(
         previous: lockOf(flavors: {'dev': 'f1', 'prod': 'f2'}),

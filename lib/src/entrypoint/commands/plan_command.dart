@@ -76,6 +76,10 @@ class PlanCommand extends TargetCommand {
 
     if (preview == null) return ExitCodes.ok;
 
+    if (preview.adopted case final adopted?) {
+      output.info(renderAdoptionNotice(adopted, writes: false));
+    }
+
     output.info(renderPreview(preview, style: output.style));
     output.summary('Plan', countChanges(preview));
 

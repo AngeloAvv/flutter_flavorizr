@@ -77,6 +77,14 @@ class FlavorizrContext {
   /// configuration: what a run does depends on the targets it is given.
   final Set<String> selected;
 
+  /// Whether the run reads a project 2.x flavorized to record it as the
+  /// baseline of the lock, and writes nothing (see `adoptProject`).
+  ///
+  /// A processor that finds an object of the project that it would make, but
+  /// that has no UUID of its own, takes it for the one 2.x made: it owns it,
+  /// whatever UUID it has, and the lock records that UUID. Nothing is renamed.
+  final bool adopting;
+
   final Map<ResourceKey<Object?>, Object?> _resources;
   final List<Artifact> _tracked = [];
   final Map<String, List<Artifact>> _trackedBy = {};
@@ -105,6 +113,7 @@ class FlavorizrContext {
     Map<String, Map<String, Map<String, String>>> previousKeys = const {},
     Iterable<String> previousFiles = const [],
     Set<String> selected = const {},
+    this.adopting = false,
   }) : selected = Set.unmodifiable(selected),
        _resources = Map.of(resources),
        _previousFiles = Set.unmodifiable({

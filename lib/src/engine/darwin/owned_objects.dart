@@ -157,6 +157,12 @@ final class OwnedObjects {
     platform: 'macos',
   );
 
+  /// Whether the run adopts a project 2.x flavorized (see
+  /// `FlavorizrContext.adopting`): the objects 2.x made, which a consumer
+  /// recognises by name, are owned with the UUID they have, for the lock to
+  /// record it.
+  bool get adopting => ctx.adopting;
+
   /// The UUIDs of the objects [ensure] owned so far in this run.
   Set<String> get owned => Set.unmodifiable(_owned);
 

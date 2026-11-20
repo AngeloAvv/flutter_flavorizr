@@ -208,6 +208,11 @@ class ApplyCommand extends TargetCommand {
   /// Whether to go on, once the changes of the engine are known.
   Future<bool> _approve(EnginePreview preview, RunPlan plan) async {
     output.data(previewFields(preview));
+
+    if (preview.adopted case final adopted?) {
+      output.info(renderAdoptionNotice(adopted, writes: true));
+    }
+
     output.info(renderPreview(preview, style: output.style));
 
     // Nothing to lose: the lock is all that may change.

@@ -27,6 +27,7 @@ import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
+import 'package:flutter_flavorizr/src/entrypoint/plan_report.dart';
 
 /// `flavorizr status [target...]`: whether `flavorizr.yaml`, `flavorizr.lock`
 /// and the files of the project agree. It is meant for CI.
@@ -59,6 +60,14 @@ class StatusCommand extends TargetCommand {
           const _Drift(
             'lock',
             'flavorizr.lock does not exist: nothing is recorded as applied.',
+          ),
+        );
+      } else if (preview.adopted case final adopted?) {
+        drift.add(
+          _Drift(
+            'lock',
+            'flavorizr.lock does not exist: nothing is recorded as applied. '
+                '${renderAdoptionNotice(adopted, writes: false)}',
           ),
         );
       }
