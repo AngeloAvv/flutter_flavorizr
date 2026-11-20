@@ -87,6 +87,21 @@ void main() {
       });
     });
 
+    // The fixtures are the Contents.json that 2.6.0 wrote (compact `jsonEncode`
+    // of the icons in order), made with an independent implementation.
+    for (final (name, icons) in [
+      ('ios', iosIconSet),
+      ('macos', macosIconSet),
+    ]) {
+      test('is, byte for byte, the Contents.json of 2.6.0 for $name', () {
+        final recorded = File(
+          'test_resources/darwin/icons_test/${name}_contents.json',
+        ).readAsBytesSync();
+
+        expect(utf8.encode(darwinIconContents(icons)), recorded);
+      });
+    }
+
     test('is compact, with no trailing newline, as 2.x wrote it', () {
       final text = darwinIconContents(macosIconSet);
 
