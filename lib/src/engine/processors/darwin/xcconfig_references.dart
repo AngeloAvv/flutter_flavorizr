@@ -174,7 +174,19 @@ final _listing = RegExp(
 ///
 /// A reference to an xcconfig of the user that is named like the ones of the
 /// flavors, in these folders, is taken for one of them.
-String xcconfigReferencesOwnedContent(String source) {
+String xcconfigReferencesOwnedContent(String source) =>
+    referencesOwnedContent(source, isFlavorXcconfigPath);
+
+/// What [xcconfigReferencesOwnedContent] is for the references whose path
+/// [isOwnedPath] accepts, as the project spells it: the definitions of those
+/// file references, and the entries that put them in a Resources phase.
+///
+/// The lock hashes it for a processor that owns such references, so that an
+/// edit of them is drift and a change of only them is written back.
+String referencesOwnedContent(
+  String source,
+  bool Function(String path) isOwnedPath,
+) {
   final lines = source.split(RegExp(r'\r?\n'));
   final inResources = _inResourcesPhases(lines);
   final references = <String>{};
@@ -200,7 +212,7 @@ String xcconfigReferencesOwnedContent(String source) {
         final path = _referencePath.firstMatch(body);
         final value = path?.group(1) ?? path?.group(2);
 
-        if (value != null && isFlavorXcconfigPath(value)) references.add(uuid);
+        if (value != null && isOwnedPath(value)) references.add(uuid);
       case 'PBXBuildFile':
         final fileRef = _fileRef.firstMatch(body)?.group(1);
 

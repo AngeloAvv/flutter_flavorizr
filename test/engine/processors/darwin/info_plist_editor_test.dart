@@ -52,7 +52,7 @@ void main() {
     test('changes only the lines of the owned keys of a pristine plist', () {
       final patched = InfoPlistEditor.withStrings(_ios, {
         ..._owned,
-        'UILaunchStoryboardName': r'$(ASSET_PREFIX)LaunchScreen',
+        'UILaunchStoryboardName': r'$(LAUNCH_SCREEN_NAME)',
       });
       final before = _ios.split(RegExp(r'\r?\n'));
       final after = patched.split(RegExp(r'\r?\n'));
@@ -67,7 +67,7 @@ void main() {
       expect(changed, [
         '\t<string>\$(BUNDLE_DISPLAY_NAME)</string>',
         '\t<string>\$(BUNDLE_NAME)</string>',
-        '\t<string>\$(ASSET_PREFIX)LaunchScreen</string>',
+        '\t<string>\$(LAUNCH_SCREEN_NAME)</string>',
       ]);
     });
 
@@ -317,12 +317,12 @@ void main() {
 
     test('has the launch storyboard only when flavorizr set it', () {
       final patched = InfoPlistEditor.withStrings(_ios, {
-        'UILaunchStoryboardName': r'$(ASSET_PREFIX)LaunchScreen',
+        'UILaunchStoryboardName': r'$(LAUNCH_SCREEN_NAME)',
       });
 
       expect(
         InfoPlistEditor.iosOwnedContent(patched),
-        contains(r'"UILaunchStoryboardName":"$(ASSET_PREFIX)LaunchScreen"'),
+        contains(r'"UILaunchStoryboardName":"$(LAUNCH_SCREEN_NAME)"'),
       );
       expect(
         InfoPlistEditor.iosOwnedContent(_ios),

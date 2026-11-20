@@ -34,6 +34,9 @@ replaces the default.
 | `firebase` | map | | A Firebase configuration: see [Firebase](/configuration/services#firebase). |
 | `generateDummyAssets` | bool | `true` | **Deprecated and ignored**: remove it. It will be an error in 4.0. |
 
+The launch screen is not a key of `ios` but of the flavor, and of the root: see
+[`launchScreen`](#the-launch-screen).
+
 ```yaml
 flavors:
   apple:
@@ -113,9 +116,9 @@ flavors:
 | `ios:plist` | Sets the bundle name keys of `Info.plist` in place. | engine |
 | `ios:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). | engine |
 | `ios:schema` | Creates a scheme for each flavor, keeping the edits made to it. See [The schemes](#the-schemes-of-the-ios-and-macos-flavors). | engine |
+| `ios:launchScreen` | Makes the [launch screen](#the-launch-screen) of each flavor that has `launchScreen: true`, from its icon. | engine |
 | `ios:icons` | Makes the icon set of each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
-| `ios:launchScreen` | Makes a launch screen for each flavor. | 2.x pipeline |
-| `ios:dummyAssets` | Copies the launch image of each flavor. | 2.x pipeline |
+| `ios:dummyAssets` | Does nothing now: the launch image is made by `ios:launchScreen`. It stays so that a recipe that names it runs. | 2.x pipeline |
 
 "2.x pipeline" processors are not on the new engine yet: they run after it, straight on the project,
 with no preview, no conflict detection and no entry in the lock. See
@@ -187,23 +190,111 @@ The configurations that 2.x made are used as they are, with their UUIDs. They
 are not owned (only a lock can tell they are not yours), so removing a flavor
 leaves its configurations in the project, with the settings that you added.
 
+## The launch screen
+
+On iOS a flavor can have a launch screen of its own: its icon, centred on the system background (white,
+or black in the dark appearance). It is **opt-in**: `launchScreen` is `false` unless you turn it on.
+
+```yaml
+launchScreen: true                # root default (default: false)
+flavors:
+  dev:
+    app: { name: "App Dev", icon: "assets/icon/dev.png" }
+    ios: { bundleId: "com.example.dev" }
+    badge: true                   # the launch screen shows the badged icon
+  prod:
+    app: { name: "App", icon: "assets/icon/prod.png" }
+    ios: { bundleId: "com.example.prod" }
+    launchScreen: false           # opt-out: the launch screen of the project
+```
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `launchScreen` (root) | bool | `false` | Turns on the launch screen of every iOS flavor, unless a flavor says otherwise. |
+| `launchScreen` (under a flavor) | bool | what the root says | Whether this flavor has a launch screen. It wins over the root. |
+
+It only applies to the flavors with an `ios` section.
+
+### What is generated
+
+`ios:launchScreen` makes, for each flavor that has a launch screen:
+
+- `ios/Runner/<flavor>LaunchScreen.storyboard`, which shows the image centred on the system background
+  colour, 128 points wide;
+- `ios/Runner/Assets.xcassets/<flavor>LaunchImage.imageset`, with the image at 1x, 2x and 3x;
+- a reference to the storyboard in `Runner.xcodeproj`, as a resource of the app.
+
+The files are generated whole, so they are **managed**: hashed in the lock, with the reference to the
+storyboard recorded as an owned object. Edit the icon, not them: a hand edit is a conflict.
+
+The image is the icon that `ios:icons` uses: the `icon` of the iOS section of the flavor or of its `app`.
+When the flavor has none, or has a [badge](/icons-and-badge#icon-badge), it is made from the source the
+badge uses (the `icon` of the root, then the `AppIcon` of the project), and **with a badge it shows the
+badged icon**. When there is no icon to make it from, the run fails before it writes anything, and says
+where it looked: set an `icon` for the flavor, or at the root (1024 px is best).
+
+### The name of the storyboard
+
+`UILaunchStoryboardName` of `Info.plist` is `$(LAUNCH_SCREEN_NAME)` as soon as one flavor has a launch
+screen, and `ios:xcconfig` defines `LAUNCH_SCREEN_NAME` in the three xcconfig files of every flavor:
+`<flavor>LaunchScreen` for a flavor with a launch screen. It is a property of the configuration, not of the
+processors of the run, so the app points at the storyboard even when the run is only `ios:plist` and
+`ios:xcconfig`.
+
+The launch storyboard the project had (the `UILaunchStoryboardName` that `Info.plist` had before flavorizr
+changed it: the `LaunchScreen` of `flutter create`, one of your own, or the one 2.x set) is kept in the xcconfig
+of every flavor as `DEFAULT_LAUNCH_SCREEN_NAME`. A flavor **without** a launch screen defines
+`LAUNCH_SCREEN_NAME` as `$(DEFAULT_LAUNCH_SCREEN_NAME)`, so it keeps the launch screen of the project.
+Without `launchScreen` anywhere, none of the two is defined and nothing changes.
+
+<Warning>
+  `ios:plist` run **on its own** does not change `UILaunchStoryboardName` when the storyboard the plist has
+  would be lost, and warns: the xcconfig of the flavors has to keep it first. Run `ios:plist` together with
+  `ios:xcconfig`, or `ios:xcconfig` first.
+</Warning>
+
+### Turning it off
+
+A flavor, or the whole project, that stops having a launch screen has its generated storyboard and image set
+removed, with the reference to the storyboard in the project, like any managed file of a flavor that goes.
+When the last launch screen goes, `UILaunchStoryboardName` goes back to the storyboard the project had.
+
+### What 2.x made is yours
+
+A `<flavor>LaunchScreen.storyboard` that flavorizr did not generate (the ones that 2.x copied, or one you
+wrote: flavorizr tells them by a comment it writes in its own), and the `<flavor>LaunchImage.imageset` of that
+flavor, are **never overwritten or deleted**. The run points the flavor at the storyboard, says so, and does
+not generate the launch screen of that flavor. Delete them to have the generated launch screen instead.
+
+### Your own processors
+
+If you list processors yourself (see [Recipes](/recipes)), `ios:launchScreen` is the one that makes the files.
+Without it `LAUNCH_SCREEN_NAME` still points at `<flavor>LaunchScreen`: add that storyboard to the project
+yourself.
+
+### Android
+
+There is nothing to generate on Android: see [Icons and badge](/icons-and-badge#the-launch-screen-and-android).
+
 ## The Info.plist of the platforms
 
 `ios:plist` and `macos:plist` edit `ios/Runner/Info.plist` and
 `macos/Runner/Info.plist` in place. Only the value of a few `<string>` entries is
 replaced in the text of the file: `CFBundleName` and `CFBundleDisplayName` on
-iOS, `UILaunchStoryboardName` too when `ios:launchScreen` is one of the
-processors of the run (the targets you give it, or the recipe it resolves to), and `CFBundleName` on
-macOS. 2.x parsed the plist and wrote it
-back pretty printed, which reformatted the whole file: now indentation, line
+iOS, `UILaunchStoryboardName` too when a flavor has a
+[`launchScreen`](#the-launch-screen) (it does not depend on the processors of
+the run: it is a property of the configuration), and `CFBundleName` on macOS.
+2.x parsed the plist and wrote it back pretty printed, which reformatted the whole file: now indentation, line
 endings, comments and the order of every other key are yours, and a plist that
 is up to date is not written at all.
 
 The lock records the owned keys, so editing one by hand is a conflict, while
 anything else you change in the plist is not drift. `UILaunchStoryboardName` is
 owned only while it has the value flavorizr gives it
-(`$(ASSET_PREFIX)LaunchScreen`): with the launch screen off, the storyboard
-Flutter wrote is yours. A plist without one of the keys, or whose value is not
+(`$(LAUNCH_SCREEN_NAME)`, which each flavor defines in its xcconfig): when the
+last launch screen goes, it goes back to the storyboard the project had (kept in
+the xcconfig of the flavors as `DEFAULT_LAUNCH_SCREEN_NAME`), which is yours.
+Any other value, such as the one 2.x set, is yours too and is left as it is. A plist without one of the keys, or whose value is not
 a plain `<string>`, fails the run and writes nothing.
 
 ## The Podfile

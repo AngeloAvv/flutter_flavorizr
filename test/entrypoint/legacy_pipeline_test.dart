@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/engine/step_observer.dart';
 import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_processor_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/ios/launch_screen/launch_assets.dart';
+import 'package:image/image.dart' as img;
 import 'package:test/test.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
@@ -46,7 +46,19 @@ flavors:
       applicationId: com.example.apple
     ios:
       bundleId: com.example.apple
+      icon: assets/icon.png
 ''');
+
+  /// What `ios:icons` writes for the flavor, which is a file of the engine in
+  /// some tests and a file a 2.x processor writes in the others.
+  const contents =
+      'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/Contents.json';
+  const icon20 =
+      'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/Icon-App-20x20@2x.png';
+
+  void writeIcon() => File('assets/icon.png')
+    ..parent.createSync(recursive: true)
+    ..writeAsBytesSync(img.encodePng(img.Image(width: 16, height: 16)));
 
   test('refuses to run on a project that is not the working directory', () {
     final elsewhere = Directory.systemTemp.createTempSync('flavorizr_legacy_');
@@ -108,17 +120,15 @@ flavors:
         project.deleteSync(recursive: true);
       });
       Directory.current = project;
+      writeIcon();
 
       await StandardLegacyPipeline(project).run(
-        [LegacyStep('ios:dummyAssets', config)],
+        [LegacyStep('ios:icons', config)],
         logger: logger,
         observer: observer,
       );
 
-      expect(observer.events, [
-        'started ios:dummyAssets',
-        'finished ios:dummyAssets',
-      ]);
+      expect(observer.events, ['started ios:icons', 'finished ios:icons']);
       expect(logger.progresses, 0, reason: 'the observer shows the step');
     });
   });
@@ -127,17 +137,14 @@ flavors:
     late Directory project;
     late Directory previous;
 
-    String placed() => File(
-      p.join(
-        project.path,
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/Contents.json',
-      ),
-    ).existsSync().toString();
+    String placed() =>
+        File(p.join(project.path, contents)).existsSync().toString();
 
     setUp(() {
       project = Directory.systemTemp.createTempSync('flavorizr_throwing_');
       previous = Directory.current;
       Directory.current = project;
+      writeIcon();
     });
 
     tearDown(() {
@@ -147,10 +154,7 @@ flavors:
 
     Future<void> run(StepObserver observer) =>
         StandardLegacyPipeline(project).run(
-          [
-            LegacyStep('ios:dummyAssets', config),
-            LegacyStep('ios:dummyAssets', config),
-          ],
+          [LegacyStep('ios:icons', config), LegacyStep('ios:icons', config)],
           logger: TestUtils.quietLogger(),
           observer: observer,
         );
@@ -204,11 +208,9 @@ flavors:
       project = Directory.systemTemp.createTempSync('flavorizr_preserve_');
       previous = Directory.current;
       Directory.current = project;
+      writeIcon();
       // What the engine generated for the flavor.
-      write(
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
-        'ICON',
-      );
+      write(contents, 'ENGINE');
     });
 
     tearDown(() {
@@ -216,64 +218,30 @@ flavors:
       project.deleteSync(recursive: true);
     });
 
-    Future<void> dummyAssets(Set<String> preserve) =>
+    Future<void> icons(Set<String> preserve) =>
         StandardLegacyPipeline(project).run(
-          [LegacyStep('ios:dummyAssets', config)],
+          [LegacyStep('ios:icons', config)],
           logger: TestUtils.quietLogger(),
           preserve: preserve,
         );
 
-    test('a file of the engine survives what is copied over it', () async {
-      await dummyAssets({
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
-      });
+    test('a file of the engine survives what a step writes over it', () async {
+      await icons({contents});
 
-      expect(
-        read(
-          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
-        ),
-        'ICON',
-      );
+      expect(read(contents), 'ENGINE');
     });
 
-    test('the rest of the assets still reaches the flavor', () async {
-      await dummyAssets({
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
-      });
+    test('the rest of what the step writes still reaches the flavor', () async {
+      await icons({contents});
 
-      expect(
-        File(
-          p.join(
-            project.path,
-            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage@2x.png',
-          ),
-        ).existsSync(),
-        isTrue,
-      );
-      expect(
-        read(
-          'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/Contents.json',
-        ),
-        launchImageContents,
-      );
+      expect(File(p.join(project.path, icon20)).existsSync(), isTrue);
     });
 
-    test(
-      'without it the placeholder wins, which is the 2.x order reversed',
-      () async {
-        await dummyAssets({});
+    test('without it the step wins, which is the 2.x order reversed', () async {
+      await icons({});
 
-        expect(
-          File(
-            p.join(
-              project.path,
-              'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png',
-            ),
-          ).readAsBytesSync(),
-          launchImageFiles['LaunchImage.png'],
-        );
-      },
-    );
+      expect(read(contents), contains('"images"'));
+    });
 
     test('a file the step did not change is not written again', () async {
       write('android/app/flavorizr.gradle', 'GRADLE');
@@ -288,25 +256,24 @@ flavors:
         ]),
       );
 
-      await dummyAssets({'android/app/flavorizr.gradle'});
+      await icons({'android/app/flavorizr.gradle'});
 
       expect(read('android/app/flavorizr.gradle'), 'GRADLE');
     }, skip: Platform.isWindows ? 'needs POSIX permissions' : false);
 
-    test('a path that did not exist is not created', () async {
-      await dummyAssets({
-        'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@3x.png',
-      });
+    test('a path that did not exist is not created, and what the step writes '
+        'there stays', () async {
+      await icons({icon20});
 
-      expect(
-        File(
-          p.join(
-            project.path,
-            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/launch@3x.png',
-          ),
-        ).existsSync(),
-        isFalse,
-      );
+      expect(File(p.join(project.path, icon20)).existsSync(), isTrue);
+
+      // A path the step does not write is not made by preserving it.
+      const absent =
+          'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/no.png';
+
+      await icons({absent});
+
+      expect(File(p.join(project.path, absent)).existsSync(), isFalse);
     });
   });
 }

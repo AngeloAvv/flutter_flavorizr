@@ -156,8 +156,8 @@ runs.
 
 | Runs on | Processors |
 | --- | --- |
-| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:schema`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:schema`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
-| The 2.x pipeline | `ios:icons`, `ios:launchScreen`, `ios:dummyAssets`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
+| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:launchScreen`, `ios:schema`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:schema`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
+| The 2.x pipeline | `ios:icons`, `ios:dummyAssets`, `macos:icons`, `macos:dummyAssets`, `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
 
 The processors of the 2.x pipeline are not dropped: `apply` runs them **after** the engine, straight on
 the project. That means they have no preview in `plan`, no conflict detection, no lock entry and are not
@@ -165,10 +165,10 @@ checked by `status`; the commands say so every time they meet one. When the engi
 runs. Each port moves a processor from the 2.x pipeline to the engine without any change to how you call
 flavorizr.
 
-`android:dummyAssets`, `macos:dummyAssets` and `windows:dummyAssets` do nothing now: flavorizr makes the
+`android:dummyAssets`, `macos:dummyAssets`, `windows:dummyAssets` and `ios:dummyAssets` do nothing now: flavorizr makes the
 icons it writes, and a flavor with no `icon` uses the default icon of the project. They stay so that a
-recipe that names one still runs. `ios:dummyAssets` writes the launch image set of each flavor, unless the
-project has one for it.
+recipe that names one still runs. On iOS the launch image of a flavor is made by `ios:launchScreen`,
+which is on the engine, for the flavors that turn [`launchScreen`](/configuration/ios#the-launch-screen) on.
 
 The 2.x processors never overwrite what the engine generated: the files the engine writes whole
 (`flavorizr.gradle`, the launcher icons of `android:icons`) are put back if a 2.x processor changes them.

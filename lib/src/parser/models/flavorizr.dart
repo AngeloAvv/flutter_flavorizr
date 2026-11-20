@@ -59,6 +59,11 @@ class FlavorizrConfig {
   @JsonKey(disallowNullValue: true)
   final String? icon;
 
+  /// Whether the iOS flavors have a launch screen made from their icon, unless
+  /// they say otherwise.
+  @JsonKey(disallowNullValue: true, defaultValue: false)
+  final bool launchScreen;
+
   /// The flavors, by name.
   @JsonKey(required: true)
   final Map<String, Flavor> flavors;
@@ -103,6 +108,10 @@ class FlavorizrConfig {
   @JsonKey(includeFromJson: false)
   final Map<String, Flavor> windowsFlavors;
 
+  /// The iOS flavors that have a launch screen made from their icon.
+  @JsonKey(includeFromJson: false)
+  final Map<String, Flavor> launchScreenFlavors;
+
   /// The Android flavors that have a Firebase configuration.
   @JsonKey(includeFromJson: false)
   final Map<String, Flavor> androidFirebaseFlavors;
@@ -129,6 +138,7 @@ class FlavorizrConfig {
     this.app,
     this.badge = false,
     this.icon,
+    this.launchScreen = false,
     required Map<String, Flavor> flavors,
     List<IDE>? ide,
     Map<String, List<String>>? recipes,
@@ -150,6 +160,11 @@ class FlavorizrConfig {
        macosFlavors = _where(flavors, (flavor) => flavor.macos != null),
        linuxFlavors = _where(flavors, (flavor) => flavor.linux != null),
        windowsFlavors = _where(flavors, (flavor) => flavor.windows != null),
+       launchScreenFlavors = _where(
+         flavors,
+         (flavor) =>
+             flavor.ios != null && (flavor.launchScreen ?? launchScreen),
+       ),
        androidFirebaseFlavors = _where(
          flavors,
          (flavor) => flavor.android?.firebase != null,
@@ -177,6 +192,7 @@ class FlavorizrConfig {
     app: app,
     badge: badge,
     icon: icon,
+    launchScreen: launchScreen,
     flavors: flavors,
     ide: ide,
     recipes: recipes,
@@ -194,6 +210,7 @@ class FlavorizrConfig {
       app: parsed.app,
       badge: parsed.badge,
       icon: parsed.icon,
+      launchScreen: parsed.launchScreen,
       flavors: parsed.flavors,
       ide: parsed.ide,
       recipes: parsed.recipes,
@@ -224,6 +241,12 @@ class FlavorizrConfig {
       color: setting?.color,
     );
   }
+
+  /// Whether the flavor called [flavor] has a launch screen made from its icon:
+  /// what it says, over what the root says, and `false` when neither says
+  /// anything. It is `false` for a flavor that is not built for iOS, or that is
+  /// not in the configuration.
+  bool launchScreenOf(String flavor) => launchScreenFlavors.containsKey(flavor);
 
   /// The platforms of a flavor that had `generateDummyAssets`.
   static const _dummyAssetsPlatforms = ['android', 'ios', 'macos', 'windows'];

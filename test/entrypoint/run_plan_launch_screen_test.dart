@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Angelo Cassano
+ * Copyright (c) 2026 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,29 +23,39 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_target_launchscreen_file_processor.dart';
+import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
+import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:test/test.dart';
 
-class IOSTargetsLaunchScreenFileProcessor extends QueueProcessor {
-  IOSTargetsLaunchScreenFileProcessor(
-    String project,
-    String destination, {
-    required super.config,
-    required super.logger,
-  }) : super(
-          [
-            ...config.iosFlavors.keys.map(
-              (flavorName) => IOSTargetLaunchScreenFileProcessor(
-                project,
-                destination,
-                flavorName,
-                config: config,
-                logger: logger,
-              ),
-            ),
-          ],
-        );
+String _config(String root) =>
+    '''
+${root}flavors:
+  apple:
+    app:
+      name: "Apple"
+    ios:
+      bundleId: "com.example.apple"
+''';
 
-  @override
-  String toString() => 'IOSTargetsLaunchScreenFileProcessor';
+void main() {
+  final registry = ProcessorRegistry.standard();
+
+  group('a full run', () {
+    test('has no launch screen to make when no flavor has one', () {
+      final ids = engineIdsFor(registry, FlavorizrConfig.parse(_config('')));
+
+      expect(ids, contains('ios:xcconfig'));
+      expect(ids, isNot(contains('ios:launchScreen')));
+    });
+
+    test('has to cover it when a flavor has one', () {
+      final ids = engineIdsFor(
+        registry,
+        FlavorizrConfig.parse(_config('launchScreen: true\n')),
+      );
+
+      expect(ids, contains('ios:launchScreen'));
+    });
+  });
 }

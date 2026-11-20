@@ -236,8 +236,9 @@ The page [Adopting a 2.x project](/reference/adopt) has the details of what is r
   they still have the bytes of the dummy icons of 2.x.
 
 - Only what the processors of the engine own is adopted. The Darwin artifacts that are still 2.x
-  processors (launch storyboards, iOS and macOS icons) are not tracked, and neither are their
-  objects in `project.pbxproj`.
+  processors (iOS and macOS icons) are not tracked, and neither are their
+  objects in `project.pbxproj`. The launch storyboards of 2.x are not recorded either: they are yours, see
+  [the iOS launch screen](#the-ios-launch-screen-is-opt-in).
 
 ### Without adopt
 
@@ -289,9 +290,26 @@ says how to fix it. See [Flutter code](/configuration/flutter).
   and are replaced by the icons of an `icon` that you add.
 - A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`.
 
-`android:dummyAssets`, `macos:dummyAssets` and `windows:dummyAssets` still exist, so that a recipe that names
-them runs, and do nothing. `ios:dummyAssets` still writes the `<flavor>LaunchImage.imageset` of a flavor,
-unless the project has one for it (it has a `Contents.json`): that is yours.
+`android:dummyAssets`, `macos:dummyAssets`, `windows:dummyAssets` and `ios:dummyAssets` still exist, so that a
+recipe that names them runs, and do nothing.
+
+## The iOS launch screen is opt-in
+
+2.x copied a `<flavor>LaunchScreen.storyboard` and a `<flavor>LaunchImage.imageset` for every iOS flavor (the
+launch image was a placeholder). 3.0 makes them only for the flavors that ask, from the icon of the flavor,
+with [`launchScreen: true`](/configuration/ios#the-launch-screen) at the root or in a flavor.
+
+- **What 2.x made is yours.** A `<flavor>LaunchScreen.storyboard` that flavorizr 3 did not generate, and the
+  `<flavor>LaunchImage.imageset` of that flavor, are adopted as they are: never overwritten and never
+  deleted. flavorizr points the flavor at the storyboard and says so. Delete them to have the generated launch
+  screen instead.
+- **Nothing changes without `launchScreen`.** The launch storyboard of the project stays what
+  `UILaunchStoryboardName` says.
+- **The bug of the default instruction set is gone.** In 2.x `UILaunchStoryboardName` was only set when
+  `ios:launchScreen` was among the instructions that ran, so a flavor could get a storyboard that the plist
+  did not point at, or the other way round. Now `Info.plist` points at `$(LAUNCH_SCREEN_NAME)`, and each flavor
+  defines it in its xcconfig: it is a property of the configuration, whatever you run.
+- `$(ASSET_PREFIX)LaunchScreen`, the value that 2.x wrote, is not written anymore.
 
 ## Commit `flavorizr.lock`
 

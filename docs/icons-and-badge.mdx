@@ -49,6 +49,14 @@ platforms that run on the engine (see [Command line](/reference/cli#processors-t
 The iOS, macOS and Windows icons are made by 2.x processors that do not track what they write: they stay in
 the project when the `icon` or the flavor goes.
 
+## The launch screen and Android
+
+On iOS a flavor can have a launch screen made from its icon (and its badge): see
+[the launch screen](/configuration/ios#the-launch-screen). Android needs nothing generated. From Android 12
+the system shows the splash screen with the launcher icon of the flavor, which `android:icons` makes (with its
+badge, if it has one), so each flavor already has its own. Older versions show the launch background of the
+project, which flavorizr does not touch.
+
 ## Icon badge
 
 A badge is a band with the name of the flavor on its icon, to tell a `dev` build from a `prod` one at a

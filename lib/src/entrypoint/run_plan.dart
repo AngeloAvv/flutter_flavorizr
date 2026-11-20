@@ -81,15 +81,18 @@ Set<String> platformsWithoutFlavors(FlavorizrConfig config) => {
 /// flavors in the lock (see `updateLock`). A project that has no Linux flavors
 /// can never run the Linux processors, so they are not part of what a full run
 /// has to cover. Neither are the ones that have nothing to make for the
-/// configuration: `ide:config` with no `ide`, and the Firebase ones with no
-/// Firebase configuration on their platform.
+/// configuration: `ide:config` with no `ide`, `ios:launchScreen` with no launch
+/// screen, and the Firebase ones with no Firebase configuration on their
+/// platform.
 Set<String> engineIdsFor(ProcessorRegistry registry, FlavorizrConfig config) {
   final skipped = platformsWithoutFlavors(config);
 
   // These have nothing to write for a configuration that does not ask for
-  // what they make: no IDE, no Firebase configuration on their platform.
+  // what they make: no IDE, no launch screen, no Firebase configuration on
+  // their platform.
   final idle = {
     if (config.ide?.isEmpty ?? true) 'ide:config',
+    if (config.launchScreenFlavors.isEmpty) 'ios:launchScreen',
     if (!config.androidFirebaseFlavorsAvailable) 'android:firebase',
     if (!config.iosFirebaseFlavorsAvailable) 'ios:firebase',
     if (!config.macosFirebaseFlavorsAvailable) 'macos:firebase',

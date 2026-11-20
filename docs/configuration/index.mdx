@@ -13,6 +13,7 @@ app:                      # defaults for every flavor
     flavorDimensions: "flavor-type"
 badge: false              # a band with the name of the flavor on its icon
 icon: "assets/icon.png"   # the icon the badges are drawn on
+launchScreen: false       # an iOS launch screen made from the icon of each flavor
 
 flavors:
   dev:
@@ -53,6 +54,7 @@ failed check. A key that is not text, such as `42:`, is refused too.
 | `app` | map | | What every flavor starts from: [`app.android`](/configuration/android#appandroid), [`app.ios`](/configuration/ios#appios) and [`app.macos`](/configuration/macos#appmacos). |
 | `badge` | bool | `false` | Turns on the [badge](/icons-and-badge) of every flavor, unless a flavor says otherwise. |
 | `icon` | string | | The source icon of the badges, when a flavor has no `icon` of its own. |
+| `launchScreen` | bool | `false` | Turns on the iOS [launch screen](/configuration/ios#the-launch-screen) of every flavor, unless a flavor says otherwise. |
 | `recipes` | map | | Named lists of processors and recipes. `default` is what runs when no target is given. See [Recipes](/recipes). |
 | `ide` | list or string | | The IDEs to write run configurations for: `vscode` and `idea`. See [IDEs](/configuration/services#ides). |
 
@@ -80,6 +82,7 @@ is also the name of an icon file, which excludes the ones the system reserves (`
 | --- | --- | --- | --- |
 | `app` | map | yes | The app of the flavor: [`name`](#app) and `icon`. |
 | `badge` | bool or map | | The badge of the flavor. See [Icons and badge](/icons-and-badge). |
+| `launchScreen` | bool | what the root says | Whether the iOS flavor has a [launch screen](/configuration/ios#the-launch-screen) made from its icon. It wins over the root, and only applies to a flavor with an `ios` section. |
 | `android` | map | | [Android](/configuration/android) configuration. A flavor with no `android` is not built for Android. |
 | `ios` | map | | [iOS](/configuration/ios) configuration. |
 | `macos` | map | | [macOS](/configuration/macos) configuration. |

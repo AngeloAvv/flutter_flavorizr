@@ -28,6 +28,7 @@ import 'package:test/test.dart';
 
 const _yaml = '''
 badge: true
+launchScreen: true
 icon: "assets/icon.png"
 app:
   android:
@@ -43,6 +44,8 @@ flavors:
       name: "Apple"
     android:
       applicationId: "com.example.apple"
+    ios:
+      bundleId: "com.example.apple"
 ''';
 
 void main() {
@@ -61,12 +64,18 @@ void main() {
     test('keeps every other setting of the configuration', () {
       expect(copy.badge, isTrue);
       expect(copy.icon, 'assets/icon.png');
+      expect(copy.launchScreen, isTrue);
       expect(copy.app, same(config.app));
       expect(copy.ide, config.ide);
       expect(copy.recipes, config.recipes);
       expect(copy.defaultRecipe, config.defaultRecipe);
       expect(copy.flavorFingerprints, config.flavorFingerprints);
       expect(copy.deprecations, config.deprecations);
+    });
+
+    test('resolves the launch screen of a flavor from the root settings', () {
+      expect(copy.launchScreenOf('banana'), isTrue);
+      expect(copy.launchScreenFlavors.keys, ['banana']);
     });
 
     test('resolves the badge of a flavor from the root settings', () {

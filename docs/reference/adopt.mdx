@@ -51,9 +51,11 @@ comparing each file with a table of the hashes of the dummy assets of 2.x:
   such, and no run deletes or overwrites it.
 
 Today this covers the Android icons (`android/app/src/<flavor>/res/mipmap-*`).
-The iOS and macOS icons, the launch screens and the Xcode project are made by
+The iOS and macOS icons and the Xcode project are made by
 2.x processors that are not on the engine yet: `adopt` lists them as not
-adopted, and does not record them. The Xcode project is never rewritten, and
+adopted, and does not record them. The launch storyboards and launch images that
+2.x copied are not recorded either: they are yours, and a run never overwrites
+or deletes them (see [the launch screen](/configuration/ios#what-2x-made-is-yours)). The Xcode project is never rewritten, and
 neither are its object identifiers.
 
 ## Flavors that are not in `flavorizr.yaml` anymore
