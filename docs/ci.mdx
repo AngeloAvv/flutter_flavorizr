@@ -29,7 +29,9 @@ jobs:
 
 `status` exits with `1` when:
 
-- there is no `flavorizr.lock` (so commit it);
+- there is no `flavorizr.lock` (so commit it). On a project that 2.x flavorized, `status` shows what 3.0 would
+  change against the baseline it takes from the files of 2.x, and still exits with `1` until `apply` has
+  written the lock;
 - the flavors of `flavorizr.yaml` and of the lock differ: a flavor was added, removed or changed without
   running `apply`;
 - a file is not what `flavorizr.yaml` asks for, or is missing;
@@ -72,7 +74,7 @@ runs `status` on `example/`, so the example never drifts from what flavorizr gen
 | `1` | Needs attention: files edited by hand are in the way (`plan`, `apply`), the project drifted (`status`), or a check failed (`doctor`). |
 | `64` | The command line is wrong, for example an unknown target. |
 | `65` | The configuration or `flavorizr.lock` cannot be used, or the configuration asks for what flavorizr cannot undo. |
-| `70` | A processor failed, or the project changed during the run. |
+| `70` | A processor failed, or the project changed during the run, or a run was left half done (see [Command line](/reference/cli#exit-codes)). |
 
 ## Output
 

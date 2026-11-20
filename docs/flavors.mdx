@@ -40,9 +40,9 @@ IDE configurations, and its icons when it has an `icon` or a [badge](/icons-and-
 already exist are not touched unless they changed, with two exceptions: the run configurations of the
 IDEs are *local* files, written again on every run (a `.idea/runConfigurations/<flavor>.xml` of an existing
 flavor is rewritten whole, and so are its entries `<flavor> Debug`, `<flavor> Profile` and `<flavor> Release`
-in `.vscode/launch.json`, so options you added to them are lost), and the processors that are not on the
-engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)) write the files
-they own on every run, with no change detection.
+in `.vscode/launch.json`, so options you added to them are lost), and `windows:icons`, which is not on the
+engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)), writes the `.ico`
+of every flavor with an `icon` or a badge again on every run, with no change detection.
 
 ## Changing a flavor
 
@@ -59,8 +59,8 @@ one**. When a removed and an added flavor have exactly the same configuration, `
 
 Delete it from the yaml. A run removes what flavorizr generated for it, which the lock knows:
 
-- the files that are **managed**: its xcconfig files, its Android icons, its entry in `flavorizr.gradle`
-  and in the Flutter code;
+- the files that are **managed**: its xcconfig files, its icons on Android, iOS and macOS, its launch
+  screen, its entry in `flavorizr.gradle` and in the Flutter code;
 - its part of the **patched** files, and nothing else: its build configurations and the references to
   its xcconfig files in `project.pbxproj`, its mappings in the Podfile, its regions in the Linux and
   Windows CMake lists, its keys and entries;
@@ -75,14 +75,13 @@ stays, and a build configuration of the flavor that holds a setting of yours sta
 Files that you put in the project yourself, such as an icon in `src/<flavor>/res`, are never deleted.
 
 Removing goes through the [conflict](/conflicts) check like any other change: a managed or patched file you
-edited asks before it is deleted. Local files, and what the processors that are not on the engine yet wrote,
-are not checked.
+edited asks before it is deleted. Local files, and the `.ico` files of `windows:icons`, are not checked.
 
 <Info>
-  The processors that are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet))
-  do not track what they write, so they cannot remove it: the icon sets of iOS and macOS, and
-  the Windows icons of a flavor you remove stay in the project, and you delete them. The launch
-  screen of iOS is on the engine, and goes with the flavor.
+  `windows:icons` is not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)):
+  it does not track what it writes, so it cannot remove it. The `windows/runner/resources/<flavor>.ico` of a
+  flavor you remove, or whose `icon` and badge you remove, stays in the project, and you delete it. The
+  icons of Android, iOS and macOS, and the launch screen of iOS, are on the engine and go with the flavor.
 </Info>
 
 ## Partial runs
@@ -93,7 +92,7 @@ A run of fewer processors than a full one (a `default` recipe that is a short li
 remove a flavor, finish with a full run (`apply all`), or `status` reports the flavors as drift.
 
 That holds when the selection has processors of the engine. A selection of only processors that are not
-on the engine yet (a `default` of `[ios:icons]`, say) is not checked at all: `status` prints `Nothing to
+on the engine yet (a `default` of `[windows:icons]`, say) is not checked at all: `status` prints `Nothing to
 check` and exits with `0`, whatever the flavors and the lock say, and `apply` writes no lock. Run
 `status all` to compare the whole project.
 
@@ -124,7 +123,12 @@ run it.
 ## When the lock is lost
 
 If `flavorizr.lock` is deleted or never was committed, flavorizr cannot know which flavors it generated:
-a flavor that was removed from the yaml in the meantime is not removed from the project. The next run
-treats the files it finds as it does on a project flavorized with 2.x: a patched file is adopted by
-patching it, and a generated (managed) file that exists and differs from what the run would write is a
-[conflict](/conflicts), since there is no telling it from one you wrote. Commit the lock to avoid it.
+a flavor that was removed from the yaml in the meantime is not removed from the project (`adopt --flavors`
+can name it: see [Adopting a 2.x project](/reference/adopt#flavors-that-are-not-in-flavorizryaml-anymore)).
+The next run treats the project as one flavorized with 2.x: when it has files that only flavorizr makes
+(`flavorizr.gradle`, the marked blocks of `build.gradle`, the xcconfig files of a flavor...), they are the
+baseline and the run shows what 3.0 changes in them, with no conflict
+(see [the first run without a lock](/reference/adopt#the-first-run-without-a-lock)). Otherwise a patched
+file is adopted by patching it, and a generated (managed) file that exists and differs from what the run
+would write is a [conflict](/conflicts), since there is no telling it from one you wrote. Commit the lock to
+avoid it.

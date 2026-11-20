@@ -13,7 +13,8 @@ Read the [migration guide](https://docs.page/AngeloAvv/flutter_flavorizr/migrati
 * `apply` does not read an answer from a pipe anymore: pass `--yes` and `--on-conflict` in scripts
 * `-f` (`--force`) and `-p` (`--processors`) are deprecated aliases of `--yes` and of the targets after the command, and are removed in 4.0
 * Commit `flavorizr.lock`: it is how flavorizr removes what it generated and tells it from what you edited
-* flutter_flavorizr is a pure Dart package
+* flutter_flavorizr is a pure Dart package: it does not depend on the Flutter SDK anymore and declares the `flavorizr` executable, so a custom entry point or a CI job needs only the Dart SDK
+* The iOS launch screen is opt-in: `launchScreen: true` (at the root or in a flavor) makes `<flavor>LaunchScreen.storyboard` and `<flavor>LaunchImage.imageset` from the icon of the flavor, and `Info.plist` points at `$(LAUNCH_SCREEN_NAME)`, which each flavor defines in its xcconfig. The storyboards and launch images that 2.x copied are yours: they are never overwritten or deleted. This also fixes `UILaunchStoryboardName` being set only when `ios:launchScreen` was in the instructions that ran
 
 ### Features
 
@@ -22,10 +23,18 @@ Read the [migration guide](https://docs.page/AngeloAvv/flutter_flavorizr/migrati
 * Removing a flavor from `flavorizr.yaml` removes it from the project
 * Conflicts with files edited by hand are reported, and answered with `--on-conflict=keep|overwrite`
 * Recipes, and custom processors registered in `tool/flavorizr.dart`
-* Optional icon badge per flavor (`badge`, `icon`)
-* Build settings of the Xcode projects are edited key by key, and `Info.plist`, `AndroidManifest.xml`, the Podfile and `launch.json` are edited in place
-* Typed `customConfig` and `manifestPlaceholders` for Groovy and Kotlin scripts
-* A new documentation site on [docs.page](https://docs.page/AngeloAvv/flutter_flavorizr), and a single example
+* Optional icon badge per flavor (`badge`, `icon`): a band with the name of the flavor, with a colour picked by a stable hash and a contrasting text, drawn at each size on the icons of Android, iOS, macOS and Windows
+* Opt-in iOS launch screen per flavor (`launchScreen`), generated in code from the icon of the flavor, with its badge when it has one
+* Adopting a project flavorized with 2.x: `flavorizr adopt` records what the project already has as the baseline of `flavorizr.lock` and writes nothing else, and the first `plan`, `apply` or `status` of a project that has no lock does the same in memory, so the first run shows what 3.0 changes and no conflicts. The placeholder icons of 2.x are recognised by their hash, and the UUIDs of the Xcode objects that 2.x made are recorded, not renamed
+* The icons of Android, iOS and macOS are tracked in the lock: a flavor that loses its `icon` (and has no badge), or that is dropped, has its icons removed, and a flavor with no `icon` builds with the default icon of the project. The Windows icons are still made by a 2.x processor and stay when the flavor goes
+* Build settings of the Xcode projects are edited key by key, so the `DEVELOPMENT_TEAM` chosen in Xcode is kept, and the objects of `project.pbxproj` have deterministic UUIDs: two runs from scratch write the same file
+* The schemes of the iOS and macOS flavors are patched, not rewritten: flavorizr owns the file and the build configurations of its actions, and the pre-actions that Flutter adds, your arguments and your testables stay
+* `Info.plist`, `AndroidManifest.xml`, the Podfile, the CMake lists and `launch.json` are edited in place, keeping their indentation, comments and everything flavorizr does not own
+* The Firebase, IDE, Flutter, Linux, Windows, Podfile, `Info.plist`, xcconfig, build target, scheme, launch screen and icon processors run on the engine. Only `windows:icons`, `huawei:agconnect` and the `android:dummyAssets` and `windows:dummyAssets` that do nothing stay on the 2.x pipeline
+* `init` writes `flavorizr.yaml`, and `tool/flavorizr.dart` runs a custom entry point, with processors of your own and explicit overrides of the built-in ones
+* A stable library (`package:flutter_flavorizr/flutter_flavorizr.dart`), an experimental one (`package:flutter_flavorizr/experimental.dart`) and a read-only configuration model
+* Typed `customConfig` and `manifestPlaceholders` for Groovy and Kotlin scripts, and a `flavorizr.gradle.kts` generated against `ApplicationExtension`
+* A new documentation site on [docs.page](https://docs.page/AngeloAvv/flutter_flavorizr), including why `appFlavor` is `null` when a flavor is launched from Xcode, and a single example
 
 ## 2.6.0
 

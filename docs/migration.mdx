@@ -27,9 +27,10 @@ flavorized with 2.x keeps working: nothing it contains has to be thrown away.
     the values of `customConfig`. [The keys that changed](#the-configuration) are listed below, and
     the error of each of them says what to write instead.
   </Step>
-  <Step title="Adopt the project">
-    Run [`flavorizr adopt`](#adopting-a-project-flavorized-with-2x) to record the files the project
-    already has as the baseline of `flavorizr.lock`, without writing anything else.
+  <Step title="Adopt the project (optional)">
+    The first `plan`, `apply` or `status` finds that the project was flavorized before and takes its files as
+    the baseline of `flavorizr.lock`, in memory. To record the baseline on its own, without writing anything
+    else, run [`flavorizr adopt`](#adopting-a-project-flavorized-with-2x).
   </Step>
   <Step title="Move to flavors.g.dart">
     Delete the `lib/flavors.dart` of 2.x and the `F.appFlavor` assignment of `main.dart`:
@@ -47,7 +48,7 @@ flavorized with 2.x keeps working: nothing it contains has to be thrown away.
   </Step>
 </Steps>
 
-On a project flavorized with 2.6.0 these steps end with `status` exiting with `0`, provided the first `adopt` and `apply` are full runs: a project that keeps a [short recipe](#instructions-is-recipes) runs them with the target `all` once.
+On a project flavorized with 2.6.0 these steps end with `status` exiting with `0`, and the first `plan` has no conflicts, with or without `adopt`, provided the first `apply` is a full run: a project that keeps a [short recipe](#instructions-is-recipes) runs it with the target `all` once.
 
 ## The configuration
 
@@ -209,14 +210,27 @@ dart run flutter_flavorizr adopt
   It writes nothing else.
 - The next `plan` then shows the 3.0 output as an ordinary, reviewable diff, with no conflict and no
   deletion of what the project is made of.
-- The placeholder icons that 2.x made for Android are recognised by their hash. A placeholder that you did
-  not touch is recorded as managed, and the next `plan` proposes to delete it, since 3.0 no longer makes
-  it. An icon you replaced stays yours.
+- The Xcode project is not rewritten, and no object is renamed: `adopt` records the UUIDs 2.x gave to the
+  build configurations of the flavors and to the references to their xcconfig files, and the value of each
+  build setting flavorizr sets, so the next runs find them and remove them with their flavor.
+- The placeholder icons that 2.x made for Android, iOS and macOS are recognised by their hash. A placeholder
+  that you did not touch is recorded as managed, and the next `plan` proposes to delete it, since 3.0 no
+  longer makes it. An icon you replaced stays yours. The launch storyboards and launch images of 2.x are not
+  icons: they are yours, `adopt` lists them, records none and no run deletes them.
 - `adopt` takes the same targets as `plan`, to adopt part of a project. It needs a configuration that 3.0
-  can read, so fix `flavorizr.yaml` first, and it fails when `flavorizr.lock` exists already: the project
-  has been run by 3.0, and there is nothing to adopt.
+  can read, so fix `flavorizr.yaml` first, and it fails with exit code `65` when `flavorizr.lock` exists
+  already: the project has been run by 3.0, and there is nothing to adopt (delete the lock to adopt the
+  project again).
 
 The page [Adopting a 2.x project](/reference/adopt) has the details of what is recorded.
+
+`adopt` is optional. When `flavorizr.lock` does not exist and the project has files that only flavorizr makes
+(`flavorizr.gradle(.kts)`, the marked blocks of `build.gradle(.kts)`, the CMake files and `my_application.cc`,
+and the xcconfig files and launch storyboards of the flavors of `flavorizr.yaml`), `plan`, `apply` and
+`status` adopt the project themselves, in memory: `plan` and `status` write nothing (`status` exits with `1`
+until the lock exists), and `apply` writes the lock, with the baseline, together with its changes once you
+approve them. A project flavorized by hand has none of those files, and its first run is the one it always
+was.
 
 ### The limits of adopt
 
@@ -235,21 +249,28 @@ The page [Adopting a 2.x project](/reference/adopt) has the details of what is r
   ran and no flavor names, and says so. The launcher icons of a flavor that is gone are recorded only when
   they still have the bytes of the dummy icons of 2.x.
 
-- Only what the processors of the engine own is adopted. The Darwin artifacts that are still 2.x
-  processors (iOS and macOS icons) are not tracked, and neither are their
-  objects in `project.pbxproj`. The launch storyboards of 2.x are not recorded either: they are yours, see
+- Only what the processors of the engine own is adopted. What the processors of the 2.x pipeline made
+  (`windows:icons`, `huawei:agconnect`) is not tracked: `adopt` lists them as not adopted. The launch
+  storyboards of 2.x are not recorded either: they are yours, see
   [the iOS launch screen](#the-ios-launch-screen-is-opt-in).
 
 ### Without adopt
 
-If you skip `adopt`, the first run does the sensible thing by itself, with the same review:
+If you skip `adopt`, the first run adopts the project itself, with the same review (see above): the files that
+2.x made are the baseline, so `plan` shows what 3.0 changes in them as an ordinary diff, with no conflict, and
+`apply` writes that and the lock together once you approve it. The first run of a project 2.x flavorized
+proposes, for instance, to delete the placeholder icons of the flavors, and to change `flavorizr.gradle`
+and the Xcode project where 3.0 writes something else.
 
 - the **patched** files (the manifest, the plists, `build.gradle`, the Podfile, `project.pbxproj`, the
   CMake lists) are adopted by patching them: what flavorizr owns is changed, and everything else stays;
-- a **managed** file that exists and differs from what 3.0 writes, typically `flavorizr.gradle`, is a
-  [conflict](/conflicts), since there is no telling it from one you wrote. Look at the diff with `d`, and
-  overwrite it, or run `apply --on-conflict=overwrite`;
-- the files of the flavors that the yaml no longer has are not removed, for the same reason as above.
+- when the project has none of the files that tell flavorizr made it (it was flavorized by hand, or never),
+  a **managed** file that exists and differs from what 3.0 writes is a [conflict](/conflicts), since there is
+  no telling it from one you wrote. Look at the diff with `d`, and overwrite it, or run
+  `apply --on-conflict=overwrite`;
+- the files of the flavors that the yaml no longer has are not removed, for the same reason as above:
+  name them with `adopt --flavors` first.
+- if the project cannot be read as a baseline, the run fails and says which processor could not read what.
 
 ## `flavors.dart` and `flavors.g.dart`
 
@@ -286,8 +307,14 @@ says how to fix it. See [Flutter code](/configuration/flutter).
   the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows.
 - **An icon you put in the project yourself** (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
   `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
-- The placeholder icons that 2.x made stay in the project until you delete them (or `adopt` proposes it),
-  and are replaced by the icons of an `icon` that you add.
+- The placeholder icons that 2.x made for Android, iOS and macOS are recognised by their hash: the first
+  `plan` proposes to delete the ones you did not change (and the flavor builds with the default icon of the
+  project in that run), and they are replaced by the icons of an `icon` that you add. The ones that you
+  changed are yours. The Windows `.ico` files that 2.x made stay until you delete them.
+- The icons of Android, iOS and macOS are tracked now: they are removed when the `icon` and the badge go, or
+  the flavor, and a hand edit of one is a conflict. `windows:icons` is still a 2.x processor: it does not
+  track what it writes, so a hand edit of a `.ico` it makes is overwritten without a conflict, and the
+  file stays when the flavor goes.
 - A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`.
 
 `android:dummyAssets`, `macos:dummyAssets`, `windows:dummyAssets` and `ios:dummyAssets` still exist, so that a
@@ -329,8 +356,13 @@ Never edit it by hand. See [`flavorizr.lock`](/reference/lock) and [Core concept
 - **Your edits survive.** `AndroidManifest.xml`, `Info.plist`, `build.gradle` and the Podfile are edited in
   place: indentation, comments and everything flavorizr does not own are left as they are. The build settings
   of a configuration are set key by key, so the `DEVELOPMENT_TEAM` you pick in Xcode is not wiped.
-- **Removing is supported.** Delete a flavor from the yaml and its files, build configurations and icons go:
-  [Adding and removing flavors](/flavors).
+- **Removing is supported.** Delete a flavor from the yaml and its files, build configurations and icons go
+  (the Windows `.ico` files excepted): [Adding and removing flavors](/flavors).
+- **The schemes** of the iOS and macOS flavors are patched, not rewritten: flavorizr owns the file and the
+  build configurations of its actions, and the pre-actions Flutter adds, your arguments and everything else
+  stay: [the schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors).
+- **The build settings are set key by key**, so the `DEVELOPMENT_TEAM` you pick in Xcode survives, and the
+  UUIDs of the objects of `project.pbxproj` do not change from one run to the next.
 - **The xcconfig files** of the flavors are no longer added to the Resources build phase, and a run takes
   the ones 2.x added out.
 - **The Windows templates** are made in the build directory, not over your `main.cpp` and `Runner.rc`.

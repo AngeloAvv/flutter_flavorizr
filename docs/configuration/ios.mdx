@@ -117,12 +117,11 @@ flavors:
 | `ios:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). | engine |
 | `ios:schema` | Creates a scheme for each flavor, keeping the edits made to it. See [The schemes](#the-schemes-of-the-ios-and-macos-flavors). | engine |
 | `ios:launchScreen` | Makes the [launch screen](#the-launch-screen) of each flavor that has `launchScreen: true`, from its icon. | engine |
-| `ios:icons` | Makes the icon set of each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
-| `ios:dummyAssets` | Does nothing now: the launch image is made by `ios:launchScreen`. It stays so that a recipe that names it runs. | 2.x pipeline |
+| `ios:icons` | Makes `AppIcon-<flavor>.appiconset` for each flavor that has an `icon` or a [badge](/icons-and-badge#ios-and-macos), and removes the one of a flavor that has neither anymore. | engine |
+| `ios:dummyAssets` | Does nothing now: the launch image is made by `ios:launchScreen`. It stays so that a recipe that names it runs. | engine |
 
-"2.x pipeline" processors are not on the new engine yet: they run after it, straight on the project,
-with no preview, no conflict detection and no entry in the lock. See
-[Processors that are not on the engine yet](/reference/cli#processors-that-are-not-on-the-engine-yet).
+Every iOS processor runs on the engine: a run is previewed, checked against the lock and written
+atomically. See [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet).
 
 Run the flavor with `flutter run --flavor <name>`, or from Xcode by selecting its scheme. If
 `appFlavor` is `null` when you launch from Xcode, see
@@ -159,8 +158,10 @@ The references have a UUID derived from their path, so two runs from scratch
 write the same `project.pbxproj`, and the lock records them (`objects`). When
 you remove a flavor, the references that flavorizr made for it are removed from
 the project too, by UUID, with everything that pointed at them. A reference that
-was there before flavorizr 3 (2.x made it, or you did) is used as it is and never
-removed, because only the lock can tell it is not yours.
+was there before the lock (2.x made it, or you did) is used as it is, and never
+removed, because only a lock can tell it is not yours. The one 2.x made is
+recorded when the project is [adopted](/reference/adopt#the-xcode-projects), which a first run
+without a lock does by itself: from then on it goes with its flavor.
 
 ## The build configurations of the flavors
 
@@ -186,9 +187,13 @@ Capabilities is not wiped anymore. The settings flavorizr sets are recorded in
   you edited: the run asks (or follows `--on-conflict`) before it writes over it.
   See [`flavorizr.lock`](/reference/lock#owned-build-settings).
 
-The configurations that 2.x made are used as they are, with their UUIDs. They
-are not owned (only a lock can tell they are not yours), so removing a flavor
-leaves its configurations in the project, with the settings that you added.
+The configurations that 2.x made keep their UUIDs: nothing is renamed. When the
+project is [adopted](/reference/adopt#the-xcode-projects) (a first run without a
+lock does it, or `adopt`) the lock records their UUIDs and the value each build
+setting has in the project, so they are owned from then on: `plan` shows a change
+of one of those settings as a change, never as a conflict, and the configurations
+go with their flavor, except the ones that hold a setting of yours (see above).
+Without that record they are used as they are and never removed.
 
 ## The launch screen
 

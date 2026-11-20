@@ -72,7 +72,7 @@ Each processor has these optional sections, left out when empty:
 | `regions` | path to region id to hash | Marked regions of a shared file. |
 | `keys` | path to key to hash | Owned keys of a plist, manifest, XML or project file: the hash of the value flavorizr wrote. See [Owned build settings](#owned-build-settings). |
 | `objects` | path to list of UUIDs | UUIDs of the pbxproj objects flavorizr created, sorted. See [Owned objects](#owned-objects). |
-| `inputs` | output path to hash | Generated binaries: the hash of the *inputs* (source file hash plus options), never of the output. The format has it, but no processor records it yet: the icons of `android:icons` are `managed` files, hashed whole. |
+| `inputs` | output path to hash | Generated binaries: the hash of the *inputs* (source file hash plus options), never of the output. The format has it, but no processor records it yet: the icons of `android:icons`, `ios:icons` and `macos:icons` are `managed` files, hashed whole. |
 
 Notes:
 
@@ -95,8 +95,9 @@ Notes:
   and `macos:configs` own: the file references to the flavor xcconfigs
   (`Flutter/<flavor>Debug.xcconfig` and `Runner/Configs/...`, and the `Profile`
   and `Release` ones, for any flavor) and their entries in a Resources phase,
-  which a run removes. An edit of the rest, by Xcode, CocoaPods, Flutter or a 2.x
-  processor, is not drift. `ios:buildTargets` and `macos:buildTargets` add the
+  which a run removes, and the references that `ios:launchScreen` makes to the
+  storyboards of the launch screens (`Runner/<flavor>LaunchScreen.storyboard`).
+  An edit of the rest, by Xcode, CocoaPods or Flutter, is not drift. `ios:buildTargets` and `macos:buildTargets` add the
   build settings of the flavors to it (see [Owned build settings](#owned-build-settings)),
   and `ios:firebase` and `macos:firebase` their build phase. **Known limitation:**
   an object another processor owns and does not extend the reader for is recorded
@@ -137,7 +138,8 @@ What the lock does with them:
   Flutter, from the user, from 2.x) is used as it is, keeps its UUID, is not
   recorded, and so is never removed, unless the processor knows it is
   flavorizr's (say, a configuration 2.x created) and claims it: the lock then
-  records the UUID it has. UUIDs are never rewritten for the project
+  records the UUID it has. That is what the [adoption](/reference/adopt#the-xcode-projects)
+  of a project 2.x flavorized does, whether `flavorizr adopt` or the first run without a lock. UUIDs are never rewritten for the project
   as a whole: that would break what refers to them from outside the file, such
   as the `BlueprintIdentifier` of a scheme.
 * **A processor says what it owns on every run**, and what the lock records for

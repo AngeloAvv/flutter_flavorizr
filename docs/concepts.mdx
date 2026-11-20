@@ -19,9 +19,11 @@ A run compares the three:
   lock and not in the yaml is removed from the project, together with what flavorizr generated for it;
 - the lock and the disk tell **what changed by hand** since the last run. A file that is not what
   flavorizr wrote is yours, and flavorizr asks before it changes it: see [Conflicts](/conflicts). That holds
-  for the `managed` and `patched` files of the processors on the engine. It does not hold for the `local`
-  files (the run configurations of the IDEs, the Firebase copies), which are written again whatever you
-  changed, nor for the [legacy processors](#engine-and-legacy-processors);
+  for the `managed` and `patched` files. It does not hold for the `local` files (the run configurations of
+  the IDEs, the Firebase copies), which are written again whatever you changed, nor for what the
+  [legacy processors](#engine-and-legacy-processors) write;
+- when there is no lock, the files that flavorizr made before there was one (2.x) are the baseline, so that
+  they are not conflicts: see [the first run without a lock](/reference/adopt#the-first-run-without-a-lock);
 - the yaml and the disk tell **what is left to do**: that is the plan.
 
 `flavorizr.lock` is meant to be committed. Without it flavorizr cannot remove a flavor, and cannot tell
@@ -50,8 +52,8 @@ Three failures can still leave a run half done, and each says so, with exit code
 - the files are written, but the lock cannot replace `flavorizr.lock` (permissions, a folder in its place):
   the changes stay written and the lock is the previous one. Fix what stops it and run flavorizr again: it
   finds nothing to change and writes the lock;
-- a 2.x processor fails after the engine finished: the changes of the engine and the lock stay written
-  (see below).
+- a processor of the 2.x pipeline fails after the engine finished (`windows:icons` or `huawei:agconnect`: see
+  [below](#engine-and-legacy-processors)): the changes of the engine and the lock stay written.
 
 `status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
 
@@ -76,7 +78,7 @@ Every file a processor produces has an **owner**, and the owner decides what a r
 
 Two things follow from it:
 
-- **Removing is as safe as adding**, for the processors of the engine. A flavor you drop from the yaml has its `managed` files deleted
+- **Removing is as safe as adding.** A flavor you drop from the yaml has its `managed` files deleted
   and its share of the `patched` ones (build configurations, Podfile mappings, plist keys) taken out,
   and nothing else. What you added to a patched file is not touched.
 - **A setting that is yours stays yours.** A build setting flavorizr wrote and you changed is yours:
@@ -85,8 +87,13 @@ Two things follow from it:
 
 ## Engine and legacy processors
 
-3.0 runs the processors on a new engine that does all of the above. Some of the iOS and macOS
-processors (icons) and `huawei:agconnect` are still the ones of 2.x:
-they are applied to the project after the engine, with no preview, no conflict detection and no entry
-in the lock. `plan` and `list` say which processors run on which, and `status` lists the ones it
-cannot vouch for. See the [command line reference](/reference/cli#processors-that-are-not-on-the-engine-yet).
+3.0 runs the processors on a new engine that does all of the above. Two processors that make or change
+files are still the ones of 2.x, `windows:icons` and `huawei:agconnect`, and so are `android:dummyAssets` and
+`windows:dummyAssets`, which do nothing and stay so that a recipe that names them runs. The 2.x processors
+are applied to the project after the engine, with no preview, no conflict detection and no entry in the
+lock. `plan` and `list` say which processors run on which, and `status` lists the ones it cannot vouch
+for. See the [command line reference](/reference/cli#processors-that-are-not-on-the-engine-yet).
+
+A project that was flavorized with 2.x has no lock. The first `plan`, `apply` or `status` finds the files that
+flavorizr made before and takes them as the baseline, so the run shows what 3.0 changes in them and not a
+conflict on each one: see [Migration](/migration) and [Adopting a 2.x project](/reference/adopt).

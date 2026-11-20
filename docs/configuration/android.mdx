@@ -155,8 +155,12 @@ tracked in the lock, so removing `adaptiveIcon` removes them on the next run.
 | `android:buildGradle` | Imports it from `build.gradle(.kts)`, in a marked block. Patched: the rest of the script is yours. |
 | `android:androidManifest` | Sets the label of the application to the name of the app of the flavor. Patched. |
 | `android:icons` | Makes the launcher icons of each flavor that has an `icon`, or a [badge](/icons-and-badge). |
-| `android:dummyAssets` | Does nothing now: a flavor with no `icon` uses the default icon of the project. |
+| `android:dummyAssets` | Does nothing now: a flavor with no `icon` uses the default icon of the project. It stays so that a recipe that names it runs. |
 | `android:firebase` | Copies `google-services.json` for each flavor that has one. See [Firebase](/configuration/services#firebase). |
+
+Every Android processor runs on the engine (previewed, checked against the lock and written atomically),
+except `android:dummyAssets`, which does nothing and is a 2.x processor
+(see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)).
 
 `AndroidManifest.xml` and the Gradle scripts are edited in place, as text: indentation, comments and
 everything flavorizr does not own stay as they are, and a file that is up to date is not written at all.

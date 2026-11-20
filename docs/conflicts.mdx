@@ -9,7 +9,8 @@ it: writing it would lose your edit. flavorizr never overwrites such a file with
 IDEs, the Firebase copies) are never checked: a run writes them again whatever you changed in them. The
 processors that are not on the engine yet (see
 [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)) do not track what they write, and
-write over it without asking.
+write over it without asking: the one that matters is `windows:icons`, which writes the `.ico` of each
+flavor that has an `icon` or a badge again on every run.
 
 ## When a file is a conflict
 
@@ -17,7 +18,7 @@ The lock holds a hash of what flavorizr wrote. A run compares it with the file o
 
 | Owner | A conflict is... |
 | --- | --- |
-| `managed` | A file that is not what the lock recorded, when the run would write something else. A managed file that exists and that the lock does not know is one too: there is no telling it from a file you wrote. |
+| `managed` | A file that is not what the lock recorded, when the run would write something else. A managed file that exists and that the lock does not know is one too: there is no telling it from a file you wrote, unless the project has files that only flavorizr makes (2.x), which a run [adopts as the baseline](/reference/adopt#the-first-run-without-a-lock) first. |
 | `patched` | The **owned part** of the file (the region, the keys, the objects flavorizr put in it) was edited since the last run. What you edit around it is not a conflict, and a patched file that the lock does not know yet is adopted by patching it. |
 | `scaffold` | Never: it is created once and then it is yours. `--overwrite-scaffold` is the only way to replace it. |
 | `local` | Never: it is regenerated silently. |

@@ -139,7 +139,7 @@ On top of the fields of `plan`:
 | --- | --- | --- |
 | `checked` | boolean | `false` when no processor of the engine was selected: there is no lock to compare with, so nothing was checked. |
 | `inSync` | boolean | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. The exit code is `1` when it is not. |
-| `drift` | `{kind, message, paths}[]` | How they differ. `kind` is `lock` (there is no `flavorizr.lock`), `flavors` (the flavors differ: see `flavors`), `files` (files that are not what `flavorizr.yaml` asks for, in `paths`) or `edited` (generated files edited by hand, in `paths`). |
+| `drift` | `{kind, message, paths}[]` | How they differ. `kind` is `lock` (there is no `flavorizr.lock`; on a project 2.x flavorized, the `message` also says that its files were taken as the baseline, and `flavorizr adopt` or `apply` records it), `flavors` (the flavors differ: see `flavors`), `files` (files that are not what `flavorizr.yaml` asks for, in `paths`) or `edited` (generated files edited by hand, in `paths`). |
 | `notChecked` | `string[]` | The processors that are not on the engine, which `status` cannot vouch for. |
 
 ### `list`
@@ -154,7 +154,7 @@ On top of the fields of `plan`:
 A `plan` with a file in the way:
 
 ```json
-{"schemaVersion":1,"command":"plan","exitCode":1,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false},{"id":"android:flavorizrGradle","platform":"android","runsOn":"engine","auto":true},{"id":"flutter:flavors","platform":"flutter","runsOn":"legacy","auto":false}],"flavors":{"added":["pear"],"removed":[],"changed":[]},"changes":[{"path":"android/app/flavorizr.gradle","platform":"android","change":"modified","disposition":"conflict","ownership":"managed"},{"path":"android/app/src/main/AndroidManifest.xml","platform":"android","change":"modified","disposition":"apply","ownership":"patched"}],"summary":{"added":0,"modified":1,"deleted":0,"conflicts":1},"warnings":[],"errors":[],"durationMs":412}
+{"schemaVersion":1,"command":"plan","exitCode":1,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false},{"id":"android:flavorizrGradle","platform":"android","runsOn":"engine","auto":true},{"id":"windows:icons","platform":"windows","runsOn":"legacy","auto":false}],"flavors":{"added":["pear"],"removed":[],"changed":[]},"changes":[{"path":"android/app/flavorizr.gradle","platform":"android","change":"modified","disposition":"conflict","ownership":"managed"},{"path":"android/app/src/main/AndroidManifest.xml","platform":"android","change":"modified","disposition":"apply","ownership":"patched"}],"summary":{"added":0,"modified":1,"deleted":0,"conflicts":1},"warnings":[],"errors":[],"durationMs":412}
 ```
 
 An `apply` where a processor failed:
@@ -172,7 +172,7 @@ A `status` that is in sync:
 A `list`:
 
 ```json
-{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[],"overridden":false},{"id":"flutter:flavors","platform":"flutter","runsOn":"legacy","needs":[],"after":[],"overridden":false}],"warnings":[],"errors":[],"durationMs":8}
+{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[],"overridden":false},{"id":"windows:icons","platform":"windows","runsOn":"legacy","needs":[],"after":[],"overridden":false}],"warnings":[],"errors":[],"durationMs":8}
 ```
 
 A command that fails before it got far, here a `plan` with an unknown target:

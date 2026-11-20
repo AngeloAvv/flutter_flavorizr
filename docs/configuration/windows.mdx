@@ -25,8 +25,11 @@ flavors:
       icon: "assets/icon/apple/app_icon.png"
 ```
 
-A flavor with no `icon` builds with the default `app_icon.ico`. The icon of a flavor is
-`windows/runner/resources/<flavor>.ico`, and an icon you put there yourself is yours.
+A flavor with no `icon` and no [badge](/icons-and-badge#icon-badge) builds with the default `app_icon.ico`.
+The icon of a flavor is `windows/runner/resources/<flavor>.ico`. An icon you put there yourself is yours
+while the flavor has no `icon` and no badge: otherwise `windows:icons` writes it again on every run, over
+yours, without a conflict, and it leaves the file in the project when the `icon`, the badge or the flavor
+goes.
 
 ## The processors
 
@@ -36,7 +39,11 @@ A flavor with no `icon` builds with the default `app_icon.ico`. The icon of a fl
 | `windows:runnerRcTemplate` | Makes `windows/runner/Runner.rc.in` from `Runner.rc`, so that its icon and title can be set per flavor. | engine |
 | `windows:cmake` | Sets the icon and the title of each flavor in `windows/runner/CMakeLists.txt`, and makes the sources from the templates. | engine |
 | `windows:icons` | Makes an `.ico` for each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
-| `windows:dummyAssets` | Does nothing now: a flavor with no `icon` uses `app_icon.ico`. | 2.x pipeline |
+| `windows:dummyAssets` | Does nothing now: a flavor with no `icon` uses `app_icon.ico`. It stays so that a recipe that names it runs. | 2.x pipeline |
+
+`windows:icons` and `windows:dummyAssets` are not on the engine yet: they run after it, straight on the
+project, with no preview, no conflict detection and no entry in the lock. See
+[Command line](/reference/cli#processors-that-are-not-on-the-engine-yet).
 
 ## What flavorizr changes in your files
 

@@ -46,10 +46,14 @@ specific to flavorizr counts: a project that was flavorized by hand has schemes,
 are yours, so a run asks about them as it always did. A project with none of the
 files above is a new one, and its first run is the one it always was.
 
-The baseline covers every processor of the default recipe, whatever the targets
-of the run, so a first `apply android:icons` leaves the project ready for the run
-of the rest. When one of them cannot read the project (a file it needs is
-missing), only the processors of the run are adopted, and the run says so.
+The baseline covers every processor of `all`, whatever the default recipe and the
+targets of the run, so a first `apply android:icons` leaves the project ready for
+the run of the rest. (The explicit `adopt` is not the same: with no target it adopts
+the default recipe, and records the flavors only when that covers every processor
+a full run covers.) When one of them cannot read the project (a file it needs is
+missing), only the processors of the run are adopted, and the run says so. When even
+those cannot read it, the run fails with the error of the processor, as a failed
+processor does, and writes nothing.
 
 A lock that exists is never replaced by an adoption, whatever it records. A
 project whose lock was lost is read the same way: the files that are there are

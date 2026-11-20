@@ -25,11 +25,11 @@ flavors:
       icon: "assets/icon/dev_android.png"  # Android only
 ```
 
-An `icon` is a path relative to the project that stays inside it, links included. The Android icons are
-generated files, owned as **managed** and hashed in the lock, so editing one by hand is a conflict. The iOS,
-macOS and Windows icons are made by 2.x processors that are not on the engine yet: they are not in the lock,
-and a run writes them over a hand edit without a conflict. The output is
-deterministic: the same sources always give the same bytes. Android flavors can also set an
+An `icon` is a path relative to the project that stays inside it, links included. The icons of Android, iOS
+and macOS are generated files, owned as **managed** and hashed in the lock, so editing one by hand is a
+conflict. The Windows icons are the exception: `windows:icons` is a 2.x processor that is not on the engine
+yet, so its `.ico` files are not in the lock, and a run writes them over a hand edit without a conflict. The
+output is deterministic: the same sources always give the same bytes. Android flavors can also set an
 [`adaptiveIcon`](/configuration/android#adaptiveicon).
 
 ### A flavor with no icon
@@ -38,18 +38,34 @@ deterministic: the same sources always give the same bytes. Android flavors can 
 `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows.
 
 An icon you put in the project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
-`<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
+`<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it. Once the flavor has an
+`icon` (or a badge), the set or the files that flavorizr would write are not yours to keep: on Android, iOS
+and macOS a file of the project that the lock does not know is a [conflict](/conflicts) and nothing is
+written until you answer, and `windows:icons` writes `<flavor>.ico` over yours.
 
 `generateDummyAssets`, which made placeholder icons in 2.x from assets that it downloaded, is
 deprecated and ignored. Remove it: it will be an error in 4.0. `assetsUrl` is an error now, since there is
 nothing to download.
 
+### iOS and macOS
+
+`ios:icons` and `macos:icons` make `AppIcon-<flavor>.appiconset` in `ios/Runner/Assets.xcassets` and
+`macos/Runner/Assets.xcassets`: every PNG of the set, resized from the source icon, and a `Contents.json`
+written in code (the text 2.x wrote, byte for byte). A flavor builds with its own set when it has an `icon` or
+a badge, or when the project has an `AppIcon-<flavor>.appiconset` already, and with the `AppIcon` of the
+project otherwise. A file of yours in the set stays when the set is removed.
+
 ### Removing icons
 
-The icons of a flavor are cleaned with it when you remove the flavor, or when you remove its `icon`, on the
-platforms that run on the engine (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)).
-The iOS, macOS and Windows icons are made by 2.x processors that do not track what they write: they stay in
-the project when the `icon` or the flavor goes.
+The icons of a flavor are cleaned with it when you remove the flavor, or when you remove its `icon` and it has
+no badge, on Android, iOS and macOS: the files are managed, and a set that is not made anymore is removed
+with its folder (a file of yours in it stays). A flavor that loses its icon builds with the `AppIcon` of the
+project in that same run.
+
+`windows:icons` is the one processor that makes icons and is not on the engine yet (see
+[Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)). It does not track what it writes, so
+the `windows/runner/resources/<flavor>.ico` files stay in the project when the `icon`, the badge or the flavor
+goes, and you delete them.
 
 ## The launch screen and Android
 
@@ -113,5 +129,6 @@ foreground gets no Android icons at all while it has a badge, and a warning says
 
 ### iOS, macOS and Windows
 
-The icons of the iOS, macOS and Windows flavors that have a badge and no `icon` stay in the project when the
-badge goes: they are those of the 2.x processors, which do not track what they write.
+The band is drawn on the icons of each set at the size of each icon. The icons of a flavor that has a badge
+and no `icon` are removed when the badge goes, on Android, iOS and macOS, which track what they write. The
+Windows `.ico` of such a flavor stays in the project, since `windows:icons` is a 2.x processor.
