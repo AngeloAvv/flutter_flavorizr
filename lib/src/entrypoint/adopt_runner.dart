@@ -125,6 +125,8 @@ Future<AdoptRun> runAdoption(
         projectRoot: context.projectRoot,
         produced: ctx.trackedByProcessor,
         androidFlavors: all.androidFlavors.keys,
+        iosFlavors: all.iosFlavors.keys,
+        macosFlavors: all.macosFlavors.keys,
         historicalFlavors: historical,
         flavors: recordedFlavors,
         availableProcessors: engineIdsFor(registry, config),
