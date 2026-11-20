@@ -29,6 +29,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/deletion_plan.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/flavor_diff.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/lock_update.dart';
@@ -173,7 +174,7 @@ final class Reconciliation {
             '${deletions.changes.map((change) => change.describe()).join('\n')}',
       if (deletions.released.isNotEmpty)
         'Left in place (shared with you, no longer owned by flavorizr):\n'
-            '${deletions.released.map((s) => '- ${s.path}').join('\n')}',
+            '${deletions.released.map((s) => '- ${deletions.describeReleased(s)}').join('\n')}',
       if (invalid.isNotEmpty)
         'Ignored in the lock (not a path of the project):\n'
             '${invalid.map((i) => '- ${i.path} (${i.processorId})').join('\n')}',
@@ -221,7 +222,10 @@ final class _DeletionAwareContent implements ConflictContent {
 /// from a partial one. [projectRoot] is the real project and [paths] the paths
 /// the shadow workspace of the run covers (`ShadowWorkspace.paths`): nothing
 /// outside of them is ever deleted. [hasher] hashes the owned content of a
-/// file, like the one of `ShadowWorkspace.diff`.
+/// file, like the one of `ShadowWorkspace.diff`, and [foreignReader] tells what
+/// of a patched file is neither owned nor added by the tools around it, which is
+/// what decides if a file flavorizr created is still its own: see
+/// [planDeletions].
 ///
 /// Nothing is written: see [Reconciliation].
 Future<Reconciliation> reconcile({
@@ -237,6 +241,7 @@ Future<Reconciliation> reconcile({
   required Set<String> availableProcessors,
   required String flavorizrVersion,
   ArtifactHasher? hasher,
+  ForeignReader? Function(String path)? foreignReader,
 }) async {
   final scan = findStaleArtifacts(
     previous: previous,
@@ -248,6 +253,7 @@ Future<Reconciliation> reconcile({
     paths: paths,
     stale: scan.stale,
     hasher: hasher,
+    foreignReader: foreignReader,
   );
 
   return Reconciliation._(

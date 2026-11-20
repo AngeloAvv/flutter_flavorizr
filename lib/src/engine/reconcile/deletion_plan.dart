@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/stale_artifacts.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
@@ -48,7 +49,17 @@ final class DeletionPlan {
   /// *patched* file only has some owned parts, and the rest is the user's (the
   /// same goes for a file some other processor records as patched). They are
   /// left in place and the lock stops owning them.
+  ///
+  /// A patched file flavorizr **created** is not here: it is in [changes], as
+  /// long as the processor can say what the user may have changed (see
+  /// [planDeletions]).
   final List<StaleArtifact> released;
+
+  /// The files of [released] that flavorizr makes for a flavor but has no record
+  /// of making: they were there before it (the user's, or made by 2.x, which
+  /// `adopt` cannot tell from the user's). They stay, and the plan says that
+  /// they are the user's to delete.
+  final List<StaleArtifact> notMade;
 
   /// The stale files that do not exist in the project anymore: nothing to
   /// delete.
@@ -59,11 +70,19 @@ final class DeletionPlan {
     required Iterable<FileChange> changes,
     required Iterable<StaleArtifact> released,
     required Iterable<StaleArtifact> gone,
+    Iterable<StaleArtifact> notMade = const [],
   }) : changes = List.unmodifiable(
          changes.toList()..sort((a, b) => a.path.compareTo(b.path)),
        ),
        released = List.unmodifiable(released),
+       notMade = List.unmodifiable(notMade),
        gone = List.unmodifiable(gone);
+
+  /// [stale], a file of [released], as a line of the plan.
+  String describeReleased(StaleArtifact stale) => notMade.contains(stale)
+      ? '${stale.path} (flavorizr did not make it: delete it yourself if you '
+            'do not need it)'
+      : stale.path;
 
   /// [diff], the changes of the shadow workspace, together with the deletions.
   ///
@@ -90,6 +109,15 @@ final class DeletionPlan {
 /// matches or that the lock has no hash for, are [ChangeDisposition.conflict]:
 /// the conflict flow decides, and nothing is deleted without it.
 ///
+/// A patched file is the user's, and is released, except one flavorizr
+/// **created** (the lock has `createdHash` for it, see `recordCreated`) of which
+/// [foreignReader] knows what is not owned: it is deleted like a managed one,
+/// but what it is compared with is that part and not the owned content, which
+/// the user, Xcode and Flutter may change without the file ceasing to be the one
+/// flavorizr made. A file that still holds what was recorded is
+/// [ChangeDisposition.apply]; one edited anywhere else is a
+/// [ChangeDisposition.conflict], and the user decides.
+///
 /// A deletion is [ChangeDisposition.blocked] when it must never happen: the
 /// path is not within one of the [paths] the run works on, it is or goes
 /// through a symbolic link (links are never followed, so what they point at is
@@ -101,6 +129,7 @@ Future<DeletionPlan> planDeletions({
   required Iterable<String> paths,
   required Iterable<StaleArtifact> stale,
   ArtifactHasher? hasher,
+  ForeignReader? Function(String path)? foreignReader,
 }) async {
   final project = Directory(p.normalize(projectRoot.absolute.path));
   final whitelist = paths.map(canonicalPath).toList();
@@ -108,6 +137,7 @@ Future<DeletionPlan> planDeletions({
   final changes = <FileChange>[];
   final released = <StaleArtifact>[];
   final gone = <StaleArtifact>[];
+  final notMade = <StaleArtifact>[];
   final deleting = <String>{};
   // A file some processor records as patched is shared with the user, whoever
   // else claims it as its own.
@@ -117,13 +147,38 @@ Future<DeletionPlan> planDeletions({
         pathIdentity(canonicalPath(artifact.path)),
   };
 
+  // ...unless flavorizr made it, and every record of it says so.
+  final made =
+      {
+        for (final artifact in stale)
+          if (artifact.ownership == Ownership.patched &&
+              artifact.createdHash != null &&
+              foreignReader?.call(canonicalPath(artifact.path)) != null)
+            pathIdentity(canonicalPath(artifact.path)),
+      }..removeWhere(
+        (path) => stale.any(
+          (artifact) =>
+              pathIdentity(canonicalPath(artifact.path)) == path &&
+              (artifact.ownership != Ownership.patched ||
+                  artifact.createdHash == null),
+        ),
+      );
+
   for (final artifact in stale) {
     final path = canonicalPath(artifact.path);
+    final isMade = made.contains(pathIdentity(path));
 
-    if (artifact.ownership == Ownership.patched ||
-        artifact.ownership == Ownership.local ||
-        shared.contains(pathIdentity(path))) {
+    if (!isMade &&
+        (artifact.ownership == Ownership.patched ||
+            artifact.ownership == Ownership.local ||
+            shared.contains(pathIdentity(path)))) {
       released.add(artifact);
+
+      if (artifact.ownership == Ownership.patched &&
+          foreignReader?.call(path) != null) {
+        notMade.add(artifact);
+      }
+
       continue;
     }
 
@@ -153,9 +208,11 @@ Future<DeletionPlan> planDeletions({
       case FileSystemEntityType.file:
         final bytes = await File(file).readAsBytes();
         final recorded = artifact.recordedHash;
-        final unchanged =
-            recorded != null &&
-            hashOwned(_artifactOf(artifact, path), bytes) == recorded;
+        final unchanged = isMade
+            ? foreignDigest(foreignReader!(path)!, bytes) ==
+                  artifact.createdHash
+            : recorded != null &&
+                  hashOwned(_artifactOf(artifact, path), bytes) == recorded;
 
         changes.add(
           change(
@@ -172,7 +229,12 @@ Future<DeletionPlan> planDeletions({
     }
   }
 
-  return DeletionPlan(changes: changes, released: released, gone: gone);
+  return DeletionPlan(
+    changes: changes,
+    released: released,
+    gone: gone,
+    notMade: notMade,
+  );
 }
 
 bool _isWithin(List<String> whitelist, String path) => whitelist.any(

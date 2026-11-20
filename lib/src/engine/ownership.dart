@@ -53,6 +53,12 @@ enum Ownership {
   /// changed, and reports a conflict when the owned parts were edited by hand
   /// since the last run. A file the lock does not know yet is adopted by
   /// patching it, since everything outside the owned parts is preserved.
+  ///
+  /// When the processor stops producing it (its flavor was dropped), the file
+  /// is left in place and the lock stops owning it, with one exception: a file
+  /// the processor **created** and recorded as such (`recordCreated`), such as
+  /// the scheme of a flavor, which is deleted along with the flavor as long as
+  /// what is not owned in it is as it was made, and is a conflict otherwise.
   patched(isHashed: true),
 
   /// Mutated by builds or usually ignored by git, such as `.idea/` run

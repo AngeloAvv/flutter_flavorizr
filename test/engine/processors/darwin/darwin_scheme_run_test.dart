@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
@@ -306,6 +307,266 @@ void main() {
         expect(project.snapshot(), before);
       },
     );
+  });
+
+  group('the scheme of a flavor that was dropped', () {
+    /// The configuration without `dates`.
+    String onlyCitrus() => _config().split('  dates:').first;
+
+    Future<int> drop([List<String> extra = const []]) async {
+      project.write('flavorizr.yaml', onlyCitrus());
+
+      return apply(extra);
+    }
+
+    test('is deleted with its flavor, and the other stays', () async {
+      await apply();
+
+      final code = await drop();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+      expect(project.exists('$_schemes/citrus.xcscheme'), isTrue);
+      expect(project.exists(_runner), isTrue);
+    });
+
+    test('leaves the lock with the one of the flavor that stays, and a run '
+        'after it has nothing to do', () async {
+      await apply();
+      await drop();
+
+      final record = (await LockStore(
+        project.root,
+        runningVersion: '3.0.0',
+      ).read())!.processors['ios:schema']!;
+
+      expect(record.files.keys, ['$_schemes/citrus.xcscheme']);
+      expect(record.keys.keys, ['$_schemes/citrus.xcscheme']);
+
+      final before = project.snapshot();
+
+      expect(await apply(), ExitCodes.ok, reason: project.logger.output);
+      expect(project.snapshot(), before);
+    });
+
+    test('is in the plan as a deletion before it happens, and `status` is '
+        'out of sync', () async {
+      await apply();
+      project.write('flavorizr.yaml', onlyCitrus());
+      final before = project.snapshot();
+
+      expect(await project.run(['plan', ..._targets]), ExitCodes.ok);
+      expect(project.logger.output, contains('$_schemes/dates.xcscheme'));
+      expect(project.logger.output, contains('1 to delete'));
+      expect(project.snapshot(), before);
+
+      project.logger.lines.clear();
+
+      expect(await project.run(['status', ..._targets]), isNot(ExitCodes.ok));
+      expect(project.logger.output, contains('$_schemes/dates.xcscheme'));
+    });
+
+    test('is a deletion in the document of `--json`, a conflict when edited '
+        'more than it owns', () async {
+      await apply();
+      project.write('flavorizr.yaml', onlyCitrus());
+
+      Future<Map<String, Object?>> change({int code = 0}) async {
+        project.stdout.clear();
+
+        expect(
+          await project.run(['plan', '--json', ..._targets]),
+          code,
+          reason: project.logger.output,
+        );
+
+        return {
+          for (final change
+              in ((jsonDecode(project.stdout.toString())
+                          as Map<String, Object?>)['changes']
+                      as List<Object?>)
+                  .cast<Map<String, Object?>>())
+            change['path']! as String: change,
+        }['$_schemes/dates.xcscheme']!;
+      }
+
+      expect(await change(), containsPair('change', 'deleted'));
+      expect(await change(), containsPair('disposition', 'apply'));
+
+      project.write(
+        '$_schemes/dates.xcscheme',
+        scheme('dates').replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+      );
+
+      expect(
+        await change(code: ExitCodes.attention),
+        containsPair('disposition', 'conflict'),
+      );
+    });
+
+    test('is deleted when only what Flutter and the user may edit changed: the '
+        'build configurations and the pre-action of Flutter', () async {
+      await apply();
+      project.write(
+        '$_schemes/dates.xcscheme',
+        withFlutterPreAction(scheme('dates')).replaceFirst(
+          'buildConfiguration = "Release-dates"',
+          'buildConfiguration = "Release"',
+        ),
+      );
+
+      final code = await drop();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+    });
+
+    test('is deleted when Xcode saved it with another layout', () async {
+      await apply();
+      project.write(
+        '$_schemes/dates.xcscheme',
+        scheme('dates').replaceAll('   ', ' '),
+      );
+
+      final code = await drop();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+    });
+
+    test('is kept, and reported as a conflict, when the user edited more than '
+        'its build configurations', () async {
+      await apply();
+      project.write(
+        '$_schemes/dates.xcscheme',
+        scheme('dates').replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+      );
+
+      final code = await drop();
+
+      expect(code, ExitCodes.attention, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isTrue);
+      expect(project.logger.output, contains('$_schemes/dates.xcscheme'));
+    });
+
+    test(
+      'is deleted after all when the conflict is told to overwrite',
+      () async {
+        await apply();
+        project.write(
+          '$_schemes/dates.xcscheme',
+          scheme(
+            'dates',
+          ).replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        );
+
+        final code = await drop(['--on-conflict', 'overwrite']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+      },
+    );
+
+    test('is patched in place when its flavor comes back after the user kept '
+        'it', () async {
+      await apply();
+      final mine = scheme(
+        'dates',
+      ).replaceFirst('launchStyle = "0"', 'launchStyle = "1"');
+      project.write('$_schemes/dates.xcscheme', mine);
+      await drop();
+      project.write('flavorizr.yaml', _config());
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(scheme('dates'), mine);
+    });
+
+    test(
+      'is made again when its flavor comes back, and goes with it again',
+      () async {
+        await apply();
+        await drop();
+        project.write('flavorizr.yaml', _config());
+
+        final code = await apply();
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(
+          _configurations(scheme('dates'))['ArchiveAction'],
+          'Release-dates',
+        );
+
+        await drop();
+
+        expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+      },
+    );
+
+    test('is left alone when flavorizr did not make it: the user had it '
+        'already', () async {
+      project.write(
+        '$_schemes/dates.xcscheme',
+        File(
+          'test_resources/example_2x/ios/Runner.xcodeproj/xcshareddata/'
+          'xcschemes/Runner.xcscheme',
+        ).readAsStringSync(),
+      );
+      await apply();
+
+      final code = await drop();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isTrue);
+      expect(
+        project.logger.output,
+        allOf(
+          contains('Left in place'),
+          contains('dates.xcscheme (flavorizr did not make it'),
+        ),
+      );
+    });
+
+    test('is deleted by a run of `ios:schema` alone', () async {
+      await apply();
+      project.write('flavorizr.yaml', onlyCitrus());
+
+      final code = await project.run(['apply', '--yes', 'ios:schema']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+    });
+
+    test(
+      'is not touched by a run that does not include `ios:schema`',
+      () async {
+        await apply();
+        project.write('flavorizr.yaml', onlyCitrus());
+
+        final code = await project.run(['apply', '--yes', 'flutter:flavors']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists('$_schemes/dates.xcscheme'), isTrue);
+      },
+    );
+
+    test('is deleted when the flavor only loses its iOS section', () async {
+      await apply();
+      project.write(
+        'flavorizr.yaml',
+        _config().replaceFirst(
+          '    ios:\n      bundleId: "com.example.dates"\n',
+          '    android:\n      applicationId: "com.example.dates"\n',
+        ),
+      );
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+      expect(project.exists('$_schemes/citrus.xcscheme'), isTrue);
+    });
   });
 
   group('an existing scheme', () {

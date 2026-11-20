@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
+
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:xml/xml.dart';
 
@@ -108,6 +110,101 @@ abstract final class SchemeEditor {
             case final configuration?)
           '$action buildConfiguration = $configuration',
     ].join('\n');
+  }
+
+  /// What the scheme in [source] holds that flavorizr does not own, nor Flutter
+  /// adds on its own: the scheme as it is **without** the build configuration of
+  /// the [ownedActions] and without the pre-action of Flutter, as a canonical
+  /// text that does not depend on the layout (the order of the attributes, the
+  /// indentation and the line breaks).
+  ///
+  /// It is how a scheme flavorizr made is told from one the user edited when its
+  /// flavor is dropped: the lock records it for a scheme flavorizr creates
+  /// (`recordCreated`), and the scheme is deleted only while it is still the
+  /// same. The three things that may change in a scheme flavorizr made, without
+  /// it ceasing to be its own, are exactly what is left out: the build
+  /// configurations it owns, the pre-action Flutter injects when Swift Package
+  /// Manager is turned on later, and the layout Xcode saves it with. Everything
+  /// else (the arguments, the environment, the targets, a pre-action or a
+  /// comment of the user) is the user's, and a change of it makes the scheme
+  /// theirs.
+  ///
+  /// A [source] that is not XML is its own foreign content, so that whatever
+  /// happens to it is seen.
+  static String foreignContent(String source) {
+    final XmlDocument document;
+
+    try {
+      document = XmlDocument.parse(source);
+    } on XmlException {
+      return source;
+    }
+
+    final scheme = document.rootElement.copy();
+
+    for (final action in ownedActions) {
+      scheme.getElement(action)?.removeAttribute('buildConfiguration');
+    }
+
+    for (final container in scheme.findAllElements('PreActions').toList()) {
+      for (final action in container.childElements.toList()) {
+        if (_isPrepareAction(action)) action.remove();
+      }
+
+      if (container.childElements.isEmpty) container.remove();
+    }
+
+    final buffer = StringBuffer();
+
+    _write(scheme, buffer);
+
+    return buffer.toString();
+  }
+
+  /// Whether [action], an `ExecutionAction`, is the pre-action Flutter adds:
+  /// the one that runs `xcode_backend.sh` or `macos_assemble.sh` with `prepare`,
+  /// whatever it is called.
+  static bool _isPrepareAction(XmlElement action) {
+    for (final content in action.findAllElements('ActionContent')) {
+      final script = content.getAttribute('scriptText') ?? '';
+
+      if (content.getAttribute('title') == prepareTitle ||
+          (RegExp(r'(xcode_backend|macos_assemble)\.sh').hasMatch(script) &&
+              RegExp(r'\bprepare\b').hasMatch(script))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// [element] as one line per node, indented by depth, with its attributes by
+  /// name: the layout of the source is not in it.
+  static void _write(XmlElement element, StringBuffer buffer, [int depth = 0]) {
+    final attributes = [
+      for (final attribute in element.attributes)
+        '${attribute.name.qualified}=${jsonEncode(attribute.value)}',
+    ]..sort();
+
+    buffer.writeln(
+      '${' ' * depth}<${element.name.qualified} '
+      '${attributes.join(' ')}>',
+    );
+
+    for (final child in element.children) {
+      switch (child) {
+        case XmlElement():
+          _write(child, buffer, depth + 1);
+        case XmlText() || XmlCDATA() || XmlComment():
+          final text = child.value?.trim() ?? '';
+
+          if (text.isNotEmpty) {
+            buffer.writeln('${' ' * (depth + 1)}${jsonEncode(text)}');
+          }
+        default:
+          break;
+      }
+    }
   }
 
   /// The build configuration each action of the scheme of [flavor] runs with.

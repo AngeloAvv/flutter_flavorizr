@@ -63,6 +63,7 @@ import 'package:flutter_flavorizr/src/engine/processors/windows/windows_main_cpp
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_rc_template_processor.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
@@ -93,11 +94,20 @@ final class EngineProcessor {
   /// as the schemes (`ios/Runner.xcodeproj/xcshareddata/xcschemes/*.xcscheme`).
   final Map<String, String Function(String source)> ownedContent;
 
+  /// How to read what a patched file holds that is neither owned by the
+  /// processor nor added by the tools around it, by path of the file (with the
+  /// same `*`). It is for the files the processor **creates**, and is what tells
+  /// one it made, and that the user did not edit, from one that is theirs when
+  /// its flavor is dropped: see `recordCreated`. A file that is not here is
+  /// never deleted with its flavor.
+  final Map<String, String Function(String source)> foreignContent;
+
   /// Registers [processor], which works on [paths].
   const EngineProcessor(
     this.processor, {
     required this.paths,
     this.ownedContent = const {},
+    this.foreignContent = const {},
   });
 }
 
@@ -215,6 +225,10 @@ class ProcessorRegistry {
           '${XcodeprojResource.iosProject}/xcshareddata/xcschemes/*.xcscheme':
               SchemeEditor.ownedContent,
         },
+        foreignContent: {
+          '${XcodeprojResource.iosProject}/xcshareddata/xcschemes/*.xcscheme':
+              SchemeEditor.foreignContent,
+        },
       ),
       EngineProcessor(
         const MacosSchemaProcessor(),
@@ -222,6 +236,10 @@ class ProcessorRegistry {
         ownedContent: {
           '${XcodeprojResource.macosProject}/xcshareddata/xcschemes/*.xcscheme':
               SchemeEditor.ownedContent,
+        },
+        foreignContent: {
+          '${XcodeprojResource.macosProject}/xcshareddata/xcschemes/*.xcscheme':
+              SchemeEditor.foreignContent,
         },
       ),
       // They work on the project, which the shared resource brings to the
@@ -427,6 +445,7 @@ class ProcessorRegistry {
         processor,
         paths: {...?previous?.paths, ...processor.paths},
         ownedContent: {...?previous?.ownedContent, ...processor.ownedContent},
+        foreignContent: {...?previous?.foreignContent},
       );
     }
 
@@ -484,6 +503,19 @@ class ProcessorRegistry {
       for (final key in processor.requires) ...?_resources[key]?.paths,
     },
   };
+
+  /// How to read what the file at [path] holds that is neither owned nor added
+  /// by the tools around it, when a processor that creates it says so: see
+  /// [EngineProcessor.foreignContent]. `null` for any other file.
+  ForeignReader? foreignReader(String path) {
+    for (final entry in _engine.values) {
+      final reader = _readerOf(entry.foreignContent, Artifact.patched(path));
+
+      if (reader != null) return reader;
+    }
+
+    return null;
+  }
 
   /// Hashes the part of a file that [artifact] owns: what the lock records and
   /// compares with the disk.

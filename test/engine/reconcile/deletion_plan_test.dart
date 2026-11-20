@@ -27,6 +27,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/deletion_plan.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/stale_artifacts.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
@@ -161,6 +162,122 @@ void main() {
 
       expect(result.changes, isEmpty);
       expect(result.released.map((s) => s.path), ['android/build.gradle']);
+    });
+
+    group('a patched file flavorizr created', () {
+      // What the file holds besides what flavorizr owns: the lines that are not
+      // `owned:`.
+      String foreign(String source) => [
+        for (final line in source.split('\n'))
+          if (!line.startsWith('owned:')) line,
+      ].join('\n');
+
+      ForeignReader? reader(String path) =>
+          path.endsWith('.xcscheme') ? foreign : null;
+
+      StaleArtifact created(String path, {String? createdHash}) =>
+          StaleArtifact(
+            processorId: 'ios:schema',
+            path: path,
+            ownership: Ownership.patched,
+            recordedHash: hashOf('owned: 1'),
+            createdHash: createdHash ?? hashOf('mine'),
+          );
+
+      Future<DeletionPlan> run(List<StaleArtifact> stale) => planDeletions(
+        projectRoot: fixture.project.root,
+        paths: const ['ios'],
+        stale: stale,
+        foreignReader: reader,
+      );
+
+      test('is deleted when only what flavorizr owns changed', () async {
+        fixture.project.write('ios/a.xcscheme', 'owned: 2\nmine');
+
+        final result = await run([created('ios/a.xcscheme')]);
+
+        expect(result.released, isEmpty);
+        expect(result.changes.single.kind, ChangeKind.deleted);
+        expect(result.changes.single.disposition, ChangeDisposition.apply);
+      });
+
+      test('is a conflict when the user changed anything else', () async {
+        fixture.project.write('ios/a.xcscheme', 'owned: 1\nmine\nmore');
+
+        final result = await run([created('ios/a.xcscheme')]);
+
+        expect(result.released, isEmpty);
+        expect(result.changes.single.disposition, ChangeDisposition.conflict);
+      });
+
+      test('has nothing to delete when it is gone', () async {
+        final result = await run([created('ios/a.xcscheme')]);
+
+        expect(result.changes, isEmpty);
+        expect(result.released, isEmpty);
+        expect(result.gone.map((s) => s.path), ['ios/a.xcscheme']);
+      });
+
+      test('is released when the lock has no record that it created it, and '
+          'the plan says so', () async {
+        fixture.project.write('ios/a.xcscheme', 'owned: 1\nmine');
+
+        final result = await run([
+          StaleArtifact(
+            processorId: 'ios:schema',
+            path: 'ios/a.xcscheme',
+            ownership: Ownership.patched,
+            recordedHash: hashOf('owned: 1'),
+          ),
+        ]);
+
+        expect(result.changes, isEmpty);
+        expect(result.released, hasLength(1));
+        expect(
+          result.describeReleased(result.released.single),
+          contains('flavorizr did not make it'),
+        );
+      });
+
+      test(
+        'is released when nothing can say what is the user\'s in it',
+        () async {
+          fixture.project.write('ios/a.txt', 'mine');
+
+          final result = await run([created('ios/a.txt')]);
+
+          expect(result.changes, isEmpty);
+          expect(result.released.map((s) => s.path), ['ios/a.txt']);
+          expect(result.describeReleased(result.released.single), 'ios/a.txt');
+        },
+      );
+
+      test('is released when another processor patches it as well and did '
+          'not create it', () async {
+        fixture.project.write('ios/a.xcscheme', 'owned: 1\nmine');
+
+        final result = await run([
+          created('ios/a.xcscheme'),
+          StaleArtifact(
+            processorId: 'other',
+            path: 'ios/a.xcscheme',
+            ownership: Ownership.patched,
+            recordedHash: hashOf('owned: 1'),
+          ),
+        ]);
+
+        expect(result.changes, isEmpty);
+        expect(result.released, hasLength(2));
+      });
+
+      test('is never deleted outside of the paths of the run, or through a '
+          'link', () async {
+        fixture.project.write('other/a.xcscheme', 'owned: 1\nmine');
+
+        final result = await run([created('other/a.xcscheme')]);
+
+        expect(result.changes.single.disposition, ChangeDisposition.blocked);
+      });
     });
 
     test('a file that is already gone has nothing to delete', () async {

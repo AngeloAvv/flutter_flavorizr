@@ -109,4 +109,61 @@ void main() {
       expect(SchemeEditor.ownedContent('<Scheme'), '<Scheme');
     });
   });
+
+  group('SchemeEditor.foreignContent', () {
+    final foreign = SchemeEditor.foreignContent(_pristine);
+
+    test('does not change with the build configurations', () {
+      final edited = _pristine
+          .replaceAll('"Debug"', '"Debug-dates"')
+          .replaceAll('"Release"', '"Release-dates"')
+          .replaceAll('"Profile"', '"Profile-dates"');
+
+      expect(edited, isNot(_pristine));
+      expect(SchemeEditor.foreignContent(edited), foreign);
+    });
+
+    test('does not change when Flutter injects its pre-action, for iOS or '
+        'macOS', () {
+      for (final platform in ['ios', 'macos']) {
+        final injected = withFlutterPreAction(_pristine, platform: platform);
+
+        expect(injected, isNot(_pristine));
+        expect(SchemeEditor.foreignContent(injected), foreign);
+      }
+    });
+
+    test('does not change with the layout Xcode saves the scheme with', () {
+      final relaid = _pristine
+          .replaceAll(RegExp(r'\n\s*'), '\n')
+          .replaceFirst(RegExp(r'<Scheme\s'), '<Scheme ');
+
+      expect(relaid, isNot(_pristine));
+      expect(SchemeEditor.foreignContent(relaid), foreign);
+    });
+
+    test('changes with what the user edits', () {
+      for (final edited in [
+        _pristine.replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        _pristine.replaceFirst(
+          '<AnalyzeAction',
+          '<!-- mine -->\n<AnalyzeAction',
+        ),
+        _pristine.replaceFirst('</Scheme>', '<Mine/>\n</Scheme>'),
+        _pristine.replaceFirst('<BuildActionEntries>', '''<PreActions>
+         <ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent title = "Mine" scriptText = "echo prepare&#10;"></ActionContent>
+         </ExecutionAction>
+      </PreActions>
+      <BuildActionEntries>'''),
+      ]) {
+        expect(edited, isNot(_pristine));
+        expect(SchemeEditor.foreignContent(edited), isNot(foreign));
+      }
+    });
+
+    test('is the whole text when the scheme is not XML', () {
+      expect(SchemeEditor.foreignContent('<Scheme'), '<Scheme');
+    });
+  });
 }
