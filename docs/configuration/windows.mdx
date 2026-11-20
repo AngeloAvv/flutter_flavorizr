@@ -25,19 +25,24 @@ flavors:
       icon: "assets/icon/apple/app_icon.png"
 ```
 
-The icon of a flavor is `windows/runner/resources/<flavor>.ico`. A flavor builds with it when it has an
-`icon` or a [badge](/icons-and-badge#icon-badge), **or when that file is in the project**, whoever made it.
-The default `app_icon.ico` applies only to a flavor with no `icon`, no badge and no `<flavor>.ico`.
+The icon of a flavor is `windows/runner/resources/<flavor>.ico`. `windows:icons` makes it from the `icon` of
+the flavor, or from the source of its [badge](/icons-and-badge#icon-badge) when it has one, and
+`windows:cmake` points the flavor at it when the flavor has an `icon` or a badge, **or when that file is in
+the project**, whoever made it. The default `app_icon.ico` is for a flavor with none of the three.
 
-* An `.ico` you put there yourself is yours while the flavor has no `icon` and no badge: flavorizr points
-  the flavor at it and never deletes it. Once the flavor has an `icon` or a badge, `windows:icons` writes it
-  again on every run, over yours, without a conflict.
-* `windows:icons` does not track what it writes, so it never removes a `<flavor>.ico`: it stays in the
-  project when you remove the `icon`, the badge or the flavor, and `windows:cmake` goes on pointing the
-  flavor at it, since the file is there. To go back to the default `app_icon.ico`, delete
-  `windows/runner/resources/<flavor>.ico` and run `apply` again.
-* A source `icon` that is missing, or is not an image, fails `windows:icons` with the engine already done:
-  its changes and the lock stay written (see [Core concepts](/concepts#plan-and-apply)).
+`windows:icons` is not on the engine yet: it does not track what it writes. That has four consequences,
+which [Every case](/icons-and-badge#every-case) lays out with the other platforms:
+
+* it writes `<flavor>.ico` again on every run, over a file of yours, with no conflict, as soon as the flavor
+  has an `icon` or a badge (an `.ico` of yours is left alone while it has neither);
+* it never removes the file: when you remove the `icon`, the badge or the flavor, `<flavor>.ico` stays and
+  stays the icon of the flavor. To get `app_icon.ico` back, remove the `icon` **and** turn the badge off
+  (the root one too), delete the file and run `apply`: with either still there, the run makes it again;
+* a badge on a flavor whose `icon` is missing, is not an image or is under 512 px uses the root `icon` or
+  the `AppIcon` of the project instead, with no error. Without a badge the same `icon` fails the run;
+* a failure (no `icon` to read, or no image of 512 px or more for a badge) comes after the engine has
+  written: its changes and the lock stay, the CMake file already points at `<flavor>.ico`, and the run exits
+  with `70`. Fix the `icon` and run `apply` again (see [Core concepts](/concepts#plan-and-apply)).
 
 ## The processors
 
@@ -47,7 +52,7 @@ The default `app_icon.ico` applies only to a flavor with no `icon`, no badge and
 | `windows:runnerRcTemplate` | Makes `windows/runner/Runner.rc.in` from `Runner.rc`, so that its icon and title can be set per flavor. | engine |
 | `windows:cmake` | Sets the icon and the title of each flavor in `windows/runner/CMakeLists.txt`, and makes the sources from the templates. | engine |
 | `windows:icons` | Makes an `.ico` for each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
-| `windows:dummyAssets` | Does nothing now: a flavor with no `icon` uses `app_icon.ico`. It stays so that a recipe that names it runs. | 2.x pipeline |
+| `windows:dummyAssets` | Does nothing now: a flavor with no `icon`, no badge and no `<flavor>.ico` uses `app_icon.ico`. It stays so that a recipe that names it runs. | 2.x pipeline |
 
 `windows:icons` and `windows:dummyAssets` are not on the engine yet: they run after it, straight on the
 project, with no preview, no conflict detection and no entry in the lock. See

@@ -303,9 +303,10 @@ says how to fix it. See [Flutter code](/configuration/flutter).
 
 - **A flavor with an `icon`** gets an icon set made from it, at every size, for Android, iOS, macOS and
   Windows.
-- **A flavor with no `icon`** gets nothing generated, and **builds with the default icon of the project**:
-  the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows (unless the
-  project has an icon for the flavor, such as the `<flavor>.ico` that 2.x made).
+- **A flavor with no `icon` and no badge** gets nothing generated, and **builds with the default icon of
+  the project**: the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows
+  (unless the project has an icon for the flavor, such as the `<flavor>.ico` that 2.x made, which is used
+  whoever made it: see [Every case](/icons-and-badge#every-case)).
 - **An icon you put in the project yourself** (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
   `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
 - The placeholder icons that 2.x made for Android, iOS and macOS are recognised by their hash: the first
@@ -315,8 +316,10 @@ says how to fix it. See [Flutter code](/configuration/flutter).
 - The icons of Android, iOS and macOS are tracked now: they are removed when the `icon` and the badge go, or
   the flavor, and a hand edit of one is a conflict. `windows:icons` is still a 2.x processor: it does not
   track what it writes, so a hand edit of a `.ico` it makes is overwritten without a conflict, and the
-  file stays when the flavor goes.
-- A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`.
+  file stays when the flavor goes, and stays the icon of the flavor (delete it, after you remove the `icon`
+  and the badge, to get `app_icon.ico` back).
+- A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`,
+  from the root `icon` or the `AppIcon` of the project.
 
 `android:dummyAssets`, `macos:dummyAssets`, `windows:dummyAssets` and `ios:dummyAssets` still exist, so that a
 recipe that names them runs, and do nothing.

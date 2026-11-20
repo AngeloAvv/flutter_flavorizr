@@ -80,10 +80,12 @@ edited asks before it is deleted. Local files, and the `.ico` files of `windows:
 <Info>
   `windows:icons` and `huawei:agconnect` are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)):
   they do not track what they write, so they cannot remove it. The `windows/runner/resources/<flavor>.ico` of a
-  flavor you remove, or whose `icon` and badge you remove, stays in the project (and keeps being the icon of
-  the flavor while it is there), and so does the `agconnect-services.json` copied to
-  `android/app/src/<flavor>`: you delete them. The icons of Android, iOS and macOS, and the launch screen of
-  iOS, are on the engine and go with the flavor.
+  flavor you remove, or whose `icon` and badge you remove, stays in the project, and so does the
+  `agconnect-services.json` copied to `android/app/src/<flavor>`: you delete them. The icons of Android, iOS
+  and macOS, and the launch screen of iOS, are on the engine and go with the flavor. A flavor that loses its
+  `icon` but keeps a badge (or the other way round) keeps its icons, made again: see
+  [Every case](/icons-and-badge#every-case). To give a Windows flavor the default `app_icon.ico` back, remove
+  its `icon`, turn its badge off, delete its `.ico` and run `apply`.
 </Info>
 
 ## Partial runs

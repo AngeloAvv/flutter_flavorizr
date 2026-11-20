@@ -171,14 +171,19 @@ runs. Each port moves a processor from the 2.x pipeline to the engine without an
 flavorizr.
 
 `android:dummyAssets`, `macos:dummyAssets`, `windows:dummyAssets` and `ios:dummyAssets` do nothing now: flavorizr makes the
-icons it writes, and a flavor with no `icon` uses the default icon of the project. They stay so that a
+icons it writes, and a flavor with no `icon` and no badge uses the default icon of the project (or the icon
+the project already has for it: see [Every case](/icons-and-badge#every-case)). They stay so that a
 recipe that names one still runs (`ios:dummyAssets` and `macos:dummyAssets` are on the engine,
 `android:dummyAssets` and `windows:dummyAssets` are not). On iOS the launch image of a flavor is made by
 `ios:launchScreen`, for the flavors that turn [`launchScreen`](/configuration/ios#the-launch-screen) on.
 
 What is left of the 2.x pipeline is `windows:icons`, which makes the `.ico` of each flavor with an `icon` or a
-badge, and `huawei:agconnect`. Neither tracks what it writes, so a hand edit of what they write is
-overwritten without a conflict, and what they wrote stays in the project when the flavor goes.
+badge, and `huawei:agconnect`, which copies `agconnect-services.json`. Neither tracks what it writes, so a
+hand edit of what they write is overwritten without a conflict, and what they wrote stays in the project when
+the flavor goes (and a `<flavor>.ico` that stays is still the icon of its flavor). Because they run after the
+engine, one that fails (a source that is missing, or a badge with no image of 512 px or more) leaves the
+engine's changes and the lock written, and exits with `70`. A badge falls back to the root `icon` or the
+`AppIcon` of the project when the `icon` of the flavor is missing, so it fails only when none is there.
 
 The 2.x processors never overwrite what the engine generated: the files the engine writes whole
 (`flavorizr.gradle`, the launcher icons of `android:icons`) are put back if a 2.x processor changes them.
