@@ -61,18 +61,20 @@ void main() {
     expect(() => processor.execute(), returnsNormally);
   });
 
-  test('Test ShellProcessor passes arguments and working directory to the process', () {
-    TestUtils.withTempDir((dir) {
-      final processor = ShellProcessor(
-        'ls',
-        const ['-a'],
-        workingDirectory: dir.path,
-        config: flavorizr,
-        logger: logger,
-      );
+  test(
+    'Test ShellProcessor passes arguments and working directory to the process',
+    () {
+      TestUtils.withTempDir((dir) {
+        final processor = ShellProcessor(
+          'ls',
+          const ['-a'],
+          workingDirectory: dir.path,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      expect(() => processor.execute(), returnsNormally);
-    });
-  });
-
+        expect(() => processor.execute(), returnsNormally);
+      });
+    },
+  );
 }

@@ -41,23 +41,26 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test NewFolderProcessor creates a nested directory that does not exist', () {
-    TestUtils.withTempDir((dir) {
-      final path = '${dir.path}/a/b/c';
-      expect(Directory(path).existsSync(), isFalse);
+  test(
+    'Test NewFolderProcessor creates a nested directory that does not exist',
+    () {
+      TestUtils.withTempDir((dir) {
+        final path = '${dir.path}/a/b/c';
+        expect(Directory(path).existsSync(), isFalse);
 
-      final processor = NewFolderProcessor(
-        path,
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = NewFolderProcessor(
+          path,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      processor.execute();
+        processor.execute();
 
-      expect(Directory(path).existsSync(), isTrue);
-      expect(processor.dir.path, path);
-    });
-  });
+        expect(Directory(path).existsSync(), isTrue);
+        expect(processor.dir.path, path);
+      });
+    },
+  );
 
   test('Test NewFolderProcessor is a no-op when directory already exists', () {
     TestUtils.withTempDir((dir) {
@@ -74,5 +77,4 @@ void main() {
       expect(Directory(path).existsSync(), isTrue);
     });
   });
-
 }

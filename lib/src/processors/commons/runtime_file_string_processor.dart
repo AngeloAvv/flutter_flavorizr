@@ -45,9 +45,7 @@ class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
       throw FileNotFoundException(path);
     }
 
-    logger.detail(
-      '[$RuntimeFileStringProcessor] Reading from file `$path`',
-    );
+    logger.detail('[$RuntimeFileStringProcessor] Reading from file `$path`');
 
     processor.input = file.readAsStringSync();
 
@@ -60,6 +58,5 @@ class RuntimeFileStringProcessor extends AbstractFileStringProcessor {
   }
 
   @override
-  String toString() =>
-      "FileProcessor: {path: $path, processor: $processor}";
+  String toString() => "FileProcessor: {path: $path, processor: $processor}";
 }

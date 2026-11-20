@@ -53,5 +53,6 @@ class CopyFolderProcessor extends AbstractProcessor<void> {
   }
 
   @override
-  String toString() => 'CopyFolderProcessor: { source: $source, destination: $destination }';
+  String toString() =>
+      'CopyFolderProcessor: { source: $source, destination: $destination }';
 }

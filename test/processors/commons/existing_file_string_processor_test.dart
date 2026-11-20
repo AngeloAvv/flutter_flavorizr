@@ -35,10 +35,7 @@ import 'package:mason_logger/mason_logger.dart';
 import '../../test_utils.dart';
 
 class _StubStringProcessor extends StringProcessor {
-  _StubStringProcessor({
-    required super.config,
-    required super.logger,
-  });
+  _StubStringProcessor({required super.config, required super.logger});
 
   @override
   String execute() => 'processed(${input ?? ''})';
@@ -53,43 +50,54 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test ExistingFileStringProcessor reads file content into the processor input', () async {
-    await TestUtils.withTempDir((dir) async {
-      final path = '${dir.path}/existing.txt';
-      File(path).writeAsStringSync('original content');
+  test(
+    'Test ExistingFileStringProcessor reads file content into the processor input',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final path = '${dir.path}/existing.txt';
+        File(path).writeAsStringSync('original content');
 
-      final processor = _StubStringProcessor(config: flavorizr, logger: logger);
+        final processor = _StubStringProcessor(
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final fileProcessor = ExistingFileStringProcessor(
-        path,
-        processor,
-        config: flavorizr,
-        logger: logger,
-      );
-
-      expect(processor.input, 'original content');
-
-      await fileProcessor.execute();
-
-      expect(File(path).readAsStringSync(), 'processed(original content)');
-    });
-  });
-
-  test('Test ExistingFileStringProcessor throws FileNotFoundException when file is missing', () {
-    TestUtils.withTempDir((dir) {
-      final path = '${dir.path}/missing.txt';
-      final processor = _StubStringProcessor(config: flavorizr, logger: logger);
-
-      expect(
-        () => ExistingFileStringProcessor(
+        final fileProcessor = ExistingFileStringProcessor(
           path,
           processor,
           config: flavorizr,
           logger: logger,
-        ),
-        throwsA(isA<FileNotFoundException>()),
-      );
-    });
-  });
+        );
 
+        expect(processor.input, 'original content');
+
+        await fileProcessor.execute();
+
+        expect(File(path).readAsStringSync(), 'processed(original content)');
+      });
+    },
+  );
+
+  test(
+    'Test ExistingFileStringProcessor throws FileNotFoundException when file is missing',
+    () {
+      TestUtils.withTempDir((dir) {
+        final path = '${dir.path}/missing.txt';
+        final processor = _StubStringProcessor(
+          config: flavorizr,
+          logger: logger,
+        );
+
+        expect(
+          () => ExistingFileStringProcessor(
+            path,
+            processor,
+            config: flavorizr,
+            logger: logger,
+          ),
+          throwsA(isA<FileNotFoundException>()),
+        );
+      });
+    },
+  );
 }

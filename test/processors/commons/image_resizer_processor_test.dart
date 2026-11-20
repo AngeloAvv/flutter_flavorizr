@@ -47,65 +47,76 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test ImageResizerProcessor resizes a real PNG image to the requested size', () {
-    TestUtils.withTempDir((dir) {
-      final destination = '${dir.path}/resized.png';
+  test(
+    'Test ImageResizerProcessor resizes a real PNG image to the requested size',
+    () {
+      TestUtils.withTempDir((dir) {
+        final destination = '${dir.path}/resized.png';
 
-      final processor = ImageResizerProcessor(
-        sourceFixture,
-        destination,
-        const Size(8, 8),
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = ImageResizerProcessor(
+          sourceFixture,
+          destination,
+          const Size(8, 8),
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final result = processor.execute();
+        final result = processor.execute();
 
-      expect(result.existsSync(), isTrue);
+        expect(result.existsSync(), isTrue);
 
-      final resized = decodeImage(File(destination).readAsBytesSync());
-      expect(resized, isNotNull);
-      expect(resized!.width, 8);
-      expect(resized.height, 8);
-    });
-  });
+        final resized = decodeImage(File(destination).readAsBytesSync());
+        expect(resized, isNotNull);
+        expect(resized!.width, 8);
+        expect(resized.height, 8);
+      });
+    },
+  );
 
-  test('Test ImageResizerProcessor throws when source image file is missing', () {
-    TestUtils.withTempDir((dir) {
-      final source = '${dir.path}/missing.png';
-      final destination = '${dir.path}/resized.png';
+  test(
+    'Test ImageResizerProcessor throws when source image file is missing',
+    () {
+      TestUtils.withTempDir((dir) {
+        final source = '${dir.path}/missing.png';
+        final destination = '${dir.path}/resized.png';
 
-      final processor = ImageResizerProcessor(
-        source,
-        destination,
-        const Size(8, 8),
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = ImageResizerProcessor(
+          source,
+          destination,
+          const Size(8, 8),
+          config: flavorizr,
+          logger: logger,
+        );
 
-      // The underlying `File.readAsBytesSync()` call throws before the
-      // processor's own `FileNotFoundException` (which only guards against a
-      // malformed/undecodable image) has a chance to run.
-      expect(() => processor.execute(), throwsA(isA<FileSystemException>()));
-    });
-  });
+        // The underlying `File.readAsBytesSync()` call throws before the
+        // processor's own `FileNotFoundException` (which only guards against a
+        // malformed/undecodable image) has a chance to run.
+        expect(() => processor.execute(), throwsA(isA<FileSystemException>()));
+      });
+    },
+  );
 
-  test('Test ImageResizerProcessor throws FileNotFoundException when source file is not a decodable image', () {
-    TestUtils.withTempDir((dir) {
-      final source = '${dir.path}/not_an_image.png';
-      final destination = '${dir.path}/resized.png';
-      File(source).writeAsStringSync('this is not image data');
+  test(
+    'Test ImageResizerProcessor throws FileNotFoundException when source file is not a decodable image',
+    () {
+      TestUtils.withTempDir((dir) {
+        final source = '${dir.path}/not_an_image.png';
+        final destination = '${dir.path}/resized.png';
+        File(source).writeAsStringSync('this is not image data');
 
-      final processor = ImageResizerProcessor(
-        source,
-        destination,
-        const Size(8, 8),
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = ImageResizerProcessor(
+          source,
+          destination,
+          const Size(8, 8),
+          config: flavorizr,
+          logger: logger,
+        );
 
-      expect(() => processor.execute(), throwsA(isA<FileNotFoundException>()));
-    });
-  });
-
+        expect(
+          () => processor.execute(),
+          throwsA(isA<FileNotFoundException>()),
+        );
+      });
+    },
+  );
 }

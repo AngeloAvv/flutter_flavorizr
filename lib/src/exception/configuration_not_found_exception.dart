@@ -27,5 +27,6 @@ class ConfigurationNotFoundException implements Exception {
   const ConfigurationNotFoundException();
 
   @override
-  String toString() => 'Cannot find a valid flutter_flavorizr configuration. Please make sure to have a pubspec.y[a]ml or flavorizr.y[a]ml file in the root of your project';
+  String toString() =>
+      'Cannot find a valid flutter_flavorizr configuration. Please make sure to have a pubspec.y[a]ml or flavorizr.y[a]ml file in the root of your project';
 }

@@ -115,7 +115,8 @@ recipes:
 
     test('a recipe that is not a list of names is a format error', () {
       expect(
-        () => FlavorizrConfig.parse(_config(extra: 'recipes:\n  ci: android\n')),
+        () =>
+            FlavorizrConfig.parse(_config(extra: 'recipes:\n  ci: android\n')),
         throwsA(anything),
       );
     });
@@ -141,7 +142,9 @@ recipes:
 
     test('a change to a flavor changes its fingerprint and no other', () {
       final before = FlavorizrConfig.parse(_config()).flavorFingerprints;
-      final after = FlavorizrConfig.parse(_config(name: 'Pear')).flavorFingerprints;
+      final after = FlavorizrConfig.parse(
+        _config(name: 'Pear'),
+      ).flavorFingerprints;
 
       expect(after['apple'], isNot(before['apple']));
       expect(after['banana'], before['banana']);

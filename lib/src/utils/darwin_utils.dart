@@ -23,12 +23,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-const _replacements = {
-  'ios/': '',
-  'macos/': '',
-};
+const _replacements = {'ios/': '', 'macos/': ''};
 
 String flatPath(String string) => _replacements.keys.fold(
-    string,
-    (string, selector) =>
-        string.replaceAll(selector, _replacements[selector] ?? ''));
+  string,
+  (string, selector) =>
+      string.replaceAll(selector, _replacements[selector] ?? ''),
+);

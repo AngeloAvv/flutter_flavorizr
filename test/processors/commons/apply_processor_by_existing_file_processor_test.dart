@@ -56,70 +56,90 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test ApplyProcessorByExistingFileProcessor picks the first existing path and its matching processor', () async {
-    await TestUtils.withTempDir((dir) async {
-      final missingPath = '${dir.path}/missing.txt';
-      final existingPath = '${dir.path}/existing.txt';
-      File(existingPath).writeAsStringSync('found content');
+  test(
+    'Test ApplyProcessorByExistingFileProcessor picks the first existing path and its matching processor',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final missingPath = '${dir.path}/missing.txt';
+        final existingPath = '${dir.path}/existing.txt';
+        File(existingPath).writeAsStringSync('found content');
 
-      final missingProcessor = _StubStringProcessor('missing', config: flavorizr, logger: logger);
-      final existingProcessor = _StubStringProcessor('existing', config: flavorizr, logger: logger);
-
-      final fileProcessor = ApplyProcessorByExistingFileProcessor(
-        [missingPath, existingPath],
-        [missingProcessor, existingProcessor],
-        config: flavorizr,
-        logger: logger,
-      );
-
-      expect(fileProcessor.path, existingPath);
-      expect(existingProcessor.input, 'found content');
-
-      await fileProcessor.execute();
-
-      expect(File(existingPath).readAsStringSync(), 'existing(found content)');
-    });
-  });
-
-  test('Test ApplyProcessorByExistingFileProcessor throws when no path exists', () {
-    TestUtils.withTempDir((dir) {
-      final firstMissing = '${dir.path}/missing1.txt';
-      final secondMissing = '${dir.path}/missing2.txt';
-
-      final processors = [
-        _StubStringProcessor('first', config: flavorizr, logger: logger),
-        _StubStringProcessor('second', config: flavorizr, logger: logger),
-      ];
-
-      expect(
-        () => ApplyProcessorByExistingFileProcessor(
-          [firstMissing, secondMissing],
-          processors,
+        final missingProcessor = _StubStringProcessor(
+          'missing',
           config: flavorizr,
           logger: logger,
-        ),
-        throwsA(isA<FileNotFoundException>()),
-      );
-    });
-  });
-
-  test('Test ApplyProcessorByExistingFileProcessor asserts when paths and processors length mismatch', () {
-    TestUtils.withTempDir((dir) {
-      final existingPath = '${dir.path}/existing.txt';
-      File(existingPath).writeAsStringSync('content');
-
-      expect(
-        () => ApplyProcessorByExistingFileProcessor(
-          [existingPath],
-          [
-            _StubStringProcessor('a', config: flavorizr, logger: logger),
-            _StubStringProcessor('b', config: flavorizr, logger: logger),
-          ],
+        );
+        final existingProcessor = _StubStringProcessor(
+          'existing',
           config: flavorizr,
           logger: logger,
-        ),
-        throwsA(isA<AssertionError>()),
-      );
-    });
-  });
+        );
+
+        final fileProcessor = ApplyProcessorByExistingFileProcessor(
+          [missingPath, existingPath],
+          [missingProcessor, existingProcessor],
+          config: flavorizr,
+          logger: logger,
+        );
+
+        expect(fileProcessor.path, existingPath);
+        expect(existingProcessor.input, 'found content');
+
+        await fileProcessor.execute();
+
+        expect(
+          File(existingPath).readAsStringSync(),
+          'existing(found content)',
+        );
+      });
+    },
+  );
+
+  test(
+    'Test ApplyProcessorByExistingFileProcessor throws when no path exists',
+    () {
+      TestUtils.withTempDir((dir) {
+        final firstMissing = '${dir.path}/missing1.txt';
+        final secondMissing = '${dir.path}/missing2.txt';
+
+        final processors = [
+          _StubStringProcessor('first', config: flavorizr, logger: logger),
+          _StubStringProcessor('second', config: flavorizr, logger: logger),
+        ];
+
+        expect(
+          () => ApplyProcessorByExistingFileProcessor(
+            [firstMissing, secondMissing],
+            processors,
+            config: flavorizr,
+            logger: logger,
+          ),
+          throwsA(isA<FileNotFoundException>()),
+        );
+      });
+    },
+  );
+
+  test(
+    'Test ApplyProcessorByExistingFileProcessor asserts when paths and processors length mismatch',
+    () {
+      TestUtils.withTempDir((dir) {
+        final existingPath = '${dir.path}/existing.txt';
+        File(existingPath).writeAsStringSync('content');
+
+        expect(
+          () => ApplyProcessorByExistingFileProcessor(
+            [existingPath],
+            [
+              _StubStringProcessor('a', config: flavorizr, logger: logger),
+              _StubStringProcessor('b', config: flavorizr, logger: logger),
+            ],
+            config: flavorizr,
+            logger: logger,
+          ),
+          throwsA(isA<AssertionError>()),
+        );
+      });
+    },
+  );
 }

@@ -55,5 +55,6 @@ class ExistingFileStringProcessor extends AbstractFileStringProcessor {
   }
 
   @override
-  String toString() => 'ExistingFileStringProcessor: {path: $path, processor: $processor}';
+  String toString() =>
+      'ExistingFileStringProcessor: {path: $path, processor: $processor}';
 }

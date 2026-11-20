@@ -44,9 +44,7 @@ class NewFolderProcessor extends AbstractProcessor {
     dir = Directory(path);
 
     if (!dir.existsSync()) {
-      logger.info(
-        '[$NewFolderProcessor] Creating directory $path',
-      );
+      logger.info('[$NewFolderProcessor] Creating directory $path');
 
       dir.createSync(recursive: true);
 

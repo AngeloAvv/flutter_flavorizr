@@ -32,7 +32,9 @@ import 'package:mason_logger/mason_logger.dart';
 
 class TestUtils {
   static String stripEndOfLines(String input) => ['\n', '\r'].fold(
-      input, (previousValue, element) => previousValue.replaceAll(element, ''));
+    input,
+    (previousValue, element) => previousValue.replaceAll(element, ''),
+  );
 
   static Logger quietLogger() => Logger(level: Level.quiet);
 

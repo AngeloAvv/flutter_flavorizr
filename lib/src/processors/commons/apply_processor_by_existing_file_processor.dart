@@ -36,16 +36,18 @@ class ApplyProcessorByExistingFileProcessor
     List<StringProcessor> processors, {
     required super.config,
     required super.logger,
-  })  : assert(paths.length == processors.length),
-        super(
-          _findExistingPath(paths, processors),
-          _findProcessor(paths, processors),
-        ) {
+  }) : assert(paths.length == processors.length),
+       super(
+         _findExistingPath(paths, processors),
+         _findProcessor(paths, processors),
+       ) {
     processor.input = file.readAsStringSync();
   }
 
   static String _findExistingPath(
-      List<String> paths, List<StringProcessor> processors) {
+    List<String> paths,
+    List<StringProcessor> processors,
+  ) {
     for (int i = 0; i < paths.length; i++) {
       final path = paths[i];
       final file = File(path);
@@ -57,7 +59,9 @@ class ApplyProcessorByExistingFileProcessor
   }
 
   static StringProcessor _findProcessor(
-      List<String> paths, List<StringProcessor> processors) {
+    List<String> paths,
+    List<StringProcessor> processors,
+  ) {
     for (int i = 0; i < paths.length; i++) {
       final path = paths[i];
       final file = File(path);

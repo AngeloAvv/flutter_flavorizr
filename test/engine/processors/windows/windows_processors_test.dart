@@ -351,7 +351,10 @@ flavors:
       );
 
       await processor.apply(ctx);
-      expect(file(root, path).readAsStringSync(), isNot(contains('banana.ico')));
+      expect(
+        file(root, path).readAsStringSync(),
+        isNot(contains('banana.ico')),
+      );
 
       await processor.apply(badged);
 

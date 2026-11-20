@@ -88,5 +88,4 @@ void main() {
 
     await expectLater(queueProcessor.execute(), completes);
   });
-
 }

@@ -41,31 +41,34 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test CopyFolderProcessor copies nested folder contents to destination', () {
-    TestUtils.withTempDir((dir) {
-      final source = '${dir.path}/source';
-      final destination = '${dir.path}/destination';
+  test(
+    'Test CopyFolderProcessor copies nested folder contents to destination',
+    () {
+      TestUtils.withTempDir((dir) {
+        final source = '${dir.path}/source';
+        final destination = '${dir.path}/destination';
 
-      Directory('$source/nested').createSync(recursive: true);
-      File('$source/file.txt').writeAsStringSync('root file');
-      File('$source/nested/nested_file.txt').writeAsStringSync('nested file');
+        Directory('$source/nested').createSync(recursive: true);
+        File('$source/file.txt').writeAsStringSync('root file');
+        File('$source/nested/nested_file.txt').writeAsStringSync('nested file');
 
-      final processor = CopyFolderProcessor(
-        source,
-        destination,
-        config: flavorizr,
-        logger: logger,
-      );
+        final processor = CopyFolderProcessor(
+          source,
+          destination,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      processor.execute();
+        processor.execute();
 
-      expect(File('$destination/file.txt').readAsStringSync(), 'root file');
-      expect(
-        File('$destination/nested/nested_file.txt').readAsStringSync(),
-        'nested file',
-      );
-    });
-  });
+        expect(File('$destination/file.txt').readAsStringSync(), 'root file');
+        expect(
+          File('$destination/nested/nested_file.txt').readAsStringSync(),
+          'nested file',
+        );
+      });
+    },
+  );
 
   test('Test CopyFolderProcessor throws when source folder does not exist', () {
     TestUtils.withTempDir((dir) {
@@ -82,5 +85,4 @@ void main() {
       expect(() => processor.execute(), throwsA(isA<FileSystemException>()));
     });
   });
-
 }

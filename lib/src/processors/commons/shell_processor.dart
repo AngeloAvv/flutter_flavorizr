@@ -40,8 +40,8 @@ class ShellProcessor extends AbstractProcessor<void> {
     String? workingDirectory,
     required FlavorizrConfig config,
     required Logger logger,
-  })  : _workingDirectory = workingDirectory,
-        super(config, logger: logger);
+  }) : _workingDirectory = workingDirectory,
+       super(config, logger: logger);
 
   @override
   void execute() {

@@ -127,11 +127,7 @@ abstract final class WindowsRunnerCMakeListsEditor {
       end = _callEnd(text);
     }
 
-    return text.upsert(
-      marker,
-      _body(windowTitles, icons),
-      anchor: (_) => end,
-    );
+    return text.upsert(marker, _body(windowTitles, icons), anchor: (_) => end);
   }
 
   /// Returns the content of [source] flavorizr owns, which is the region. It is

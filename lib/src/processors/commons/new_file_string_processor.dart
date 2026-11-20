@@ -35,9 +35,7 @@ class NewFileStringProcessor extends AbstractFileStringProcessor {
 
   @override
   Future<void> execute() async {
-    logger.detail(
-      '[$NewFileStringProcessor] Creating file `$path`',
-    );
+    logger.detail('[$NewFileStringProcessor] Creating file `$path`');
 
     file.createSync(recursive: true);
 

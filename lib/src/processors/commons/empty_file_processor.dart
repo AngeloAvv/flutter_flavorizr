@@ -26,10 +26,8 @@
 import 'package:flutter_flavorizr/src/processors/commons/string_processor.dart';
 
 class EmptyFileProcessor extends StringProcessor {
-  EmptyFileProcessor({
-    required super.config,
-    required super.logger,
-  }) : super(input: '');
+  EmptyFileProcessor({required super.config, required super.logger})
+    : super(input: '');
 
   @override
   String toString() => 'EmptyFileProcessor';

@@ -34,10 +34,7 @@ import 'package:mason_logger/mason_logger.dart';
 import '../../test_utils.dart';
 
 class _StubStringProcessor extends StringProcessor {
-  _StubStringProcessor({
-    required super.config,
-    required super.logger,
-  });
+  _StubStringProcessor({required super.config, required super.logger});
 
   @override
   String execute() => 'processed(${input ?? ''})';
@@ -52,45 +49,56 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test DynamicFileStringProcessor reads and rewrites content when file exists', () async {
-    await TestUtils.withTempDir((dir) async {
-      final path = '${dir.path}/existing.txt';
-      File(path).writeAsStringSync('original content');
+  test(
+    'Test DynamicFileStringProcessor reads and rewrites content when file exists',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final path = '${dir.path}/existing.txt';
+        File(path).writeAsStringSync('original content');
 
-      final processor = _StubStringProcessor(config: flavorizr, logger: logger);
+        final processor = _StubStringProcessor(
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final fileProcessor = DynamicFileStringProcessor(
-        path,
-        processor,
-        config: flavorizr,
-        logger: logger,
-      );
+        final fileProcessor = DynamicFileStringProcessor(
+          path,
+          processor,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await fileProcessor.execute();
+        await fileProcessor.execute();
 
-      expect(processor.input, 'original content');
-      expect(File(path).readAsStringSync(), 'processed(original content)');
-    });
-  });
+        expect(processor.input, 'original content');
+        expect(File(path).readAsStringSync(), 'processed(original content)');
+      });
+    },
+  );
 
-  test('Test DynamicFileStringProcessor is a no-op when file does not exist', () async {
-    await TestUtils.withTempDir((dir) async {
-      final path = '${dir.path}/missing.txt';
+  test(
+    'Test DynamicFileStringProcessor is a no-op when file does not exist',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final path = '${dir.path}/missing.txt';
 
-      final processor = _StubStringProcessor(config: flavorizr, logger: logger);
+        final processor = _StubStringProcessor(
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final fileProcessor = DynamicFileStringProcessor(
-        path,
-        processor,
-        config: flavorizr,
-        logger: logger,
-      );
+        final fileProcessor = DynamicFileStringProcessor(
+          path,
+          processor,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await fileProcessor.execute();
+        await fileProcessor.execute();
 
-      expect(File(path).existsSync(), isFalse);
-      expect(processor.input, isNull);
-    });
-  });
-
+        expect(File(path).existsSync(), isFalse);
+        expect(processor.input, isNull);
+      });
+    },
+  );
 }

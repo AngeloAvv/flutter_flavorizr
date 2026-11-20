@@ -56,7 +56,8 @@ class IOS with BuildSettingsMixin {
     Map<String, dynamic> buildSettings = const {},
     List<Include> includes = const [],
   }) : includes = frozenList(includes),
-       userBuildSettings = (freeze(buildSettings) as Map).cast<String, dynamic>(),
+       userBuildSettings = (freeze(buildSettings) as Map)
+           .cast<String, dynamic>(),
        buildSettings =
            (freeze({
                      ...BuildSettingsMixin.iosDefaultBuildSettings,

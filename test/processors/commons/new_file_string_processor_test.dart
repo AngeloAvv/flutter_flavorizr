@@ -34,10 +34,7 @@ import 'package:mason_logger/mason_logger.dart';
 import '../../test_utils.dart';
 
 class _StubStringProcessor extends StringProcessor {
-  _StubStringProcessor({
-    required super.config,
-    required super.logger,
-  });
+  _StubStringProcessor({required super.config, required super.logger});
 
   @override
   String execute() => 'generated content';
@@ -52,44 +49,56 @@ void main() {
     flavorizr = TestUtils.parseFlavorizr('test_resources/pubspec');
   });
 
-  test('Test NewFileStringProcessor creates a new nested file with processor output', () async {
-    await TestUtils.withTempDir((dir) async {
-      final path = '${dir.path}/nested/new_file.txt';
-      final processor = _StubStringProcessor(config: flavorizr, logger: logger);
+  test(
+    'Test NewFileStringProcessor creates a new nested file with processor output',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final path = '${dir.path}/nested/new_file.txt';
+        final processor = _StubStringProcessor(
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final fileProcessor = NewFileStringProcessor(
-        path,
-        processor,
-        config: flavorizr,
-        logger: logger,
-      );
+        final fileProcessor = NewFileStringProcessor(
+          path,
+          processor,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      expect(File(path).existsSync(), isFalse);
+        expect(File(path).existsSync(), isFalse);
 
-      await fileProcessor.execute();
+        await fileProcessor.execute();
 
-      expect(File(path).existsSync(), isTrue);
-      expect(File(path).readAsStringSync(), 'generated content');
-    });
-  });
+        expect(File(path).existsSync(), isTrue);
+        expect(File(path).readAsStringSync(), 'generated content');
+      });
+    },
+  );
 
-  test('Test NewFileStringProcessor overwrites an already existing file', () async {
-    await TestUtils.withTempDir((dir) async {
-      final path = '${dir.path}/existing.txt';
-      File(path).writeAsStringSync('old content');
+  test(
+    'Test NewFileStringProcessor overwrites an already existing file',
+    () async {
+      await TestUtils.withTempDir((dir) async {
+        final path = '${dir.path}/existing.txt';
+        File(path).writeAsStringSync('old content');
 
-      final processor = _StubStringProcessor(config: flavorizr, logger: logger);
+        final processor = _StubStringProcessor(
+          config: flavorizr,
+          logger: logger,
+        );
 
-      final fileProcessor = NewFileStringProcessor(
-        path,
-        processor,
-        config: flavorizr,
-        logger: logger,
-      );
+        final fileProcessor = NewFileStringProcessor(
+          path,
+          processor,
+          config: flavorizr,
+          logger: logger,
+        );
 
-      await fileProcessor.execute();
+        await fileProcessor.execute();
 
-      expect(File(path).readAsStringSync(), 'generated content');
-    });
-  });
+        expect(File(path).readAsStringSync(), 'generated content');
+      });
+    },
+  );
 }

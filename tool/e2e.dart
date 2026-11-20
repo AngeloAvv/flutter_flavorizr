@@ -457,15 +457,9 @@ void _prepareAndroid(Directory project, {required bool groovy}) {
 
   android('build.gradle').writeAsStringSync(groovyRootBuild);
 
-  try {
-    android('app/build.gradle').writeAsStringSync(
-      groovyAppBuild(android('app/build.gradle.kts').readAsStringSync()),
-    );
-  } on FormatException catch (error) {
-    _fail('Cannot make the project a Groovy one: ${error.message}');
-  }
-
-  android('app/build.gradle.kts').deleteSync();
+  // `flutter create`'s app build script is valid Groovy as it is (calls and
+  // assignments only).
+  android('app/build.gradle.kts').renameSync(android('app/build.gradle').path);
   android('settings.gradle.kts').deleteSync();
   android('build.gradle.kts').deleteSync();
 }

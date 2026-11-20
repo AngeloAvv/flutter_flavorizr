@@ -36,6 +36,6 @@ abstract class AbstractFileProcessor extends AbstractProcessor<void> {
     this.path, {
     required FlavorizrConfig config,
     required super.logger,
-  })  : file = File(path),
-        super(config);
+  }) : file = File(path),
+       super(config);
 }

@@ -54,7 +54,8 @@ class CopyFileProcessor extends AbstractFileProcessor {
   }
 
   @override
-  String toString() => 'CopyFileProcessor: { source: $source, destination: $destination }';
+  String toString() =>
+      'CopyFileProcessor: { source: $source, destination: $destination }';
 
   String get source => path;
 }

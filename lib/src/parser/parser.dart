@@ -231,7 +231,11 @@ class Parser {
       final base = ['flavors', '${(name as YamlNode).value}', 'android'];
 
       for (final MapEntry(key: key, value: value) in custom.nodes.entries) {
-        final property = [...base, 'customConfig', '${(key as YamlNode).value}'];
+        final property = [
+          ...base,
+          'customConfig',
+          '${(key as YamlNode).value}',
+        ];
 
         if (key is YamlScalar && key.value == 'manifestPlaceholders') {
           throw InvalidConfigurationException(
@@ -266,7 +270,10 @@ class Parser {
         break;
       case YamlMap():
         for (final MapEntry(key: key, value: value) in node.nodes.entries) {
-          _checkQuotedText(value, [...path, '${(key as YamlNode).value}'], file);
+          _checkQuotedText(value, [
+            ...path,
+            '${(key as YamlNode).value}',
+          ], file);
         }
       case YamlList():
         for (final (index, item) in node.nodes.indexed) {
