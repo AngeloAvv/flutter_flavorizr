@@ -113,27 +113,29 @@ abstract final class SchemeEditor {
     ].join('\n');
   }
 
-  /// What the scheme in [source] holds that flavorizr does not own, nor Flutter
-  /// adds on its own: the scheme as it is **without** the build configuration of
-  /// the [ownedActions] and without the pre-action of Flutter, as a canonical
-  /// text that does not depend on the layout.
+  /// What the scheme in [source] holds that is the user's: a canonical text of
+  /// the **whole** document, with three exclusions and nothing else.
   ///
   /// It is how a scheme flavorizr made is told from one the user edited when its
   /// flavor is dropped: the lock records it for a scheme flavorizr creates
   /// (`recordCreated`), and the scheme is deleted only while it is still the
-  /// same. The three things that may change in a scheme flavorizr made, without
-  /// it ceasing to be its own, are exactly what is left out: the build
-  /// configurations it owns, the pre-action Flutter injects when Swift Package
-  /// Manager is turned on later ([_isPrepareAction]: only that one, as Flutter
-  /// writes it), and the layout Xcode saves it with. Everything else is the
-  /// user's, and a change of it makes the scheme theirs: the arguments, the
-  /// environment, the targets, a script, and **any comment**, inside the scheme
-  /// or around it.
+  /// same. So a node of any type, at any place, that is not one of the
+  /// exclusions changes it, and nothing has to be listed for that: elements and
+  /// all of their attributes, text, CDATA sections, comments, processing
+  /// instructions, the document type and the declaration (a node nobody
+  /// expected is written as it is, too).
   ///
-  /// What the layout is: the line endings, the order, the quotes and the
-  /// escaping of the attributes, the whitespace between the nodes and around a
-  /// text or a comment, and whether a text is written as a CDATA section. The
-  /// XML declaration and a document type are not content.
+  /// The exclusions are what may change in a scheme flavorizr made without it
+  /// ceasing to be its own:
+  ///
+  /// 1. **What flavorizr owns**: the `buildConfiguration` attribute of the
+  ///    [ownedActions] of the scheme, whatever its value.
+  /// 2. **What Flutter adds**: its pre-action, as it writes it
+  ///    ([_isPrepareAction]), and the `PreActions` container of the build action
+  ///    when that was all it held (no attribute, no other node but whitespace).
+  /// 3. **Formatting**: the line endings; the order, the quoting and the escaping
+  ///    of the attributes; the whitespace between the nodes and around a text;
+  ///    and whether a text is written as a CDATA section.
   ///
   /// A [source] that is not XML is its own foreign content, so that whatever
   /// happens to it is seen.
@@ -141,8 +143,6 @@ abstract final class SchemeEditor {
     final XmlDocument document;
 
     try {
-      // A parser may leave a carriage return in an attribute, where it is not
-      // layout to the one that wrote it.
       document = XmlDocument.parse(
         source.replaceAll('\r\n', '\n').replaceAll('\r', '\n'),
       );
@@ -150,55 +150,104 @@ abstract final class SchemeEditor {
       return source;
     }
 
-    final scheme = document.rootElement;
-
-    for (final action in ownedActions) {
-      scheme.getElement(action)?.removeAttribute('buildConfiguration');
-    }
-
-    // Flutter adds its pre-action to the build action, and nowhere else.
-    final preActions = scheme
-        .getElement('BuildAction')
-        ?.getElement('PreActions');
-
-    if (preActions != null) {
-      // What Flutter's action refers to is the target the scheme builds.
-      final targets = [
-        for (final reference
-            in scheme
-                .getElement('BuildAction')!
-                .findAllElements('BuildActionEntry')
-                .expand((entry) => entry.findElements('BuildableReference')))
-          _attributesOf(reference),
-      ];
-
-      for (final action in preActions.childElements.toList()) {
-        if (_isPrepareAction(action, targets)) action.remove();
-      }
-
-      // What was left of the container is the user's, comments included: it
-      // goes only when nothing is.
-      if (!preActions.children.any(_hasContent)) preActions.remove();
-    }
-
     final buffer = StringBuffer();
 
-    for (final node in document.children) {
-      switch (node) {
-        case XmlElement():
-          _write(node, buffer);
-        case XmlComment():
-          buffer.writeln('#comment ${jsonEncode(node.value.trim())}');
-        default:
-          // The declaration, a document type and the whitespace around.
-          break;
-      }
-    }
+    _writeChildren(document, buffer, _Context(document.rootElement), 0);
 
     return buffer.toString();
   }
 
-  /// Whether [node] is something that is there: anything but whitespace.
+  /// The children of [parent], one line per node, indented by [depth].
+  static void _writeChildren(
+    XmlNode parent,
+    StringBuffer buffer,
+    _Context context,
+    int depth,
+  ) {
+    final indent = ' ' * depth;
+    // A text and a CDATA section are one: what is written between two nodes is
+    // a single string, however it is split.
+    final text = StringBuffer();
+
+    void flush() {
+      final value = text.toString().trim();
+
+      if (value.isNotEmpty) buffer.writeln('$indent#text ${jsonEncode(value)}');
+
+      text.clear();
+    }
+
+    for (final node in parent.children) {
+      if (node is XmlText) {
+        text.write(node.value);
+
+        continue;
+      }
+
+      if (node is XmlCDATA) {
+        text.write(node.value);
+
+        continue;
+      }
+
+      flush();
+
+      switch (node) {
+        case XmlElement() when context.isFlutterOnly(node):
+          // Exclusion 2: what Flutter added, and nothing else.
+          break;
+        case XmlElement():
+          _writeElement(node, buffer, context, depth);
+        case XmlComment():
+          buffer.writeln('$indent#comment ${jsonEncode(node.value)}');
+        case XmlProcessing():
+          buffer.writeln(
+            '$indent#processing ${jsonEncode(node.target)} '
+            '${jsonEncode(node.value)}',
+          );
+        case XmlDeclaration():
+          buffer.writeln('$indent#declaration ${_attributes(node)}');
+        case XmlDoctype():
+          buffer.writeln('$indent#doctype ${jsonEncode(node.toXmlString())}');
+        default:
+          buffer.writeln('$indent#node ${jsonEncode(node.toXmlString())}');
+      }
+    }
+
+    flush();
+  }
+
+  static void _writeElement(
+    XmlElement element,
+    StringBuffer buffer,
+    _Context context,
+    int depth,
+  ) {
+    final attributes = _attributes(
+      element,
+      // Exclusion 1: what flavorizr owns.
+      skip: context.ownsBuildConfiguration(element)
+          ? 'buildConfiguration'
+          : null,
+    );
+
+    buffer.writeln(
+      '${' ' * depth}<${element.name.qualified}'
+      '${attributes.isEmpty ? '' : ' $attributes'}>',
+    );
+
+    _writeChildren(element, buffer, context, depth + 1);
+  }
+
+  /// The attributes of [node] by name, as `name="value"`, without [skip]:
+  /// their order in the source is not in it.
+  static String _attributes(XmlHasAttributes node, {String? skip}) => ([
+    for (final attribute in node.attributes)
+      if (attribute.name.qualified != skip)
+        '${attribute.name.qualified}=${jsonEncode(attribute.value)}',
+  ]..sort()).join(' ');
+
+  /// Whether [node] has anything but whitespace in it.
   static bool _hasContent(XmlNode node) => switch (node) {
     XmlText() => node.value.trim().isNotEmpty,
     _ => true,
@@ -209,8 +258,8 @@ abstract final class SchemeEditor {
   /// [PrepareScript] for iOS or macOS, for one of the [targets] the scheme builds
   /// (the attributes of their `BuildableReference`), and nothing else. A script
   /// that only mentions it, one that runs it and something more, one for another
-  /// target, and a comment or an element nobody expects in it make it the
-  /// user's.
+  /// target, and an attribute, a comment or an element nobody expects in it make
+  /// it the user's.
   static bool _isPrepareAction(
     XmlElement action,
     List<Map<String, String>> targets,
@@ -218,10 +267,9 @@ abstract final class SchemeEditor {
     if (action.name.local != 'ExecutionAction' ||
         action.attributes.length != 1 ||
         action.getAttribute('ActionType') != _shellScriptAction ||
-        action.descendants.any(
-          (node) => node is XmlComment || node is XmlCDATA,
-        ) ||
-        action.descendants.whereType<XmlText>().any(_hasContent)) {
+        action.children.any(
+          (node) => node is! XmlElement && _hasContent(node),
+        )) {
       return false;
     }
 
@@ -233,7 +281,10 @@ abstract final class SchemeEditor {
 
     final content = contents.single;
 
-    return {
+    return content.children.every(
+          (node) => node is XmlElement || !_hasContent(node),
+        ) &&
+        {
           for (final attribute in content.attributes) attribute.name.qualified,
         }.difference({'title', 'scriptText'}).isEmpty &&
         content.getAttribute('title') == prepareTitle &&
@@ -244,7 +295,8 @@ abstract final class SchemeEditor {
   }
 
   /// Whether the `ActionContent` is made of an `EnvironmentBuildable` that
-  /// holds a single `BuildableReference`, which is one of the [targets].
+  /// holds a single `BuildableReference`, which is one of the [targets], and
+  /// nothing else.
   static bool _refersToATarget(
     XmlElement content,
     List<Map<String, String>> targets,
@@ -253,7 +305,10 @@ abstract final class SchemeEditor {
 
     if (buildables.length != 1 ||
         buildables.single.name.local != 'EnvironmentBuildable' ||
-        buildables.single.attributes.isNotEmpty) {
+        buildables.single.attributes.isNotEmpty ||
+        buildables.single.children.any(
+          (node) => node is! XmlElement && _hasContent(node),
+        )) {
       return false;
     }
 
@@ -261,7 +316,7 @@ abstract final class SchemeEditor {
 
     if (references.length != 1 ||
         references.single.name.local != 'BuildableReference' ||
-        references.single.childElements.isNotEmpty) {
+        references.single.children.any(_hasContent)) {
       return false;
     }
 
@@ -276,51 +331,6 @@ abstract final class SchemeEditor {
     for (final attribute in element.attributes)
       attribute.name.qualified: attribute.value,
   };
-
-  /// [element] as one line per node, indented by depth, with its attributes by
-  /// name: the layout of the source is not in it.
-  static void _write(XmlElement element, StringBuffer buffer, [int depth = 0]) {
-    final indent = ' ' * depth;
-    final attributes = [
-      for (final attribute in element.attributes)
-        '${attribute.name.qualified}=${jsonEncode(attribute.value)}',
-    ]..sort();
-
-    buffer.writeln(
-      '$indent<${[element.name.qualified, ...attributes].join(' ')}>',
-    );
-
-    // A text and a CDATA section are one: what is written between two nodes
-    // is a single string, however it is split.
-    final text = StringBuffer();
-
-    void flush() {
-      final value = text.toString().trim();
-
-      if (value.isNotEmpty) {
-        buffer.writeln('$indent #text ${jsonEncode(value)}');
-      }
-
-      text.clear();
-    }
-
-    for (final child in element.children) {
-      switch (child) {
-        case XmlText() || XmlCDATA():
-          text.write(child.value);
-        case XmlElement():
-          flush();
-          _write(child, buffer, depth + 1);
-        case XmlComment():
-          flush();
-          buffer.writeln('$indent #comment ${jsonEncode(child.value.trim())}');
-        default:
-          break;
-      }
-    }
-
-    flush();
-  }
 
   /// The build configuration each action of the scheme of [flavor] runs with.
   static Map<String, String> buildConfigurations(String flavor) => {
@@ -388,5 +398,72 @@ abstract final class SchemeEditor {
     }
 
     container.children.insert(0, action.xmlElement.copy());
+  }
+}
+
+/// What [SchemeEditor.foreignContent] needs to know of the scheme it reads, to
+/// apply its exclusions.
+final class _Context {
+  final XmlElement root;
+
+  /// What the build action builds: the attributes of its `BuildableReference`s.
+  final List<Map<String, String>> targets;
+
+  _Context(this.root)
+    : targets = [
+        for (final reference
+            in root
+                    .getElement('BuildAction')
+                    ?.findAllElements('BuildActionEntry')
+                    .expand(
+                      (entry) => entry.findElements('BuildableReference'),
+                    ) ??
+                const <XmlElement>[])
+          SchemeEditor._attributesOf(reference),
+      ];
+
+  /// Whether the `buildConfiguration` of [element] is flavorizr's: [element] is
+  /// the action of the scheme that is one of the owned ones.
+  bool ownsBuildConfiguration(XmlElement element) =>
+      identical(element.parent, root) &&
+      SchemeEditor.ownedActions.contains(element.name.local) &&
+      identical(root.getElement(element.name.local), element);
+
+  /// Whether [element] is only what Flutter adds: its pre-action in the
+  /// `PreActions` of the build action, or that container when it holds nothing
+  /// else (no attribute, and no node but its pre-action and whitespace).
+  bool isFlutterOnly(XmlElement element) {
+    final parent = element.parent;
+
+    if (parent is! XmlElement || !_isBuildPreActions(element, parent)) {
+      return _isPreActionOfFlutter(element);
+    }
+
+    final children = element.children
+        .where((node) => node is! XmlText || node.value.trim().isNotEmpty)
+        .toList();
+
+    return element.attributes.isEmpty &&
+        children.isNotEmpty &&
+        children.every(
+          (node) =>
+              node is XmlElement &&
+              SchemeEditor._isPrepareAction(node, targets),
+        );
+  }
+
+  bool _isBuildPreActions(XmlElement element, XmlElement parent) =>
+      element.name.local == 'PreActions' &&
+      parent.name.local == 'BuildAction' &&
+      identical(parent.parent, root);
+
+  bool _isPreActionOfFlutter(XmlElement element) {
+    final container = element.parent;
+
+    return container is XmlElement &&
+        container.name.local == 'PreActions' &&
+        container.parent is XmlElement &&
+        _isBuildPreActions(container, container.parent! as XmlElement) &&
+        SchemeEditor._isPrepareAction(element, targets);
   }
 }

@@ -112,9 +112,9 @@ void main() {
   });
 
   group('SchemeEditor.foreignContent', () {
-    /// The foreign content of [source], which has to be XML: a source that
-    /// is not is its own foreign content, and a test of an edit that broke the
-    /// XML would pass for what it did not test.
+    /// The foreign content of [source], which has to be XML: a source that is
+    /// not is its own foreign content, and a test of an edit that broke the XML
+    /// would pass for what it did not test.
     String foreignOf(String source) {
       XmlDocument.parse(source);
 
@@ -123,207 +123,300 @@ void main() {
 
     final foreign = foreignOf(_pristine);
 
-    test('does not change with the build configurations', () {
-      final edited = _pristine
-          .replaceAll('"Debug"', '"Debug-dates"')
-          .replaceAll('"Release"', '"Release-dates"')
-          .replaceAll('"Profile"', '"Profile-dates"');
+    /// [from] replaced by [to], which has to be there: an edit that finds
+    /// nothing to edit would test nothing.
+    String Function(String) swap(String from, String to) => (source) {
+      expect(source, contains(from));
 
-      expect(edited, isNot(_pristine));
-      expect(foreignOf(edited), foreign);
-    });
+      return source.replaceFirst(from, to);
+    };
 
-    test('does not change when Flutter injects its pre-action, for iOS or '
-        'macOS', () {
-      for (final platform in ['ios', 'macos']) {
-        final injected = withFlutterPreAction(_pristine, platform: platform);
+    /// The first match of [pattern] replaced by [to].
+    String Function(String) swapMatch(RegExp pattern, String to) => (source) {
+      expect(pattern.hasMatch(source), isTrue);
 
-        expect(injected, isNot(_pristine));
-        expect(foreignOf(injected), foreign);
-      }
-    });
+      return source.replaceFirst(pattern, to);
+    };
 
-    test('does not change with the layout Xcode saves the scheme with', () {
-      final relaid = _pristine
-          .replaceAll(RegExp(r'\n\s*'), '\n')
-          .replaceFirst(RegExp(r'<Scheme\s'), '<Scheme ');
+    /// [source] as Flutter leaves it after a build, then edited by [edit].
+    String Function(String) afterFlutter(String Function(String) edit) =>
+        (source) => edit(withFlutterPreAction(source));
 
-      expect(relaid, isNot(_pristine));
-      expect(foreignOf(relaid), foreign);
-    });
+    const shell =
+        'Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.'
+        'ShellScriptAction';
+    const prepare =
+        r'/bin/sh &quot;$FLUTTER_ROOT/packages/flutter_tools/bin/'
+        r'xcode_backend.sh&quot; prepare&#10;';
 
-    test('changes with what the user edits', () {
-      for (final edited in [
-        _pristine.replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
-        _pristine.replaceFirst(
-          '<AnalyzeAction',
-          '<!-- mine -->\n<AnalyzeAction',
+    /// A pre-action of the build action, in a container of its own.
+    String Function(String) preAction({
+      String title = SchemeEditor.prepareTitle,
+      String script = prepare,
+      String action = '',
+      String content = '',
+      String inside = '',
+    }) => swap(
+      '<BuildActionEntries>',
+      '<PreActions><ExecutionAction ActionType = "$shell"$action>'
+          '<ActionContent title = "$title" scriptText = "$script"$content>'
+          '$inside</ActionContent></ExecutionAction></PreActions>'
+          '<BuildActionEntries>',
+    );
+
+    final changes = <String, String Function(String)>{
+      // Elements and their attributes.
+      'an attribute of the root changed': swap(
+        'version = "1.3"',
+        'version = "1.4"',
+      ),
+      'an attribute added to the root': swap('<Scheme', '<Scheme mine = "1"'),
+      'an attribute removed from the root': swap('version = "1.3">', '>'),
+      'an attribute of an element changed': swap(
+        'launchStyle = "0"',
+        'launchStyle = "1"',
+      ),
+      'an attribute removed from an element': swap('launchStyle = "0"', ''),
+      'an attribute added to the build action': swap(
+        '<BuildAction',
+        '<BuildAction mine = "1"',
+      ),
+      'an attribute added to an owned action': swap(
+        '<ArchiveAction',
+        '<ArchiveAction mine = "1"',
+      ),
+      'an attribute of an owned action changed': swap(
+        'revealArchiveInOrganizer = "YES"',
+        'revealArchiveInOrganizer = "NO"',
+      ),
+      'an attribute removed from an owned action': swap(
+        'revealArchiveInOrganizer = "YES"',
+        '',
+      ),
+      'a build configuration on an element that does not own one': swap(
+        '<MacroExpansion>',
+        '<MacroExpansion buildConfiguration = "Debug">',
+      ),
+      'an element added': swap('</Scheme>', '<Mine/></Scheme>'),
+      'an element added to an owned action': swap(
+        '</ArchiveAction>',
+        '<Mine/></ArchiveAction>',
+      ),
+      'an element removed': swapMatch(
+        RegExp(r'<ArchiveAction[\s\S]*?</ArchiveAction>'),
+        '',
+      ),
+      'an element renamed': (source) {
+        expect(source, contains('Testables'));
+
+        return source.replaceAll('Testables', 'TestablesX');
+      },
+      // Text.
+      'a text added': swap('</Scheme>', '<Mine>a</Mine></Scheme>'),
+      'a text added to an owned action': swap(
+        '</AnalyzeAction>',
+        'text</AnalyzeAction>',
+      ),
+      'a CDATA section added': swap(
+        '</Scheme>',
+        '<Mine><![CDATA[a]]></Mine></Scheme>',
+      ),
+      // Comments.
+      'a comment before the root': swap('<Scheme', '<!-- mine -->\n<Scheme'),
+      'a comment after the root': (source) => '$source\n<!-- mine -->\n',
+      'a comment in an element': swap(
+        '<MacroExpansion>',
+        '<MacroExpansion><!-- mine -->',
+      ),
+      'a comment in an owned action': swap(
+        '</AnalyzeAction>',
+        '<!-- mine --></AnalyzeAction>',
+      ),
+      // Processing instructions.
+      'a processing instruction before the root': swap(
+        '<Scheme',
+        '<?mine a?>\n<Scheme',
+      ),
+      'a processing instruction after the root': (source) =>
+          '$source\n<?mine a?>\n',
+      'a processing instruction in an element': swap(
+        '</Scheme>',
+        '<?mine a?></Scheme>',
+      ),
+      // The document type and the declaration.
+      'a document type': swap('<Scheme', '<!DOCTYPE Scheme>\n<Scheme'),
+      'the encoding of the declaration': swap(
+        'encoding="UTF-8"',
+        'encoding="UTF-16"',
+      ),
+      'a standalone declaration': swap(
+        'encoding="UTF-8"?>',
+        'encoding="UTF-8" standalone="yes"?>',
+      ),
+      // What may be in the container of the pre-actions of the build action,
+      // and is not Flutter's.
+      'an empty pre-actions container': swap(
+        '<BuildActionEntries>',
+        '<PreActions/><BuildActionEntries>',
+      ),
+      'a pre-actions container with an attribute': swap(
+        '<BuildActionEntries>',
+        '<PreActions keep = "true"/><BuildActionEntries>',
+      ),
+      'a pre-actions container with an attribute and the action of Flutter':
+          afterFlutter(swap('<PreActions>', '<PreActions keep = "true">')),
+      'a comment in a pre-actions container': swap(
+        '<BuildActionEntries>',
+        '<PreActions><!-- mine --></PreActions><BuildActionEntries>',
+      ),
+      'a comment in a pre-actions container with the action of Flutter':
+          afterFlutter(swap('<PreActions>', '<PreActions><!-- mine -->')),
+      'a text in a pre-actions container with the action of Flutter':
+          afterFlutter(swap('<PreActions>', '<PreActions>mine')),
+      'a processing instruction in a pre-actions container': afterFlutter(
+        swap('<PreActions>', '<PreActions><?mine a?>'),
+      ),
+      'an action of the user in the pre-actions of the build action': preAction(
+        title: 'Mine',
+        script: 'echo mine&#10;',
+      ),
+      'an action of the user next to the action of Flutter': afterFlutter(
+        swap(
+          '</PreActions>',
+          '<ExecutionAction ActionType = "$shell"><ActionContent title = "Mine" '
+              'scriptText = "echo mine&#10;"></ActionContent></ExecutionAction>'
+              '</PreActions>',
         ),
-        _pristine.replaceFirst('</Scheme>', '<Mine/>\n</Scheme>'),
-        _pristine.replaceFirst('<BuildActionEntries>', '''<PreActions>
-         <ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
-            <ActionContent title = "Mine" scriptText = "echo prepare&#10;"></ActionContent>
-         </ExecutionAction>
-      </PreActions>
-      <BuildActionEntries>'''),
-      ]) {
+      ),
+      // What looks like the pre-action of Flutter and is not.
+      'a script that only mentions the one of Flutter': preAction(
+        script: 'echo xcode_backend.sh prepare&#10;',
+      ),
+      'the title of the user': preAction(title: 'Mine'),
+      'a command added to the one of Flutter': preAction(
+        script: '${prepare}echo mine&#10;',
+      ),
+      'an attribute on the action': preAction(action: ' mine = "1"'),
+      'an attribute on the content': preAction(content: ' mine = "1"'),
+      'a comment in the content': preAction(inside: '<!-- mine -->'),
+      'an element in the content': preAction(inside: '<Mine/>'),
+      'a text in the content': preAction(inside: 'mine'),
+      'a pre-action of Flutter in the launch action': (source) {
+        final action = RegExp(
+          r'<PreActions>[\s\S]*?</PreActions>',
+        ).firstMatch(withFlutterPreAction(source))!.group(0)!;
+        final launch = RegExp(r'<LaunchAction[^>]*>');
+
+        expect(launch.hasMatch(source), isTrue);
+
+        return source.replaceFirstMapped(
+          launch,
+          (match) => '${match.group(0)}$action',
+        );
+      },
+      'a pre-action of Flutter for another target': (source) {
+        final target = RegExp(
+          r'(<EnvironmentBuildable>[\s\S]*?BlueprintIdentifier = )"[^"]*"',
+        );
+        final injected = withFlutterPreAction(source);
+
+        expect(target.hasMatch(injected), isTrue);
+
+        return injected.replaceFirstMapped(
+          target,
+          (match) => '${match.group(1)}"0123456789ABCDEF"',
+        );
+      },
+    };
+
+    for (final MapEntry(key: name, value: edit) in changes.entries) {
+      test('changes with $name', () {
+        // The edits that need the scheme to be one of Flutter's are made of it.
+        final edited = edit(_pristine);
+
         expect(edited, isNot(_pristine));
         expect(foreignOf(edited), isNot(foreign));
-      }
-    });
-
-    /// A pre-action that is [script] of the title [title], in a scheme that has
-    /// none.
-    String withAction(
-      String script, {
-      String title = SchemeEditor.prepareTitle,
-      String after = '',
-    }) {
-      final action =
-          '''<PreActions>
-         <ExecutionAction ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
-            <ActionContent title = "$title" scriptText = "$script">$after</ActionContent>
-         </ExecutionAction>
-      </PreActions>''';
-
-      return _pristine.replaceFirst(
-        '<BuildActionEntries>',
-        '$action\n<BuildActionEntries>',
-      );
+      });
     }
 
-    test('keeps a script of the user that only mentions the one of Flutter', () {
-      for (final edited in [
-        withAction('echo xcode_backend.sh prepare&#10;', title: 'Mine'),
-        withAction('echo xcode_backend.sh prepare&#10;'),
-        withAction(
-          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;echo mine&#10;',
-        ),
-        withAction(
-          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;',
-          title: 'Mine',
-        ),
-        withAction(
-          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;',
-          after: '<!-- mine -->',
-        ),
-        withAction(
-          '/bin/sh &quot;\$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;',
-          after: '<Mine/>',
-        ),
-      ]) {
-        expect(foreignOf(edited), isNot(foreign), reason: edited);
-      }
+    final unchanged = <String, String Function(String)>{
+      // 1. What flavorizr owns.
+      'the build configurations': (source) => source
+          .replaceAll('"Debug"', '"Debug-dates"')
+          .replaceAll('"Release"', '"Release-dates"')
+          .replaceAll('"Profile"', '"Profile-dates"'),
+      'a build configuration removed': swap(
+        'buildConfiguration = "Release"',
+        '',
+      ),
+      // 2. What Flutter adds.
+      'the pre-action of Flutter for iOS': (source) =>
+          withFlutterPreAction(source),
+      'the pre-action of Flutter for macOS': (source) =>
+          withFlutterPreAction(source, platform: 'macos'),
+      'the pre-action of Flutter with other whitespace': afterFlutter(
+        swap('<PreActions>', '<PreActions>\n\n   '),
+      ),
+      // 3. Formatting.
+      'the line endings': (source) => source.replaceAll('\n', '\r\n'),
+      'the order of the attributes': swapMatch(
+        RegExp(r'LastUpgradeVersion = "1510"\s+version = "1.3"'),
+        'version = "1.3" LastUpgradeVersion = "1510"',
+      ),
+      'the quotes of the attributes': (source) => source.replaceAll('"', "'"),
+      'the escaping of an attribute': swap(
+        'launchStyle = "0"',
+        'launchStyle = "&#48;"',
+      ),
+      'the whitespace between the nodes': (source) =>
+          source.replaceAll(RegExp(r'\n\s*'), '\n'),
+      'the indentation': (source) => source.replaceAll('   ', '  '),
+    };
+
+    for (final MapEntry(key: name, value: edit) in unchanged.entries) {
+      test('does not change with $name', () {
+        final edited = edit(_pristine);
+
+        expect(edited, isNot(_pristine));
+        expect(foreignOf(edited), foreign);
+      });
+    }
+
+    String withText(String child) =>
+        swap('</Scheme>', '<Mine>$child</Mine></Scheme>')(_pristine);
+
+    test('does not change with how a text is written', () {
+      expect(foreignOf(withText('<![CDATA[a]]>')), foreignOf(withText('a')));
+      expect(foreignOf(withText('\n  a  \n')), foreignOf(withText('a')));
+      expect(foreignOf(withText('a<![CDATA[b]]>')), foreignOf(withText('ab')));
     });
 
-    test('keeps the pre-action of Flutter outside of the build action', () {
-      final injected = withFlutterPreAction(_pristine);
-      final action = RegExp(
-        r'<PreActions>[\s\S]*?</PreActions>',
-      ).firstMatch(injected)!.group(0)!;
-      final moved = _pristine.replaceFirstMapped(
-        RegExp(r'<LaunchAction[^>]*>'),
-        (match) => '${match.group(0)}\n$action',
-      );
+    test('changes with what a text, a comment or an instruction says', () {
+      final variants = [
+        withText('a'),
+        withText('b'),
+        withText('a  b'),
+        withText('<!--a-->'),
+        withText('<!-- a -->'),
+        withText('<!--b-->'),
+        withText('<?a b?>'),
+        withText('<?a c?>'),
+        withText('<?c b?>'),
+      ];
 
-      // The scheme has it in the launch action, and no pre-action in the
-      // build action.
-      expect(
-        XmlDocument.parse(
-          moved,
-        ).rootElement.getElement('LaunchAction')!.getElement('PreActions'),
-        isNotNull,
-      );
-      expect(foreignOf(moved), isNot(foreign));
+      expect({
+        for (final source in variants) foreignOf(source),
+      }, hasLength(variants.length));
     });
 
-    test('keeps a pre-action that looks like the one of Flutter when it is '
-        'for another target, or has more in it', () {
-      final injected = withFlutterPreAction(_pristine);
-
-      for (final edited in [
-        injected.replaceFirstMapped(
-          RegExp(
-            r'(<EnvironmentBuildable>[\s\S]*?BlueprintIdentifier = )"[^"]*"',
-          ),
-          (match) => '${match.group(1)}"0123456789ABCDEF"',
-        ),
-        injected.replaceFirst(
-          '</EnvironmentBuildable>',
-          '<Mine/></EnvironmentBuildable>',
-        ),
-        injected.replaceFirst(
-          '<EnvironmentBuildable>',
-          '<EnvironmentBuildable><!-- mine -->',
-        ),
-      ]) {
-        expect(edited, isNot(injected));
-        expect(foreignOf(edited), isNot(foreign));
-      }
-    });
-
-    test('keeps a comment in a pre-actions container, with or without the '
-        'action of Flutter', () {
-      final bare = _pristine.replaceFirst(
+    test('does not change with the pre-action of Flutter in a container of the '
+        'user', () {
+      final bare = swap(
         '<BuildActionEntries>',
-        '<PreActions><!-- deployment note --></PreActions>\n<BuildActionEntries>',
-      );
-      final injected = withFlutterPreAction(bare);
+        '<PreActions><!-- mine --></PreActions><BuildActionEntries>',
+      )(_pristine);
 
-      expect(foreignOf(bare), isNot(foreign));
-      expect(foreignOf(injected), foreignOf(bare));
-      expect(
-        foreignOf(bare.replaceFirst('deployment note', 'another note')),
-        isNot(foreignOf(bare)),
-      );
-    });
-
-    test('does not depend on the whitespace around the pre-action of '
-        'Flutter', () {
-      final injected = withFlutterPreAction(_pristine);
-
-      expect(
-        foreignOf(injected.replaceFirst('<PreActions>', '<PreActions>\n\n   ')),
-        foreign,
-      );
-    });
-
-    test('keeps a comment outside of the root element', () {
-      for (final edited in [
-        _pristine.replaceFirst('<Scheme', '<!-- deployment note -->\n<Scheme'),
-        '$_pristine\n<!-- deployment note -->\n',
-      ]) {
-        expect(foreignOf(edited), isNot(foreign));
-      }
-
-      expect(
-        foreignOf(
-          _pristine.replaceFirst('<Scheme', '<!--  note  -->\n<Scheme'),
-        ),
-        foreignOf(_pristine.replaceFirst('<Scheme', '<!-- note -->\n<Scheme')),
-      );
-    });
-
-    test('does not depend on line endings, nor on the order of the '
-        'attributes', () {
-      expect(foreignOf(_pristine.replaceAll('\n', '\r\n')), foreign);
-      expect(
-        foreignOf(
-          _pristine.replaceFirst(
-            RegExp(r'LastUpgradeVersion = "1510"\s+version = "1.3"'),
-            'version = "1.3" LastUpgradeVersion = "1510"',
-          ),
-        ),
-        foreign,
-      );
-    });
-
-    test('tells a comment from text, and does not depend on CDATA', () {
-      String scheme(String child) =>
-          _pristine.replaceFirst('</Scheme>', '<Mine>$child</Mine>\n</Scheme>');
-
-      expect(foreignOf(scheme('<![CDATA[a]]>')), foreignOf(scheme('a')));
-      expect(foreignOf(scheme('<!--a-->')), isNot(foreignOf(scheme('a'))));
+      expect(foreignOf(withFlutterPreAction(bare)), foreignOf(bare));
     });
 
     test('is the whole text when the scheme is not XML', () {
