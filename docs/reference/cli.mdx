@@ -111,13 +111,14 @@ assets:download,android:buildGradle` runs on 3.x with warnings only.
 | `1` | Needs attention: files edited by hand are in the way (`plan`, `apply`), the project drifted (`status`), or a check failed (`doctor`). |
 | `64` | The command line is wrong, e.g. an unknown target. |
 | `65` | The configuration or `flavorizr.lock` cannot be used, or the configuration asks for what flavorizr cannot undo (see below). |
-| `70` | A processor failed, or the project changed during the run. |
+| `70` | A processor failed, or the project changed during the run, or a run was left half done (see below). |
 
 A run that fails does not write the engine's changes to the project, and the
 lock is written last. A lock that cannot even be staged stops the run before
 anything is written. There are three exceptions, and each says so:
 
-* a copy-back that is interrupted lists what was and what was not written;
+* a copy-back that is interrupted exits with `70` and lists what was and what was not written: the lock
+  keeps the previous state, so review the files with your version control and run flavorizr again;
 * a lock that cannot replace `flavorizr.lock` once the files are written exits
   with `70`: the engine's changes stay written, so fix what stops the lock from
   being written (permissions, a folder in its place) and run flavorizr again,

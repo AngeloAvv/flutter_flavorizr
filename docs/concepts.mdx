@@ -38,11 +38,15 @@ A run does not touch your project while it works out what to do:
 
 That gives dry runs, a reviewable diff, and writes that are all or nothing in practice: a processor
 that fails does not write the changes of the engine to your project, and the lock is written last.
-Two failures can still leave a run half done, and each says so:
+Three failures can still leave a run half done, and each says so, with exit code `70` (see
+[the exit codes](/reference/cli#exit-codes)):
 
 - the copy back of the files is interrupted: the message lists what was and what was not written, and the
   lock keeps the previous state. Fix what stopped it, and run flavorizr again: it finds the files that
   were written and does the rest;
+- the files are written, but the lock cannot replace `flavorizr.lock` (permissions, a folder in its place):
+  the changes stay written and the lock is the previous one. Fix what stops it and run flavorizr again: it
+  finds nothing to change and writes the lock;
 - a 2.x processor fails after the engine finished: the changes of the engine and the lock stay written
   (see below).
 
