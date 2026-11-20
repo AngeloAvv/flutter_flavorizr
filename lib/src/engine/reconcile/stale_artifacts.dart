@@ -26,6 +26,7 @@
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 
 /// A file the lock attributes to a processor that ran, and which that
@@ -44,12 +45,18 @@ final class StaleArtifact {
   /// never hashes it.
   final String? recordedHash;
 
+  /// What the lock recorded of the file when flavorizr **created** it (see
+  /// `recordCreated`), or `null` when it did not: the file was there before,
+  /// or the lock is older than the record.
+  final String? createdHash;
+
   /// Creates a stale artifact.
   const StaleArtifact({
     required this.processorId,
     required this.path,
     required this.ownership,
     required this.recordedHash,
+    this.createdHash,
   });
 
   @override
@@ -173,6 +180,7 @@ StaleScan findStaleArtifacts({
         path: canonical,
         ownership: file.ownership,
         recordedHash: file.hash,
+        createdHash: _createdHashOf(lock, canonical),
       );
 
       (trackedPaths.contains(pathIdentity(canonical)) ? unattributed : stale)
@@ -186,6 +194,16 @@ StaleScan findStaleArtifacts({
     invalid: invalid
       ..sort((a, b) => _compare(a.processorId, a.path, b.processorId, b.path)),
   );
+}
+
+/// What the lock of one processor recorded of [canonical] when the processor
+/// created it, or `null`.
+String? _createdHashOf(ProcessorLock lock, String canonical) {
+  for (final MapEntry(key: path, value: hashes) in lock.keys.entries) {
+    if (tryCanonicalPath(path) == canonical) return hashes[createdKey];
+  }
+
+  return null;
 }
 
 int _byProcessorThenPath(StaleArtifact a, StaleArtifact b) =>

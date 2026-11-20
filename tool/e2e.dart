@@ -37,7 +37,9 @@
 // 1. `apply` works on a project `flutter create` made;
 // 2. `plan` then has nothing to do: a second run is idempotent;
 // 3. a flavor that is dropped from flavorizr.yaml is removed by `apply`, and a
-//    second `plan` has nothing to do again;
+//    second `plan` has nothing to do again. What flavorizr made for it goes with
+//    it: its scheme (iOS and macOS) and the copies of its Firebase and
+//    AppGallery Connect configurations;
 // 4. the flavor that is left builds;
 // 5. the build changes nothing for flavorizr, on every platform: `plan` has
 //    nothing to do after it, and neither has an `apply`, which writes no file
@@ -87,9 +89,15 @@ const _platformSection = {
       'android:\n      applicationId: "com.example.%s"'
       '\n      customConfig:\n        versionNameSuffix: "-%s"'
       '\n        matchingFallbacks: [release]'
-      '\n      manifestPlaceholders:\n        $_placeholder: "scheme-%s"',
-  'ios': 'ios:\n      bundleId: "com.example.%s"',
-  'macos': 'macos:\n      bundleId: "com.example.%s"',
+      '\n      manifestPlaceholders:\n        $_placeholder: "scheme-%s"'
+      '\n      firebase:\n        config: ".firebase/%s/google-services.json"'
+      '\n      agconnect:\n        config: ".agconnect/%s/agconnect-services.json"',
+  'ios':
+      'ios:\n      bundleId: "com.example.%s"'
+      '\n      firebase:\n        config: ".firebase/%s/GoogleService-Info.plist"',
+  'macos':
+      'macos:\n      bundleId: "com.example.%s"'
+      '\n      firebase:\n        config: ".firebase/%s/GoogleService-Info.plist"',
   'linux': 'linux:\n      applicationId: "com.example.%s"',
   'windows': 'windows: {}',
 };
@@ -194,6 +202,7 @@ Future<void> _e2e(
     final config = File(p.join(project.path, 'flavorizr.yaml'));
 
     config.writeAsStringSync(_config(platform, ['apple', 'banana']));
+    _writeServiceConfigs(project, platform, ['apple', 'banana']);
 
     final apple = platform == 'ios' || platform == 'macos';
 
@@ -217,11 +226,31 @@ Future<void> _e2e(
       _expectAndroidIcons(project, ['apple', 'banana']);
     }
     if (platform == 'ios') _expectLaunchScreens(project, ['apple', 'banana']);
+    _expectServiceCopies(project, platform, present: ['apple', 'banana']);
+    if (apple) _expectSchemes(project, platform, present: ['apple', 'banana']);
 
     _step('remove banana');
     config.writeAsStringSync(_config(platform, ['apple']));
     await _flavorizr(project, ['apply', '--yes']);
     await _expectNothingToDo(project, 'the removal of a flavor');
+
+    // What flavorizr made for the flavor goes with it: the scheme, which would
+    // point at build configurations that are gone, and the copies of the
+    // Firebase and AppGallery Connect configurations.
+    _expectServiceCopies(
+      project,
+      platform,
+      present: ['apple'],
+      removed: ['banana'],
+    );
+    if (apple) {
+      _expectSchemes(
+        project,
+        platform,
+        present: ['apple'],
+        removed: ['banana'],
+      );
+    }
 
     if (apple) {
       _expectIcons(project, platform, ['apple']);
@@ -323,6 +352,104 @@ Future<void> _e2e(
     if (platform == 'android') _expectMergedPlaceholder(project, 'apple');
   } finally {
     workspace.deleteSync(recursive: true);
+  }
+}
+
+/// The copies of the service configurations each platform makes, by flavor.
+String _serviceCopy(String platform, String name, String flavor) =>
+    switch (platform) {
+      'android' => 'android/app/src/$flavor/$name',
+      _ => '$platform/Runner/$flavor/$name',
+    };
+
+/// The service configurations of the platform that has them, as they are in the
+/// project and as `apply` copies them: a Firebase one for Android, iOS and macOS,
+/// an AppGallery Connect one for Android.
+const _serviceConfigs = {
+  'android': ['google-services.json', 'agconnect-services.json'],
+  'ios': ['GoogleService-Info.plist'],
+  'macos': ['GoogleService-Info.plist'],
+};
+
+/// Writes the sources of the service configurations of [flavors], where
+/// `flavorizr.yaml` says they are.
+void _writeServiceConfigs(
+  Directory project,
+  String platform,
+  List<String> flavors,
+) {
+  for (final name in _serviceConfigs[platform] ?? const <String>[]) {
+    final folder = name == 'agconnect-services.json'
+        ? '.agconnect'
+        : '.firebase';
+
+    for (final flavor in flavors) {
+      // A plist that is valid, as the build compiles it.
+      File(p.join(project.path, folder, flavor, name))
+        ..createSync(recursive: true)
+        ..writeAsStringSync(
+          name.endsWith('.plist')
+              ? '<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
+                    '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+                    '<plist version="1.0"><dict><key>FLAVOR</key>'
+                    '<string>$flavor</string></dict></plist>\n'
+              : '{"flavor": "$flavor"}\n',
+        );
+    }
+  }
+}
+
+/// Fails unless the service configurations of the [present] flavors are copied
+/// to the folder of the flavor, and the ones of the [removed] are not.
+void _expectServiceCopies(
+  Directory project,
+  String platform, {
+  List<String> present = const [],
+  List<String> removed = const [],
+}) {
+  for (final name in _serviceConfigs[platform] ?? const <String>[]) {
+    for (final flavor in present) {
+      if (!File(
+        p.join(project.path, _serviceCopy(platform, name, flavor)),
+      ).existsSync()) {
+        _fail('The $name of $flavor was not copied.');
+      }
+    }
+
+    for (final flavor in removed) {
+      if (File(
+        p.join(project.path, _serviceCopy(platform, name, flavor)),
+      ).existsSync()) {
+        _fail('The $name of the flavor that was removed is still there.');
+      }
+    }
+  }
+}
+
+/// Fails unless the schemes of the [present] flavors are there and the ones of
+/// the [removed] are not.
+void _expectSchemes(
+  Directory project,
+  String platform, {
+  List<String> present = const [],
+  List<String> removed = const [],
+}) {
+  File scheme(String flavor) => File(
+    p.join(
+      project.path,
+      '$platform/Runner.xcodeproj/xcshareddata/xcschemes/$flavor.xcscheme',
+    ),
+  );
+
+  for (final flavor in present) {
+    if (!scheme(flavor).existsSync()) _fail('The scheme of $flavor is gone.');
+  }
+
+  for (final flavor in removed) {
+    if (scheme(flavor).existsSync()) {
+      _fail('The scheme of the flavor that was removed is still there.');
+    }
   }
 }
 

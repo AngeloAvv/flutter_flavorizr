@@ -295,6 +295,7 @@ Future<EngineRun> runEngine(
         availableProcessors: engineIdsFor(registry, config),
         flavorizrVersion: context.version,
         hasher: registry.hash,
+        foreignReader: registry.foreignReader,
       );
       final diff = reconciliation.applyTo(
         await shadow.diff(

@@ -27,9 +27,14 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:path/path.dart' as p;
+
+/// The key under which the lock remembers a copy: the hash of what was copied.
+const copyKey = 'copy';
 
 /// Copies the file at [source], a path of the project the user wrote in
 /// [option] of the configuration, to [destination], below the workspace of the
@@ -85,8 +90,65 @@ Future<List<int>> copyProjectConfig(
   await target.parent.create(recursive: true);
   await target.writeAsBytes(bytes);
   ctx.track(Artifact.local(destination));
+  ctx.ownKeys(destination, {copyKey: digestOf(bytes)});
 
   return bytes;
+}
+
+/// Whether [path] is where a processor makes the copy of a flavor: `name` in a
+/// folder of any flavor, directly below `parent`.
+///
+/// [path] comes from a lock that is edited by merges and by hand, so it is not
+/// trusted: what is deleted is only ever a file named like the copies are, in
+/// the folder of a flavor, and nothing else the lock names.
+bool isFlavorCopyPath(
+  String path, {
+  required String parent,
+  required String name,
+}) {
+  final parts = p.posix.split(path);
+  final prefix = p.posix.split(parent);
+
+  return parts.length == prefix.length + 2 &&
+      p.posix.isWithin(parent, path) &&
+      parts.last == name;
+}
+
+/// Removes the copies of earlier runs that this one does not make, because
+/// their flavor was dropped or lost its configuration.
+///
+/// [keep] are the destinations this run copied to, and [isCopy] tells where the
+/// processor makes a copy (see [isFlavorCopyPath]). A copy goes only when the
+/// lock recorded it for the processor (so flavorizr made it) and the file still
+/// holds exactly what was copied: one the lock does not know, or that the user
+/// changed since, is theirs and stays. Either way the processor stops
+/// remembering it.
+///
+/// The deletion is the one of a local artifact, which no conflict stands in the
+/// way of: the check above is what keeps what is the user's.
+void removeStaleCopies(
+  FlavorizrContext ctx, {
+  required Iterable<String> keep,
+  required bool Function(String path) isCopy,
+}) {
+  final kept = {for (final path in keep) canonicalPath(path)};
+
+  for (final path in ctx.previousKeyFiles) {
+    if (kept.contains(path) || !isCopy(path)) continue;
+
+    final recorded = ctx.previousKeysOf(path)[copyKey];
+    final file = File(ctx.resolve(path));
+
+    if (recorded == null ||
+        FileSystemEntity.typeSync(file.path, followLinks: false) !=
+            FileSystemEntityType.file ||
+        digestOf(file.readAsBytesSync()) != recorded) {
+      continue;
+    }
+
+    file.deleteSync();
+    ctx.track(Artifact.local(path));
+  }
 }
 
 /// Refuses a [flavor] that cannot be the name of a directory.

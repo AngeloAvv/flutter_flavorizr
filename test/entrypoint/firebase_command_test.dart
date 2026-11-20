@@ -252,18 +252,22 @@ void main() {
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.snapshot(), before);
+      final record = (await LockStore(
+        project.root,
+        runningVersion: '3.0.0',
+      ).read())!.processors['ios:firebase']!;
+
+      // Not as files: all the lock remembers of a copy is what it copied.
       expect(
-        project.read('flavorizr.lock'),
-        isNot(contains('GoogleService-Info.plist')),
+        record.files.keys.where((path) => path.endsWith('.plist')),
+        isEmpty,
       );
-      expect(project.read('flavorizr.lock'), contains('ios/firebaseScript.sh'));
-      expect(
-        (await LockStore(
-          project.root,
-          runningVersion: '3.0.0',
-        ).read())!.processors['ios:firebase']!.objects[_ios],
-        contains(firebaseBuildPhaseUuid('ios')),
-      );
+      expect(record.files, contains('ios/firebaseScript.sh'));
+      expect(record.keys.keys, [
+        'ios/Runner/apple/GoogleService-Info.plist',
+        'ios/Runner/banana/GoogleService-Info.plist',
+      ]);
+      expect(record.objects[_ios], contains(firebaseBuildPhaseUuid('ios')));
     });
 
     test('is in sync after the builds copied other configurations over the '
@@ -337,10 +341,21 @@ void main() {
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(await phases(_ios), isEmpty);
       expect(project.exists('ios/firebaseScript.sh'), isFalse);
-      // The copies are the builds'.
+      // The copies flavorizr made go with the configuration they came from.
       expect(
         project.exists('ios/Runner/apple/GoogleService-Info.plist'),
-        isTrue,
+        isFalse,
+      );
+      expect(
+        project.exists('ios/Runner/banana/GoogleService-Info.plist'),
+        isFalse,
+      );
+      expect(
+        (await LockStore(
+          project.root,
+          runningVersion: '3.0.0',
+        ).read())!.processors['ios:firebase']?.keys,
+        anyOf(isNull, isEmpty),
       );
     });
 
@@ -484,6 +499,215 @@ void main() {
     });
   });
 
+  group('the copies of a flavor that was dropped', () {
+    for (final (platform, run, file) in [
+      ('ios', _iosRun, 'GoogleService-Info.plist'),
+      ('macos', _macosRun, 'GoogleService-Info.plist'),
+    ]) {
+      String copy(String flavor) => '$platform/Runner/$flavor/$file';
+
+      group(platform, () {
+        test('goes with it, and the one of the other stays', () async {
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple', 'banana'], platform: platform),
+          );
+          await project.run(['apply', '--yes', ...run]);
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple'], platform: platform),
+          );
+
+          final code = await project.run(['apply', '--yes', ...run]);
+
+          expect(code, ExitCodes.ok, reason: project.logger.output);
+          expect(project.exists(copy('banana')), isFalse);
+          expect(project.exists(copy('apple')), isTrue);
+          expect(project.exists('$platform/Runner/banana'), isFalse);
+          expect(
+            project.read('$platform/firebaseScript.sh'),
+            isNot(contains('banana')),
+          );
+
+          final before = project.snapshot();
+
+          expect(await project.run(['apply', '--yes', ...run]), ExitCodes.ok);
+          expect(project.snapshot(), before);
+        });
+
+        test('is in the plan before it is deleted, and nowhere else', () async {
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple', 'banana'], platform: platform),
+          );
+          await project.run(['apply', '--yes', ...run]);
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple'], platform: platform),
+          );
+          final before = project.snapshot();
+
+          project.logger.lines.clear();
+          await project.run(['plan', ...run]);
+
+          expect(project.logger.output, contains(copy('banana')));
+          expect(project.snapshot(), before);
+        });
+
+        test('stays when the user changed it since', () async {
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple', 'banana'], platform: platform),
+          );
+          await project.run(['apply', '--yes', ...run]);
+          project.write(copy('banana'), 'mine now');
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple'], platform: platform),
+          );
+
+          final code = await project.run(['apply', '--yes', ...run]);
+
+          expect(code, ExitCodes.ok, reason: project.logger.output);
+          expect(project.read(copy('banana')), 'mine now');
+
+          final before = project.snapshot();
+
+          expect(await project.run(['apply', '--yes', ...run]), ExitCodes.ok);
+          expect(project.snapshot(), before);
+        });
+
+        test('is made again when its flavor comes back', () async {
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple', 'banana'], platform: platform),
+          );
+          await project.run(['apply', '--yes', ...run]);
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple'], platform: platform),
+          );
+          await project.run(['apply', '--yes', ...run]);
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple', 'banana'], platform: platform),
+          );
+
+          final code = await project.run(['apply', '--yes', ...run]);
+
+          expect(code, ExitCodes.ok, reason: project.logger.output);
+          expect(project.read(copy('banana')), 'banana-ios');
+        });
+
+        test('is deleted by a run of the Firebase processor alone', () async {
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple', 'banana'], platform: platform),
+          );
+          await project.run(['apply', '--yes', ...run]);
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple'], platform: platform),
+          );
+
+          final code = await project.run([
+            'apply',
+            '--yes',
+            '$platform:firebase',
+          ]);
+
+          expect(code, ExitCodes.ok, reason: project.logger.output);
+          expect(project.exists(copy('banana')), isFalse);
+        });
+
+        test('is a file of the user, and stays, when flavorizr did not copy '
+            'it', () async {
+          project.write(
+            'flavorizr.yaml',
+            _config(
+              ['apple', 'banana'],
+              platform: platform,
+              withFirebase: ['apple'],
+            ),
+          );
+          project.write(copy('banana'), 'mine');
+          await project.run(['apply', '--yes', ...run]);
+          project.write(
+            'flavorizr.yaml',
+            _config(['apple'], platform: platform),
+          );
+
+          final code = await project.run(['apply', '--yes', ...run]);
+
+          expect(code, ExitCodes.ok, reason: project.logger.output);
+          expect(project.read(copy('banana')), 'mine');
+        });
+      });
+    }
+
+    test('android: goes with the flavor, and the other stays', () async {
+      String config(Iterable<String> flavors) =>
+          'flavors:\n${[for (final flavor in flavors) '''
+  $flavor:
+    app:
+      name: "$flavor app"
+    android:
+      applicationId: "com.example.$flavor"
+      firebase:
+        config: ".firebase/$flavor/google-services.json"
+'''].join()}';
+      const target = 'android:firebase';
+
+      project.write('flavorizr.yaml', config(['apple', 'banana']));
+      await project.run(['apply', '--yes', target]);
+      project.write('flavorizr.yaml', config(['apple']));
+
+      final code = await project.run(['apply', '--yes', target]);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(
+        project.exists('android/app/src/banana/google-services.json'),
+        isFalse,
+      );
+      expect(
+        project.read('android/app/src/apple/google-services.json'),
+        'apple-android',
+      );
+
+      final before = project.snapshot();
+
+      expect(await project.run(['apply', '--yes', target]), ExitCodes.ok);
+      expect(project.snapshot(), before);
+    });
+
+    test('android: stays when the user made it, and when changed it', () async {
+      String config(Iterable<String> flavors) =>
+          'flavors:\n${[for (final flavor in flavors) '''
+  $flavor:
+    app:
+      name: "$flavor app"
+    android:
+      applicationId: "com.example.$flavor"
+      firebase:
+        config: ".firebase/$flavor/google-services.json"
+'''].join()}';
+      const target = 'android:firebase';
+
+      project.write('flavorizr.yaml', config(['apple', 'banana']));
+      await project.run(['apply', '--yes', target]);
+      project.write('android/app/src/banana/google-services.json', 'mine now');
+      project.write('flavorizr.yaml', config(['apple']));
+
+      final code = await project.run(['apply', '--yes', target]);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(
+        project.read('android/app/src/banana/google-services.json'),
+        'mine now',
+      );
+    });
+  });
+
   group('android:firebase', () {
     test('copies google-services.json to the folder of each flavor, as local, '
         'and rewrites it when it is edited', () async {
@@ -515,10 +739,17 @@ void main() {
         project.read('android/app/src/banana/google-services.json'),
         'banana-android',
       );
-      expect(
-        project.read('flavorizr.lock'),
-        isNot(contains('google-services')),
-      );
+      // The copies are not files of the lock: it only remembers what it copied.
+      final record = (await LockStore(
+        project.root,
+        runningVersion: '3.0.0',
+      ).read())!.processors['android:firebase']!;
+
+      expect(record.files, isEmpty);
+      expect(record.keys.keys, [
+        'android/app/src/apple/google-services.json',
+        'android/app/src/banana/google-services.json',
+      ]);
 
       project.write('android/app/src/apple/google-services.json', 'edited');
 

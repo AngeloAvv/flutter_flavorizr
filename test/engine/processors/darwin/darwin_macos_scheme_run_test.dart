@@ -288,6 +288,69 @@ void main() {
     );
   });
 
+  group('the scheme of a flavor that was dropped', () {
+    const onlyCitrus = '''
+flavors:
+  citrus:
+    app:
+      name: "Citrus App"
+    macos:
+      bundleId: "com.example.citrus"
+''';
+
+    test('is deleted with its flavor, and a second run has nothing to '
+        'do', () async {
+      await apply();
+      project.write('flavorizr.yaml', onlyCitrus);
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+      expect(project.exists('$_schemes/citrus.xcscheme'), isTrue);
+      expect(project.exists(_runner), isTrue);
+
+      final before = project.snapshot();
+
+      expect(await apply(), ExitCodes.ok, reason: project.logger.output);
+      expect(project.snapshot(), before);
+    });
+
+    test(
+      'is kept when the user edited more than what flavorizr owns',
+      () async {
+        await apply();
+        project.write(
+          '$_schemes/dates.xcscheme',
+          scheme(
+            'dates',
+          ).replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        );
+        project.write('flavorizr.yaml', onlyCitrus);
+
+        final code = await apply();
+
+        expect(code, ExitCodes.attention, reason: project.logger.output);
+        expect(project.exists('$_schemes/dates.xcscheme'), isTrue);
+      },
+    );
+
+    test('is deleted when Flutter added its pre-action to it', () async {
+      project.write('pubspec.yaml', _spmOff);
+      await apply();
+      project.write(
+        '$_schemes/dates.xcscheme',
+        withFlutterPreAction(scheme('dates'), platform: 'macos'),
+      );
+      project.write('flavorizr.yaml', onlyCitrus);
+
+      final code = await apply();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+    });
+  });
+
   group('an existing scheme', () {
     test('gets only its build configurations changed', () async {
       final user = File(

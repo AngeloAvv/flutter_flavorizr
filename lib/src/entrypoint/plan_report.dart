@@ -84,7 +84,7 @@ String renderPreview(
     ],
     if (preview.reconciliation.deletions.released.isNotEmpty)
       'Left in place (shared with you, no longer owned by flavorizr):\n'
-          '${[for (final stale in preview.reconciliation.deletions.released) '  - ${stale.path}'].join('\n')}',
+          '${[for (final stale in preview.reconciliation.deletions.released) '  - ${preview.reconciliation.deletions.describeReleased(stale)}'].join('\n')}',
     if (preview.reconciliation.invalid.isNotEmpty)
       'Ignored in the lock (not a path of the project):\n'
           '${[for (final path in preview.reconciliation.invalid) '  - ${path.path} (${path.processorId})'].join('\n')}',
