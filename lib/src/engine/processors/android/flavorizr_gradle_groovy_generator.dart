@@ -69,6 +69,11 @@ class FlavorizrGradleGroovyGenerator {
     _appendFlavors(buffer);
 
     logger.detail(
+      '[$FlavorizrGradleGroovyGenerator] Generating build features',
+    );
+    _appendBuildFeatures(buffer);
+
+    logger.detail(
       '[$FlavorizrGradleGroovyGenerator] Generating close android section',
     );
     _appendEndContent(buffer);
@@ -144,6 +149,24 @@ class FlavorizrGradleGroovyGenerator {
     });
 
     buffer.writeln('    }');
+  }
+
+  /// Turns on the features the Android Gradle Plugin has off by default and
+  /// that the flavors need: it fails the build when a flavor declares a
+  /// `resValue` or a `buildConfigField` and the feature is disabled.
+  void _appendBuildFeatures(StringBuffer buffer) {
+    final hasBuildConfigFields =
+        config.app?.android?.buildConfigFields.isNotEmpty == true ||
+        config.androidFlavors.values.any(
+          (flavor) => flavor.android?.buildConfigFields.isNotEmpty == true,
+        );
+
+    buffer.writeln();
+    buffer.writeln('    buildFeatures.resValues = true');
+
+    if (hasBuildConfigFields) {
+      buffer.writeln('    buildFeatures.buildConfig = true');
+    }
   }
 
   void _appendEndContent(StringBuffer buffer) {

@@ -70,4 +70,13 @@ void main() {
 
     expect(actual, matcher);
   });
+
+  test('enables the resource values the flavors declare', () {
+    final actual = FlavorizrGradleGroovyGenerator(
+      config: flavorizr,
+      logger: logger,
+    ).generate();
+
+    expect(actual, contains('    buildFeatures.resValues = true\n'));
+  });
 }

@@ -242,34 +242,6 @@ pluginManagement {
 $plugins''';
 }
 
-/// The `android/app/build.gradle` of a Groovy project, from [kotlinBuild], the
-/// `android/app/build.gradle.kts` `flutter create` makes: valid Groovy as it is
-/// (calls and assignments only), but for `buildFeatures.resValues`.
-///
-/// The Groovy `flavorizr.gradle` declares a `resValue` for each flavor (the
-/// `app_name`) and, unlike the Kotlin one, does not enable the feature, which
-/// the Android Gradle Plugin has off by default: the project turns it on, as
-/// the Kotlin one is turned on by flavorizr.
-///
-/// Throws a [FormatException] when [kotlinBuild] has no `android` block.
-String groovyAppBuild(String kotlinBuild) {
-  final android = RegExp(
-    r'^android \{\n',
-    multiLine: true,
-  ).firstMatch(kotlinBuild);
-
-  if (android == null) {
-    throw const FormatException('build.gradle.kts has no android block.');
-  }
-
-  return '${kotlinBuild.substring(0, android.end)}'
-      '    buildFeatures {\n'
-      '        resValues = true\n'
-      '    }\n'
-      '\n'
-      '${kotlinBuild.substring(android.end)}';
-}
-
 /// The `android/build.gradle` of a Groovy project, which `flutter create` makes
 /// as `build.gradle.kts`.
 const groovyRootBuild = '''

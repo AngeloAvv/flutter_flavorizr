@@ -273,42 +273,6 @@ include(":app")
       );
     });
 
-    test('groovyAppBuild enables resValues at the top of android', () {
-      const build = '''
-plugins {
-    id("com.android.application")
-}
-
-android {
-    namespace = "com.example.e2e_app"
-    defaultConfig {
-        applicationId = "com.example.e2e_app"
-    }
-}
-''';
-
-      expect(groovyAppBuild(build), '''
-plugins {
-    id("com.android.application")
-}
-
-android {
-    buildFeatures {
-        resValues = true
-    }
-
-    namespace = "com.example.e2e_app"
-    defaultConfig {
-        applicationId = "com.example.e2e_app"
-    }
-}
-''');
-    });
-
-    test('groovyAppBuild needs the android block', () {
-      expect(() => groovyAppBuild('plugins {}\n'), throwsFormatException);
-    });
-
     test('groovyRootBuild is Groovy', () {
       expect(groovyRootBuild, contains('tasks.register("clean", Delete)'));
       expect(groovyRootBuild, isNot(contains('val ')));

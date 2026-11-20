@@ -69,6 +69,8 @@ android {
             resValue "string", "app_name", "Apple App"
         }
     }
+
+    buildFeatures.resValues = true
 }''';
 
 const _kotlinApple = '''
