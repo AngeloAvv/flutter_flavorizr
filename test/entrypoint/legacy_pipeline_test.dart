@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/step_observer.dart';
@@ -42,19 +43,21 @@ flavors:
   apple:
     app:
       name: Apple
+      icon: assets/icon.png
     android:
       applicationId: com.example.apple
-    ios:
-      bundleId: com.example.apple
+    windows: {}
+  banana:
+    app:
+      name: Banana
       icon: assets/icon.png
+    windows: {}
 ''');
 
-  /// What `ios:icons` writes for the flavor, which is a file of the engine in
-  /// some tests and a file a 2.x processor writes in the others.
-  const contents =
-      'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/Contents.json';
-  const icon20 =
-      'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/Icon-App-20x20@2x.png';
+  /// What 'windows:icons' writes for the flavors, the first of which is a file of
+  /// the engine in some tests and a file a 2.x processor writes in the others.
+  const contents = 'windows/runner/resources/apple.ico';
+  const icon20 = 'windows/runner/resources/banana.ico';
 
   void writeIcon() => File('assets/icon.png')
     ..parent.createSync(recursive: true)
@@ -123,12 +126,15 @@ flavors:
       writeIcon();
 
       await StandardLegacyPipeline(project).run(
-        [LegacyStep('ios:icons', config)],
+        [LegacyStep('windows:icons', config)],
         logger: logger,
         observer: observer,
       );
 
-      expect(observer.events, ['started ios:icons', 'finished ios:icons']);
+      expect(observer.events, [
+        'started windows:icons',
+        'finished windows:icons',
+      ]);
       expect(logger.progresses, 0, reason: 'the observer shows the step');
     });
   });
@@ -154,7 +160,10 @@ flavors:
 
     Future<void> run(StepObserver observer) =>
         StandardLegacyPipeline(project).run(
-          [LegacyStep('ios:icons', config), LegacyStep('ios:icons', config)],
+          [
+            LegacyStep('windows:icons', config),
+            LegacyStep('windows:icons', config),
+          ],
           logger: TestUtils.quietLogger(),
           observer: observer,
         );
@@ -220,7 +229,7 @@ flavors:
 
     Future<void> icons(Set<String> preserve) =>
         StandardLegacyPipeline(project).run(
-          [LegacyStep('ios:icons', config)],
+          [LegacyStep('windows:icons', config)],
           logger: TestUtils.quietLogger(),
           preserve: preserve,
         );
@@ -240,26 +249,33 @@ flavors:
     test('without it the step wins, which is the 2.x order reversed', () async {
       await icons({});
 
-      expect(read(contents), contains('"images"'));
+      expect(
+        File(p.join(project.path, contents)).readAsBytesSync(),
+        isNot(utf8.encode('ENGINE')),
+      );
     });
 
-    test('a file the step did not change is not written again', () async {
-      write('android/app/flavorizr.gradle', 'GRADLE');
-      Process.runSync('chmod', [
-        '444',
-        p.join(project.path, 'android/app/flavorizr.gradle'),
-      ]);
-      addTearDown(
-        () => Process.runSync('chmod', [
-          '644',
+    test(
+      'a file the step did not change is not written again',
+      () async {
+        write('android/app/flavorizr.gradle', 'GRADLE');
+        Process.runSync('chmod', [
+          '444',
           p.join(project.path, 'android/app/flavorizr.gradle'),
-        ]),
-      );
+        ]);
+        addTearDown(
+          () => Process.runSync('chmod', [
+            '644',
+            p.join(project.path, 'android/app/flavorizr.gradle'),
+          ]),
+        );
 
-      await icons({'android/app/flavorizr.gradle'});
+        await icons({'android/app/flavorizr.gradle'});
 
-      expect(read('android/app/flavorizr.gradle'), 'GRADLE');
-    }, skip: Platform.isWindows ? 'needs POSIX permissions' : false);
+        expect(read('android/app/flavorizr.gradle'), 'GRADLE');
+      },
+      skip: Platform.isWindows ? 'needs POSIX permissions' : false,
+    );
 
     test('a path that did not exist is not created, and what the step writes '
         'there stays', () async {
@@ -268,8 +284,7 @@ flavors:
       expect(File(p.join(project.path, icon20)).existsSync(), isTrue);
 
       // A path the step does not write is not made by preserving it.
-      const absent =
-          'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/no.png';
+      const absent = 'windows/runner/resources/cherry.ico';
 
       await icons({absent});
 

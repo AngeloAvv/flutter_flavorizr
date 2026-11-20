@@ -48,6 +48,10 @@ const _fullRun = [
   'macos:schema',
   'ios:buildTargets',
   'macos:buildTargets',
+  'ios:dummyAssets',
+  'ios:icons',
+  'macos:dummyAssets',
+  'macos:icons',
 ];
 
 final String _pristine = File(

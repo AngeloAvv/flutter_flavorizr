@@ -40,14 +40,10 @@ import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_pr
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/icons/ios_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/ios_plist_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_runner_cmake_lists_processor.dart';
-import 'package:flutter_flavorizr/src/processors/macos/dummy_assets/macos_dummy_assets_targets_processor.dart';
-import 'package:flutter_flavorizr/src/processors/macos/icons/macos_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/macos_plist_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/windows_dummy_assets_processor.dart';
@@ -261,9 +257,6 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'ios:dummyAssets': () =>
-          IOSDummyAssetsTargetsProcessor(config: flavorizr, logger: logger),
-      'ios:icons': () => IOSIconsProcessor(config: flavorizr, logger: logger),
       'ios:plist': () => ExistingFileStringProcessor(
         K.iOSPListPath,
         IOSPListProcessor(config: flavorizr, logger: logger),
@@ -282,10 +275,6 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'macos:dummyAssets': () =>
-          MacOSDummyAssetsTargetsProcessor(config: flavorizr, logger: logger),
-      'macos:icons': () =>
-          MacOSIconsProcessor(config: flavorizr, logger: logger),
       'macos:plist': () => ExistingFileStringProcessor(
         K.macOSPlistPath,
         MacOSPListProcessor(config: flavorizr, logger: logger),

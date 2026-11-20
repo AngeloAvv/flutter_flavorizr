@@ -48,6 +48,10 @@ const _run = [
   'macos:schema',
   'ios:buildTargets',
   'macos:buildTargets',
+  'ios:dummyAssets',
+  'ios:icons',
+  'macos:dummyAssets',
+  'macos:icons',
   'ios:podfile',
   'macos:podfile',
 ];

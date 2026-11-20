@@ -26,15 +26,11 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/badge/badge_color.dart';
-import 'package:flutter_flavorizr/src/badge/badge_palette.dart';
 import 'package:flutter_flavorizr/src/badge/badge_renderer.dart';
-import 'package:flutter_flavorizr/src/badge/badge_source_icon.dart';
 import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/ico_encoder_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
-import 'package:flutter_flavorizr/src/processors/ios/icons/ios_icons_processor.dart';
-import 'package:flutter_flavorizr/src/processors/macos/icons/macos_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/models/commons/size.dart';
 import 'package:image/image.dart' as img;
@@ -183,101 +179,22 @@ void main() {
     });
   });
 
-  group('the icons processors of the Darwin and Windows platforms', () {
-    test('badge a flavor with an icon, at the size of each file', () async {
-      await inProject((dir) async {
-        await IOSIconsProcessor(
-          config: FlavorizrConfig.parse(
-            _yaml(
-              'ios',
-              badge: 'badge: true',
-              icon: '      icon: assets/icon.png\n',
+  group('the icons processor of Windows', () {
+    test(
+      'makes the icons of a flavor with a badge and no icon, from the one of '
+      'the root',
+      () async {
+        await inProject((dir) async {
+          await WindowsIconsProcessor(
+            config: FlavorizrConfig.parse(
+              _yaml('windows', badge: 'badge: true\nicon: assets/icon.png'),
             ),
-          ),
-          logger: TestUtils.quietLogger(),
-        ).execute();
-
-        final set = 'ios/Runner/Assets.xcassets/AppIcon-dev.appiconset';
-        final marketing = decoded(p.join(set, 'Icon-App-1024x1024@1x.png'));
-        final small = decoded(p.join(set, 'Icon-App-20x20@2x.png'));
-
-        expect([marketing.width, small.width], [1024, 40]);
-        expectBadged(marketing, color: defaultBadgeColor('dev'));
-        expectBadged(small, color: defaultBadgeColor('dev'));
-      });
-    });
-
-    test('make the icons of a flavor with a badge and no icon, from the one of '
-        'the root', () async {
-      await inProject((dir) async {
-        await MacOSIconsProcessor(
-          config: FlavorizrConfig.parse(
-            _yaml('macos', badge: 'badge: true\nicon: assets/icon.png'),
-          ),
-          logger: TestUtils.quietLogger(),
-        ).execute();
-
-        await WindowsIconsProcessor(
-          config: FlavorizrConfig.parse(
-            _yaml('windows', badge: 'badge: true\nicon: assets/icon.png'),
-          ),
-          logger: TestUtils.quietLogger(),
-        ).execute();
-
-        final set = 'macos/Runner/Assets.xcassets/AppIcon-dev.appiconset';
-
-        expectBadged(
-          decoded(p.join(set, 'app_icon_512.png')),
-          color: defaultBadgeColor('dev'),
-        );
-        expect(File('windows/runner/resources/dev.ico').existsSync(), isTrue);
-      });
-    });
-
-    test('make nothing for a flavor with no badge and no icon', () async {
-      await inProject((dir) async {
-        await IOSIconsProcessor(
-          config: FlavorizrConfig.parse(_yaml('ios')),
-          logger: TestUtils.quietLogger(),
-        ).execute();
-
-        expect(Directory('ios').existsSync(), isFalse);
-      });
-    });
-
-    test('keep the icon of a flavor that has no badge as it is', () async {
-      await inProject((dir) async {
-        await IOSIconsProcessor(
-          config: FlavorizrConfig.parse(
-            _yaml('ios', icon: '      icon: assets/icon.png\n'),
-          ),
-          logger: TestUtils.quietLogger(),
-        ).execute();
-
-        final set = 'ios/Runner/Assets.xcassets/AppIcon-dev.appiconset';
-        final icon = decoded(p.join(set, 'Icon-App-1024x1024@1x.png'));
-        final plain = img.copyResize(
-          decoded('assets/icon.png'),
-          width: 1024,
-          height: 1024,
-          interpolation: img.Interpolation.average,
-        );
-
-        expect(icon.toUint8List(), plain.toUint8List());
-      });
-    });
-
-    test('fail with a hint when there is no icon of 512 px', () async {
-      await inProject((dir) async {
-        // The source is chosen when the processor is built.
-        expect(
-          () => IOSIconsProcessor(
-            config: FlavorizrConfig.parse(_yaml('ios', badge: 'badge: true')),
             logger: TestUtils.quietLogger(),
-          ),
-          throwsA(isA<BadgeSourceIconException>()),
-        );
-      }, withIcon: false);
-    });
+          ).execute();
+
+          expect(File('windows/runner/resources/dev.ico').existsSync(), isTrue);
+        });
+      },
+    );
   });
 }
