@@ -66,7 +66,7 @@ Delete it from the yaml. A run removes what flavorizr generated for it, which th
   Windows CMake lists, its keys and entries;
 - its **local** files, such as its run configuration of IntelliJ and Android Studio, and its entries in
   `.vscode/launch.json`. They are regenerated and removed without a conflict check, so a change of yours in
-  them goes too. A `launch.json` that cannot be read is left as it is, with a warning (see
+  them goes too. A `launch.json` that cannot be parsed is left as it is, with a warning (see
   [IDEs](/configuration/services#ides)): the entries of the flavor stay in it, and **only the run that
   finds the flavor dropped removes them**, so remove them by hand.
 
@@ -78,10 +78,12 @@ Removing goes through the [conflict](/conflicts) check like any other change: a 
 edited asks before it is deleted. Local files, and the `.ico` files of `windows:icons`, are not checked.
 
 <Info>
-  `windows:icons` is not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)):
-  it does not track what it writes, so it cannot remove it. The `windows/runner/resources/<flavor>.ico` of a
-  flavor you remove, or whose `icon` and badge you remove, stays in the project, and you delete it. The
-  icons of Android, iOS and macOS, and the launch screen of iOS, are on the engine and go with the flavor.
+  `windows:icons` and `huawei:agconnect` are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)):
+  they do not track what they write, so they cannot remove it. The `windows/runner/resources/<flavor>.ico` of a
+  flavor you remove, or whose `icon` and badge you remove, stays in the project (and keeps being the icon of
+  the flavor while it is there), and so does the `agconnect-services.json` copied to
+  `android/app/src/<flavor>`: you delete them. The icons of Android, iOS and macOS, and the launch screen of
+  iOS, are on the engine and go with the flavor.
 </Info>
 
 ## Partial runs

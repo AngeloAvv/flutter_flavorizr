@@ -25,11 +25,19 @@ flavors:
       icon: "assets/icon/apple/app_icon.png"
 ```
 
-A flavor with no `icon` and no [badge](/icons-and-badge#icon-badge) builds with the default `app_icon.ico`.
-The icon of a flavor is `windows/runner/resources/<flavor>.ico`. An icon you put there yourself is yours
-while the flavor has no `icon` and no badge: otherwise `windows:icons` writes it again on every run, over
-yours, without a conflict, and it leaves the file in the project when the `icon`, the badge or the flavor
-goes.
+The icon of a flavor is `windows/runner/resources/<flavor>.ico`. A flavor builds with it when it has an
+`icon` or a [badge](/icons-and-badge#icon-badge), **or when that file is in the project**, whoever made it.
+The default `app_icon.ico` applies only to a flavor with no `icon`, no badge and no `<flavor>.ico`.
+
+* An `.ico` you put there yourself is yours while the flavor has no `icon` and no badge: flavorizr points
+  the flavor at it and never deletes it. Once the flavor has an `icon` or a badge, `windows:icons` writes it
+  again on every run, over yours, without a conflict.
+* `windows:icons` does not track what it writes, so it never removes a `<flavor>.ico`: it stays in the
+  project when you remove the `icon`, the badge or the flavor, and `windows:cmake` goes on pointing the
+  flavor at it, since the file is there. To go back to the default `app_icon.ico`, delete
+  `windows/runner/resources/<flavor>.ico` and run `apply` again.
+* A source `icon` that is missing, or is not an image, fails `windows:icons` with the engine already done:
+  its changes and the lock stay written (see [Core concepts](/concepts#plan-and-apply)).
 
 ## The processors
 
@@ -70,8 +78,7 @@ build already rewrote (with the icon and the title of a flavor in it) is
 templated all the same. The templates are regenerated at every `apply`, so run
 it again after you change `main.cpp` or `Runner.rc`; `status` does not see a
 change of the files they are made from. The icon of a flavor is still
-`windows/runner/resources/<flavor>.ico`, which `windows:icons` and
-`windows:dummyAssets` make.
+`windows/runner/resources/<flavor>.ico`, which `windows:icons` makes (`windows:dummyAssets` makes nothing).
 
 The editors do not parse C++, CMake or resource scripts, and do not try to know
 what is a comment, a string or a directive. They recognise a few **supported

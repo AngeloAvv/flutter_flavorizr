@@ -113,8 +113,11 @@ flavors:
 ```
 
 The `huawei:agconnect` processor is still a 2.x one: it runs after the engine, with no preview and no
-entry in the lock. Add the native dependencies of AppGallery Connect yourself: flavorizr only applies the
-configuration.
+entry in the lock. It copies the file of each flavor to `android/app/src/<flavor>/agconnect-services.json` on
+every run, over whatever is there and without a conflict, and a missing source fails the run with the engine
+already done. It never removes a copy: the one of a flavor that you drop, or that loses its `agconnect`,
+stays, and you delete it. Add the native dependencies of AppGallery Connect yourself: flavorizr only applies
+the configuration.
 
 ## IDEs
 
@@ -145,10 +148,10 @@ run, without a question.
   not touched. The file is JSONC, as VS Code's own template is: the comments
   outside those entries, the trailing commas, the layout and your other entries
   stay as they are, and a new entry is laid out like the ones that are there. A
-  file that cannot be read (a syntax error, or a `configurations` that is not a
+  file that cannot be parsed (a syntax error, or a `configurations` that is not a
   list) is left alone, with a warning that prints the entries to add by hand,
   and the run goes on with exit code `0`. **Fix the syntax error first**: while
-  it is there VS Code cannot read the file either, whatever you add to it. Then
+  it is there VS Code cannot parse the file either, whatever you add to it. Then
   run flavorizr again, which adds the entries of the flavors it misses, or add
   the printed entries yourself. A flavor you dropped meanwhile is no longer
   known as dropped once a run has updated the lock: remove its

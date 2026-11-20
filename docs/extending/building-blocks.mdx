@@ -63,7 +63,7 @@ is never drift.
 
 `VsCodeLaunchEditor` reads and edits `.vscode/launch.json` the way VS Code does, as JSONC: with comments and
 trailing commas, adding, replacing or removing only the entries that carry the name of a flavor (the comments
-inside a replaced or removed entry go with it, the other comments stay). A file it cannot read
+inside a replaced or removed entry go with it, the other comments stay). A file it cannot parse
 is an error (a `FormatException`) that the caller decides what to do with.
 
 A processor says what it owns of a patched file with `ownedContent`, a map from the path of the file to a

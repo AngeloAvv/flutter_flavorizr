@@ -304,7 +304,8 @@ says how to fix it. See [Flutter code](/configuration/flutter).
 - **A flavor with an `icon`** gets an icon set made from it, at every size, for Android, iOS, macOS and
   Windows.
 - **A flavor with no `icon`** gets nothing generated, and **builds with the default icon of the project**:
-  the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows.
+  the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows (unless the
+  project has an icon for the flavor, such as the `<flavor>.ico` that 2.x made).
 - **An icon you put in the project yourself** (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
   `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
 - The placeholder icons that 2.x made for Android, iOS and macOS are recognised by their hash: the first

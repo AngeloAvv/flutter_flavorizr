@@ -35,7 +35,10 @@ output is deterministic: the same sources always give the same bytes. Android fl
 ### A flavor with no icon
 
 **A flavor with no `icon` gets nothing generated, and builds with the default icon of the project**: the
-`main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows.
+`main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows. A flavor builds with
+its own icon instead when the project already has one for it: an `AppIcon-<flavor>.appiconset` on iOS and
+macOS, and a `windows/runner/resources/<flavor>.ico` on Windows, which is used whoever made it (so it
+stays in use after you remove the `icon` of the flavor, until you delete the file and run `apply`).
 
 An icon you put in the project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
 `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it. Once the flavor has an
@@ -65,7 +68,8 @@ project in that same run.
 `windows:icons` is the one processor that makes icons and is not on the engine yet (see
 [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)). It does not track what it writes, so
 the `windows/runner/resources/<flavor>.ico` files stay in the project when the `icon`, the badge or the flavor
-goes, and you delete them.
+goes, and `windows:cmake` keeps pointing the flavor at the file while it is there: delete it, and run `apply`,
+to go back to the default `app_icon.ico`.
 
 ## The launch screen and Android
 
