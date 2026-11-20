@@ -80,6 +80,7 @@ class FlavorizrContext {
   final Map<ResourceKey<Object?>, Object?> _resources;
   final List<Artifact> _tracked = [];
   final Map<String, List<Artifact>> _trackedBy = {};
+  final Set<String> _previousFiles;
   final Map<String, Map<String, Set<String>>> _previousObjects;
   final Map<String, Map<String, Set<String>>> _ownedObjects = {};
   final Map<String, Map<String, Map<String, String>>> _previousKeys;
@@ -102,9 +103,13 @@ class FlavorizrContext {
     this.processorId,
     Map<String, Map<String, Set<String>>> previousObjects = const {},
     Map<String, Map<String, Map<String, String>>> previousKeys = const {},
+    Iterable<String> previousFiles = const [],
     Set<String> selected = const {},
   }) : selected = Set.unmodifiable(selected),
        _resources = Map.of(resources),
+       _previousFiles = Set.unmodifiable({
+         for (final path in previousFiles) ?tryCanonicalPath(path),
+       }),
        _previousObjects = _canonicalObjects(previousObjects),
        _previousKeys = _canonicalKeys(previousKeys),
        root = Directory(p.normalize(root.absolute.path)),
@@ -153,6 +158,25 @@ class FlavorizrContext {
 
     list.forEach(track);
     _trackedBy.putIfAbsent(processorId, () => []).addAll(list);
+  }
+
+  /// The canonical paths of the files the lock recorded, for any processor.
+  Set<String> get previousFiles => _previousFiles;
+
+  /// Whether the lock recorded [path], a file or a folder of the project, as one
+  /// of the files of a processor: a file of the folder, for a folder.
+  ///
+  /// It is what tells a file flavorizr made in an earlier run from one the user
+  /// put there, and so what a processor can count on being replaced or removed
+  /// by this run. It is `false` on the first run, and for a path that is not one
+  /// of the project.
+  bool hasPreviousFile(String path) {
+    final canonical = tryCanonicalPath(path);
+
+    return canonical != null &&
+        _previousFiles.any(
+          (file) => file == canonical || p.posix.isWithin(canonical, file),
+        );
   }
 
   /// The UUIDs of the pbxproj objects the lock recorded for each processor, by

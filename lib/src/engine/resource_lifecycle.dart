@@ -177,6 +177,7 @@ class ResourceLifecycle {
           processorId: step.processor.id,
           previousObjects: ctx.previousObjects,
           previousKeys: ctx.previousKeys,
+          previousFiles: ctx.previousFiles,
           selected: ctx.selected,
           resources: {
             for (final key in step.processor.requires) key: open[key],

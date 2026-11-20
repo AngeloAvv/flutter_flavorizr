@@ -157,6 +157,11 @@ abstract class _BuildTargetsProcessor extends FlavorizrProcessor {
     flavorName: flavorName,
     // A flavor with a badge has the icons that are made for it.
     hasIcon: hasIcon || ctx.config.badgeOf(flavorName) != null,
+    // The set of a flavor that lost its icon is the one `ios:icons` made, and
+    // removes: it is not the one the flavor builds with.
+    generated: ctx.hasPreviousFile(
+      '$assetsPath/AppIcon-$flavorName.appiconset',
+    ),
     chosen:
         userApp.containsKey(DarwinIconName.setting) ||
         own.containsKey(DarwinIconName.setting),
