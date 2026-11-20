@@ -82,7 +82,7 @@ configurations of the IDEs are regenerated silently: neither is recorded.
 ### The dummy icons
 
 2.x copied dummy launcher icons, app icons and `.ico` files for a flavor. 3.x does not make them: a flavor
-with no icon uses the default icon of the project. `adopt` recognises them by
+with no icon uses the default icon of the project, or the one the project already has for it. `adopt` recognises them by
 comparing each file with a table of the hashes of the dummy assets of 2.x:
 
 * a file that still has the bytes 2.x wrote is **managed**: it is recorded, and

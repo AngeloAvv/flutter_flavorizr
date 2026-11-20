@@ -117,7 +117,8 @@ A run that fails does not write the changes to the project, and the
 lock is written last. A lock that cannot even be staged stops the run before
 anything is written. There are two exceptions, and each says so:
 
-* a copy-back that is interrupted exits with `70` and lists what was and what was not written: the lock
+* a copy-back that is interrupted exits with `70` and lists what was and what was not written (it is also what
+  happens when a file changes after the first one was written: before that, the run writes nothing): the lock
   keeps the previous state, so review the files with your version control and run flavorizr again (see
   [what a retry does not restore](/concepts#plan-and-apply));
 * a lock that cannot replace `flavorizr.lock` once the files are written exits

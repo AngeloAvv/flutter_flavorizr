@@ -6,7 +6,7 @@ Read the [migration guide](https://docs.page/AngeloAvv/flutter_flavorizr/migrati
 
 * Removed the `instructions` key: `recipes` replaces it, and the recipe `default` is what runs without a target. The error prints the `recipes` to write
 * Removed the `assetsUrl` key and the assets pipeline (`assets:download`, `assets:extract`, `assets:clean`): flavorizr bundles no assets and downloads nothing
-* Deprecated and ignored `generateDummyAssets`, which becomes an error in 4.0. A flavor with no `icon` builds with the default icon of the project
+* Deprecated and ignored `generateDummyAssets`, which becomes an error in 4.0. A flavor with no `icon` builds with the default icon of the project, or with the icon the project already has for it that flavorizr did not make
 * `customConfig` is typed: texts are quoted for you (a text with its own quotes is an error), code is written as `{raw: ...}`, and `manifestPlaceholders` is a key of the flavor
 * Unknown keys of the configuration are errors, with their path, line and a suggestion
 * `lib/flavors.dart` is split in `flavors.g.dart`, generated and managed, and `flavors.dart`, which exports it and is yours. `F.appFlavor` is read from Flutter and is not assigned anymore

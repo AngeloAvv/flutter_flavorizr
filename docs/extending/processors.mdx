@@ -41,8 +41,8 @@ class FlavorsDocProcessor extends FlavorizrProcessor {
   (`android`, `ios`, `macos`, `linux`, `windows`, `flutter`, `google`, `huawei`
   and `ide`).
 * `paths` is what the processor reads or writes, relative to the project.
-  Nothing outside of it is copied to the workspace of the run, diffed or
-  written back.
+  Nothing outside of it is copied to the workspace of the run, diffed, written
+  back or deleted (see [what a custom processor gets for free](#what-a-custom-processor-gets-for-free)).
 * `apply` writes below `ctx.root`, the workspace of the run, never to the
   project; it reads the configuration from `ctx.config`; it says what it owns
   with `ctx.track`. The owner of a file decides what a run may do to it:
@@ -109,7 +109,16 @@ recipes:
   scaffold that is as it was written, go; one you edited is a
   [conflict](/conflicts#deleting-a-file-that-is-not-made-anymore). A processor
   that is not in the run, or that you took out of `tool/flavorizr.dart`, leaves
-  its files and its entries in the lock as they are.
+  its files and its entries in the lock as they are. A patched file is not
+  deleted: the lock stops recording it, and what your processor put in it stays,
+  unless the processor takes it out itself.
+* **Cleanup only reaches what is in `paths`.** A deletion outside the `paths`
+  of the processors of the run is never made: the plan shows it as
+  `[blocked]` and the file, and its record in the lock, stay. So when a
+  processor moves a file (say `FLAVORS.md` becomes `FLAVORS.txt`), keep the old
+  path in `paths` for one run, so that the run deletes the old file, and remove
+  it from `paths` after that. If you changed `paths` at once, delete the old file
+  yourself: its entry stays in the lock.
 * `flavorizr list` shows it, with the processors it needs.
 
 The pipeline of this repository checks that `example/` is in sync with its lock

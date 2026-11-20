@@ -35,12 +35,12 @@ delete it, and decides by what the lock recorded for it:
 | --- | --- |
 | `managed` | Deletes it when it is still what the lock recorded, and asks (a conflict) when you edited it. |
 | `scaffold` | Deletes it **silently** when it is still exactly what flavorizr wrote, which the lock records as a hash. A scaffold you edited, one the lock has no hash for (it was yours before, or the lock is a version 1 one that never recorded it), is a **conflict**: the plan shows it as `- <file> (scaffold) [conflict]`. |
-| `patched` | Left in place, and the lock stops owning it: it is shared with you, so the run only takes out what it owned. A patched file flavorizr created (a scheme) is the one exception: see [Adding and removing flavors](/flavors#removing-a-flavor). |
+| `patched` | **Released, not cleaned**: the file is not changed, the lock stops recording it, and the plan lists it under `Left in place (shared with you, no longer owned by flavorizr)`. What the processor put in it (its region, its keys) stays on disk: removing it, if the processor does that at all, is the work of the processor, as the built-in ones do for a flavor that goes. A patched file flavorizr created (a scheme) is the one exception: it is deleted like a managed one, see [Adding and removing flavors](/flavors#removing-a-flavor). |
 | `local` | Not in the lock, so never stale. The processor that wrote it removes it itself: the run configuration of a flavor that goes, and a copy of a service configuration while it is untouched. |
 
 A conflict of this kind is answered like any other: `o` deletes the file, `k` keeps it, and `--on-conflict=keep`
 leaves it. A kept file stays in the lock, so the next run asks again for as long as the processor runs and
-does not make it. Only the processors that run are looked at: a partial run, a processor that the recipe does
+does not make it. Only the processors that run, and only the paths they declare (see [Custom processors](/extending/processors#what-a-custom-processor-gets-for-free)), are looked at: a partial run, a processor that the recipe does
 not name, or one that is not registered anymore (it is gone from `tool/flavorizr.dart`) leaves its files, and
 its lock entries, as they are. Delete them by hand if you do not need them.
 

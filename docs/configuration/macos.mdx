@@ -55,7 +55,7 @@ flavors:
 | `macos:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). |
 | `macos:schema` | Creates a scheme for each flavor, keeping the edits made to it, which builds the app named after its target. See [The schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors). |
 | `macos:icons` | Makes `AppIcon-<flavor>.appiconset` for each flavor that has an `icon` or a [badge](/icons-and-badge#ios-and-macos), and removes the one of a flavor that has neither anymore. |
-| `macos:dummyAssets` | Does nothing: a flavor with no `icon` and no badge uses the default `AppIcon`. It stays so that a recipe that names it runs. |
+| `macos:dummyAssets` | Does nothing: a flavor with no `icon` and no badge uses the default `AppIcon`, unless the project already has an `AppIcon-<flavor>.appiconset` that flavorizr did not generate: the flavor then uses that set. It stays so that a recipe that names it runs. |
 
 ## Running a flavor
 

@@ -52,20 +52,36 @@ Two failures can still leave a run half done, and each says so, with exit code `
   the changes stay written and the lock is the previous one. Fix what stops it and run flavorizr again: it
   finds nothing to change and writes the lock.
 
-A run also stops with `70`, and writes nothing, when a file of the project changed after the run copied it
-to the workspace: run it again.
+A file of the project that changes while the run works is caught twice, and the two are not the same:
 
-**What a retry does not restore.** In both cases the files are written and the lock is the previous one, so
-the retry finds the files as they are and writes the lock with what it can tell from them: the hash of each
-generated file, the keys, the objects of the Xcode project (found again by their UUID), the inputs of the
+- when the change is found **before the first file is written** (the run checks every file it is about to write
+  once more, right after staging them), the run stops with `70` and says `Aborted: ... changed while
+  flutter_flavorizr was running, so nothing was written`. Run it again;
+- when it is found **after copy-back began** (each file is checked once more right before its own
+  replacement, so another process can still edit a file that is waiting its turn), the run stops as the
+  interrupted copy-back above does: the files written before it stay, the message lists them under `Already
+  applied`, and the lock is the previous one. Follow the steps below as for any interruption: it is not a
+  case of "nothing was written".
+
+The filesystem offers no lock, so a process that writes a file between its last check and its replacement still
+loses that write. Run flavorizr while nothing else edits the project.
+
+**What a retry does not restore.** In the two cases above the files are written and the lock is the previous
+one, so the retry finds the files as they are and writes the lock with what it can tell from them: the hash of
+each generated file, the keys, the objects of the Xcode project (found again by their UUID), the inputs of the
 icons (they are rendered again, to the same bytes) and the copies of the service configurations (written on
 every run). The one record that is made only when a file is **created** is lost: that a scheme
 (`xcschemes/<flavor>.xcscheme`) was made by flavorizr. A retry finds the scheme already there, so it does
 not record it, and when you drop the flavor later the scheme stays and the plan lists it as `flavorizr did
-not make it`. To keep the record, restore what the failed run created before you run again: delete the
-scheme files it added (the lines that `apply` printed with `+`, or the new files `git status` shows),
-fix what stopped it, and run flavorizr: it creates the schemes again and the lock records them. Skipping
-this costs one file to delete by hand when the flavor goes. See [`flavorizr.lock`](/reference/lock#what-the-lock-keeps-to-delete-safely).
+not make it`.
+
+To keep the record, delete the schemes **the failed run created** and run flavorizr again: it creates them
+and the lock records them. Do not pick them with `git status`, which also shows a scheme of yours that was
+untracked before the run. Use what the run printed: the preview lists a scheme the run adds with `+`
+(`+ ios/Runner.xcodeproj/xcshareddata/xcschemes/pear.xcscheme (patched)`), and a scheme it only changes with `~`.
+Delete the ones marked `+`, and, when the copy-back was interrupted, only those that the message lists under
+`Already applied` (the others were not written, and the retry creates them). If you no longer have that
+output, leave the schemes where they are: it costs one scheme to delete by hand when the flavor goes. See [`flavorizr.lock`](/reference/lock#what-the-lock-keeps-to-delete-safely).
 
 `status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
 
