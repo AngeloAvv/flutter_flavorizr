@@ -124,34 +124,18 @@ class StatusCommand extends TargetCommand {
         for (final item in drift)
           {'kind': item.kind, 'message': item.message, 'paths': item.paths},
       ],
-      'notChecked': [for (final step in plan.legacy) step.id],
     });
-
-    if (plan.legacy.isNotEmpty) {
-      output.info(
-        'Not checked, since they are not on the engine yet: '
-        '${plan.legacy.map((step) => step.id).join(', ')}.',
-      );
-    }
 
     if (drift.isEmpty && !checked) {
       // Without processors of the engine there is no lock to be in sync with,
       // since only a run of the engine writes it.
-      output.info(
-        'Nothing to check: no processor of the engine is selected, and the '
-        'others cannot be checked.',
-      );
+      output.info('Nothing to check: no processor is selected.');
 
       return ExitCodes.ok;
     }
 
     if (drift.isEmpty) {
-      output.success(
-        plan.legacy.isEmpty
-            ? 'In sync.'
-            : 'In sync, as far as the engine can tell: the processors above '
-                  'are not checked.',
-      );
+      output.success('In sync.');
       output.summary('Status', countChanges(preview));
 
       return ExitCodes.ok;

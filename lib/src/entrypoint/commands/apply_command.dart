@@ -24,15 +24,12 @@
  */
 
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_policy.dart';
-import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/entrypoint/commands/flavorizr_command.dart';
 import 'package:flutter_flavorizr/src/entrypoint/deprecated_options.dart';
 import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/documents.dart';
-import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
 import 'package:flutter_flavorizr/src/entrypoint/plan_report.dart';
-import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 import 'package:flutter_flavorizr/src/engine/execution_report.dart';
 
 /// `flavorizr apply [target...]`: shows what would change, asks, and applies it.
@@ -118,10 +115,7 @@ class ApplyCommand extends TargetCommand {
     final config = loadConfig();
     final plan = resolve(config);
 
-    _planned = [
-      for (final step in plan.engine.steps) step.processor.id,
-      for (final step in plan.legacy) step.id,
-    ];
+    _planned = [for (final step in plan.engine.steps) step.processor.id];
 
     await checkNothingIsDropped(config);
 
@@ -134,70 +128,33 @@ class ApplyCommand extends TargetCommand {
       return ExitCodes.ok;
     }
 
-    // Before anything is written: the engine goes first.
-    context.legacy.check(plan.legacy);
+    final run = await runEngine(
+      context,
+      config: config,
+      plan: plan,
+      logger: output.logger,
+      observer: output,
+      terminal: output.terminal(context.terminal),
+      approve: _approve,
+      policy: switch (argResults!['on-conflict']) {
+        final String value => ConflictPolicy.tryParse(value),
+        _ => null,
+      },
+      yes: _yes,
+      overwriteScaffold: argResults!['overwrite-scaffold'] == true,
+    );
 
-    var generated = const <String>{};
-    EnginePreview? preview;
-    ConflictResolution? resolution;
-    var written = const ChangeCounts();
+    _report = run.report;
+    _applied = run.applied;
 
-    if (plan.engine.steps.isNotEmpty) {
-      final run = await runEngine(
-        context,
-        config: config,
-        plan: plan,
-        logger: output.logger,
-        observer: output,
-        terminal: output.terminal(context.terminal),
-        approve: (preview) => _approve(preview, plan),
-        policy: switch (argResults!['on-conflict']) {
-          final String value => ConflictPolicy.tryParse(value),
-          _ => null,
-        },
-        yes: _yes,
-        overwriteScaffold: argResults!['overwrite-scaffold'] == true,
-      );
+    if (!run.report.succeeded) return run.report.exitCode;
+    if (run.cancelled) return _cancel();
 
-      _report = run.report;
-      _applied = run.applied;
-      preview = run.preview;
-      resolution = run.resolution;
+    final written = countChanges(run.preview, resolution: run.resolution);
 
-      if (!run.report.succeeded) return run.report.exitCode;
-      if (run.cancelled) return _cancel();
-
-      generated = run.generated;
-      written = countChanges(preview, resolution: resolution);
-
-      // What the run wrote, which is not what the preview said once the
-      // conflicts were decided. It is told now: a processor that is not on the
-      // engine may still fail, and the files are written all the same.
-      output.data({'summary': written.toJson()});
-    } else {
-      output.data(previewFields(null));
-
-      if (!await _confirm()) return _cancel();
-    }
-
-    try {
-      await context.legacy.run(
-        plan.legacy,
-        logger: output.logger,
-        preserve: generated,
-        observer: output,
-      );
-    } on Object {
-      if (plan.engine.steps.isNotEmpty) {
-        output.warn(
-          'The processors of the engine already finished and their changes '
-          'are written, with flavorizr.lock. The 2.x processors that follow '
-          'did not: run flavorizr again once the problem is fixed.',
-        );
-      }
-
-      rethrow;
-    }
+    // What the run wrote, which is not what the preview said once the
+    // conflicts were decided.
+    output.data({'summary': written.toJson()});
 
     output.summary('Applied', written);
     output.success('Flavorization process finished');
@@ -206,7 +163,7 @@ class ApplyCommand extends TargetCommand {
   }
 
   /// Whether to go on, once the changes of the engine are known.
-  Future<bool> _approve(EnginePreview preview, RunPlan plan) async {
+  Future<bool> _approve(EnginePreview preview) async {
     output.data(previewFields(preview));
 
     if (preview.adopted case final adopted?) {
@@ -216,7 +173,7 @@ class ApplyCommand extends TargetCommand {
     output.info(renderPreview(preview, style: output.style));
 
     // Nothing to lose: the lock is all that may change.
-    if (!preview.hasChanges && plan.legacy.isEmpty) return true;
+    if (!preview.hasChanges) return true;
 
     return _confirm();
   }

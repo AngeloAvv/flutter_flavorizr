@@ -230,7 +230,6 @@ abstract class TargetCommand extends FlavorizrCommand {
         ? RunPlan(
             messages: const [],
             engine: const ExecutionPlan([]),
-            legacy: const [],
             paths: const {},
           )
         : resolveRunPlan(

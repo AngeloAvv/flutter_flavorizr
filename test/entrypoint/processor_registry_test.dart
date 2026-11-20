@@ -62,12 +62,12 @@ void main() {
   final registry = ProcessorRegistry.standard();
 
   group('ProcessorRegistry', () {
-    test('runs the ported Android, Linux, Windows, Flutter, xcconfig, build '
-        'targets, icons, Podfile and Info.plist processors on the engine', () {
-      expect(registry.engineIds, {
+    test('has every processor of flavorizr', () {
+      expect(registry.ids, {
         'android:androidManifest',
         'android:flavorizrGradle',
         'android:buildGradle',
+        'android:dummyAssets',
         'android:icons',
         'linux:cmake',
         'linux:runnerCmake',
@@ -147,6 +147,7 @@ void main() {
           'android:androidManifest',
           'android:flavorizrGradle',
           'android:buildGradle',
+          'android:dummyAssets',
           'android:icons',
           'linux:cmake',
           'linux:runnerCmake',
@@ -299,39 +300,8 @@ void main() {
       }
     });
 
-    test('keeps every other 2.x instruction on the legacy pipeline', () {
-      expect(registry.legacyIds, isNot(contains('huawei:agconnect')));
-      expect(registry.legacyIds, isNot(contains('ios:schema')));
-      expect(registry.legacyIds, isNot(contains('macos:schema')));
-      expect(registry.legacyIds, contains('android:dummyAssets'));
-      expect(registry.legacyIds, isNot(contains('windows:icons')));
-      expect(registry.legacyIds, isNot(contains('windows:dummyAssets')));
-      expect(registry.legacyIds, isNot(contains('windows:cmake')));
-      expect(registry.legacyIds, isNot(contains('linux:cmake')));
-      expect(registry.legacyIds, isNot(contains('linux:runnerCmake')));
-      expect(registry.legacyIds, isNot(contains('linux:myApplication')));
-      expect(registry.legacyIds, isNot(contains('android:icons')));
-      expect(registry.legacyIds, isNot(contains('ios:xcconfig')));
-      expect(registry.legacyIds, isNot(contains('ios:buildTargets')));
-      expect(registry.legacyIds, isNot(contains('macos:buildTargets')));
-      expect(registry.legacyIds, isNot(contains('macos:xcconfig')));
-      expect(registry.legacyIds, isNot(contains('ios:podfile')));
-      expect(registry.legacyIds, isNot(contains('macos:podfile')));
-      expect(
-        registry.ids,
-        hasLength(registry.engineIds.length + registry.legacyIds.length),
-      );
-    });
-
-    test('a processor that is ported leaves the legacy ones', () {
-      final custom = ProcessorRegistry(
-        engine: [
-          registry.engineProcessors.values.first,
-        ].map((processor) => EngineProcessor(processor, paths: {'x'})),
-        legacyIds: ['android:androidManifest', 'other'],
-      );
-
-      expect(custom.legacyIds, {'other'});
+    test('every processor is a processor of the engine', () {
+      expect(registry.engineProcessors.keys, registry.ids);
     });
 
     test('hashes a managed file whole', () {

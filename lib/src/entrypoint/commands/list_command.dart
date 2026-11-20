@@ -68,17 +68,15 @@ class ListCommand extends FlavorizrCommand {
 
     output.info('Recipes\n${catalog.renderListing()}');
     output.info(
-      'Processors (engine: previewed, checked against the lock and written '
-      'atomically; legacy: applied straight to the project)',
+      'Processors (all run on the engine: previewed, checked against the lock '
+      'and written atomically)',
     );
 
     for (final id in (registry.ids.toList()..sort())) {
-      final processor = processors[id];
-
       output.info(
-        '  $id [${processor == null ? 'legacy' : 'engine'}]'
+        '  $id [engine]'
         '${registry.overriddenIds.contains(id) ? ' (overridden)' : ''}'
-        '${_tree(processor)}',
+        '${_tree(processors[id]!)}',
       );
     }
 
@@ -86,9 +84,7 @@ class ListCommand extends FlavorizrCommand {
   }
 
   /// The dependencies of [processor], as the branches of its tree.
-  String _tree(FlavorizrProcessor? processor) {
-    if (processor == null) return '';
-
+  String _tree(FlavorizrProcessor processor) {
     final dependencies = <(String, String)>[
       for (final id in processor.dependsOn.toList()..sort()) ('needs', id),
       for (final id in processor.after.toList()..sort()) ('after', id),
@@ -97,10 +93,7 @@ class ListCommand extends FlavorizrCommand {
     return [
       for (var index = 0; index < dependencies.length; index++)
         '\n    ${index == dependencies.length - 1 ? '└─' : '├─'} '
-            '${dependencies[index].$1} ${_describe(dependencies[index].$2)}',
+            '${dependencies[index].$1} ${dependencies[index].$2}',
     ].join();
   }
-
-  String _describe(String id) =>
-      '$id${context.registry.isEngine(id) ? '' : ' (legacy)'}';
 }

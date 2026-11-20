@@ -149,7 +149,7 @@ void main() {
         expect(project.snapshot(), before);
       });
 
-      test('marks the processors that are not on the engine', () async {
+      test('lists android:dummyAssets like any other processor', () async {
         await project.run([
           'plan',
           '--json',
@@ -157,12 +157,17 @@ void main() {
           'android:dummyAssets',
         ]);
 
-        expect((document()['processors'] as List).last, {
-          'id': 'android:dummyAssets',
-          'platform': 'android',
-          'runsOn': 'legacy',
-          'auto': false,
-        });
+        expect(
+          (document()['processors'] as List)
+              .cast<Map<String, Object?>>()
+              .firstWhere((p) => p['id'] == 'android:dummyAssets'),
+          {
+            'id': 'android:dummyAssets',
+            'platform': 'android',
+            'runsOn': 'engine',
+            'auto': false,
+          },
+        );
       });
 
       test('exits with 1 and says which files are in the way', () async {
@@ -423,90 +428,21 @@ void main() {
         });
       });
 
-      test('lists a failed legacy step, after the engine steps', () async {
-        project.legacy.failAt = 'android:dummyAssets';
-
-        final code = await project.run([
+      test('lists android:dummyAssets as a step', () async {
+        await project.run([
           'apply',
           '--json',
-          'android:flavorizrGradle',
-          'android:dummyAssets',
-        ]);
-        final steps = (document()['steps'] as List)
-            .cast<Map<String, Object?>>();
-
-        expect(code, ExitCodes.software);
-        expect(steps.map((s) => '${s['id']} ${s['status']}'), [
-          'android:flavorizrGradle completed',
-          'android:dummyAssets failed',
-        ]);
-      });
-
-      test(
-        'lists the legacy steps an engine failure kept from running',
-        () async {
-          File(
-            project.abs('android/app/src/main/AndroidManifest.xml'),
-          ).deleteSync();
-
-          await project.run([
-            'apply',
-            '--json',
-            'android:androidManifest',
-            'android:dummyAssets',
-          ]);
-
-          expect(
-            (document()['steps'] as List).cast<Map<String, Object?>>().last,
-            {
-              'id': 'android:dummyAssets',
-              'status': 'skipped',
-              'durationMs': null,
-            },
-          );
-        },
-      );
-
-      test('keeps what was written when a legacy step then fails', () async {
-        await project.run(['apply', '-y', ...engineTargets]);
-        project.write('android/app/flavorizr.gradle', '// mine\n');
-        project.write('flavorizr.yaml', CliFixture.config(['apple', 'pear']));
-        project.stdout.clear();
-        project.legacy.failAt = 'android:dummyAssets';
-
-        final code = await project.run([
-          'apply',
-          '--json',
-          '--on-conflict=overwrite',
           ...engineTargets,
           'android:dummyAssets',
         ]);
-        final doc = document();
-        final modified = changes(doc).where((c) => c['change'] == 'modified');
 
-        expect(code, ExitCodes.software);
-        expect(doc['applied'], isTrue);
-        expect(doc['summary'], containsPair('conflicts', 0));
-        expect((doc['summary'] as Map)['modified'], modified.length);
+        expect(
+          (document()['steps'] as List)
+              .cast<Map<String, Object?>>()
+              .singleWhere((s) => s['id'] == 'android:dummyAssets'),
+          containsPair('status', 'completed'),
+        );
       });
-
-      test(
-        'lists the processors that are not on the engine as steps',
-        () async {
-          await project.run([
-            'apply',
-            '--json',
-            ...engineTargets,
-            'android:dummyAssets',
-          ]);
-
-          expect((document()['steps'] as List).last, {
-            'id': 'android:dummyAssets',
-            'status': 'completed',
-            'durationMs': 1,
-          });
-        },
-      );
 
       test('says the steps that were skipped when a processor fails', () async {
         File(
@@ -601,7 +537,7 @@ void main() {
         ]);
       });
 
-      test('names what it did not check', () async {
+      test('has no list of what it did not check', () async {
         await project.run(['apply', '-y', ...engineTargets]);
         project.stdout.clear();
 
@@ -612,15 +548,17 @@ void main() {
           'android:dummyAssets',
         ]);
 
-        expect(document()['notChecked'], ['android:dummyAssets']);
+        expect(document(), isNot(contains('notChecked')));
+        expect(document()['checked'], isTrue);
       });
 
-      test('has nothing to check without a processor of the engine', () async {
-        final code = await project.run([
-          'status',
-          '--json',
-          'android:dummyAssets',
-        ]);
+      test('has nothing to check without a processor', () async {
+        project.write(
+          'flavorizr.yaml',
+          '${CliFixture.config(['apple'])}recipes:\n  default: []\n',
+        );
+
+        final code = await project.run(['status', '--json']);
         final doc = document();
 
         expect(code, ExitCodes.ok);
@@ -650,11 +588,15 @@ void main() {
         expect(processors.firstWhere((p) => p['id'] == 'android:dummyAssets'), {
           'id': 'android:dummyAssets',
           'platform': 'android',
-          'runsOn': 'legacy',
+          'runsOn': 'engine',
           'needs': <String>[],
           'after': <String>[],
           'overridden': false,
         });
+        expect(
+          processors.firstWhere((p) => p['id'] == 'android:icons')['after'],
+          ['android:dummyAssets'],
+        );
         expect(
           (processors.firstWhere(
                 (p) => p['id'] == 'android:buildGradle',

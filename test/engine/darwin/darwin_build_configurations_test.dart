@@ -107,7 +107,6 @@ void main() {
       projectRoot: project.root,
       logger: project.logger,
       terminal: NoTerminal(),
-      legacy: project.legacy,
       version: '3.0.0',
       registry: ProcessorRegistry(
         engine: [

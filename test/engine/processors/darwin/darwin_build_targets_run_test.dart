@@ -122,9 +122,8 @@ void main() {
     test('is a processor of the engine, in the recipe of iOS', () {
       final registry = ProcessorRegistry.standard();
 
-      expect(registry.isEngine('ios:buildTargets'), isTrue);
-      expect(registry.isEngine('macos:buildTargets'), isTrue);
-      expect(registry.legacyIds, isNot(contains('ios:buildTargets')));
+      expect(registry.engineProcessors, contains('ios:buildTargets'));
+      expect(registry.engineProcessors, contains('macos:buildTargets'));
     });
 
     test('makes the configurations of the flavor, with its settings', () async {
