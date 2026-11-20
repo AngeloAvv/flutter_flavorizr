@@ -57,6 +57,7 @@ final class DummyAssets {
       'macos/Assets.xcassets/AppIcon.appiconset/',
       'macos/Runner/Assets.xcassets/AppIcon-{f}.appiconset/',
     ),
+    ('windows/app_icon.ico', 'windows/runner/resources/{f}.ico'),
   ];
 
   final Map<String, String> _hashes;
@@ -71,7 +72,7 @@ final class DummyAssets {
   /// The files 2.x wrote for [flavor], by path relative to the project, with the
   /// hash of the bytes it wrote.
   ///
-  /// With a [platform] (`android`, `ios` or `macos`), only the ones of that
+  /// With a [platform] (`android`, `ios`, `macos` or `windows`), only the ones of that
   /// platform: the ones of the others are not asked about. A platform that has
   /// no dummy assets has no files. [flavor] must be a name that is safe to use in
   /// a path.
@@ -94,6 +95,10 @@ final class DummyAssets {
   }
 }
 
+/// The hashes of what 2.6 wrote. The one of Windows is not the one of a file that
+/// 2.x copied but of the `.ico` it built from its `windows/app_icon.ico`, which
+/// is the same for every flavor: it is the one that the golden project of 2.6.0
+/// records for them.
 const _v2Hashes = {
   'android/res/mipmap-hdpi/ic_launcher.png':
       '6a7c8f0d703e3682108f9662f813302236240d3f8f638bb391e32bfb96055fef',
@@ -165,4 +170,6 @@ const _v2Hashes = {
       '3a69a8a1aac5d9a8374492af4b6d07a4ce637659eb24a7849c4dfb261d75c6a3',
   'macos/Assets.xcassets/AppIcon.appiconset/app_icon_64.png':
       'd29d4e0af9256dc92d0a8f8810608a5e64a132ad8b397ca2c4ddc0b1c26a68c3',
+  'windows/app_icon.ico':
+      '4905ee2a6a9a10857f1f4c15d88479f0dc9c810f8d648653ac4e3e3bfb2784fc',
 };

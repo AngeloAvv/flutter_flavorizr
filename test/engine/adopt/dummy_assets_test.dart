@@ -99,6 +99,20 @@ void main() {
       }
     });
 
+    test('has the hash of the dummy .ico 2.6.0 built for Windows', () {
+      final paths = DummyAssets.v2.flavorPaths('banana', platform: 'windows');
+
+      expect(paths.keys, ['windows/runner/resources/banana.ico']);
+      expect(
+        paths['windows/runner/resources/banana.ico'],
+        _recorded('windows/runner/resources/banana.ico'),
+      );
+      expect(
+        DummyAssets.v2.flavorPaths('apple', platform: 'windows').values.single,
+        _recorded('windows/runner/resources/apple.ico'),
+      );
+    });
+
     test('names the files of a flavor after the flavor', () {
       final apple = DummyAssets.v2.flavorPaths('apple');
 
@@ -108,6 +122,7 @@ void main() {
           'android/app/src/apple/res/mipmap-hdpi/ic_launcher.png',
           'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset/Icon-App-20x20@1x.png',
           'macos/Runner/Assets.xcassets/AppIcon-apple.appiconset/app_icon_16.png',
+          'windows/runner/resources/apple.ico',
         ]),
       );
       expect(apple.keys.where((path) => path.contains('banana')), isEmpty);

@@ -51,6 +51,7 @@ final _dummies = DummyAssets({
   'ios/LaunchScreen.storyboard': DummyAssets.hashOf(utf8.encode('dummy')),
   'macos/Assets.xcassets/AppIcon.appiconset/app_icon_16.png':
       DummyAssets.hashOf(utf8.encode('dummy')),
+  'windows/app_icon.ico': DummyAssets.hashOf(utf8.encode('dummy')),
 });
 
 void main() {
@@ -73,6 +74,7 @@ void main() {
     Iterable<String> androidFlavors = const [],
     Iterable<String> iosFlavors = const [],
     Iterable<String> macosFlavors = const [],
+    Iterable<String> windowsFlavors = const [],
     Map<String, String> flavors = const {},
     Set<String>? available,
     Set<String> historical = const {},
@@ -82,6 +84,7 @@ void main() {
     androidFlavors: androidFlavors,
     iosFlavors: iosFlavors,
     macosFlavors: macosFlavors,
+    windowsFlavors: windowsFlavors,
     historicalFlavors: historical,
     flavors: flavors,
     availableProcessors: available ?? produced.keys.toSet(),
@@ -445,6 +448,137 @@ void main() {
         final adoption = await adopt(
           produced: {'ios:icons': const []},
           iosFlavors: ['../x', 'a/b', ''],
+        );
+
+        expect(adoption.lock.processors, isEmpty);
+      },
+    );
+  });
+
+  group('the dummy icons of 2.x on Windows', () {
+    const ico = 'windows/runner/resources/apple.ico';
+
+    test('that was never touched is managed by the icons processor', () async {
+      write(ico, 'dummy');
+
+      final adoption = await adopt(
+        produced: {'windows:icons': const []},
+        windowsFlavors: ['apple'],
+      );
+
+      expect(adoption.recorded, {
+        'windows:icons': [ico],
+      });
+      expect(
+        adoption.lock.processors['windows:icons']!.files[ico],
+        LockedFile(ownership: Ownership.managed, hash: 'managed:dummy'),
+      );
+      expect(adoption.userOwned, isEmpty);
+    });
+
+    test('that the user replaced is theirs, and not recorded', () async {
+      write(ico, 'my own icon');
+
+      final adoption = await adopt(
+        produced: {'windows:icons': const []},
+        windowsFlavors: ['apple'],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, [ico]);
+    });
+
+    test('is not the icon of the project', () async {
+      write('windows/runner/resources/app_icon.ico', 'dummy');
+
+      final adoption = await adopt(
+        produced: {'windows:icons': const []},
+        windowsFlavors: ['apple'],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, isEmpty);
+    });
+
+    test('is only looked for in the flavors of the platform', () async {
+      write(ico, 'dummy');
+
+      final adoption = await adopt(
+        produced: {'windows:icons': const []},
+        windowsFlavors: ['banana'],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, isEmpty);
+    });
+
+    test('is left alone when the run does not make icons', () async {
+      write(ico, 'dummy');
+
+      final adoption = await adopt(
+        produced: {'windows:cmake': const []},
+        windowsFlavors: ['apple'],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, isEmpty);
+    });
+
+    test(
+      'does not make the dummy icons of the other platforms Windows ones',
+      () async {
+        write('android/app/src/apple/res/mipmap-hdpi/ic_launcher.png', 'dummy');
+
+        final adoption = await adopt(
+          produced: {'windows:icons': const []},
+          androidFlavors: ['apple'],
+          windowsFlavors: ['apple'],
+        );
+
+        expect(adoption.lock.processors, isEmpty);
+      },
+    );
+
+    test('of a historical flavor are told by their hash alone', () async {
+      const cherry = 'windows/runner/resources/cherry.ico';
+      const banana = 'windows/runner/resources/banana.ico';
+
+      write(cherry, 'dummy');
+      write(banana, 'my own icon');
+
+      final adoption = await adopt(
+        produced: {
+          'windows:icons': [const Artifact.managed(banana)],
+        },
+        windowsFlavors: ['cherry', 'banana'],
+        historical: {'cherry', 'banana'},
+      );
+
+      expect(adoption.recorded['windows:icons'], [cherry]);
+      expect(adoption.userOwned, [banana]);
+    });
+
+    test('that the processor makes anyway is recorded once', () async {
+      write(ico, 'dummy');
+
+      final adoption = await adopt(
+        produced: {
+          'windows:icons': [const Artifact.managed(ico)],
+        },
+        windowsFlavors: ['apple'],
+      );
+
+      expect(adoption.recorded['windows:icons'], [ico]);
+    });
+
+    test(
+      'of a flavor with a name that is no folder is never looked for',
+      () async {
+        write('windows/runner/resources/.ico', 'dummy');
+
+        final adoption = await adopt(
+          produced: {'windows:icons': const []},
+          windowsFlavors: ['../x', 'a/b', ''],
         );
 
         expect(adoption.lock.processors, isEmpty);

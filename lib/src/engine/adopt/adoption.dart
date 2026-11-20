@@ -44,6 +44,9 @@ const iosIconsProcessorId = 'ios:icons';
 /// The processor that makes the app icons of macOS.
 const macosIconsProcessorId = 'macos:icons';
 
+/// The processor that makes the icons of Windows.
+const windowsIconsProcessorId = 'windows:icons';
+
 /// The processor that makes the launch screens of iOS, opt-in per flavor.
 const iosLaunchScreenProcessorId = 'ios:launchScreen';
 
@@ -57,7 +60,8 @@ class _DummyIcons {
   final String platform;
   final Iterable<String> flavors;
 
-  /// The folder a flavor has its icons in, with the trailing `/`.
+  /// Where a flavor has its icons: a folder with the trailing `/`, or the file
+  /// when it has a single one.
   final String Function(String flavor) folder;
 
   /// Whether the dummy asset at [path] is an icon of the processor: the launch
@@ -125,7 +129,8 @@ final class Adoption {
 /// in the lock: neither is recorded.
 ///
 /// What 3.0 no longer makes cannot be found in [produced]. The dummy icons of 2.x
-/// for the flavors in [androidFlavors], [iosFlavors] and [macosFlavors] (which may
+/// for the flavors in [androidFlavors], [iosFlavors], [macosFlavors] and
+/// [windowsFlavors] (which may
 /// name flavors the configuration no longer has) are looked for by hash (see [DummyAssets]): the ones still
 /// holding the bytes 2.x wrote are recorded as managed by the icons processor of
 /// their platform, which no longer makes them, so that the next run proposes to delete them. The
@@ -162,6 +167,7 @@ Future<Adoption> adoptProject({
   required Iterable<String> androidFlavors,
   Iterable<String> iosFlavors = const [],
   Iterable<String> macosFlavors = const [],
+  Iterable<String> windowsFlavors = const [],
   Set<String> historicalFlavors = const {},
   required Map<String, String> flavors,
   required Set<String> availableProcessors,
@@ -192,6 +198,13 @@ Future<Adoption> adoptProject({
       macosFlavors,
       (flavor) => 'macos/Runner/Assets.xcassets/AppIcon-$flavor.appiconset/',
       _inAppIconSet,
+    ),
+    _DummyIcons(
+      windowsIconsProcessorId,
+      'windows',
+      windowsFlavors,
+      (flavor) => 'windows/runner/resources/$flavor.ico',
+      _any,
     ),
   ];
   final present = <String, List<Artifact>>{};

@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
@@ -140,6 +141,73 @@ void main() {
         isNot(contains('$ios/AppIcon-banana.appiconset/Contents.json')),
       );
     });
+
+    test('classifies the dummy .ico of Windows by its hash: the one still as '
+        '2.x built it goes, the one the user replaced stays and is still '
+        'the icon of its flavor', () async {
+      const resources = 'windows/runner/resources';
+
+      project.dummyAssets = DummyAssets({
+        'windows/app_icon.ico': DummyAssets.hashOf(utf8.encode('dummy ico')),
+      });
+      project.write('$resources/apple.ico', 'dummy ico');
+      project.write('$resources/banana.ico', 'the logo of banana');
+      project.write('$resources/app_icon.ico', 'dummy ico');
+
+      final before = project.snapshot();
+      final code = await project.run(['adopt']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect({...project.snapshot()}..remove('flavorizr.lock'), before);
+
+      final lock = (await lockOf(project))!;
+
+      expect(lock.processors['windows:icons']!.files.keys, [
+        '$resources/apple.ico',
+      ]);
+      expect(project.logger.output, contains('$resources/banana.ico'));
+      expect(
+        project.logger.output,
+        isNot(contains(RegExp(r'Not adopted[^\n]*windows'))),
+      );
+
+      final changes = await planned(project);
+
+      expect(changes['$resources/apple.ico'], startsWith('deleted/'));
+      expect(changes, isNot(contains('$resources/banana.ico')));
+      expect(changes, isNot(contains('$resources/app_icon.ico')));
+      expect(
+        changes.values.where((change) => change.endsWith('/conflict')),
+        isEmpty,
+        reason: '$changes',
+      );
+    });
+
+    test(
+      'is followed by an apply that removes the dummy .ico, points the '
+      'flavor at the icon of the project and keeps the .ico of the user',
+      () async {
+        const resources = 'windows/runner/resources';
+
+        project.dummyAssets = DummyAssets({
+          'windows/app_icon.ico': DummyAssets.hashOf(utf8.encode('dummy ico')),
+        });
+        project.write('$resources/apple.ico', 'dummy ico');
+        project.write('$resources/banana.ico', 'the logo of banana');
+        await project.run(['adopt']);
+
+        final code = await project.run(['apply', '--yes', 'windows']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.exists('$resources/apple.ico'), isFalse);
+        expect(project.read('$resources/banana.ico'), 'the logo of banana');
+
+        final cmake = project.read('windows/runner/CMakeLists.txt');
+
+        expect(cmake, contains('banana.ico'));
+        expect(cmake, isNot(contains('apple.ico')));
+      },
+    );
 
     test('leaves the icons the user replaced alone', () async {
       await project.run(['adopt']);
