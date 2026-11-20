@@ -28,7 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/build_targets_processors.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_icon_name.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_icon_name.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

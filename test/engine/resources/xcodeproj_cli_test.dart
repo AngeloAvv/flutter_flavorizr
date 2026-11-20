@@ -29,7 +29,7 @@ import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_file_reference.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run.dart' as cli;
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
@@ -62,7 +62,7 @@ void main() {
               XcodeprojResource.iosArtifact,
               (xcodeproj) {
                 for (final file in files) {
-                  DarwinAddFileProcessor.addTo(xcodeproj, file);
+                  addFileToProject(xcodeproj, file);
                 }
               },
               error: failure,

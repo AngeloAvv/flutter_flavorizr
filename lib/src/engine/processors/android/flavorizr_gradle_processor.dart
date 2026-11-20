@@ -28,9 +28,9 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_groovy_generator.dart';
+import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_kotlin_generator.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_kotlin_processor.dart';
-import 'package:flutter_flavorizr/src/processors/android/build_gradle/android_flavorizr_legacy_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
 /// Writes `android/app/flavorizr.gradle(.kts)`, which declares the product
@@ -44,8 +44,8 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 /// `android/app/build.gradle` exists, otherwise Kotlin when
 /// `android/app/build.gradle.kts` does. The build file is a user input, so it
 /// is looked up in the real project and nothing needs to copy it to the
-/// workspace. The content is produced by the generators of the 2.x processors,
-/// which stay the single source of it until they are retired.
+/// workspace. The content is produced by [FlavorizrGradleGroovyGenerator] and
+/// [FlavorizrGradleKotlinGenerator].
 class FlavorizrGradleProcessor extends FlavorizrProcessor {
   /// Creates the processor.
   const FlavorizrGradleProcessor();
@@ -85,19 +85,19 @@ class FlavorizrGradleProcessor extends FlavorizrProcessor {
   static final _Dsl _groovy = _Dsl(
     buildPath: K.androidBuildLegacyPath,
     targetPath: K.androidFlavorizrLegacyPath,
-    generate: (ctx) => AndroidFlavorizrLegacyProcessor(
+    generate: (ctx) => FlavorizrGradleGroovyGenerator(
       config: ctx.config,
       logger: ctx.logger,
-    ).execute(),
+    ).generate(),
   );
 
   static final _Dsl _kotlin = _Dsl(
     buildPath: K.androidBuildKotlinPath,
     targetPath: K.androidFlavorizrKotlinPath,
-    generate: (ctx) => AndroidFlavorizrKotlinProcessor(
+    generate: (ctx) => FlavorizrGradleKotlinGenerator(
       config: ctx.config,
       logger: ctx.logger,
-    ).execute(),
+    ).generate(),
   );
 }
 

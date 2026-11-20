@@ -28,10 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_application_editor.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unsafe_title_setter_exception.dart';
-import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
 import 'package:test/test.dart';
-
-import '../../../test_utils.dart';
 
 const _titles = {'apple': 'Apple App', 'banana': 'Banana App'};
 
@@ -262,24 +259,17 @@ void main() {
       );
     });
 
-    test('adds the region right after a declaration whose setters read it, as '
-        '2.x did byte for byte', () {
+    test('adds the region right after a declaration whose setters read it', () {
       final patched = LinuxMyApplicationEditor.withWindowTitles(
         _readingTheVariable,
         _titles,
       );
-      final legacy = LinuxMyApplicationProcessor(
-        input: _readingTheVariable,
-        config: TestUtils.parseFlavorizr('test_resources/linux/pubspec'),
-        logger: TestUtils.quietLogger(),
-      ).execute();
 
       expect(
         _outsideTheRegions(patched),
         _outsideTheRegions(_readingTheVariable),
       );
       expect(patched, contains(_begin('window_title')));
-      expect(patched, legacy);
     });
 
     test('keeps the overrides of the setters that are still literals, since a '
