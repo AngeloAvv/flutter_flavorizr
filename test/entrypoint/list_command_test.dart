@@ -75,7 +75,7 @@ recipes:
 
       expect(project.logger.output, contains('android:icons [engine]'));
       expect(project.logger.output, contains('android:dummyAssets [legacy]'));
-      expect(project.logger.output, contains('huawei:agconnect [legacy]'));
+      expect(project.logger.output, contains('huawei:agconnect [engine]'));
       expect(project.logger.output, contains('ios:podfile [engine]'));
       expect(project.logger.output, contains('ios:buildTargets [engine]'));
       expect(project.logger.output, contains('ios:schema [engine]'));

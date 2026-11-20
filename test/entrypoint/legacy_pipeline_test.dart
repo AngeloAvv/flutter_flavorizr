@@ -44,30 +44,21 @@ flavors:
       name: Apple
     android:
       applicationId: com.example.apple
-      agconnect:
-        config: .huawei/apple/agconnect-services.json
   banana:
     app:
       name: Banana
     android:
       applicationId: com.example.banana
-      agconnect:
-        config: .huawei/banana/agconnect-services.json
+ide:
+  - idea
 ''');
 
-  /// What 'huawei:agconnect' writes for the flavors, the first of which is a
-  /// file of the engine in some tests and a file a 2.x processor writes in the
-  /// others.
-  const contents = 'android/app/src/apple/agconnect-services.json';
-  const icon20 = 'android/app/src/banana/agconnect-services.json';
+  /// What 'ide:config' writes for the flavors, the first of which is a file of
+  /// the engine in some tests and a file a 2.x processor writes in the others.
+  const contents = '.idea/runConfigurations/apple.xml';
+  const icon20 = '.idea/runConfigurations/banana.xml';
 
-  void writeIcon() {
-    for (final flavor in ['apple', 'banana']) {
-      File('.huawei/$flavor/agconnect-services.json')
-        ..parent.createSync(recursive: true)
-        ..writeAsStringSync('{"flavor": "$flavor"}');
-    }
-  }
+  void writeIcon() {}
 
   test('refuses to run on a project that is not the working directory', () {
     final elsewhere = Directory.systemTemp.createTempSync('flavorizr_legacy_');
@@ -132,14 +123,14 @@ flavors:
       writeIcon();
 
       await StandardLegacyPipeline(project).run(
-        [LegacyStep('huawei:agconnect', config)],
+        [LegacyStep('ide:config', config)],
         logger: logger,
         observer: observer,
       );
 
       expect(observer.events, [
-        'started huawei:agconnect',
-        'finished huawei:agconnect',
+        'started ide:config',
+        'finished ide:config',
       ]);
       expect(logger.progresses, 0, reason: 'the observer shows the step');
     });
@@ -167,8 +158,8 @@ flavors:
     Future<void> run(StepObserver observer) =>
         StandardLegacyPipeline(project).run(
           [
-            LegacyStep('huawei:agconnect', config),
-            LegacyStep('huawei:agconnect', config),
+            LegacyStep('ide:config', config),
+            LegacyStep('ide:config', config),
           ],
           logger: TestUtils.quietLogger(),
           observer: observer,
@@ -235,7 +226,7 @@ flavors:
 
     Future<void> icons(Set<String> preserve) =>
         StandardLegacyPipeline(project).run(
-          [LegacyStep('huawei:agconnect', config)],
+          [LegacyStep('ide:config', config)],
           logger: TestUtils.quietLogger(),
           preserve: preserve,
         );
@@ -286,7 +277,7 @@ flavors:
       expect(File(p.join(project.path, icon20)).existsSync(), isTrue);
 
       // A path the step does not write is not made by preserving it.
-      const absent = 'android/app/src/cherry/agconnect-services.json';
+      const absent = '.idea/runConfigurations/cherry.xml';
 
       await icons({absent});
 

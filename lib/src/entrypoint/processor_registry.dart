@@ -48,6 +48,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_processors
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/google/firebase_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/huawei/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/ide/ide_config_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
@@ -339,6 +340,9 @@ class ProcessorRegistry {
         const MacosFirebaseProcessor(),
         paths: {K.macOSRunnerPath, K.macOSFirebaseScriptPath},
       ),
+      // The AppGallery Connect configuration of the flavors: the copies are
+      // local.
+      EngineProcessor(const AGConnectProcessor(), paths: {K.androidSrcPath}),
       // The run configurations of the IDEs are local: the IDEs write to them,
       // and git ignores `.idea/`.
       EngineProcessor(

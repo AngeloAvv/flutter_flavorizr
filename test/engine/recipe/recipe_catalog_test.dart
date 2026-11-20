@@ -34,14 +34,15 @@ import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:test/test.dart';
 
 /// What `all` runs: the default instruction set, which has no starting files
-/// of a new app, with the Firebase processors of the engine where `google:firebase`
-/// of 2.x was.
+/// of a new app, with the Firebase and the AppGallery Connect processors of the
+/// engine before the IDE ones.
 final _allIds = [
   for (final id in Processor.defaultInstructionSet) ...[
-    if (id == 'huawei:agconnect') ...[
+    if (id == 'ide:config') ...[
       'android:firebase',
       'ios:firebase',
       'macos:firebase',
+      'huawei:agconnect',
     ],
     id,
   ],

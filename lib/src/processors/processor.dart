@@ -38,7 +38,6 @@ import 'package:flutter_flavorizr/src/processors/commons/apply_processor_by_exis
 import 'package:flutter_flavorizr/src/processors/commons/dynamic_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
-import 'package:flutter_flavorizr/src/processors/huawei/agconnect/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ide/ide_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/ios_plist_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_processor.dart';
@@ -102,9 +101,6 @@ class Processor extends AbstractProcessor<void> {
     'windows:cmake',
     'windows:dummyAssets',
     'windows:icons',
-
-    // Huawei
-    'huawei:agconnect',
 
     // IDE
     'ide:config',
@@ -316,13 +312,6 @@ class Processor extends AbstractProcessor<void> {
       'windows:cmake': () => ExistingFileStringProcessor(
         K.windowsRunnerCMakeListsPath,
         WindowsRunnerCMakeListsProcessor(config: flavorizr, logger: logger),
-        config: flavorizr,
-        logger: logger,
-      ),
-
-      // Huawei
-      'huawei:agconnect': () => AGConnectProcessor(
-        destination: K.androidSrcPath,
         config: flavorizr,
         logger: logger,
       ),
