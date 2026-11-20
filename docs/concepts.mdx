@@ -19,7 +19,9 @@ A run compares the three:
   lock and not in the yaml is removed from the project, together with what flavorizr generated for it;
 - the lock and the disk tell **what changed by hand** since the last run. A file that is not what
   flavorizr wrote is yours, and flavorizr asks before it changes it: see [Conflicts](/conflicts). That holds
-  for the processors on the engine, not for the [legacy ones](#engine-and-legacy-processors);
+  for the `managed` and `patched` files of the processors on the engine. It does not hold for the `local`
+  files (the run configurations of the IDEs, the Firebase copies), which are written again whatever you
+  changed, nor for the [legacy processors](#engine-and-legacy-processors);
 - the yaml and the disk tell **what is left to do**: that is the plan.
 
 `flavorizr.lock` is meant to be committed. Without it flavorizr cannot remove a flavor, and cannot tell

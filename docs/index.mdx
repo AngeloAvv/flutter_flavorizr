@@ -45,8 +45,9 @@ flutter run --flavor dev
 - **Plan and apply**: every run goes through a shadow copy of the project, which gives dry runs,
   diffs and writes that are all or nothing in practice
 - **Removes what it made**: drop a flavor from the yaml and its files, configurations and Android icons go
-- **Conflicts, not overwrites**: a generated file you edited is reported, and you choose what wins (for the
-  processors on the engine: see [Concepts](/concepts#engine-and-legacy-processors))
+- **Conflicts, not overwrites**: a generated file you edited is reported, and you choose what wins. It holds
+  for the managed and patched files of the processors on the engine, not for local files such as the IDE run
+  configurations: see [Concepts](/concepts#file-ownership)
 - **Icons and badge**: per-flavor launcher icons, with an optional band that names the flavor
 - **Recipes**: named lists of steps, instead of a flat list of instructions
 - **CI friendly**: `status` fails on drift, every command has stable exit codes, and `plan`, `apply`, `status` and `list` print `--json`

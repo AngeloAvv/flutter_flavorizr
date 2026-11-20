@@ -66,7 +66,9 @@ Delete it from the yaml. A run removes what flavorizr generated for it, which th
   Windows CMake lists, its keys and entries;
 - its **local** files, such as its run configuration of IntelliJ and Android Studio, and its entries in
   `.vscode/launch.json`. They are regenerated and removed without a conflict check, so a change of yours in
-  them goes too.
+  them goes too. A `launch.json` that cannot be read is left as it is, with a warning (see
+  [IDEs](/configuration/services#ides)): the entries of the flavor stay in it, and **only the run that
+  finds the flavor dropped removes them**, so remove them by hand.
 
 The scheme of an iOS or macOS flavor you drop stays: a scheme is a file you and Xcode edit too, so the lock only stops owning it. What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
 stays, and a build configuration of the flavor that holds a setting of yours stays in the project.

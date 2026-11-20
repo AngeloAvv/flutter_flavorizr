@@ -4,8 +4,10 @@ description: "What happens when a run has to write over a file you edited, and h
 ---
 
 A **conflict** is a file that a run has to change, and that was edited by hand since flavorizr last wrote
-it: writing it would lose your edit. flavorizr never overwrites such a file without your say, when it is
-written by a processor of the engine. The processors that are not on the engine yet (see
+it: writing it would lose your edit. flavorizr never overwrites such a file without your say, when it is a
+`managed` or `patched` file of a processor of the engine. The `local` files (the run configurations of the
+IDEs, the Firebase copies) are never checked: a run writes them again whatever you changed in them. The
+processors that are not on the engine yet (see
 [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)) do not track what they write, and
 write over it without asking.
 

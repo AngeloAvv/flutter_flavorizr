@@ -128,15 +128,24 @@ ide: [vscode, idea]
 IDEs write to it, and git ignores `.idea/`, so it is written again silently on
 every run, is never recorded in `flavorizr.lock`, and is never a conflict or
 drift (`status` does not mention it, and a fresh clone without `.idea/` is in
-sync).
+sync). That also means a change of yours in what it writes is lost at the next
+run, without a question.
 
 * `idea`: `.idea/runConfigurations/<flavor>.xml`, one file for each flavor,
-  written whole. The file of a flavor you drop is removed, and the other files
-  of the folder are yours.
+  written whole, every run: options you added to the run configuration of a
+  flavor are overwritten. The file of a flavor you drop is removed, and the
+  other files of the folder are yours.
 * `vscode`: `.vscode/launch.json` is created when there is none. When it exists
   only the entries named after a flavor (`<flavor> Debug`, `<flavor> Profile`
   and `<flavor> Release`) are added, replaced or, for a flavor you drop,
-  removed. The file is JSONC, as VS Code's own template is: the comments, the
-  trailing commas, the layout and your entries stay as they are. A file that
-  cannot be read is left alone, with a warning that prints the entries to add
-  by hand.
+  removed. An entry with one of those names is replaced by the one flavorizr
+  makes, so options you added to it are lost, and the second entry of a name is
+  deleted. The file is JSONC, as VS Code's own template is: the comments, the
+  trailing commas, the layout and your other entries stay as they are. A file
+  that cannot be read (a syntax error, or a `configurations` that is not a list) is left
+  alone, with a warning that prints the entries to add by hand, and the run
+  goes on with exit code `0`. Fix the file, or add those entries yourself.
+  The next run adds the entries of the flavors it misses, but a flavor you
+  dropped meanwhile is no longer known as dropped once a run has updated the
+  lock: remove its `<flavor> Debug`, `<flavor> Profile` and
+  `<flavor> Release` entries by hand.
