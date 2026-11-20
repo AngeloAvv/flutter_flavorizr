@@ -179,6 +179,7 @@ class ResourceLifecycle {
           previousKeys: ctx.previousKeys,
           previousFiles: ctx.previousFiles,
           selected: ctx.selected,
+          adopting: ctx.adopting,
           resources: {
             for (final key in step.processor.requires) key: open[key],
           },

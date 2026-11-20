@@ -74,6 +74,10 @@ abstract final class DarwinBuildConfigurations {
   /// The objects of the project that are there already are used as they are and
   /// not owned, unless [claimExisting] is set: it is for a project 2.x
   /// flavorized, whose objects flavorizr made and may remove with the flavor.
+  /// The configurations are claimed too when the run adopts the project
+  /// ([OwnedObjects.adopting]): the lock records the UUIDs 2.x gave them. The
+  /// reference to an xcconfig file is not: `ios:xcconfig` and `macos:configs`
+  /// own it, and it is claimed only when [claimExisting] says so.
   ///
   /// With [settings], the settings of [buildSettings] (and `PRODUCT_NAME` of
   /// the target) are set **key by key** on the configurations, the ones that
@@ -91,6 +95,7 @@ abstract final class DarwinBuildConfigurations {
     OwnedBuildSettings? settings,
   }) {
     final project = owned.project;
+    final claimConfigurations = claimExisting || owned.adopting;
     final target = project.nativeTargets.firstOrNull;
     final targetName = target?.name;
     final targetList = target?.buildConfigurationList;
@@ -116,7 +121,7 @@ abstract final class DarwinBuildConfigurations {
         flavor: flavor,
         kind: ['buildConfiguration', mode],
         existing: () => projectList[name],
-        claimExisting: claimExisting,
+        claimExisting: claimConfigurations,
         create: (config) {
           final base = projectList[mode];
 
@@ -141,7 +146,7 @@ abstract final class DarwinBuildConfigurations {
         flavor: flavor,
         kind: ['buildConfiguration', mode],
         existing: () => targetList[name],
-        claimExisting: claimExisting,
+        claimExisting: claimConfigurations,
         create: (config) {
           config.name = name;
           config.buildSettings = _copy(_targetSettings);

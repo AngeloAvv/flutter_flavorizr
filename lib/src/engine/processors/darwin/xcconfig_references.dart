@@ -53,7 +53,8 @@ const _xcconfigFileType = 'text.xcconfig';
 /// A file that is referenced already, wherever, is used and not duplicated. It is
 /// **foreign** (it is not owned, so it is never removed) unless the lock
 /// recorded it for the processor: it is what 2.x made, or the user, and only a
-/// lock tells which. It is given the type 2.x did not write
+/// lock tells which. The adoption of a project 2.x flavorized
+/// ([OwnedObjects.adopting]) is what records it. It is given the type 2.x did not write
 /// (`lastKnownFileType` is `text.xcconfig`, as Xcode has it) when it has none.
 ///
 /// The project is not opened or saved here: it is the shared one of the run.
@@ -71,6 +72,8 @@ PBXFileReference ensureXcconfigReference(
     kind: ['xcconfigFileReference', ...path.split('/')],
     existing: () =>
         project.files.where((file) => file.path == path).firstOrNull,
+    // The one 2.x made, when the run adopts the project: the lock records it.
+    claimExisting: owned.adopting,
     create: (file) {
       file.path = path;
       file.sourceTree = '<group>';

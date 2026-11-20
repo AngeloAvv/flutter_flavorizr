@@ -93,6 +93,9 @@ class PlanExecutor {
   /// [previousFiles] are the files the lock recorded, for any processor
   /// (`FlavorizrContext.hasPreviousFile`).
   ///
+  /// With [adopting], the processors read a project 2.x flavorized to learn what
+  /// to record as its baseline (`FlavorizrContext.adopting`).
+  ///
   /// [resources] must hold every resource the plan requires. A resource a step
   /// requires and is missing, and an invalid [paths], throw before anything is
   /// applied.
@@ -114,6 +117,7 @@ class PlanExecutor {
     Map<String, Map<String, Map<String, String>>> previousKeys = const {},
     Iterable<String> previousFiles = const [],
     Set<String> selected = const {},
+    bool adopting = false,
     Directory? tempParent,
   }) {
     final lifecycle = ResourceLifecycle(plan, resources);
@@ -133,6 +137,7 @@ class PlanExecutor {
           previousKeys: previousKeys,
           previousFiles: previousFiles,
           selected: selected,
+          adopting: adopting,
         );
         final completed = <String>[];
         String? currentId;

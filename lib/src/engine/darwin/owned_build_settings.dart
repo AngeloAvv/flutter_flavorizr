@@ -67,6 +67,10 @@ import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 /// conflict, before the project is written; the second one needs no baseline
 /// of the file, which other processors that write it move.
 ///
+/// When the run adopts a project 2.x flavorized (`OwnedObjects.adopting`), the
+/// lock records the hash of the value each key has in the project, which is not
+/// the one the run writes, and no edit is reported: the project is the baseline.
+///
 /// One instance per processor and project, for one `FlavorizrProcessor.apply`.
 final class OwnedBuildSettings {
   /// The scope of the configurations of the project.
@@ -116,6 +120,18 @@ final class OwnedBuildSettings {
 
     for (final setting in wanted.keys) {
       final key = keyOf(scope, config.uuid, setting);
+
+      // Adopting a project 2.x flavorized: the baseline is what is there, so
+      // the next run finds what it wrote in each key, and a key that is not
+      // there yet is just set.
+      if (_owned.adopting) {
+        if (before.containsKey(setting)) {
+          _written[key] = hashOf(before[setting]);
+        }
+
+        continue;
+      }
+
       final recorded = _previous[key];
       final found = before.containsKey(setting)
           ? hashOf(before[setting])

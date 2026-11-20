@@ -601,8 +601,8 @@ void main() {
       }
     });
 
-    test('uses the references 2.x made, with no duplicate, and owns none of '
-        'them: only the lock can tell whose they are', () async {
+    test('uses the references 2.x made, with no duplicate, and owns them: the '
+        'adoption of the project records the UUIDs they have', () async {
       final iosBefore = objectUuids(project.read(_iosPbxproj));
 
       // Without the build configurations, which are not what is tested here.
@@ -630,12 +630,20 @@ void main() {
       final iosAfter = objectUuids(project.read(_iosPbxproj));
       expect(iosAfter.difference(iosBefore), isEmpty);
       expect(iosBefore.difference(iosAfter), hasLength(6));
-      expect(await locked('ios:xcconfig', _iosPbxproj), isEmpty);
-      expect(await locked('macos:configs', _macosPbxproj), isEmpty);
+      expect(
+        await locked('ios:xcconfig', _iosPbxproj),
+        hasLength(6),
+        reason: 'the references 2.x made, with the UUIDs they have',
+      );
+      expect(await locked('macos:configs', _macosPbxproj), hasLength(6));
+      expect(
+        (await locked('ios:xcconfig', _iosPbxproj)).difference(iosBefore),
+        isEmpty,
+      );
     });
 
-    test('keeps the references 2.x made when a flavor is dropped, with no '
-        'dangling reference, though the files go', () async {
+    test('removes the references 2.x made when a flavor is dropped, since the '
+        'adoption recorded them, with no dangling reference', () async {
       await apply();
 
       project.write('flavorizr.yaml', _config(['apple']));
@@ -646,7 +654,12 @@ void main() {
       for (final pbxproj in [_iosPbxproj, _macosPbxproj]) {
         final text = project.read(pbxproj);
 
-        expect(text, contains('banana'), reason: pbxproj);
+        // The launch screens of 2.x are the user's: they stay, with the flavor.
+        expect(
+          text.replaceAll(RegExp('.*bananaLaunchScreen.*\\n'), ''),
+          isNot(contains('banana')),
+          reason: pbxproj,
+        );
         expect(danglingUuids(text), isEmpty, reason: pbxproj);
         expect(text, isNot(contains('xcconfig in Resources')), reason: pbxproj);
       }

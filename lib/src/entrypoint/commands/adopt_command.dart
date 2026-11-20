@@ -116,7 +116,7 @@ class AdoptCommand extends FlavorizrCommand {
     final adoption = run.adoption!;
     final recorded = adoption.recorded.values.expand((paths) => paths).length;
 
-    for (final path in adoption.userOwned) {
+    for (final path in [...adoption.userOwned, ...adoption.launchScreens]) {
       output.info('Yours, left alone: $path');
     }
 
