@@ -37,7 +37,12 @@ flavors:
 A run adds everything the flavor needs from the processors it runs: the Android product flavor, the xcconfig files, build
 configurations and scheme of Xcode, the mappings in the Podfile, the entries of the Flutter code and of the
 IDE configurations, and its icons when it has an `icon` or a [badge](/icons-and-badge). The flavors that
-already exist are not touched unless they changed.
+already exist are not touched unless they changed, with two exceptions: the run configurations of the
+IDEs are *local* files, written again on every run (a `.idea/runConfigurations/<flavor>.xml` of an existing
+flavor is rewritten whole, and so are its entries `<flavor> Debug`, `<flavor> Profile` and `<flavor> Release`
+in `.vscode/launch.json`, so options you added to them are lost), and the processors that are not on the
+engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)) write the files
+they own on every run, with no change detection.
 
 ## Changing a flavor
 
@@ -54,19 +59,22 @@ one**. When a removed and an added flavor have exactly the same configuration, `
 
 Delete it from the yaml. A run removes what flavorizr generated for it, which the lock knows:
 
-- the files that are **managed**: its xcconfig files, its icons, its entry in `flavorizr.gradle` and in the
-  Flutter code;
+- the files that are **managed**: its xcconfig files, its Android icons, its entry in `flavorizr.gradle`
+  and in the Flutter code;
 - its part of the **patched** files, and nothing else: its build configurations and the references to
   its xcconfig files in `project.pbxproj`, its mappings in the Podfile, its regions in the Linux and
   Windows CMake lists, its keys and entries;
-- its **local** files, such as its run configuration of IntelliJ and Android Studio.
+- its **local** files, such as its run configuration of IntelliJ and Android Studio, and its entries in
+  `.vscode/launch.json`. They are regenerated and removed without a conflict check, so a change of yours in
+  them goes too.
 
 The scheme of an iOS or macOS flavor you drop stays: a scheme is a file you and Xcode edit too, so the lock only stops owning it. What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
 stays, and a build configuration of the flavor that holds a setting of yours stays in the project.
 Files that you put in the project yourself, such as an icon in `src/<flavor>/res`, are never deleted.
 
-Removing goes through the [conflict](/conflicts) check like any other change: a generated file you
-edited asks before it is deleted.
+Removing goes through the [conflict](/conflicts) check like any other change: a managed or patched file you
+edited asks before it is deleted. Local files, and what the processors that are not on the engine yet wrote,
+are not checked.
 
 <Info>
   The processors that are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet))
@@ -103,7 +111,9 @@ a platform, is out of scope for 3.0. To do it:
 
 1. restore the files flavorizr changed from version control, or put the original values back;
 2. delete the files it generated, and `flavorizr.lock`;
-3. run flavorizr again with what remains in `flavorizr.yaml`.
+3. if flavors remain in `flavorizr.yaml`, run flavorizr again with them. If none remain, stop at step 2 and
+   remove the flavorizr configuration instead: a run with `flavors: {}` writes `lib/flavors.g.dart` and
+   `lib/flavors.dart` again.
 
 The check compares `flavorizr.yaml` with the lock only, whatever the targets, and it only knows what the
 lock records: a project with no `flavorizr.lock` is never refused. `status`, `list` and `doctor` do not

@@ -44,8 +44,9 @@ flutter run --flavor dev
   plists, `build.gradle`, the Podfile) is left alone
 - **Plan and apply**: every run goes through a shadow copy of the project, which gives dry runs,
   diffs and writes that are all or nothing in practice
-- **Removes what it made**: drop a flavor from the yaml and its files, configurations and icons go
-- **Conflicts, not overwrites**: a generated file you edited is reported, and you choose what wins
+- **Removes what it made**: drop a flavor from the yaml and its files, configurations and Android icons go
+- **Conflicts, not overwrites**: a generated file you edited is reported, and you choose what wins (for the
+  processors on the engine: see [Concepts](/concepts#engine-and-legacy-processors))
 - **Icons and badge**: per-flavor launcher icons, with an optional band that names the flavor
 - **Recipes**: named lists of steps, instead of a flat list of instructions
 - **CI friendly**: `status` fails on drift, every command has stable exit codes, and `plan`, `apply`, `status` and `list` print `--json`

@@ -25,8 +25,10 @@ flavors:
       icon: "assets/icon/dev_android.png"  # Android only
 ```
 
-An `icon` is a path relative to the project that stays inside it, links included. The icons are generated
-files, owned as **managed** and hashed in the lock, so editing one by hand is a conflict. The output is
+An `icon` is a path relative to the project that stays inside it, links included. The Android icons are
+generated files, owned as **managed** and hashed in the lock, so editing one by hand is a conflict. The iOS,
+macOS and Windows icons are made by 2.x processors that are not on the engine yet: they are not in the lock,
+and a run writes them over a hand edit without a conflict. The output is
 deterministic: the same sources always give the same bytes. Android flavors can also set an
 [`adaptiveIcon`](/configuration/android#adaptiveicon).
 

@@ -33,7 +33,8 @@ jobs:
 - the flavors of `flavorizr.yaml` and of the lock differ: a flavor was added, removed or changed without
   running `apply`;
 - a file is not what `flavorizr.yaml` asks for, or is missing;
-- a file that flavorizr generated was edited by hand.
+- a file that flavorizr generated was edited by hand. Only the processors on the engine are checked:
+  `status` lists the ones it cannot vouch for.
 
 What you edit in a file flavorizr only patches (the manifest, `build.gradle`) is not drift: only the part
 flavorizr owns is compared. The files of the `local` class (the run configurations of the IDEs, the
