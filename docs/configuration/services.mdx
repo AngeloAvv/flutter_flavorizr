@@ -139,13 +139,17 @@ run, without a question.
   only the entries named after a flavor (`<flavor> Debug`, `<flavor> Profile`
   and `<flavor> Release`) are added, replaced or, for a flavor you drop,
   removed. An entry with one of those names is replaced by the one flavorizr
-  makes, so options you added to it are lost, and the second entry of a name is
-  deleted. The file is JSONC, as VS Code's own template is: the comments, the
-  trailing commas, the layout and your other entries stay as they are. A file
-  that cannot be read (a syntax error, or a `configurations` that is not a list) is left
-  alone, with a warning that prints the entries to add by hand, and the run
-  goes on with exit code `0`. Fix the file, or add those entries yourself.
-  The next run adds the entries of the flavors it misses, but a flavor you
-  dropped meanwhile is no longer known as dropped once a run has updated the
-  lock: remove its `<flavor> Debug`, `<flavor> Profile` and
-  `<flavor> Release` entries by hand.
+  makes (when it differs from it), so options you added to it, **and the
+  comments inside it**, are lost, and the second entry of a name is deleted
+  with its comments. An entry that is the same as the one flavorizr makes is
+  not touched. The file is JSONC, as VS Code's own template is: the comments
+  outside those entries, the trailing commas, the layout and your other entries
+  stay as they are, and a new entry is laid out like the ones that are there. A
+  file that cannot be read (a syntax error, or a `configurations` that is not a
+  list) is left alone, with a warning that prints the entries to add by hand,
+  and the run goes on with exit code `0`. **Fix the syntax error first**: while
+  it is there VS Code cannot read the file either, whatever you add to it. Then
+  run flavorizr again, which adds the entries of the flavors it misses, or add
+  the printed entries yourself. A flavor you dropped meanwhile is no longer
+  known as dropped once a run has updated the lock: remove its
+  `<flavor> Debug`, `<flavor> Profile` and `<flavor> Release` entries by hand.
