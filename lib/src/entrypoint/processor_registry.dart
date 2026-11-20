@@ -36,6 +36,8 @@ import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest
 import 'package:flutter_flavorizr/src/engine/processors/android/flavorizr_gradle_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/build_settings_owned_content.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/build_targets_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_dummy_assets_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_icons_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/info_plist_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/launch_screen_processor.dart';
@@ -174,7 +176,7 @@ class ProcessorRegistry {
   }
 
   /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, build targets, schema, launch screen, Podfile and Info.plist processors that were ported
+  /// xcconfig, build targets, schema, icons, dummy assets, launch screen, Podfile and Info.plist processors that were ported
   /// run on the engine, every other 2.x
   /// instruction on the legacy pipeline.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
@@ -238,6 +240,12 @@ class ProcessorRegistry {
         paths: {K.iOSPListPath},
         ownedContent: {K.iOSPListPath: InfoPlistEditor.iosOwnedContent},
       ),
+      // The appiconsets of the flavors, in the asset catalog of the app. The
+      // placeholders of 2.x are not made anymore, but the ids stay.
+      const EngineProcessor(IosDummyAssetsProcessor(), paths: {}),
+      const EngineProcessor(MacosDummyAssetsProcessor(), paths: {}),
+      EngineProcessor(const IosIconsProcessor(), paths: {K.iOSAssetsPath}),
+      EngineProcessor(const MacosIconsProcessor(), paths: {K.macOSAssetsPath}),
       // The storyboards and the launch images of the flavors, in the asset
       // catalog of the app, and their references in the project.
       EngineProcessor(

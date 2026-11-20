@@ -45,19 +45,26 @@ abstract final class DarwinIconName {
   /// [settings] with the icon of the flavor [flavorName]: the set of the flavor
   /// when [hasIcon] or when [assetsPath] has it, [projectDefault] if not.
   /// [chosen] is whether the user wrote the setting: it is left as it is.
+  ///
+  /// A set that is in [assetsPath] is the user's, unless [generated]: it is one
+  /// flavorizr made (the lock says so), which it removes when the flavor has no
+  /// icon, so it does not count.
   static Map<String, dynamic> resolve(
     Map<String, dynamic> settings, {
     required String assetsPath,
     required String flavorName,
     required bool hasIcon,
     bool chosen = false,
+    bool generated = false,
   }) {
     if (chosen || settings[setting] != flavorSet) return settings;
 
-    final exists = Directory(
-      '$assetsPath/AppIcon-$flavorName.appiconset',
-    ).existsSync();
+    final exists =
+        !generated &&
+        Directory('$assetsPath/AppIcon-$flavorName.appiconset').existsSync();
 
-    return hasIcon || exists ? settings : {...settings, setting: projectDefault};
+    return hasIcon || exists
+        ? settings
+        : {...settings, setting: projectDefault};
   }
 }

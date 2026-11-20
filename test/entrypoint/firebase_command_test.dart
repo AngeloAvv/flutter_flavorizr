@@ -43,6 +43,8 @@ const _iosRun = [
   'ios:xcconfig',
   'ios:schema',
   'ios:buildTargets',
+  'ios:dummyAssets',
+  'ios:icons',
   'ios:podfile',
   'ios:firebase',
 ];
@@ -55,6 +57,8 @@ const _macosRun = [
   'macos:configs',
   'macos:schema',
   'macos:buildTargets',
+  'macos:dummyAssets',
+  'macos:icons',
   'macos:podfile',
   'macos:firebase',
 ];

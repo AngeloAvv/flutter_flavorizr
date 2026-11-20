@@ -41,6 +41,16 @@ final _dummies = DummyAssets({
   'android/res/mipmap-hdpi/ic_launcher.png': DummyAssets.hashOf(
     utf8.encode('dummy'),
   ),
+  'ios/Assets.xcassets/AppIcon.appiconset/Contents.json': DummyAssets.hashOf(
+    utf8.encode('dummy'),
+  ),
+  'ios/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png':
+      DummyAssets.hashOf(utf8.encode('dummy')),
+  'ios/Assets.xcassets/LaunchImage.imageset/LaunchImage.png':
+      DummyAssets.hashOf(utf8.encode('dummy')),
+  'ios/LaunchScreen.storyboard': DummyAssets.hashOf(utf8.encode('dummy')),
+  'macos/Assets.xcassets/AppIcon.appiconset/app_icon_16.png':
+      DummyAssets.hashOf(utf8.encode('dummy')),
 });
 
 void main() {
@@ -61,6 +71,8 @@ void main() {
   Future<Adoption> adopt({
     Map<String, Iterable<Artifact>> produced = const {},
     Iterable<String> androidFlavors = const [],
+    Iterable<String> iosFlavors = const [],
+    Iterable<String> macosFlavors = const [],
     Map<String, String> flavors = const {},
     Set<String>? available,
     Set<String> historical = const {},
@@ -68,6 +80,8 @@ void main() {
     projectRoot: root,
     produced: produced,
     androidFlavors: androidFlavors,
+    iosFlavors: iosFlavors,
+    macosFlavors: macosFlavors,
     historicalFlavors: historical,
     flavors: flavors,
     availableProcessors: available ?? produced.keys.toSet(),
@@ -271,6 +285,166 @@ void main() {
         final adoption = await adopt(
           produced: {'android:icons': const []},
           androidFlavors: ['../main/../../../x', 'a/b'],
+        );
+
+        expect(adoption.lock.processors, isEmpty);
+      },
+    );
+  });
+
+  group('the dummy icons of 2.x on iOS and macOS', () {
+    const iosSet = 'ios/Runner/Assets.xcassets/AppIcon-apple.appiconset';
+    const macosSet = 'macos/Runner/Assets.xcassets/AppIcon-apple.appiconset';
+
+    test('that were never touched are managed by the icons processor of '
+        'their platform', () async {
+      write('$iosSet/Contents.json', 'dummy');
+      write('$iosSet/Icon-App-20x20@2x.png', 'dummy');
+      write('$macosSet/app_icon_16.png', 'dummy');
+
+      final adoption = await adopt(
+        produced: {'ios:icons': const [], 'macos:icons': const []},
+        iosFlavors: ['apple'],
+        macosFlavors: ['apple'],
+      );
+
+      expect(adoption.recorded, {
+        'ios:icons': ['$iosSet/Contents.json', '$iosSet/Icon-App-20x20@2x.png'],
+        'macos:icons': ['$macosSet/app_icon_16.png'],
+      });
+      expect(
+        adoption.lock.processors['ios:icons']!.files['$iosSet/Contents.json'],
+        LockedFile(ownership: Ownership.managed, hash: 'managed:dummy'),
+      );
+    });
+
+    test('that the user replaced are theirs, and not recorded', () async {
+      write('$iosSet/Icon-App-20x20@2x.png', 'my own icon');
+      write('$macosSet/app_icon_16.png', 'my own icon');
+
+      final adoption = await adopt(
+        produced: {'ios:icons': const [], 'macos:icons': const []},
+        iosFlavors: ['apple'],
+        macosFlavors: ['apple'],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, [
+        '$iosSet/Icon-App-20x20@2x.png',
+        '$macosSet/app_icon_16.png',
+      ]);
+    });
+
+    test('are only looked for by the processor of their platform, and only in '
+        'the flavors of it', () async {
+      write('$iosSet/Contents.json', 'dummy');
+      write('$macosSet/app_icon_16.png', 'dummy');
+
+      final adoption = await adopt(
+        produced: {'ios:icons': const [], 'macos:icons': const []},
+        iosFlavors: ['banana'],
+        macosFlavors: const [],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, isEmpty);
+    });
+
+    test('are left alone when the run does not make icons', () async {
+      write('$iosSet/Contents.json', 'dummy');
+
+      final adoption = await adopt(
+        produced: {'ios:plist': const []},
+        iosFlavors: ['apple'],
+      );
+
+      expect(adoption.lock.processors, isEmpty);
+      expect(adoption.userOwned, isEmpty);
+    });
+
+    test(
+      'are not the launch images and storyboards, which are not icons',
+      () async {
+        const launch =
+            'ios/Runner/Assets.xcassets/appleLaunchImage.imageset/LaunchImage.png';
+
+        write(launch, 'dummy');
+        write('ios/Runner/appleLaunchScreen.storyboard', 'dummy');
+
+        final adoption = await adopt(
+          produced: {'ios:icons': const []},
+          iosFlavors: ['apple'],
+        );
+
+        expect(adoption.lock.processors, isEmpty);
+        expect(adoption.userOwned, isEmpty);
+      },
+    );
+
+    test('of a historical flavor are told by their hash alone, even when the '
+        'processor makes them from the settings of another flavor', () async {
+      const cherry =
+          'ios/Runner/Assets.xcassets/AppIcon-cherry.appiconset/Contents.json';
+
+      write('$iosSet/Contents.json', 'my own icons');
+      write(cherry, 'my own icons');
+
+      final adoption = await adopt(
+        produced: {
+          'ios:icons': [
+            const Artifact.managed('$iosSet/Contents.json'),
+            const Artifact.managed(cherry),
+          ],
+        },
+        iosFlavors: ['apple', 'cherry'],
+        historical: {'cherry'},
+      );
+
+      expect(adoption.recorded['ios:icons'], ['$iosSet/Contents.json']);
+      expect(adoption.userOwned, [cherry]);
+    });
+
+    test('of a historical flavor that were never touched are managed', () async {
+      const cherry =
+          'macos/Runner/Assets.xcassets/AppIcon-cherry.appiconset/app_icon_16.png';
+
+      write(cherry, 'dummy');
+
+      final adoption = await adopt(
+        produced: {
+          'macos:icons': [const Artifact.managed(cherry)],
+        },
+        macosFlavors: ['cherry'],
+        historical: {'cherry'},
+      );
+
+      expect(adoption.recorded['macos:icons'], [cherry]);
+    });
+
+    test('that the processor makes anyway are recorded once', () async {
+      write('$iosSet/Contents.json', 'dummy');
+
+      final adoption = await adopt(
+        produced: {
+          'ios:icons': [const Artifact.managed('$iosSet/Contents.json')],
+        },
+        iosFlavors: ['apple'],
+      );
+
+      expect(adoption.recorded['ios:icons'], ['$iosSet/Contents.json']);
+    });
+
+    test(
+      'of a flavor with a name that is no folder are never looked for',
+      () async {
+        write(
+          'ios/Runner/Assets.xcassets/AppIcon-.appiconset/Contents.json',
+          'dummy',
+        );
+
+        final adoption = await adopt(
+          produced: {'ios:icons': const []},
+          iosFlavors: ['../x', 'a/b', ''],
         );
 
         expect(adoption.lock.processors, isEmpty);

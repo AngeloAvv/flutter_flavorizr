@@ -24,6 +24,7 @@
  */
 
 import 'package:flutter_flavorizr/src/engine/adopt/adoption.dart';
+import 'package:flutter_flavorizr/src/engine/adopt/legacy_artifacts.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/step_observer.dart';
@@ -37,6 +38,33 @@ import 'package:mason_logger/mason_logger.dart';
 /// What the lock records for a flavor that was declared with `--flavors`: the
 /// configuration of such a flavor is not known.
 const adoptedFlavorFingerprint = 'adopted';
+
+/// What a run recorded as its baseline when the project had no lock and had
+/// files flavorizr made before there was one (see [findLegacyArtifacts]).
+///
+/// It lives in memory: only a run that writes (`apply`) puts it in
+/// `flavorizr.lock`, together with its changes, and a `plan` or a `status` never
+/// does.
+final class FirstRunAdoption {
+  /// The files that told the project was flavorized before: the first ones are
+  /// enough to say so.
+  final List<String> evidence;
+
+  /// What was recorded.
+  final Adoption adoption;
+
+  /// Whether only the processors of the run were adopted, since another one of
+  /// the default recipe could not read the project: the rest of it has no
+  /// baseline.
+  final bool partial;
+
+  /// Creates the record of an adoption.
+  const FirstRunAdoption({
+    required this.evidence,
+    required this.adoption,
+    this.partial = false,
+  });
+}
 
 /// The outcome of [runAdoption].
 final class AdoptRun {
@@ -90,7 +118,8 @@ FlavorizrConfig withHistoricalFlavors(
 /// their files are recorded too, so that the next run removes them, as it does
 /// for a flavor that was dropped.
 ///
-/// A processor that fails ends the run with nothing written.
+/// A processor that fails ends the run with nothing written. With [write] unset
+/// not even the lock is written: the baseline is only worked out and returned.
 Future<AdoptRun> runAdoption(
   CliContext context, {
   required FlavorizrConfig config,
@@ -98,6 +127,7 @@ Future<AdoptRun> runAdoption(
   required Set<String> named,
   required Logger logger,
   StepObserver? observer,
+  bool write = true,
 }) async {
   // A flavor of the configuration is never historical, whatever it is named.
   final historical = {
@@ -120,18 +150,25 @@ Future<AdoptRun> runAdoption(
     paths: plan.paths,
     resources: registry.resources,
     selected: plan.selected,
+    adopting: true,
     commit: (shadow, ctx) async {
       adoption = await adoptProject(
         projectRoot: context.projectRoot,
         produced: ctx.trackedByProcessor,
         androidFlavors: all.androidFlavors.keys,
+        iosFlavors: all.iosFlavors.keys,
+        macosFlavors: all.macosFlavors.keys,
         historicalFlavors: historical,
         flavors: recordedFlavors,
         availableProcessors: engineIdsFor(registry, config),
         flavorizrVersion: context.version,
         hasher: registry.hash,
         dummyAssets: context.dummyAssets,
+        ownedObjects: ctx.ownedObjects,
+        ownedKeys: ctx.ownedKeys,
       );
+
+      if (!write) return;
 
       try {
         await LockStore(
