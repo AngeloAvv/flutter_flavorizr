@@ -68,6 +68,13 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// said nothing about keeps what the lock had, and so does a file in
 /// [retained], where the keys the run meant to write are not.
 ///
+/// [written] are the paths the run writes to the project (the changes that
+/// are applied, and the conflicts that were approved). A file that several
+/// processors patch is hashed as a whole, so the processors that did not run
+/// have the hash of what the run wrote in their record of it, but only for the
+/// files that are written: a file the run tracked and left as it is still
+/// holds what it held, and an edit of it is still an edit for them.
+///
 /// [desiredFlavors] maps each flavor to the hash of its resolved configuration.
 /// It is recorded only when the run covers every one of [availableProcessors]:
 /// the flavors the lock records are the ones every processor applied, and a
@@ -83,6 +90,7 @@ FlavorizrLock updateLock({
   Set<String> retained = const {},
   Map<String, Map<String, Set<String>>> ownedObjects = const {},
   Map<String, Map<String, Map<String, String>>> ownedKeys = const {},
+  Set<String> written = const {},
 }) {
   final previousProcessors = previous?.processors ?? const {};
   final isFullRun =
@@ -154,6 +162,7 @@ FlavorizrLock updateLock({
         for (final file in entry.value.files.entries)
           if (file.value.ownership == Ownership.patched &&
               file.value.hash != null &&
+              written.contains(file.key) &&
               !retained.contains(file.key))
             file.key: file.value.hash!,
   });
@@ -264,8 +273,10 @@ void _refreshSharedFiles(
 
     processors[id] = ProcessorLock(
       files: files,
+      regions: record.regions,
       keys: record.keys,
       objects: record.objects,
+      inputs: record.inputs,
     );
   }
 }

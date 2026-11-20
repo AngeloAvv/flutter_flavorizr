@@ -31,6 +31,7 @@ import 'package:flutter_flavorizr/src/engine/conflict/conflict_policy.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
+import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
@@ -181,7 +182,15 @@ Future<EngineRun> runEngine(
       // processor of the default recipe cannot read what it is missing) is
       // adopted for the processors of this run.
       final candidates = [
-        (resolveRunPlan(registry: registry, config: config), false),
+        // Whatever the default recipe is: the baseline is the whole project.
+        (
+          resolveRunPlan(
+            registry: registry,
+            config: config,
+            targets: const [allRecipeName],
+          ),
+          false,
+        ),
         (plan, true),
       ];
       final tried = <String>{};

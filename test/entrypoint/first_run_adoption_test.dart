@@ -46,7 +46,8 @@ void main() {
     final other = project2x();
 
     addTearDown(other.dispose);
-    await other.run(['adopt']);
+    expect(await other.run(['adopt']), ExitCodes.ok);
+    expect(other.exists('flavorizr.lock'), isTrue);
 
     return planned(other);
   }
@@ -173,6 +174,26 @@ void main() {
         expect(await planned(project), isNot(contains(icon('banana', 'hdpi'))));
       },
     );
+
+    test('adopts the whole project, whatever the default recipe is', () async {
+      final yaml = project.read('flavorizr.yaml');
+
+      // The recipes are the last thing of the configuration.
+      project.write(
+        'flavorizr.yaml',
+        '${yaml.substring(0, yaml.indexOf('recipes:'))}'
+            'recipes:\n  default:\n    - android:icons\n',
+      );
+
+      final code = await project.run(['apply', '--yes', 'ios:xcconfig']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+
+      final lock = (await lockOf(project))!;
+
+      expect(lock.processors, contains('macos:schema'));
+      expect(lock.processors, contains('android:icons'));
+    });
 
     test('writes the lock when there is nothing else to write: a lost lock '
         'is recovered from the files', () async {

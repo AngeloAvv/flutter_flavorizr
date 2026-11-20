@@ -109,15 +109,34 @@ void main() {
     expect(found(['other']), isEmpty);
   });
 
-  test('does not follow a link, and ignores a name that is not a folder', () {
+  test('does not follow a link: not for a file it looks for', () {
     final outside = Directory.systemTemp.createTempSync('flavorizr_outside_');
 
     addTearDown(() => outside.deleteSync(recursive: true));
-    File(p.join(outside.path, 'flavors.dart')).writeAsStringSync('');
-    Directory(p.join(root.path, 'lib')).createSync();
+    File(p.join(outside.path, 'x')).writeAsStringSync('');
+    Directory(p.join(root.path, 'ios', 'Flutter')).createSync(recursive: true);
+    Directory(p.join(root.path, 'android', 'app')).createSync(recursive: true);
     Link(
-      p.join(root.path, 'lib', 'flavors.dart'),
-    ).createSync(p.join(outside.path, 'flavors.dart'));
+      p.join(root.path, 'ios', 'Flutter', 'devDebug.xcconfig'),
+    ).createSync(p.join(outside.path, 'x'));
+    Link(
+      p.join(root.path, 'android', 'app', 'flavorizr.gradle'),
+    ).createSync(p.join(outside.path, 'x'));
+
+    expect(found(), isEmpty);
+  });
+
+  test('does not go through a folder that is a link', () {
+    final outside = Directory.systemTemp.createTempSync('flavorizr_outside_');
+
+    addTearDown(() => outside.deleteSync(recursive: true));
+    File(p.join(outside.path, 'devDebug.xcconfig')).writeAsStringSync('');
+    Link(p.join(root.path, 'ios')).createSync(outside.path);
+
+    expect(found(), isEmpty);
+  });
+
+  test('ignores a name that is not a folder', () {
     write('ios/Flutter/DebugDebug.xcconfig');
 
     expect(found(['../x', '', 'a/b', '.']), isEmpty);

@@ -52,6 +52,7 @@ FlavorizrLock update({
   Iterable<StaleArtifact> stale = const [],
   Set<String> retained = const {},
   Map<String, Map<String, Set<String>>> objects = const {},
+  Set<String> written = const {},
 }) => updateLock(
   previous: previous,
   flavorizrVersion: '3.0.0',
@@ -62,6 +63,7 @@ FlavorizrLock update({
   stale: stale,
   retained: retained,
   ownedObjects: objects,
+  written: written,
 );
 
 const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
@@ -179,14 +181,42 @@ void main() {
           'ios:xcconfig': [patchedPbxproj],
         },
         hashes: {pbxproj: 'new'},
+        written: {pbxproj},
       );
 
       expect(lock.processors['ios:xcconfig']!.files[pbxproj]!.hash, 'new');
       expect(lock.processors['ios:firebase']!.files[pbxproj]!.hash, 'new');
+      final refreshed = lock.processors['ios:firebase']!;
+
+      expect(refreshed.regions, other.regions);
+      expect(refreshed.keys, other.keys);
+      expect(refreshed.objects, other.objects);
+      expect(refreshed.inputs, other.inputs);
       expect(
         lock.processors['ios:firebase']!.files['ios/Flutter/a.xcconfig'],
         managed('x'),
       );
+    });
+
+    test('a file the run tracked and did not write is not refreshed for the '
+        'others: an edit of theirs is still an edit', () {
+      LockedFile patched(String hash) =>
+          LockedFile(ownership: Ownership.patched, hash: hash);
+
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'ios:xcconfig': ProcessorLock(files: {pbxproj: patched('old')}),
+            'ios:firebase': ProcessorLock(files: {pbxproj: patched('old')}),
+          },
+        ),
+        produced: {
+          'ios:xcconfig': [patchedPbxproj],
+        },
+        hashes: {pbxproj: 'edited'},
+      );
+
+      expect(lock.processors['ios:firebase']!.files[pbxproj]!.hash, 'old');
     });
 
     test('a file the run kept as the user has it is not refreshed for the '
@@ -205,6 +235,7 @@ void main() {
           'ios:xcconfig': [patchedPbxproj],
         },
         hashes: {pbxproj: 'new'},
+        written: {pbxproj},
         retained: {pbxproj},
       );
 

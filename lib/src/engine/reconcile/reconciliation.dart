@@ -132,8 +132,17 @@ final class Reconciliation {
         stale.path,
     };
 
+    final written = {
+      for (final change in diff.changes)
+        if (change.disposition == ChangeDisposition.apply ||
+            (change.disposition == ChangeDisposition.conflict &&
+                resolution.approved.contains(change.path)))
+          change.path,
+    };
+
     return updateLock(
       previous: _previous,
+      written: written,
       flavorizrVersion: _flavorizrVersion,
       produced: _produced,
       ownedHashes: _ownedHashes,
