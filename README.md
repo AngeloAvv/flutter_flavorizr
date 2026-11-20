@@ -397,6 +397,10 @@ the default icon of the project**: the `main` resources on Android,
 `AppIcon` on iOS and macOS, `app_icon.ico` on Windows. An icon you put in the
 project yourself (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
 `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
+The sets of `ios:icons` and `macos:icons` (`AppIcon-<flavor>.appiconset`) are
+generated whole and tracked in `flavorizr.lock`: a flavor that loses its `icon`
+(and has no badge), or that is dropped, has its set removed on the next run, and
+an edit of a generated file is a conflict.
 `generateDummyAssets` is deprecated and ignored.
 
 #### Icon badge
@@ -447,9 +451,9 @@ flavors:
   says why.
 * Changing the label or the colour makes the icons again on the next run, and
   `badge: false` makes the icons of the `icon` without it. The icons of the
-  iOS, macOS and Windows flavors that have a badge and no `icon` stay in the
-  project when the badge goes: they are those of the 2.x processors, which do
-  not track what they write.
+  flavors that have a badge and no `icon` are removed when the badge goes, on
+  Android, iOS and macOS, which track what they write; the ones of Windows stay
+  in the project, as `windows:icons` is a 2.x processor.
 
 #### Launch screen
 

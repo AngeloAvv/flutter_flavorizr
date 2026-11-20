@@ -38,7 +38,7 @@ configurations of the IDEs are regenerated silently: neither is recorded.
 
 ### The dummy icons
 
-2.x copied dummy launcher icons for a flavor. 3.x does not make them: a flavor
+2.x copied dummy launcher icons and app icons for a flavor. 3.x does not make them: a flavor
 with no icon uses the default icon of the project. `adopt` recognises them by
 comparing each file with a table of the hashes of the dummy assets of 2.x:
 
@@ -47,11 +47,12 @@ comparing each file with a table of the hashes of the dummy assets of 2.x:
 * a file that has other bytes is **yours**: it is not recorded, it is listed as
   such, and no run deletes or overwrites it.
 
-Today this covers the Android icons (`android/app/src/<flavor>/res/mipmap-*`).
-The iOS and macOS icons, the launch screens and the Xcode project are made by
-2.x processors that are not on the engine yet: `adopt` lists them as not
-adopted, and does not record them. The Xcode project is never rewritten, and
-neither are its object identifiers.
+This covers the Android icons (`android/app/src/<flavor>/res/mipmap-*`) and the
+iOS and macOS app icons (`ios/Runner/Assets.xcassets/AppIcon-<flavor>.appiconset`
+and the one of macOS). The launch images and storyboards of 2.x are not icons:
+`ios:launchScreen` treats them as yours. The Xcode project is never rewritten,
+and neither are its object identifiers. The run that deletes the dummy set of a
+flavor also points the flavor at the `AppIcon` of the project.
 
 ## Flavors that are not in `flavorizr.yaml` anymore
 
@@ -77,6 +78,6 @@ icons and the xcconfigs, and records the ones that exist. The next `plan` shows
 the flavors as removed, and the files as deleted. The settings of the flavors
 are not known, so they are looked for as the settings of the flavors of
 `flavorizr.yaml`, for each platform. That is enough to tell the name of a file,
-not who owns it: the launcher icons of such a flavor are recorded only when they
-still have the bytes of the dummy icons of 2.x, whatever icon the flavors of
+not who owns it: the launcher icons and the app icons of such a flavor are recorded only when
+they still have the bytes of the dummy icons of 2.x, whatever icon the flavors of
 `flavorizr.yaml` have.
