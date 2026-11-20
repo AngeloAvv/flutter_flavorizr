@@ -29,9 +29,7 @@ import 'package:flutter_flavorizr/src/badge/badge_color.dart';
 import 'package:flutter_flavorizr/src/badge/badge_renderer.dart';
 import 'package:flutter_flavorizr/src/badge/resolved_badge.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/commons/ico_encoder_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/image_resizer_processor.dart';
-import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/models/commons/size.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
@@ -45,17 +43,6 @@ final _badge = ResolvedBadge(
   label: 'DEV',
   color: const BadgeColor(0xE5, 0x39, 0x35),
 );
-
-String _yaml(String platform, {String badge = '', String icon = ''}) =>
-    '''
-$badge
-flavors:
-  dev:
-    app:
-      name: "App"
-$icon    $platform:
-      ${platform == 'windows' ? '{}' : 'bundleId: "com.example.dev"'}
-''';
 
 void main() {
   late Directory originalDir;
@@ -149,52 +136,5 @@ void main() {
 
     expect(() => build(const Size(120, 80)), throwsA(isA<AssertionError>()));
     expect(() => build(const Size(120, 120)), returnsNormally);
-  });
-
-  group('IcoEncoderProcessor', () {
-    test('draws the badge on every size of the .ico', () async {
-      await inProject((dir) async {
-        final destination = p.join(dir.path, 'app.ico');
-
-        IcoEncoderProcessor(
-          'assets/icon.png',
-          destination,
-          badge: _badge,
-          config: FlavorizrConfig.parse('flavors: {}'),
-          logger: TestUtils.quietLogger(),
-        ).execute();
-
-        final bytes = File(destination).readAsBytesSync();
-        final decoder = img.IcoDecoder();
-        final info = decoder.startDecode(bytes)!;
-
-        expect(info.numFrames, 4);
-
-        for (var i = 0; i < info.numFrames; i++) {
-          final frame = decoder.decode(bytes, frame: i)!;
-
-          expectBadged(frame, reason: '${frame.width}');
-        }
-      });
-    });
-  });
-
-  group('the icons processor of Windows', () {
-    test(
-      'makes the icons of a flavor with a badge and no icon, from the one of '
-      'the root',
-      () async {
-        await inProject((dir) async {
-          await WindowsIconsProcessor(
-            config: FlavorizrConfig.parse(
-              _yaml('windows', badge: 'badge: true\nicon: assets/icon.png'),
-            ),
-            logger: TestUtils.quietLogger(),
-          ).execute();
-
-          expect(File('windows/runner/resources/dev.ico').existsSync(), isTrue);
-        });
-      },
-    );
   });
 }

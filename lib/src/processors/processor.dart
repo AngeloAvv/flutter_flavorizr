@@ -44,8 +44,6 @@ import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_process
 import 'package:flutter_flavorizr/src/processors/linux/linux_my_application_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_runner_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/macos/macos_plist_processor.dart';
-import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icons_processor.dart';
-import 'package:flutter_flavorizr/src/processors/windows/windows_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/windows_main_cpp_template_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/windows_runner_cmake_lists_processor.dart';
 import 'package:flutter_flavorizr/src/processors/windows/windows_runner_rc_template_processor.dart';
@@ -317,10 +315,6 @@ class Processor extends AbstractProcessor<void> {
         config: flavorizr,
         logger: logger,
       ),
-      'windows:dummyAssets': () =>
-          WindowsDummyAssetsProcessor(config: flavorizr, logger: logger),
-      'windows:icons': () =>
-          WindowsIconsProcessor(config: flavorizr, logger: logger),
 
       // IDE
       'ide:config': () => IDEProcessor(config: flavorizr, logger: logger),

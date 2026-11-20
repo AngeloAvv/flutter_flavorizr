@@ -28,8 +28,8 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_icons_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/windows/icons/windows_icons_processor.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -289,15 +289,21 @@ flavors:
 
     test('Windows .ico, 16 to 256 px, with a label that is cut', () async {
       await inProject((project) async {
-        await WindowsIconsProcessor(
-          config: FlavorizrConfig.parse(
-            yaml('windows', '{ label: PRODUCTION, color: "#6D4C41" }'),
+        final root = Directory(p.join(project.path, 'out'))..createSync();
+
+        await const WindowsIconsProcessor().apply(
+          FlavorizrContext(
+            config: FlavorizrConfig.parse(
+              yaml('windows', '{ label: PRODUCTION, color: "#6D4C41" }'),
+            ),
+            root: root,
+            projectRoot: project,
+            logger: TestUtils.quietLogger(),
           ),
-          logger: TestUtils.quietLogger(),
-        ).execute();
+        );
 
         final bytes = File(
-          'windows/runner/resources/dev.ico',
+          p.join(root.path, 'windows/runner/resources/dev.ico'),
         ).readAsBytesSync();
         final decoder = img.IcoDecoder();
         final info = decoder.startDecode(bytes)!;

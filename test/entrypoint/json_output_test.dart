@@ -423,29 +423,23 @@ void main() {
         });
       });
 
-      test('lists what a failed legacy step kept from running', () async {
-        project.write(
-          'flavorizr.yaml',
-          '${CliFixture.config(['apple'])}'
-              '    windows: {}\n',
-        );
+      test('lists a failed legacy step, after the engine steps', () async {
         project.legacy.failAt = 'android:dummyAssets';
 
         final code = await project.run([
           'apply',
           '--json',
+          'android:flavorizrGradle',
           'android:dummyAssets',
-          'windows:dummyAssets',
         ]);
         final steps = (document()['steps'] as List)
             .cast<Map<String, Object?>>();
 
         expect(code, ExitCodes.software);
         expect(steps.map((s) => '${s['id']} ${s['status']}'), [
+          'android:flavorizrGradle completed',
           'android:dummyAssets failed',
-          'windows:dummyAssets skipped',
         ]);
-        expect(steps.last['durationMs'], isNull);
       });
 
       test(

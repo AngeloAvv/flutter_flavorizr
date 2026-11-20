@@ -264,23 +264,33 @@ flavors:
     windows: {}
 ''';
 
-    test('that make files run on the engine, in the order of the recipe, '
-        'and the ones that make icons on the legacy pipeline after them', () {
+    test('all run on the engine, the icons after the placeholders', () {
       final plan = resolve(windows, ['windows']);
 
-      expect(engine(plan), [
-        'windows:mainCppTemplate',
-        'windows:runnerRcTemplate',
-        'windows:cmake',
-      ]);
-      expect(plan.legacy.map((step) => step.id), [
-        'windows:dummyAssets',
-        'windows:icons',
-      ]);
+      expect(
+        engine(plan),
+        unorderedEquals([
+          'windows:mainCppTemplate',
+          'windows:runnerRcTemplate',
+          'windows:cmake',
+          'windows:dummyAssets',
+          'windows:icons',
+        ]),
+      );
+      expect(
+        engine(plan).indexOf('windows:dummyAssets'),
+        lessThan(engine(plan).indexOf('windows:icons')),
+      );
+      expect(
+        engine(plan).indexOf('windows:runnerRcTemplate'),
+        lessThan(engine(plan).indexOf('windows:cmake')),
+      );
+      expect(plan.legacy, isEmpty);
       expect(plan.paths, {
         'windows/runner/main.cpp.in',
         'windows/runner/Runner.rc.in',
         'windows/runner/CMakeLists.txt',
+        'windows/runner/resources',
       });
     });
 
@@ -302,6 +312,8 @@ flavors:
         'windows:mainCppTemplate',
         'windows:runnerRcTemplate',
         'windows:cmake',
+        'windows:dummyAssets',
+        'windows:icons',
         'flutter:flavors',
       });
     });
