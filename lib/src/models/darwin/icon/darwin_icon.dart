@@ -31,11 +31,8 @@ abstract class DarwinIcon {
   final DarwinIdiom idiom;
   final int scale;
 
-  const DarwinIcon({
-    required this.size,
-    required this.idiom,
-    required this.scale,
-  });
+  const DarwinIcon(
+      {required this.size, required this.idiom, required this.scale});
 
   String get fileName;
 
@@ -44,11 +41,11 @@ abstract class DarwinIcon {
     final strSize = size.toStringAsFixed(digits);
 
     return {
-      'size': '${strSize}x$strSize',
-      'idiom': idiom.value,
-      'scale': '${scale}x',
-      'filename': fileName,
-    };
+        'size': '${strSize}x$strSize',
+        'idiom': idiom.value,
+        'scale': '${scale}x',
+        'filename': fileName,
+      };
   }
 
   Size get imageSize => Size(size * scale, size * scale);

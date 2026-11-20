@@ -253,21 +253,20 @@ abstract class TargetCommand extends FlavorizrCommand {
   /// It is meant to run before anything is done, whatever the targets: it
   /// compares the configuration with the lock, and nothing is written. See
   /// [checkRemoval].
-  Future<void> checkNothingIsDropped(FlavorizrConfig config) async =>
-      checkRemoval(
-        previous: await LockStore(
-          context.projectRoot,
-          runningVersion: context.version,
-        ).read(),
-        flavors: config.flavors.keys.toSet(),
-        platforms: {
-          if (config.androidFlavorsAvailable) 'android',
-          if (config.iosFlavorsAvailable) 'ios',
-          if (config.macosFlavorsAvailable) 'macos',
-          if (config.linuxFlavorsAvailable) 'linux',
-          if (config.windowsFlavorsAvailable) 'windows',
-        },
-      );
+  Future<void> checkNothingIsDropped(FlavorizrConfig config) async => checkRemoval(
+    previous: await LockStore(
+      context.projectRoot,
+      runningVersion: context.version,
+    ).read(),
+    flavors: config.flavors.keys.toSet(),
+    platforms: {
+      if (config.androidFlavorsAvailable) 'android',
+      if (config.iosFlavorsAvailable) 'ios',
+      if (config.macosFlavorsAvailable) 'macos',
+      if (config.linuxFlavorsAvailable) 'linux',
+      if (config.windowsFlavorsAvailable) 'windows',
+    },
+  );
 
   /// What the processors of the engine would change, or `null` when there are
   /// none. Fails when one of them does.

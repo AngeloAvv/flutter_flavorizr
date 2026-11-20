@@ -495,7 +495,8 @@ void main() {
                 [
                   onIos(
                     'test:ios',
-                    (project) => addFileToProject(project, 'a.xcconfig'),
+                    (project) =>
+                        addFileToProject(project, 'a.xcconfig'),
                   ),
                 ],
                 requested: ['test:ios'],
@@ -538,10 +539,16 @@ void main() {
       'is not shared between runs: a resource opens afresh every time',
       () async {
         await run([
-          onIos('test:a', (project) => addFileToProject(project, 'a.xcconfig')),
+          onIos(
+            'test:a',
+            (project) => addFileToProject(project, 'a.xcconfig'),
+          ),
         ]);
         await run([
-          onIos('test:b', (project) => addFileToProject(project, 'a.xcconfig')),
+          onIos(
+            'test:b',
+            (project) => addFileToProject(project, 'a.xcconfig'),
+          ),
         ]);
 
         // The second run found the file reference the first one saved: no change.
@@ -560,7 +567,8 @@ void main() {
                 [
                   onIos(
                     'test:ios',
-                    (project) => addFileToProject(project, 'a.xcconfig'),
+                    (project) =>
+                        addFileToProject(project, 'a.xcconfig'),
                   ),
                 ],
                 requested: ['test:ios'],

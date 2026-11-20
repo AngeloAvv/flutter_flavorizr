@@ -32,9 +32,7 @@ void main() {
   test(
     'Windows flavors default generateDummyAssets to true and icon to null when only `windows: {}` is set',
     () {
-      final flavorizr = TestUtils.parseFlavorizr(
-        'test_resources/windows/pubspec',
-      );
+      final flavorizr = TestUtils.parseFlavorizr('test_resources/windows/pubspec');
 
       expect(flavorizr.windowsFlavorsAvailable, isTrue);
       expect(flavorizr.windowsFlavors.keys, containsAll(['apple', 'banana']));

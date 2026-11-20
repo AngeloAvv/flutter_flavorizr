@@ -125,8 +125,7 @@ class K {
 
   static String windowsRunnerPath = '$windowsPath/runner';
 
-  static String windowsRunnerCMakeListsPath =
-      '$windowsRunnerPath/CMakeLists.txt';
+  static String windowsRunnerCMakeListsPath = '$windowsRunnerPath/CMakeLists.txt';
 
   static String windowsMainCppPath = '$windowsRunnerPath/main.cpp';
 

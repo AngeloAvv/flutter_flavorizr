@@ -76,26 +76,19 @@ void main() {
     expect(resolve(defaults)[DarwinIconName.setting], DarwinIconName.flavorSet);
   });
 
-  test(
-    'a set that flavorizr made is not the one of the flavor, which is on its '
-    'way out',
-    () {
-      Directory(p.join(assets.path, 'AppIcon-apple.appiconset')).createSync();
+  test('a set that flavorizr made is not the one of the flavor, which is on its '
+      'way out', () {
+    Directory(p.join(assets.path, 'AppIcon-apple.appiconset')).createSync();
 
-      expect(
-        resolve(defaults, generated: true)[DarwinIconName.setting],
-        'AppIcon',
-      );
-      expect(
-        resolve(
-          defaults,
-          hasIcon: true,
-          generated: true,
-        )[DarwinIconName.setting],
-        DarwinIconName.flavorSet,
-      );
-    },
-  );
+    expect(
+      resolve(defaults, generated: true)[DarwinIconName.setting],
+      'AppIcon',
+    );
+    expect(
+      resolve(defaults, hasIcon: true, generated: true)[DarwinIconName.setting],
+      DarwinIconName.flavorSet,
+    );
+  });
 
   test('the set of another flavor is not the one of this flavor', () {
     Directory(p.join(assets.path, 'AppIcon-banana.appiconset')).createSync();
