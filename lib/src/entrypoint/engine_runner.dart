@@ -171,6 +171,10 @@ Future<EngineRun> runEngine(
               const <MapEntry<String, ProcessorLock>>[])
         if (lock.keys.isNotEmpty) id: lock.keys,
     },
+    previousFiles: [
+      for (final lock in previous?.processors.values ?? const <ProcessorLock>[])
+        ...lock.files.keys,
+    ],
     commit: (shadow, ctx) async {
       final reconciliation = await reconcile(
         projectRoot: shadow.projectRoot,

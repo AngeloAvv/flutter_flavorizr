@@ -664,8 +664,7 @@ CMake and `Runner.rc`, so it has to be made of letters, digits, `_`, `-` and
 with any extension).
 
 
-Every other instruction (the other `ios:*` and `macos:*`,
-`windows:dummyAssets`, `windows:icons`, `google:firebase`, `huawei:agconnect`, `ide:config`,
+Every other instruction (`windows:dummyAssets`, `windows:icons`, `google:firebase`, `huawei:agconnect`, `ide:config`,
 `android:dummyAssets`) still is a 2.x processor. They
 are not dropped: `apply` runs them with the 2.x pipeline, **after** the engine,
 straight on the project. That means they have no preview in `plan`, no conflict

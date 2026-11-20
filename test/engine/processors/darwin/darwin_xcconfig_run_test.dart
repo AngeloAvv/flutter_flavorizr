@@ -53,6 +53,10 @@ const _targets = [
   'macos:schema',
   'ios:buildTargets',
   'macos:buildTargets',
+  'ios:dummyAssets',
+  'ios:icons',
+  'macos:dummyAssets',
+  'macos:icons',
   'ios:podfile',
   'macos:podfile',
 ];

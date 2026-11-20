@@ -158,6 +158,72 @@ void main() {
       );
     });
 
+    test('classifies the dummy icons of iOS and macOS by their hash: the ones '
+        'still as 2.x wrote them go, the ones the user replaced stay', () async {
+      String hashOfGolden(String path) => DummyAssets.hashOf(
+        File(p.join(_golden.path, path)).readAsBytesSync(),
+      );
+
+      const ios = 'ios/Runner/Assets.xcassets';
+      const macos = 'macos/Runner/Assets.xcassets';
+
+      // The golden has no binary files: the Contents.json of the sets are what
+      // is there to tell by.
+      project.dummyAssets = DummyAssets({
+        'ios/Assets.xcassets/AppIcon.appiconset/Contents.json': hashOfGolden(
+          '$ios/AppIcon-apple.appiconset/Contents.json',
+        ),
+        'macos/Assets.xcassets/AppIcon.appiconset/Contents.json': hashOfGolden(
+          '$macos/AppIcon-apple.appiconset/Contents.json',
+        ),
+      });
+      project.write(
+        '$ios/AppIcon-banana.appiconset/Contents.json',
+        '{"images":[],"info":{"version":1,"author":"me"}}',
+      );
+
+      final code = await project.run(['adopt']);
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+
+      final lock = (await _lockOf(project))!;
+
+      expect(lock.processors['ios:icons']!.files.keys, [
+        '$ios/AppIcon-apple.appiconset/Contents.json',
+      ]);
+      expect(
+        lock.processors['macos:icons']!.files.keys,
+        unorderedEquals([
+          '$macos/AppIcon-apple.appiconset/Contents.json',
+          '$macos/AppIcon-banana.appiconset/Contents.json',
+        ]),
+      );
+      expect(
+        project.logger.output,
+        contains('$ios/AppIcon-banana.appiconset/Contents.json'),
+      );
+
+      final changes = await _planned(project);
+
+      expect(
+        changes.values.where((change) => change.endsWith('/conflict')),
+        isEmpty,
+        reason: '$changes',
+      );
+      expect(
+        changes['$ios/AppIcon-apple.appiconset/Contents.json'],
+        startsWith('deleted/'),
+      );
+      expect(
+        changes['$macos/AppIcon-banana.appiconset/Contents.json'],
+        startsWith('deleted/'),
+      );
+      expect(
+        changes,
+        isNot(contains('$ios/AppIcon-banana.appiconset/Contents.json')),
+      );
+    });
+
     test('is what makes a plan of the project reviewable', () async {
       // Without a baseline, what 2.x wrote cannot be told from what the user
       // wrote: the files are conflicts.

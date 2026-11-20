@@ -43,6 +43,7 @@ void main() {
     Set<String> previousFlavors = const {},
     String? processorId,
     Map<String, Map<String, Set<String>>> previousObjects = const {},
+    Set<String> previousFiles = const {},
   }) => FlavorizrContext(
     config: config,
     root: root,
@@ -51,6 +52,7 @@ void main() {
     previousFlavors: previousFlavors,
     processorId: processorId,
     previousObjects: previousObjects,
+    previousFiles: previousFiles,
   );
 
   setUp(() {
@@ -83,6 +85,28 @@ flavors:
       expect(ctx.previousFlavors, {'apple', 'cherry'});
       expect(ctx.root.path, root.path);
       expect(ctx.projectRoot.path, projectRoot.path);
+    });
+
+    group('hasPreviousFile', () {
+      test('is whether the lock recorded the file, or a file below the folder', () {
+        final ctx = buildContext(
+          previousFiles: {'a/set/Contents.json', 'b.txt'},
+        );
+
+        expect(ctx.hasPreviousFile('b.txt'), isTrue);
+        expect(ctx.hasPreviousFile('a/set'), isTrue);
+        expect(ctx.hasPreviousFile('a/set/'), isTrue);
+        expect(ctx.hasPreviousFile('a/se'), isFalse);
+        expect(ctx.hasPreviousFile('c'), isFalse);
+      });
+
+      test('is false on the first run, and for a path that is not one', () {
+        expect(buildContext().hasPreviousFile('a'), isFalse);
+        expect(
+          buildContext(previousFiles: {'a'}).hasPreviousFile('../a'),
+          isFalse,
+        );
+      });
     });
 
     group('resolve', () {

@@ -41,7 +41,9 @@
 //
 // On iOS the flavors have a launch screen (`launchScreen: true`), so the build
 // also compiles the storyboard and the image sets flavorizr generated, and the
-// files of the flavor that was dropped are gone.
+// files of the flavor that was dropped are gone. On iOS and macOS `apple` has an
+// `icon` and `banana` a `badge` with no icon of its own, so the build compiles
+// the icon sets of both, and the set of the flavor that was dropped is gone.
 //
 // The files of the project are the ones `flutter create` writes, so a change of
 // Flutter that a processor does not follow is found here.
@@ -49,6 +51,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 
 const _platforms = ['android', 'ios', 'macos', 'linux', 'windows'];
@@ -79,10 +82,25 @@ const _build = {
 
 String _config(String platform, Iterable<String> flavors) {
   final section = _platformSection[platform]!;
-  final root = platform == 'ios' ? 'launchScreen: true\n' : '';
+  final apple = platform == 'ios' || platform == 'macos';
+  final root = [
+    if (platform == 'ios') 'launchScreen: true',
+    // On iOS and macOS `apple` has an icon of its own, and `banana` has a badge
+    // and none: its icons are made from the one of the root.
+    if (apple) 'icon: assets/icon.png',
+  ].map((line) => '$line\n').join();
 
-  return '${root}flavors:\n${[for (final flavor in flavors) '  $flavor:\n    app:\n      name: "$flavor"\n'
-        '    ${section.replaceAll('%s', flavor)}\n'].join()}';
+  String flavor(String name) {
+    final icon = apple && name == 'apple'
+        ? '      icon: assets/icon.png\n'
+        : '';
+    final badge = apple && name == 'banana' ? '    badge: true\n' : '';
+
+    return '  $name:\n    app:\n      name: "$name"\n$icon$badge'
+        '    ${section.replaceAll('%s', name)}\n';
+  }
+
+  return '${root}flavors:\n${flavors.map(flavor).join()}';
 }
 
 Future<void> main(List<String> arguments) async {
@@ -141,16 +159,35 @@ Future<void> _e2e(String platform, Directory checkout) async {
 
     config.writeAsStringSync(_config(platform, ['apple', 'banana']));
 
+    final apple = platform == 'ios' || platform == 'macos';
+
+    if (apple) {
+      File(p.join(project.path, 'assets/icon.png'))
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(_icon());
+    }
+
     _step('apply');
     await _flavorizr(project, ['apply', '--yes', '--overwrite-scaffold']);
     await _expectNothingToDo(project, 'a second run');
 
+    if (apple) _expectIcons(project, platform, ['apple', 'banana']);
     if (platform == 'ios') _expectLaunchScreens(project, ['apple', 'banana']);
 
     _step('remove banana');
     config.writeAsStringSync(_config(platform, ['apple']));
     await _flavorizr(project, ['apply', '--yes']);
     await _expectNothingToDo(project, 'the removal of a flavor');
+
+    if (apple) {
+      _expectIcons(project, platform, ['apple']);
+
+      if (Directory(
+        p.join(project.path, _assets[platform]!, 'AppIcon-banana.appiconset'),
+      ).existsSync()) {
+        _fail('The icons of the flavor that was removed are still there.');
+      }
+    }
 
     if (platform == 'ios') {
       _expectLaunchScreens(project, ['apple']);
@@ -193,6 +230,39 @@ Future<void> _e2e(String platform, Directory checkout) async {
     }
   } finally {
     workspace.deleteSync(recursive: true);
+  }
+}
+
+/// The asset catalog of the app, where the icon sets of the flavors are.
+const _assets = {
+  'ios': 'ios/Runner/Assets.xcassets',
+  'macos': 'macos/Runner/Assets.xcassets',
+};
+
+/// A square icon of 1024 px, which is what the sets are made from.
+List<int> _icon() => img.encodePng(
+  img.Image(width: 1024, height: 1024)..clear(img.ColorRgb8(33, 150, 243)),
+);
+
+/// Fails unless each of [flavors] has the icon set of the platform, and the
+/// biggest of its icons.
+void _expectIcons(Directory project, String platform, List<String> flavors) {
+  final biggest = platform == 'ios'
+      ? 'Icon-App-1024x1024@1x.png'
+      : 'app_icon_1024.png';
+
+  for (final flavor in flavors) {
+    final set = p.join(
+      project.path,
+      _assets[platform]!,
+      'AppIcon-$flavor.appiconset',
+    );
+
+    for (final file in ['Contents.json', biggest]) {
+      if (!File(p.join(set, file)).existsSync()) {
+        _fail('The icons of `$flavor` have no `$file`.');
+      }
+    }
   }
 }
 
