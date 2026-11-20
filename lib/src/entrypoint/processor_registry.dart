@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_build_gradle_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_build_gradle_patch_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/android/android_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icons_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_manifest_patch_processor.dart';
@@ -48,6 +49,7 @@ import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_processors
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_processors.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_references.dart';
 import 'package:flutter_flavorizr/src/engine/processors/google/firebase_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/huawei/agconnect_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/ide/ide_config_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_cmake_lists_patch_processor.dart';
@@ -56,10 +58,12 @@ import 'package:flutter_flavorizr/src/engine/processors/linux/linux_my_applicati
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/linux/linux_runner_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/flutter/flutter_processors.dart';
+import 'package:flutter_flavorizr/src/engine/processors/windows/windows_icons_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_main_cpp_template_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_editor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_cmake_lists_patch_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/windows/windows_runner_rc_template_processor.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
@@ -68,7 +72,6 @@ import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/exception/duplicate_processor_exception.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_processor_registration_exception.dart';
-import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 
 /// A processor that runs on the engine, with what the CLI has to know about it
@@ -91,11 +94,20 @@ final class EngineProcessor {
   /// as the schemes (`ios/Runner.xcodeproj/xcshareddata/xcschemes/*.xcscheme`).
   final Map<String, String Function(String source)> ownedContent;
 
+  /// How to read what a patched file holds that is neither owned by the
+  /// processor nor added by the tools around it, by path of the file (with the
+  /// same `*`). It is for the files the processor **creates**, and is what tells
+  /// one it made, and that the user did not edit, from one that is theirs when
+  /// its flavor is dropped: see `recordCreated`. A file that is not here is
+  /// never deleted with its flavor.
+  final Map<String, String Function(String source)> foreignContent;
+
   /// Registers [processor], which works on [paths].
   const EngineProcessor(
     this.processor, {
     required this.paths,
     this.ownedContent = const {},
+    this.foreignContent = const {},
   });
 }
 
@@ -142,17 +154,14 @@ final class EngineResource {
   });
 }
 
-/// Every processor flavorizr knows, and where each one runs.
+/// Every processor flavorizr knows.
 ///
-/// A processor either runs on the engine, which previews its changes in a
-/// shadow workspace, checks them against the lock and writes them back
-/// atomically, or it still is a 2.x one, which the legacy pipeline applies
-/// straight to the project. Porting a processor moves it from the second kind
-/// to the first: it is added to [ProcessorRegistry.standard], and the CLI needs
-/// no other change. Processors of the user are added with [withProcessors].
+/// Every processor runs on the engine, which previews its changes in a shadow
+/// workspace, checks them against the lock and writes them back atomically.
+/// A processor is added to [ProcessorRegistry.standard], and the CLI needs no
+/// other change. Processors of the user are added with [withProcessors].
 class ProcessorRegistry {
   final Map<String, EngineProcessor> _engine;
-  final Set<String> _legacyIds;
   final Set<String> _overridden = {};
 
   /// The ids of the processors of flavorizr: the only ones an override can
@@ -160,25 +169,17 @@ class ProcessorRegistry {
   Set<String> _builtIn = const {};
   final Map<ResourceKey<Object?>, EngineResource> _resources;
 
-  /// Creates a registry of [engine] processors, the legacy processors named by
-  /// [legacyIds] and the shared [resources] the engine processors may require.
+  /// Creates a registry of [engine] processors and the shared [resources] they
+  /// may require.
   ProcessorRegistry({
     Iterable<EngineProcessor> engine = const [],
-    Iterable<String> legacyIds = const [],
     Iterable<EngineResource> resources = const [],
   }) : _resources = {for (final entry in resources) entry.resource.key: entry},
-       _engine = {for (final entry in engine) entry.processor.id: entry},
-       _legacyIds = {
-         for (final id in legacyIds)
-           if (!engine.any((entry) => entry.processor.id == id)) id,
-       } {
-    _builtIn = {..._engine.keys, ..._legacyIds};
+       _engine = {for (final entry in engine) entry.processor.id: entry} {
+    _builtIn = {..._engine.keys};
   }
 
-  /// The registry of this version: the Android, Linux, Windows, Flutter, IDE,
-  /// xcconfig, build targets, schema, icons, dummy assets, launch screen, Podfile and Info.plist processors that were ported
-  /// run on the engine, every other 2.x
-  /// instruction on the legacy pipeline.
+  /// The registry of this version: every processor of flavorizr.
   factory ProcessorRegistry.standard() => ProcessorRegistry(
     engine: [
       EngineProcessor(
@@ -200,6 +201,8 @@ class ProcessorRegistry {
           K.androidBuildKotlinPath: AndroidBuildGradleEditor.ownedContent,
         },
       ),
+      // The placeholder icons of 2.x are not made anymore, but the id stays.
+      const EngineProcessor(AndroidDummyAssetsProcessor(), paths: {}),
       const EngineProcessor(
         AndroidIconsProcessor(),
         paths: {'android/app/src'},
@@ -222,6 +225,10 @@ class ProcessorRegistry {
           '${XcodeprojResource.iosProject}/xcshareddata/xcschemes/*.xcscheme':
               SchemeEditor.ownedContent,
         },
+        foreignContent: {
+          '${XcodeprojResource.iosProject}/xcshareddata/xcschemes/*.xcscheme':
+              SchemeEditor.foreignContent,
+        },
       ),
       EngineProcessor(
         const MacosSchemaProcessor(),
@@ -229,6 +236,10 @@ class ProcessorRegistry {
         ownedContent: {
           '${XcodeprojResource.macosProject}/xcshareddata/xcschemes/*.xcscheme':
               SchemeEditor.ownedContent,
+        },
+        foreignContent: {
+          '${XcodeprojResource.macosProject}/xcshareddata/xcschemes/*.xcscheme':
+              SchemeEditor.foreignContent,
         },
       ),
       // They work on the project, which the shared resource brings to the
@@ -297,6 +308,13 @@ class ProcessorRegistry {
               WindowsRunnerCMakeListsEditor.ownedContent,
         },
       ),
+      // The `.ico` of the flavors, next to the icon of the project. The
+      // placeholders of 2.x are not made anymore, but the ids stay.
+      const EngineProcessor(WindowsDummyAssetsProcessor(), paths: {}),
+      EngineProcessor(
+        const WindowsIconsProcessor(),
+        paths: {K.windowsIconsPath},
+      ),
       EngineProcessor(
         const IosPodfilePatchProcessor(),
         paths: {K.iOSPodfilePath},
@@ -331,6 +349,9 @@ class ProcessorRegistry {
         const MacosFirebaseProcessor(),
         paths: {K.macOSRunnerPath, K.macOSFirebaseScriptPath},
       ),
+      // The AppGallery Connect configuration of the flavors: the copies are
+      // local.
+      EngineProcessor(const AGConnectProcessor(), paths: {K.androidSrcPath}),
       // The run configurations of the IDEs are local: the IDEs write to them,
       // and git ignores `.idea/`.
       EngineProcessor(
@@ -341,8 +362,8 @@ class ProcessorRegistry {
     resources: [
       // The part of the projects the lock hashes is the one the processors
       // above own: the references to the xcconfigs of the flavors, the build
-      // settings of their configurations and the Firebase build phase. The 2.x
-      // processors that run after the engine change the rest.
+      // settings of their configurations and the Firebase build phase. What
+      // else Xcode or Flutter change is never drift.
       EngineResource(
         XcodeprojResource.ios(),
         paths: const {XcodeprojResource.iosProject},
@@ -362,7 +383,6 @@ class ProcessorRegistry {
         },
       ),
     ],
-    legacyIds: Processor.defaultInstructionSet,
   );
 
   /// This registry with the processors of the user, which run on the engine
@@ -373,8 +393,7 @@ class ProcessorRegistry {
   /// namespace of flavorizr (see [reservedNamespaces]). The [overrides] replace
   /// a processor of flavorizr, the one that has their id: they take its place
   /// in the recipes and in the dependencies of the other processors, and work
-  /// on the paths of the processor they replace as well as their own, when it
-  /// is one of the engine: a processor that still is a 2.x one declares none.
+  /// on the paths of the processor they replace as well as their own.
   /// What an override patches in a file, it declares in [FlavorizrProcessor.ownedContent],
   /// which replaces the one of the processor for that file: otherwise the lock
   /// hashes the part the replaced processor owned, not what the override
@@ -426,6 +445,7 @@ class ProcessorRegistry {
         processor,
         paths: {...?previous?.paths, ...processor.paths},
         ownedContent: {...?previous?.ownedContent, ...processor.ownedContent},
+        foreignContent: {...?previous?.foreignContent},
       );
     }
 
@@ -439,7 +459,6 @@ class ProcessorRegistry {
               ownedContent: processor.ownedContent,
             ),
         ],
-        legacyIds: _legacyIds,
         resources: _resources.values,
       )
       .._overridden.addAll({..._overridden, ...replacing})
@@ -450,21 +469,18 @@ class ProcessorRegistry {
   /// replaces.
   Set<String> get overriddenIds => Set.unmodifiable(_overridden);
 
-  /// The processors that run on the engine, by id.
+  /// The processors, by id.
   Map<String, FlavorizrProcessor> get engineProcessors => {
     for (final entry in _engine.entries) entry.key: entry.value.processor,
   };
 
-  /// The shared resources the processors that run on the engine may require.
+  /// The shared resources the processors may require.
   List<Resource<Object?>> get resources => [
     for (final entry in _resources.values) entry.resource,
   ];
 
-  /// The ids of the processors that run on the engine.
-  Set<String> get engineIds => Set.unmodifiable(_engine.keys);
-
-  /// The ids of the processors a full run covers: the ones of the engine that
-  /// the `all` recipe reaches.
+  /// The ids of the processors a full run covers: the ones that the `all`
+  /// recipe reaches.
   ///
   /// The lock records the flavors a run applied only when it is a full run. A
   /// processor that is not part of `all`, such as the ones of `flutter:scaffold`
@@ -472,16 +488,10 @@ class ProcessorRegistry {
   /// everything else from being one.
   Set<String> get fullRunIds => RecipeCatalog(
     processorIds: ids,
-  ).resolve([allRecipeName]).processorIds.where(isEngine).toSet();
-
-  /// The ids of the processors that still run on the legacy pipeline.
-  Set<String> get legacyIds => Set.unmodifiable(_legacyIds);
+  ).resolve([allRecipeName]).processorIds.toSet();
 
   /// The id of every processor.
-  Set<String> get ids => {..._engine.keys, ..._legacyIds};
-
-  /// Whether the processor [id] runs on the engine.
-  bool isEngine(String id) => _engine.containsKey(id);
+  Set<String> get ids => Set.unmodifiable(_engine.keys);
 
   /// The paths the shadow workspace of a run of [processors] is made of.
   ///
@@ -493,6 +503,19 @@ class ProcessorRegistry {
       for (final key in processor.requires) ...?_resources[key]?.paths,
     },
   };
+
+  /// How to read what the file at [path] holds that is neither owned nor added
+  /// by the tools around it, when a processor that creates it says so: see
+  /// [EngineProcessor.foreignContent]. `null` for any other file.
+  ForeignReader? foreignReader(String path) {
+    for (final entry in _engine.values) {
+      final reader = _readerOf(entry.foreignContent, Artifact.patched(path));
+
+      if (reader != null) return reader;
+    }
+
+    return null;
+  }
 
   /// Hashes the part of a file that [artifact] owns: what the lock records and
   /// compares with the disk.

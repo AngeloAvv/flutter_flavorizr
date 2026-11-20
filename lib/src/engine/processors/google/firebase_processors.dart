@@ -31,66 +31,43 @@ import 'package:flutter_flavorizr/src/engine/darwin/owned_objects.dart';
 import 'package:flutter_flavorizr/src/engine/darwin/pbxproj_seed.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
+import 'package:flutter_flavorizr/src/engine/processors/project_config_copy.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
+import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_file_reference.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
-import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
-import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
-import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_file_processor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:flutter_flavorizr/src/utils/darwin_utils.dart';
-import 'package:path/path.dart' as p;
 
 /// The name Xcode shows for the build phase that copies the Firebase
 /// configuration of the flavor that is built.
 const firebaseBuildPhaseName = 'Firebase Setup';
 
-/// What [ctx] copies of the Firebase configuration of a flavor: the file at
-/// [source], a path of the project, to [destination], below the workspace.
-///
-/// The source is an input of the user, read from the real project and kept inside
-/// it, links included. The copy is [Artifact.local]: the IDEs and the builds
-/// work with it, so it is written again silently on every run, never hashed in
-/// the lock, and never a conflict or drift.
 Future<void> _copyConfig(
   FlavorizrContext ctx,
   String source,
   String destination,
-) async {
-  final resolved = ctx.resolveProject(source);
+) => copyProjectConfig(
+  ctx,
+  source: source,
+  destination: destination,
+  option: 'firebase.config',
+);
 
-  switch (FileSystemEntity.typeSync(resolved)) {
-    case FileSystemEntityType.notFound:
-      throw FileNotFoundException(source);
-    case FileSystemEntityType.file:
-      break;
-    default:
-      throw MalformedResourceException(source);
-  }
+/// The name of the copy of the Firebase configuration of an Android flavor.
+const androidFirebaseFile = 'google-services.json';
 
-  // `resolve` is lexical: a link inside the project may still lead out of it.
-  final real = await File(resolved).resolveSymbolicLinks();
-  final realProject = await ctx.projectRoot.resolveSymbolicLinks();
-
-  if (!p.isWithin(realProject, real)) {
-    throw ArgumentError.value(
-      source,
-      'firebase.config',
-      'must stay within `${ctx.projectRoot.path}`, links included',
-    );
-  }
-
-  final target = File(ctx.resolve(destination));
-
-  await target.parent.create(recursive: true);
-  await File(real).copy(target.path);
-  ctx.track(Artifact.local(destination));
-}
+/// The name of the copy of the Firebase configuration of an Apple flavor.
+const appleFirebaseFile = 'GoogleService-Info.plist';
 
 /// `android:firebase`: the `google-services.json` of each Android flavor that
 /// has a Firebase configuration, in `android/app/src/<flavor>`, where the Google
 /// services plugin looks for the one of the flavor that is built.
+///
+/// A flavor that loses its configuration, or that is removed, loses the copy
+/// flavorizr made for it, as long as it still holds what flavorizr copied: see
+/// [removeStaleCopies].
 class AndroidFirebaseProcessor extends FlavorizrProcessor {
   /// Creates the processor.
   const AndroidFirebaseProcessor();
@@ -100,16 +77,27 @@ class AndroidFirebaseProcessor extends FlavorizrProcessor {
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
+    final copies = <String>{};
+
     for (final MapEntry(key: flavor, value: definition)
         in ctx.config.androidFirebaseFlavors.entries) {
-      _checkFlavorName(flavor);
+      checkFlavorName(flavor);
 
-      await _copyConfig(
-        ctx,
-        definition.android!.firebase!.config,
-        '${K.androidSrcPath}/$flavor/google-services.json',
-      );
+      final destination = '${K.androidSrcPath}/$flavor/$androidFirebaseFile';
+
+      await _copyConfig(ctx, definition.android!.firebase!.config, destination);
+      copies.add(destination);
     }
+
+    removeStaleCopies(
+      ctx,
+      keep: copies,
+      isCopy: (path) => isFlavorCopyPath(
+        path,
+        parent: K.androidSrcPath,
+        name: androidFirebaseFile,
+      ),
+    );
   }
 }
 
@@ -214,7 +202,10 @@ String firebaseOwnedContent(String source, String platform) {
 /// * `<platform>/Runner/<flavor>/GoogleService-Info.plist` is the copy of each
 ///   flavor, and `<platform>/Runner/GoogleService-Info.plist` an empty file when
 ///   the project has none: the build overwrites it, so both are
-///   [Artifact.local].
+///   [Artifact.local]. The copy of a flavor that loses its configuration, or
+///   that is removed, goes with it, as long as it still holds what flavorizr
+///   copied (see [removeStaleCopies]). The empty file is not a copy of any
+///   flavor, and stays.
 /// * `<platform>/firebaseScript.sh` is generated whole from the flavors, so it
 ///   is [Artifact.managed]: a flavor that loses its configuration is out of it,
 ///   and the script goes when none is left.
@@ -254,16 +245,23 @@ abstract class _AppleFirebaseProcessor extends FlavorizrProcessor {
   Future<void> apply(FlavorizrContext ctx) async {
     final flavors = sources(ctx.config);
     final owned = this.owned(ctx);
+    final copies = <String>{};
 
     for (final MapEntry(key: flavor, value: source) in flavors.entries) {
-      _checkFlavorName(flavor);
+      checkFlavorName(flavor);
 
-      await _copyConfig(
-        ctx,
-        source,
-        '$runnerPath/$flavor/GoogleService-Info.plist',
-      );
+      final destination = '$runnerPath/$flavor/$appleFirebaseFile';
+
+      await _copyConfig(ctx, source, destination);
+      copies.add(destination);
     }
+
+    removeStaleCopies(
+      ctx,
+      keep: copies,
+      isCopy: (path) =>
+          isFlavorCopyPath(path, parent: runnerPath, name: appleFirebaseFile),
+    );
 
     // Without a configuration the processor makes nothing, and `settle` takes
     // out what an earlier run made: the phase of 2.x, which no lock names, is
@@ -301,11 +299,10 @@ abstract class _AppleFirebaseProcessor extends FlavorizrProcessor {
     ctx.track(Artifact.local(path));
   }
 
-  void _ensureFileReference(XcodeProject project) =>
-      DarwinAddFileProcessor.addTo(
-        project,
-        flatPath('$runnerPath/GoogleService-Info.plist'),
-      );
+  void _ensureFileReference(XcodeProject project) => addFileToProject(
+    project,
+    flatPath('$runnerPath/GoogleService-Info.plist'),
+  );
 
   PBXNativeTarget _runner(XcodeProject project) =>
       project.targets.first as PBXNativeTarget;
@@ -414,17 +411,4 @@ class MacosFirebaseProcessor extends _AppleFirebaseProcessor {
         in config.macosFirebaseFlavors.entries)
       flavor: macos!.firebase!.config,
   };
-}
-
-void _checkFlavorName(String flavor) {
-  if (flavor.isEmpty ||
-      flavor == '.' ||
-      flavor == '..' ||
-      flavor.contains(RegExp(r'[/\\\x00]'))) {
-    throw ArgumentError.value(
-      flavor,
-      'flavor',
-      'cannot be used as the name of a directory',
-    );
-  }
 }

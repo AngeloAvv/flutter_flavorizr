@@ -129,13 +129,6 @@ class AdoptCommand extends FlavorizrCommand {
       );
     }
 
-    if (plan.legacy.isNotEmpty) {
-      output.info(
-        'Not adopted, since they are not on the engine yet: '
-        '${plan.legacy.map((step) => step.id).join(', ')}.',
-      );
-    }
-
     output.success(
       'Adopted $recorded file${recorded == 1 ? '' : 's'} into '
       '${LockStore.fileName}. No other file was written: run `flavorizr plan` '

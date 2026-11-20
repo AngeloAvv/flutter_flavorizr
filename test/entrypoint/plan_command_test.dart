@@ -45,7 +45,6 @@ void main() {
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.snapshot(), before);
       expect(project.questions, isEmpty);
-      expect(project.legacy.ran, isEmpty);
     });
 
     test('shows the graph, with what was pulled in marked (auto)', () async {
@@ -53,7 +52,7 @@ void main() {
 
       expect(
         project.logger.output,
-        contains('2. android:flavorizrGradle (auto)\n  3. android:buildGradle'),
+        contains('3. android:flavorizrGradle (auto)\n  4. android:buildGradle'),
       );
     });
 
@@ -88,12 +87,11 @@ void main() {
       expect(project.logger.output, contains('up to date'));
     });
 
-    test('names the processors that are not on the engine', () async {
-      await project.run(['plan', ...engineTargets, 'huawei:agconnect']);
+    test('names android:dummyAssets among the processors', () async {
+      await project.run(['plan', ...engineTargets]);
 
-      expect(project.logger.output, contains('huawei:agconnect'));
-      expect(project.logger.output, contains('not on the engine yet'));
-      expect(project.legacy.ran, isEmpty);
+      expect(project.logger.output, contains('2. android:dummyAssets\n'));
+      expect(project.logger.output, isNot(contains('not on the engine yet')));
     });
 
     test('exits with 1 when a file edited by hand is in the way', () async {

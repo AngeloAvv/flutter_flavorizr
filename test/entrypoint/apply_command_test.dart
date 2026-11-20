@@ -30,12 +30,12 @@ import 'package:test/test.dart';
 
 import 'cli_fixture.dart';
 
-/// The processors that run on the engine, so that no run needs the legacy
-/// pipeline: the `android` recipe also holds `android:dummyAssets`, which does.
+/// The processors of a run that writes something of every kind.
 const engine = [
   'flutter:flavors',
   'android:androidManifest',
   'android:buildGradle',
+  'android:dummyAssets',
   'android:icons',
 ];
 
@@ -117,7 +117,6 @@ void main() {
       expect(code, ExitCodes.ok);
       expect(project.snapshot(), before);
       expect(project.logger.output, contains('cancelled'));
-      expect(project.legacy.ran, isEmpty);
     });
 
     test('does not ask again when nothing changes', () async {
@@ -220,7 +219,6 @@ void main() {
 
       expect(code, ExitCodes.ok);
       expect(project.snapshot(), before);
-      expect(project.legacy.ran, isEmpty);
       expect(project.logger.output, contains('nothing to run'));
     });
 
@@ -312,96 +310,39 @@ void main() {
           project.logger.output,
           contains('Failed: android:androidManifest'),
         );
-        expect(project.legacy.ran, isEmpty);
       });
     });
 
-    group('processors that are not on the engine', () {
-      test('are run by the legacy pipeline, after the engine', () async {
+    group('android:dummyAssets', () {
+      test('runs on the engine with the others', () async {
         final code = await project.run([
           'apply',
           '--yes',
           'android:flavorizrGradle',
           'android:dummyAssets',
-          'huawei:agconnect',
         ]);
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
-        expect(project.legacy.ids, ['android:dummyAssets', 'huawei:agconnect']);
-      });
-
-      test('are asked to keep the files the engine generated', () async {
-        await project.run(['apply', '--yes', ...engine, 'android:dummyAssets']);
-
-        expect(project.legacy.preserved.single, {
-          'android/app/flavorizr.gradle',
-          'lib/flavors.g.dart',
-        });
-      });
-
-      test('are named in the plan, with what that means', () async {
-        await project.run(['apply', '--yes', 'android:dummyAssets']);
-
-        expect(project.logger.output, contains('not on the engine yet'));
         expect(project.logger.output, contains('android:dummyAssets'));
+        expect(project.logger.output, isNot(contains('not on the engine')));
       });
 
-      test('alone, still ask for confirmation', () async {
-        project.answer = false;
-
-        await project.run(['apply', 'android:dummyAssets']);
-
-        expect(project.questions, hasLength(1));
-        expect(project.legacy.ran, isEmpty);
-      });
-
-      test('that fail leave the engine applied, and say so', () async {
-        project.legacy.failure = StateError('boom');
-
-        final code = await project.run([
-          'apply',
-          '--yes',
-          'android:flavorizrGradle',
-          'android:dummyAssets',
-        ]);
-
-        expect(code, ExitCodes.software);
-        expect(project.exists('android/app/flavorizr.gradle'), isTrue);
-        expect(project.exists('flavorizr.lock'), isTrue);
-        expect(project.logger.output, contains('already finished'));
-        expect(project.logger.errors.join(), contains('boom'));
-      });
-
-      test('are checked before the engine writes anything', () async {
+      test('makes nothing', () async {
         final before = project.snapshot();
-        project.legacy.checkFailure = StateError('not here');
 
         final code = await project.run([
           'apply',
           '--yes',
-          'android:flavorizrGradle',
           'android:dummyAssets',
         ]);
 
-        expect(code, ExitCodes.software);
-        expect(project.snapshot(), before);
-      });
-
-      test('do not run when the engine fails', () async {
-        File(
-          project.abs('android/app/src/main/AndroidManifest.xml'),
-        ).deleteSync();
-
-        final code = await project.run([
-          'apply',
-          '--yes',
-          'android:androidManifest',
-          'android:dummyAssets',
-        ]);
-
-        expect(code, ExitCodes.software);
-        expect(project.legacy.ran, isEmpty);
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(
+          project.snapshot().keys.toSet().difference(before.keys.toSet()),
+          {'flavorizr.lock'},
+        );
+        expect(project.exists('android/app/src/apple'), isFalse);
       });
     });
   });

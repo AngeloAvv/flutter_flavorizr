@@ -50,6 +50,14 @@ class FlavorsDocProcessor extends FlavorizrProcessor {
   `Artifact.patched` is a file the user also edits (declare what part is
   yours with `ownedContent`), `Artifact.scaffold` is created once and
   `Artifact.local` is regenerated and never hashed.
+* A file that is costly to generate the same way everywhere, such as an image
+  rendered from another one, can say what it is made from:
+  `Artifact.managed(path, inputs: hash)`, where `hash` is computed from the
+  inputs alone (the bytes of the source, the options), never from the output.
+  The lock records it (see [Inputs of generated files](flavorizr-lock.md#inputs-of-generated-files)),
+  and a later run asks `await ctx.isGeneratedFrom(path, hash)`: when it is
+  `true` the file is still what was generated from those inputs, and the
+  processor leaves it as it is and tracks it again with the same `inputs`.
 * `dependsOn` and `after` order the processor with the others, and `requires`
   names the shared resources it uses.
 

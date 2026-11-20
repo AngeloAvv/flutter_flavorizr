@@ -122,6 +122,25 @@ flavors:
       expect(ctx.previousKeysOf('escape/project.pbxproj'), isEmpty);
     });
 
+    test('a processor reads the files the lock recorded keys for it', () {
+      final ctx = build(
+        previousKeys: {
+          'ios:buildTargets': {
+            pbxproj: {'k': 'sha256:a'},
+            r'ios\Other.pbxproj': {'k': 'sha256:b'},
+            '../escape/project.pbxproj': {'k': 'sha256:c'},
+          },
+          'ios:xcconfig': {
+            'ios/Flutter/Debug.xcconfig': {'k': 'sha256:d'},
+          },
+        },
+      );
+
+      expect(ctx.previousKeyFiles, {pbxproj, 'ios/Other.pbxproj'});
+      expect(build().previousKeyFiles, isEmpty);
+      expect(() => build(processorId: null).previousKeyFiles, throwsStateError);
+    });
+
     test('what a processor owns is added up by file', () {
       final ctx = build();
 
@@ -318,6 +337,61 @@ flavors:
       expect(lock.processors['macos:buildTargets']!.keys, {
         pbxproj: {'m': 'sha256:n'},
       });
+    });
+
+    test('the keys of a local file are recorded as the processor says them, '
+        'and are how it remembers the copies it made', () {
+      const copy = Artifact.local('android/app/src/apple/copy.json');
+      final lock = update(
+        produced: {
+          'ios:buildTargets': [copy],
+        },
+        keys: {
+          'ios:buildTargets': {
+            copy.path: {'copy': 'sha256:a'},
+          },
+        },
+      );
+
+      expect(lock.processors['ios:buildTargets']!.files, isEmpty);
+      expect(lock.processors['ios:buildTargets']!.keys, {
+        copy.path: {'copy': 'sha256:a'},
+      });
+    });
+
+    test('the keys the lock had for a local file are not carried over: what '
+        'the processor stops saying is forgotten', () {
+      const copy = Artifact.local('android/app/src/apple/copy.json');
+      final lock = update(
+        previous: lockOf({
+          'ios:buildTargets': ProcessorLock(
+            keys: {
+              copy.path: {'copy': 'sha256:a'},
+            },
+          ),
+        }),
+        produced: {
+          'ios:buildTargets': [copy],
+        },
+      );
+
+      expect(lock.processors['ios:buildTargets'], isNull);
+    });
+
+    test('a local file the processor stops tracking takes its keys with '
+        'it', () {
+      final lock = update(
+        previous: lockOf({
+          'ios:buildTargets': ProcessorLock(
+            keys: {
+              'android/app/src/apple/copy.json': {'copy': 'sha256:a'},
+            },
+          ),
+        }),
+        produced: {'ios:buildTargets': const <Artifact>[]},
+      );
+
+      expect(lock.processors['ios:buildTargets'], isNull);
     });
   });
 }

@@ -23,6 +23,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:convert';
+
+import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/entrypoint/exit_codes.dart';
 import 'package:test/test.dart';
 
@@ -66,16 +69,21 @@ void main() {
           project.read('lib/flavors.dart'),
           contains("export 'flavors.g.dart';"),
         );
-        expect(project.legacy.ran, isEmpty);
 
         final lock = project.read('flavorizr.lock');
 
         expect(lock, contains('flutter:flavors:'));
         expect(lock, contains('lib/flavors.g.dart:\n        hash: sha256:'));
         expect(lock, contains('ownership: managed'));
+        // What flavorizr wrote is hashed, so that it can be removed safely.
+        expect(lock, contains('lib/flavors.dart:\n        hash: sha256:'));
+        expect(lock, contains('ownership: scaffold'));
         expect(
           lock,
-          contains('lib/flavors.dart:\n        ownership: scaffold'),
+          contains(
+            'hash: ${digestOf(utf8.encode(project.read('lib/flavors.dart')))}\n'
+            '        ownership: scaffold',
+          ),
         );
       },
     );
@@ -337,6 +345,98 @@ void main() {
         project.read('lib/flavors.dart'),
         contains("export 'flavors.g.dart'"),
       );
+    });
+
+    group('the hash of what it wrote', () {
+      String hashIn(String path) =>
+          'hash: ${digestOf(utf8.encode(project.read(path)))}\n'
+          '        ownership: scaffold';
+
+      test('is in the lock for the files it created, and not for the '
+          'main.dart that was there', () async {
+        await project.run(['apply', '--yes', 'flutter:scaffold']);
+
+        final lock = project.read('flavorizr.lock');
+
+        for (final path in ['lib/app.dart', 'lib/pages/my_home_page.dart']) {
+          expect(
+            lock,
+            contains('$path:\n        ${hashIn(path)}'),
+            reason: path,
+          );
+        }
+        expect(lock, contains('lib/main.dart:\n        ownership: scaffold'));
+      });
+
+      test('stays what was written when the user edits the file, so that '
+          'the edit is told from it', () async {
+        await project.run(['apply', '--yes', 'flutter:scaffold']);
+
+        final written = hashIn('lib/app.dart');
+
+        project.write('lib/app.dart', '// mine\n');
+
+        expect(
+          await project.run(['apply', '--yes', 'flutter:scaffold']),
+          ExitCodes.ok,
+          reason: project.logger.output,
+        );
+        expect(project.read('lib/app.dart'), '// mine\n');
+        expect(project.read('flavorizr.lock'), contains(written));
+      });
+
+      test('is the one of the new content when --overwrite-scaffold '
+          'replaces the file', () async {
+        await project.run(['apply', '--yes', 'flutter:scaffold']);
+        project.write('lib/app.dart', '// mine\n');
+
+        await project.run([
+          'apply',
+          '--yes',
+          '--overwrite-scaffold',
+          'flutter:scaffold',
+        ]);
+
+        expect(project.read('lib/app.dart'), contains('class App'));
+        expect(
+          project.read('flavorizr.lock'),
+          contains(hashIn('lib/app.dart')),
+        );
+      });
+
+      test('is learned by a lock that has none, for a file that is as '
+          'flavorizr writes it, and not for one the user changed', () async {
+        await project.run(['apply', '--yes', 'flutter:scaffold']);
+
+        final lock = project.read('flavorizr.lock');
+        final appHash = hashIn('lib/app.dart');
+        final pageHash = hashIn('lib/pages/my_home_page.dart');
+
+        // A lock of version 1 has no hash for a scaffold.
+        project.write(
+          'flavorizr.lock',
+          lock
+              .replaceAll(
+                RegExp(r'hash: sha256:[0-9a-f]+\n        ownership: scaffold'),
+                'ownership: scaffold',
+              )
+              .replaceFirst('schemaVersion: 2', 'schemaVersion: 1'),
+        );
+        project.write('lib/pages/my_home_page.dart', '// mine\n');
+
+        final code = await project.run(['apply', '--yes', 'flutter:scaffold']);
+
+        expect(code, ExitCodes.ok, reason: project.logger.output);
+        expect(project.read('flavorizr.lock'), contains(appHash));
+        expect(project.read('flavorizr.lock'), isNot(contains(pageHash)));
+        // What the user wrote is no baseline for a deletion: no hash at all.
+        expect(
+          project.read('flavorizr.lock'),
+          contains('lib/pages/my_home_page.dart:\n        ownership: scaffold'),
+        );
+        expect(project.read('flavorizr.lock'), contains('schemaVersion: 2'));
+        expect(project.read('lib/pages/my_home_page.dart'), '// mine\n');
+      });
     });
 
     test('running only flutter:main brings what it needs', () async {

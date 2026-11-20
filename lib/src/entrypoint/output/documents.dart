@@ -71,9 +71,9 @@ ChangeCounts countChanges(
   );
 }
 
-/// What [plan] runs: the processors of the engine in the order they run, with
-/// the ones a dependency pulled in marked `auto`, then the ones that are not on
-/// the engine yet. [plan] also says what it left out and why.
+/// What [plan] runs: the processors in the order they run, with the ones a
+/// dependency pulled in marked `auto`. [plan] also says what it left out and
+/// why.
 Map<String, Object?> processorFields(RunPlan plan) => {
   'messages': plan.messages,
   'processors': [
@@ -83,13 +83,6 @@ Map<String, Object?> processorFields(RunPlan plan) => {
         'platform': platformOfProcessor(step.processor.id),
         'runsOn': 'engine',
         'auto': step.auto,
-      },
-    for (final step in plan.legacy)
-      {
-        'id': step.id,
-        'platform': platformOfProcessor(step.id),
-        'runsOn': 'legacy',
-        'auto': false,
       },
   ],
 };
@@ -118,8 +111,7 @@ Map<String, Object?> previewFields(EnginePreview? preview) => {
 /// What happened to the processors of a run: the ones that ran, in order, with
 /// how long each took and whether it completed or failed, then the ones that
 /// did not run because an earlier one failed, or the run stopped: the ones the
-/// [report] skipped, and the [planned] ones nothing recorded, such as the
-/// processors that are not on the engine after one of them failed.
+/// [report] skipped, and the [planned] ones nothing recorded.
 List<Map<String, Object?>> stepFields(
   ExecutionReport? report,
   List<StepRecord> records, {
@@ -154,7 +146,7 @@ List<Map<String, Object?>> recipeFields(Iterable<RecipeListing> recipes) => [
     },
 ];
 
-/// The processors of `list`: where each one runs, and what it needs.
+/// The processors of `list`: what each one needs.
 List<Map<String, Object?>> listedProcessorFields({
   required Iterable<String> ids,
   required Map<String, FlavorizrProcessor> engine,
@@ -164,7 +156,7 @@ List<Map<String, Object?>> listedProcessorFields({
     {
       'id': id,
       'platform': platformOfProcessor(id),
-      'runsOn': engine.containsKey(id) ? 'engine' : 'legacy',
+      'runsOn': 'engine',
       'needs': _sorted(engine[id]?.dependsOn),
       'after': _sorted(engine[id]?.after),
       'overridden': overridden.contains(id),

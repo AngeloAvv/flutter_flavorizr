@@ -30,7 +30,6 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
-import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
@@ -50,8 +49,7 @@ typedef Prompt =
 typedef FlutterVersionProbe = Future<String?> Function();
 
 /// Everything the commands depend on, so that a test can replace it: the
-/// project, where to print and ask, which processors exist and how the ones
-/// that are not on the engine run.
+/// project, where to print and ask, and which processors exist.
 class CliContext {
   /// The root of the project: the directory that holds `pubspec.yaml`.
   final Directory projectRoot;
@@ -81,11 +79,8 @@ class CliContext {
   /// Where the JSON document and the animation are written: stdout.
   final StringSink sink;
 
-  /// Every processor, on the engine or not.
+  /// Every processor.
   final ProcessorRegistry registry;
-
-  /// Runs the processors that are not on the engine.
-  final LegacyPipeline legacy;
 
   /// Tells the version of Flutter, for `doctor`.
   final FlutterVersionProbe flutterVersion;
@@ -104,7 +99,6 @@ class CliContext {
     Confirm? confirm,
     Prompt? prompt,
     ProcessorRegistry? registry,
-    LegacyPipeline? legacy,
     FlutterVersionProbe? flutterVersion,
     OutputEnvironment? environment,
     StringSink? sink,
@@ -116,7 +110,6 @@ class CliContext {
        _confirm = confirm,
        _prompt = prompt,
        registry = registry ?? ProcessorRegistry.standard(),
-       legacy = legacy ?? StandardLegacyPipeline(projectRoot),
        dummyAssets = dummyAssets ?? DummyAssets.v2,
        flutterVersion = flutterVersion ?? probeFlutterVersion;
 

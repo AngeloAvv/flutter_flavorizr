@@ -30,18 +30,54 @@ import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
 import 'package:flutter_flavorizr/src/exception/invalid_recipe_name_exception.dart';
 import 'package:flutter_flavorizr/src/exception/recipe_cycle_exception.dart';
 import 'package:flutter_flavorizr/src/exception/unknown_target_exception.dart';
-import 'package:flutter_flavorizr/src/processors/processor.dart';
 import 'package:test/test.dart';
 
+/// The instructions of 2.x, in the order it ran them, which is the one `all`
+/// keeps.
+const _defaultInstructionSet = [
+  'android:androidManifest',
+  'android:flavorizrGradle',
+  'android:buildGradle',
+  'android:dummyAssets',
+  'android:icons',
+  'flutter:flavors',
+  'ios:podfile',
+  'ios:xcconfig',
+  'ios:buildTargets',
+  'ios:schema',
+  'ios:dummyAssets',
+  'ios:icons',
+  'ios:plist',
+  'ios:launchScreen',
+  'macos:podfile',
+  'macos:xcconfig',
+  'macos:configs',
+  'macos:buildTargets',
+  'macos:schema',
+  'macos:dummyAssets',
+  'macos:icons',
+  'macos:plist',
+  'linux:cmake',
+  'linux:runnerCmake',
+  'linux:myApplication',
+  'windows:mainCppTemplate',
+  'windows:runnerRcTemplate',
+  'windows:cmake',
+  'windows:dummyAssets',
+  'windows:icons',
+  'ide:config',
+];
+
 /// What `all` runs: the default instruction set, which has no starting files
-/// of a new app, with the Firebase processors of the engine where `google:firebase`
-/// of 2.x was.
+/// of a new app, with the Firebase and the AppGallery Connect processors of the
+/// engine before the IDE ones.
 final _allIds = [
-  for (final id in Processor.defaultInstructionSet) ...[
-    if (id == 'huawei:agconnect') ...[
+  for (final id in _defaultInstructionSet) ...[
+    if (id == 'ide:config') ...[
       'android:firebase',
       'ios:firebase',
       'macos:firebase',
+      'huawei:agconnect',
     ],
     id,
   ],

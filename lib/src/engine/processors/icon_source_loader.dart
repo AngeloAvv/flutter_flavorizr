@@ -24,10 +24,14 @@
  */
 
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter_flavorizr/src/badge/badge_source_icon.dart';
+import 'package:flutter_flavorizr/src/badge/project_badge_source_files.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
 import 'package:flutter_flavorizr/src/exception/file_not_found_exception.dart';
+import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.dart';
 import 'package:flutter_flavorizr/src/exception/malformed_resource_exception.dart';
 import 'package:path/path.dart' as p;
 
@@ -41,7 +45,16 @@ import 'package:path/path.dart' as p;
 Future<AndroidIconSource> loadIconSource(
   FlavorizrContext ctx,
   String path,
-) async {
+) async =>
+    AndroidIconSource.decode(await readIconSourceBytes(ctx, path), name: path);
+
+/// Reads the bytes of the source icon at [path], relative to the project, with
+/// the checks of [loadIconSource] but the decoding: what the inputs hash of an
+/// icon is made from.
+///
+/// Throws what [loadIconSource] throws for a file that is missing, too big, not
+/// a file or outside the project.
+Future<Uint8List> readIconSourceBytes(FlavorizrContext ctx, String path) async {
   final resolved = ctx.resolveProject(path);
 
   switch (FileSystemEntity.typeSync(resolved)) {
@@ -73,5 +86,32 @@ Future<AndroidIconSource> loadIconSource(
     throw MalformedResourceException(path);
   }
 
-  return AndroidIconSource.decode(await file.readAsBytes(), name: path);
+  return file.readAsBytes();
+}
+
+/// The image the icons of the flavor [flavorName] are made from, relative to the
+/// project, or `null` when it has none to make. [icon] is the `icon` of the
+/// flavor for the platform: the one of the platform, or else the one of the app.
+///
+/// A flavor with no badge has the icons of its [icon] and none without it. One
+/// with a badge always has them, from the first of the choices of
+/// `resolveBadgeSourceIcon` (its [icon] if it is big enough, the `icon` of the
+/// root, the `AppIcon` of the project), and the run fails with a hint when
+/// there is none.
+String? iconSourceOf(FlavorizrContext ctx, String flavorName, String? icon) {
+  if (ctx.config.badgeOf(flavorName) == null) return icon;
+
+  try {
+    return resolveBadgeSourceIcon(
+      flavorIcon: icon,
+      rootIcon: ctx.config.icon,
+      files: ProjectBadgeSourceFiles(ctx.projectRoot),
+    ).path;
+  } on BadgeSourceIconException catch (error) {
+    throw InvalidConfigurationException(
+      'The flavor `$flavorName` has a badge, and there is no icon to draw it '
+      'on: set `icon` for the flavor, or `icon` at the root (1024 px is '
+      'best). ${error.tried.isEmpty ? 'No icon was found in the project.' : 'Looked at: ${error.tried.join(', ')}.'}',
+    );
+  }
 }

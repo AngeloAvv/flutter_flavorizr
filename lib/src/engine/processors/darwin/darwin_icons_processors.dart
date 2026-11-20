@@ -24,18 +24,15 @@
  */
 
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_flavorizr/src/badge/badge_source_icon.dart';
-import 'package:flutter_flavorizr/src/badge/project_badge_source_files.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/darwin_icon_sets.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
+import 'package:flutter_flavorizr/src/engine/processors/icon_inputs.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
-import 'package:flutter_flavorizr/src/exception/invalid_configuration_exception.dart';
 import 'package:flutter_flavorizr/src/models/darwin/icon/darwin_icon.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
@@ -58,7 +55,11 @@ import 'package:flutter_flavorizr/src/utils/constants.dart';
 /// `AppIcon` of the project (see `DarwinIconName`), and has no set.
 ///
 /// Every file is [Artifact.managed]: it is generated whole from a source icon,
-/// so it is hashed in the lock and a hand edit of it is a conflict. What a flavor
+/// so it is hashed in the lock and a hand edit of it is a conflict. The PNGs
+/// also record the hash of their inputs (see [iconInputs]): a run that finds the
+/// same source, size and badge, and the file as the lock has it, neither renders
+/// nor writes it, so another machine, or another version of the library that
+/// encodes the PNGs, changes nothing. What a flavor
 /// does not make anymore (it was dropped, lost its `icon`, or its badge was
 /// turned off and it has no `icon`) is not produced, so the reconciliation of
 /// stale artifacts removes the files of the previous run, and copy-back the
@@ -100,25 +101,8 @@ abstract class DarwinIconsProcessor extends FlavorizrProcessor {
   ///
   /// A flavor with a badge always has one, which is the first of the choices of
   /// `resolveBadgeSourceIcon`, and the run fails with a hint when there is none.
-  String? sourceOf(FlavorizrContext ctx, String flavorName, Flavor flavor) {
-    final icon = platformIcon(flavor) ?? flavor.app.icon;
-
-    if (ctx.config.badgeOf(flavorName) == null) return icon;
-
-    try {
-      return resolveBadgeSourceIcon(
-        flavorIcon: icon,
-        rootIcon: ctx.config.icon,
-        files: ProjectBadgeSourceFiles(ctx.projectRoot),
-      ).path;
-    } on BadgeSourceIconException catch (error) {
-      throw InvalidConfigurationException(
-        'The flavor `$flavorName` has a badge, and there is no icon to draw it '
-        'on: set `icon` for the flavor, or `icon` at the root (1024 px is '
-        'best). ${error.tried.isEmpty ? 'No icon was found in the project.' : 'Looked at: ${error.tried.join(', ')}.'}',
-      );
-    }
-  }
+  String? sourceOf(FlavorizrContext ctx, String flavorName, Flavor flavor) =>
+      iconSourceOf(ctx, flavorName, platformIcon(flavor) ?? flavor.app.icon);
 
   @override
   Future<void> apply(FlavorizrContext ctx) async {
@@ -126,7 +110,7 @@ abstract class DarwinIconsProcessor extends FlavorizrProcessor {
     // source of two flavors may be the same, and the 2x of a size is the 1x of
     // another. A decoded source is dropped as soon as its sizes are rendered.
     final rendered = <String, Map<int, Uint8List>>{};
-    final outputs = <String, List<int>>{};
+    final files = GeneratedIcons(ctx);
 
     for (final MapEntry(key: flavorName, value: flavor) in flavors(
       ctx.config,
@@ -143,35 +127,48 @@ abstract class DarwinIconsProcessor extends FlavorizrProcessor {
         if (badge != null) ...[badge.label, badge.color.hex],
       ].join('\u0000');
       final pngs = rendered.putIfAbsent(key, () => {});
-      final sizes = {for (final icon in icons) icon.imageSize.width.toInt()}
+      final set = setPath(flavorName);
+      final digest = await files.sourceDigest(source);
+      // What is not up to date, by path.
+      final stale = <String, ({int size, String inputs})>{};
+
+      files.add(
+        '$set/${K.darwinAppIconContentsFileName}',
+        utf8.encode(darwinIconContents(icons)),
+      );
+
+      for (final icon in icons) {
+        final path = '$set/${icon.fileName}';
+        final size = icon.imageSize.width.toInt();
+        final inputs = iconInputs(
+          kind: 'png',
+          sourceDigest: digest,
+          sizes: [size, size],
+          badge: badge,
+        );
+
+        if (!await files.keepIfUpToDate(path, inputs)) {
+          stale[path] = (size: size, inputs: inputs);
+        }
+      }
+
+      final sizes = {for (final file in stale.values) file.size}
         ..removeAll(pngs.keys);
 
       if (sizes.isNotEmpty) {
-        final image = await loadIconSource(ctx, source);
+        final image = await files.loadSource(source);
 
         for (final size in sizes) {
           pngs[size] = image.renderPng(size, size, badge: badge);
         }
       }
 
-      final set = setPath(flavorName);
-
-      outputs['$set/${K.darwinAppIconContentsFileName}'] = utf8.encode(
-        darwinIconContents(icons),
-      );
-
-      for (final icon in icons) {
-        outputs['$set/${icon.fileName}'] = pngs[icon.imageSize.width.toInt()]!;
+      for (final MapEntry(key: path, value: file) in stale.entries) {
+        files.add(path, pngs[file.size]!, inputs: file.inputs);
       }
     }
 
-    for (final MapEntry(key: path, value: bytes) in outputs.entries) {
-      final target = File(ctx.resolve(path));
-
-      await target.parent.create(recursive: true);
-      await target.writeAsBytes(bytes);
-      ctx.track(Artifact.managed(path));
-    }
+    await files.write();
   }
 }
 

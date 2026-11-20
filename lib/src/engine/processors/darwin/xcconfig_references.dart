@@ -46,7 +46,7 @@ const _xcconfigFileType = 'text.xcconfig';
 /// The reference goes in the group named [groupName], or in the main group, and
 /// **only there**: a flavor xcconfig is a base configuration of the build
 /// configurations, which is how Xcode reads it, never a resource. 2.x also put
-/// it in the Resources phase of the first target (as `DarwinAddFileProcessor`
+/// it in the Resources phase of the first target (as `addFileToProject`
 /// does for any file), which copied the xcconfigs into the app bundle: see
 /// [removeXcconfigsFromResources], which cleans that.
 ///

@@ -487,8 +487,7 @@ class _JsonOutput extends Output {
 /// the document; on a terminal a spinner never ends up in the middle of a line.
 ///
 /// It covers the lines a processor prints. A progress bar or a question does not
-/// go through it, so nothing that runs under it may use them: the 2.x processors
-/// are run without theirs (see `Processor.runInstruction`).
+/// go through it, so nothing that runs under it may use them.
 class _OutputLogger extends Logger {
   final Output _output;
 

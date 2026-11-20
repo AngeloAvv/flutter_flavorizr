@@ -30,4 +30,7 @@ android {
             buildConfigField "double", "field_three", "20.0"
         }
     }
+
+    buildFeatures.resValues = true
+    buildFeatures.buildConfig = true
 }

@@ -158,6 +158,7 @@ Future<AdoptRun> runAdoption(
         androidFlavors: all.androidFlavors.keys,
         iosFlavors: all.iosFlavors.keys,
         macosFlavors: all.macosFlavors.keys,
+        windowsFlavors: all.windowsFlavors.keys,
         historicalFlavors: historical,
         flavors: recordedFlavors,
         availableProcessors: engineIdsFor(registry, config),
@@ -166,6 +167,7 @@ Future<AdoptRun> runAdoption(
         dummyAssets: context.dummyAssets,
         ownedObjects: ctx.ownedObjects,
         ownedKeys: ctx.ownedKeys,
+        workspace: shadow.root,
       );
 
       if (!write) return;

@@ -30,6 +30,7 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_editor.dart';
+import 'package:flutter_flavorizr/src/engine/reconcile/created_files.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
 import 'package:flutter_flavorizr/src/engine/resources/xcodeproj_resource.dart';
@@ -89,8 +90,21 @@ bool swiftPackageManagerEnabled(FlavorizrContext ctx) {
 /// The Xcode project is read, never changed: it is the shared `xcodeproj`
 /// resource, for the target the scheme builds.
 ///
-/// The scheme of a flavor that was dropped stays: a patched file is shared with
-/// the user, and the lock stops owning it.
+/// The scheme of a flavor that was dropped goes with it, because it points at the
+/// build configurations that are deleted, but only a scheme **flavorizr made**:
+/// the lock records that when it makes one (`recordCreated`), together with what
+/// the scheme holds besides what flavorizr owns ([SchemeEditor.foreignContent]).
+/// The ownership model of a patched file decides the rest:
+///
+/// * a scheme made by flavorizr, and edited only in what it owns (the build
+///   configurations), in what Flutter adds (its pre-action) or in its layout, is
+///   deleted;
+/// * one the user edited anywhere else is a conflict: it is deleted only when
+///   the user says so (`--on-conflict overwrite`, or the prompt), and kept
+///   otherwise;
+/// * one that was there before flavorizr (the user's, or the one 2.x made, which
+///   `adopt` cannot tell from the user's) is the user's: it is left in place and
+///   the plan says so.
 abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
   /// Creates a processor.
   const DarwinSchemeProcessor();
@@ -149,6 +163,18 @@ abstract class DarwinSchemeProcessor extends FlavorizrProcessor {
           flavor,
           withPrepareAction: spm,
         ).saveAs(file.path);
+
+        // It is flavorizr's to delete with its flavor, for as long as it is
+        // what was made here: see `recordCreated`. A scheme that is there
+        // already, the user's or one 2.x made, is never recorded as made by it.
+        if (!ctx.adopting) {
+          recordCreated(
+            ctx,
+            path,
+            SchemeEditor.foreignContent,
+            await file.readAsBytes(),
+          );
+        }
       }
 
       ctx.track(Artifact.patched(path));

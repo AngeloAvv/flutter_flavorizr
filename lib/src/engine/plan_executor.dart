@@ -28,6 +28,7 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
 import 'package:flutter_flavorizr/src/engine/execution_report.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
+import 'package:flutter_flavorizr/src/engine/recorded_output.dart';
 import 'package:flutter_flavorizr/src/engine/resource.dart';
 import 'package:flutter_flavorizr/src/engine/resource_lifecycle.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/shadow_workspace.dart';
@@ -89,7 +90,9 @@ class PlanExecutor {
   /// by processor id and then by path of the project file: each processor reads
   /// its own through `FlavorizrContext.previousObjectsOf`. [previousKeys] are
   /// the hashes of the keys the lock recorded, in the same way
-  /// (`FlavorizrContext.previousKeysOf`).
+  /// (`FlavorizrContext.previousKeysOf`). [previousOutputs] are what the lock
+  /// recorded about the files generated from inputs, by processor id and then
+  /// by path (`FlavorizrContext.isGeneratedFrom`).
   /// [previousFiles] are the files the lock recorded, for any processor
   /// (`FlavorizrContext.hasPreviousFile`).
   ///
@@ -115,6 +118,7 @@ class PlanExecutor {
     Set<String> previousFlavors = const {},
     Map<String, Map<String, Set<String>>> previousObjects = const {},
     Map<String, Map<String, Map<String, String>>> previousKeys = const {},
+    Map<String, Map<String, RecordedOutput>> previousOutputs = const {},
     Iterable<String> previousFiles = const [],
     Set<String> selected = const {},
     bool adopting = false,
@@ -135,6 +139,7 @@ class PlanExecutor {
           previousFlavors: previousFlavors,
           previousObjects: previousObjects,
           previousKeys: previousKeys,
+          previousOutputs: previousOutputs,
           previousFiles: previousFiles,
           selected: selected,
           adopting: adopting,

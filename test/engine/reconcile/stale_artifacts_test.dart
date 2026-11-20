@@ -95,6 +95,35 @@ void main() {
       expect(scan.stale.single.recordedHash, 'h2');
     });
 
+    test('a patched file the lock says flavorizr created carries what it '
+        'recorded, and one it did not does not', () {
+      final scan = scanOf(
+        previous: lockOf({
+          'ios:schema': ProcessorLock(
+            files: {
+              'ios/a.xcscheme': LockedFile(
+                ownership: Ownership.patched,
+                hash: 'h1',
+              ),
+              'ios/b.xcscheme': LockedFile(
+                ownership: Ownership.patched,
+                hash: 'h2',
+              ),
+            },
+            keys: {
+              'ios/a.xcscheme': {'created': 'c1', 'other': 'x'},
+            },
+          ),
+        }),
+        produced: {'ios:schema': const []},
+      );
+
+      expect(
+        {for (final s in scan.stale) s.path: s.createdHash},
+        {'ios/a.xcscheme': 'c1', 'ios/b.xcscheme': null},
+      );
+    });
+
     test('a processor that ran and produced nothing loses everything', () {
       final scan = scanOf(
         previous: lockOf({

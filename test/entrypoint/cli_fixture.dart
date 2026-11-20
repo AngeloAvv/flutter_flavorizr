@@ -28,8 +28,6 @@ import 'dart:io';
 import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/entrypoint/cli_context.dart';
-import 'package:flutter_flavorizr/src/engine/step_observer.dart';
-import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/output_environment.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run.dart' as cli;
@@ -86,69 +84,13 @@ class NoTerminal implements ConflictTerminal {
   Future<String?> readAnswer(String prompt) async => null;
 }
 
-/// A legacy pipeline that only records what it was asked to run.
-class FakeLegacy implements LegacyPipeline {
-  final List<LegacyStep> ran = [];
-
-  /// What [check] and [run] throw, if anything.
-  Object? failure;
-
-  /// The paths each run was asked to keep.
-  final List<Set<String>> preserved = [];
-
-  /// What [check] throws, if anything.
-  Object? checkFailure;
-
-  /// The id of the step that fails when it runs, after the ones before it.
-  String? failAt;
-
-  /// The steps [check] was asked about.
-  final List<LegacyStep> checked = [];
-
-  /// The ids that ran, in order.
-  List<String> get ids => [for (final step in ran) step.id];
-
-  @override
-  void check(Iterable<LegacyStep> steps) {
-    if (checkFailure case final error?) throw error;
-
-    checked.addAll(steps);
-  }
-
-  @override
-  Future<void> run(
-    Iterable<LegacyStep> steps, {
-    required Logger logger,
-    Set<String> preserve = const {},
-    StepObserver? observer,
-  }) async {
-    if (failure case final error?) throw error;
-
-    preserved.add(preserve);
-
-    for (final step in steps) {
-      observer?.started(step.id);
-
-      if (step.id == failAt) {
-        final error = StateError('${step.id} failed');
-
-        observer?.failed(step.id, const Duration(milliseconds: 1), error);
-
-        throw error;
-      }
-
-      ran.add(step);
-      observer?.finished(step.id, const Duration(milliseconds: 1));
-    }
-  }
-}
-
 /// The processors that run on the engine, which together are a full run of it:
 /// only a full run records the flavors in the lock.
 const engineTargets = [
   'flutter:flavors',
   'android:androidManifest',
   'android:buildGradle',
+  'android:dummyAssets',
   'android:icons',
 ];
 
@@ -184,7 +126,6 @@ android {
 class CliFixture {
   final Directory root = Directory.systemTemp.createTempSync('flavorizr_cli_');
   final RecordingLogger logger = RecordingLogger();
-  final FakeLegacy legacy = FakeLegacy();
   final List<String> questions = [];
 
   /// What the user answers when asked to confirm.
@@ -255,7 +196,6 @@ class CliFixture {
 
       return answers[question] ?? defaultValue;
     },
-    legacy: legacy,
     registry: registry,
     flutterVersion: () async => flutterVersion,
     environment: environment,

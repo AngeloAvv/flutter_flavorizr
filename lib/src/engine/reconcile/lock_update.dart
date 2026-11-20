@@ -36,14 +36,17 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// `flavorizr android`) never touches the lock entries of another platform. The
 /// record of a processor of the run is rebuilt from what it tracked: the files
 /// it stopped producing leave it, and a processor that owns nothing has no
-/// record. Its regions and inputs are not rebuilt, since `Artifact` cannot
-/// express them yet. The exceptions are the objects and the keys: see
-/// [ownedObjects] and [ownedKeys].
+/// record. Its regions are not rebuilt, since `Artifact` cannot express them
+/// yet. Its inputs are: they are the ones its managed artifacts declare (see
+/// `ManagedArtifact.inputs`), and a file that is kept as it is, or whose
+/// deletion did not happen, keeps the ones the lock had for it. The objects and
+/// the keys are the exceptions: see [ownedObjects] and [ownedKeys].
 ///
 /// * [produced] are the artifacts each processor tracked, and [ownedHashes] the
 ///   hash of the owned content of each of them, by canonical path: it must have
 ///   one for every managed and patched artifact. Local artifacts are never
-///   recorded.
+///   recorded as files (see [ownedKeys] for what a processor may remember of
+///   them).
 /// * [stale] are the files of the processors of the run that were not produced
 ///   again (see `findStaleArtifacts`).
 /// * [retained] are the paths whose file the run left as it was although it
@@ -66,7 +69,16 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// the value it wrote, by key. They are recorded the way the objects are: what
 /// is recorded for a processor is exactly what it says, a file it tracks and
 /// said nothing about keeps what the lock had, and so does a file in
-/// [retained], where the keys the run meant to write are not.
+/// [retained], where the keys the run meant to write are not. A local file a
+/// processor tracks is the exception: it is recorded as the processor says, and
+/// it is how the processor remembers the copies it made.
+///
+/// The hash of a scaffold is the one of what flavorizr wrote, and it is there so
+/// that a scaffold that is not produced anymore is removed only while it is as
+/// it was written. It is recorded for a scaffold in [written], and for one in
+/// [inSync], which the project holds exactly as the run would write it (so
+/// that a lock of version 1, which has none, learns it). Otherwise the user may
+/// have changed it, or had it first: the hash the lock had is kept, if any.
 ///
 /// [written] are the paths the run writes to the project (the changes that
 /// are applied, and the conflicts that were approved). A file that several
@@ -91,6 +103,7 @@ FlavorizrLock updateLock({
   Map<String, Map<String, Set<String>>> ownedObjects = const {},
   Map<String, Map<String, Map<String, String>>> ownedKeys = const {},
   Set<String> written = const {},
+  Set<String> inSync = const {},
 }) {
   final previousProcessors = previous?.processors ?? const {};
   final isFullRun =
@@ -101,24 +114,48 @@ FlavorizrLock updateLock({
 
   for (final MapEntry(key: id, value: artifacts) in produced.entries) {
     final before = previousProcessors[id]?.files ?? const {};
+    final beforeInputs = previousProcessors[id]?.inputs ?? const {};
     final files = <String, LockedFile>{};
+    final inputs = <String, String>{};
+    final copies = <String>{};
 
     for (final artifact in artifacts) {
-      if (artifact.ownership == Ownership.local) continue;
-
       final path = canonicalPath(artifact.path);
+
+      if (artifact.ownership == Ownership.local) {
+        copies.add(path);
+        continue;
+      }
 
       if (retained.contains(path)) {
         final recorded = _sameClass(before[path], artifact.ownership);
 
-        if (recorded != null) files[path] = recorded;
+        if (recorded != null) {
+          files[path] = recorded;
+
+          final kept = beforeInputs[path];
+
+          if (kept != null) inputs[path] = kept;
+        }
         continue;
       }
 
       files[path] = LockedFile(
         ownership: artifact.ownership,
-        hash: artifact.ownership.isHashed ? _hashOf(ownedHashes, path) : null,
+        hash: switch (artifact.ownership) {
+          Ownership.managed || Ownership.patched => _hashOf(ownedHashes, path),
+          Ownership.scaffold =>
+            (written.contains(path) || inSync.contains(path)
+                    ? ownedHashes[path]
+                    : null) ??
+                _scaffoldHashBefore(before[path]),
+          Ownership.local => null,
+        },
       );
+
+      final declared = artifact.inputs;
+
+      if (declared != null) inputs[path] = declared;
     }
 
     for (final entry in stale) {
@@ -129,6 +166,10 @@ FlavorizrLock updateLock({
           ownership: entry.ownership,
           hash: entry.recordedHash,
         );
+
+        final kept = beforeInputs[entry.path];
+
+        if (kept != null) inputs[entry.path] = kept;
       }
     }
 
@@ -143,6 +184,7 @@ FlavorizrLock updateLock({
       before: previousProcessors[id]?.keys ?? const {},
       reported: ownedKeys[id] ?? const {},
       files: files.keys.toSet(),
+      copies: copies,
       retained: retained,
       isEmpty: (hashes) => hashes.isEmpty,
     );
@@ -152,6 +194,7 @@ FlavorizrLock updateLock({
         files: files,
         keys: keys,
         objects: objects,
+        inputs: inputs,
       );
     }
   }
@@ -176,12 +219,18 @@ FlavorizrLock updateLock({
 
 /// What to record for a processor, by file, of what it owns inside the files
 /// (the objects of a project, the keys of a file): see `updateLock`.
+///
+/// What a processor says about a local file it tracks ([copies]) is recorded as
+/// it says it, and never carried over: the lock does not hold local files, only
+/// what a processor asks it to remember about the copies it made, so that it
+/// can tell them from the ones of the user when it stops making them.
 Map<String, V> _recordedOf<V>({
   required Map<String, V> before,
   required Map<String, V> reported,
   required Set<String> files,
   required Set<String> retained,
   required bool Function(V value) isEmpty,
+  Set<String> copies = const {},
 }) {
   final recorded = <String, V>{};
 
@@ -201,7 +250,7 @@ Map<String, V> _recordedOf<V>({
     // not kept: the file is not owned (not tracked, or kept as the user has it).
     if (canonical == null ||
         retained.contains(canonical) ||
-        !files.contains(canonical)) {
+        !(files.contains(canonical) || copies.contains(canonical))) {
       continue;
     }
 
@@ -213,6 +262,9 @@ Map<String, V> _recordedOf<V>({
       if (!isEmpty(entry.value)) entry.key: entry.value,
   };
 }
+
+String? _scaffoldHashBefore(LockedFile? recorded) =>
+    recorded?.ownership == Ownership.scaffold ? recorded!.hash : null;
 
 LockedFile? _sameClass(LockedFile? recorded, Ownership ownership) =>
     recorded != null && recorded.ownership == ownership ? recorded : null;

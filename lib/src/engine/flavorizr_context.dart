@@ -26,7 +26,9 @@
 import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
+import 'package:flutter_flavorizr/src/engine/recorded_output.dart';
 import 'package:flutter_flavorizr/src/engine/resource_key.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
@@ -69,8 +71,7 @@ class FlavorizrContext {
   /// It is what [previousObjectsOf] and [ownObjects] speak for.
   final String? processorId;
 
-  /// The ids of every processor the run was asked for, the ones that run on
-  /// the legacy pipeline too.
+  /// The ids of every processor the run was asked for.
   ///
   /// A processor that depends on a step it does not run itself, such as the
   /// launch screen the plist points to, reads it here and not in the
@@ -93,6 +94,7 @@ class FlavorizrContext {
   final Map<String, Map<String, Set<String>>> _ownedObjects = {};
   final Map<String, Map<String, Map<String, String>>> _previousKeys;
   final Map<String, Map<String, Map<String, String>>> _ownedKeys = {};
+  final Map<String, Map<String, RecordedOutput>> _previousOutputs;
   final Set<String> _edited = {};
 
   /// Creates a context.
@@ -111,6 +113,7 @@ class FlavorizrContext {
     this.processorId,
     Map<String, Map<String, Set<String>>> previousObjects = const {},
     Map<String, Map<String, Map<String, String>>> previousKeys = const {},
+    Map<String, Map<String, RecordedOutput>> previousOutputs = const {},
     Iterable<String> previousFiles = const [],
     Set<String> selected = const {},
     this.adopting = false,
@@ -121,6 +124,7 @@ class FlavorizrContext {
        }),
        _previousObjects = _canonicalObjects(previousObjects),
        _previousKeys = _canonicalKeys(previousKeys),
+       _previousOutputs = _canonicalOutputs(previousOutputs),
        root = Directory(p.normalize(root.absolute.path)),
        projectRoot = Directory(p.normalize(projectRoot.absolute.path)),
        previousFlavors = Set.unmodifiable(previousFlavors);
@@ -280,6 +284,13 @@ class FlavorizrContext {
     );
   }
 
+  /// The canonical paths of the files the lock recorded keys for, for the
+  /// processor of this context: where [previousKeysOf] has something to say.
+  ///
+  /// Throws a [StateError] on a context that is not for a processor.
+  Set<String> get previousKeyFiles =>
+      Set.unmodifiable(_previousKeys[_requireProcessor()]?.keys ?? const []);
+
   /// The keys the processors declared through [ownKeys] so far, by processor
   /// id and then by canonical path of the file: the hash of the value, by key.
   ///
@@ -318,6 +329,49 @@ class FlavorizrContext {
           .putIfAbsent(canonicalPath(path), () => {})
           .addAll(hashes);
     }
+  }
+
+  /// What the lock recorded about the files each processor generated from
+  /// inputs, by processor id and then by canonical path: see
+  /// [isGeneratedFrom].
+  Map<String, Map<String, RecordedOutput>> get previousOutputs =>
+      _previousOutputs;
+
+  /// Whether the file at [path], relative to the project, is still what the
+  /// previous run generated from [inputs]: the lock recorded the same hash of
+  /// the inputs for it, and the file in the workspace is exactly what the lock
+  /// recorded, so nobody edited it since.
+  ///
+  /// It is how a processor skips what it does not need to generate again. The
+  /// file is then left as it is, and the processor declares it as usual, with
+  /// the same `ManagedArtifact.inputs`: it is not written, so the plan has
+  /// nothing to say about it, whatever a library would render today. A file
+  /// that is not what the lock recorded, because it is missing or was edited,
+  /// is `false`: generating it again is what finds the edit, and reports it as
+  /// the conflict it is.
+  ///
+  /// It is `false` on the first run, for a file the lock has no inputs for
+  /// (such as one recorded by a lock of version 1), for a link, which is never
+  /// followed, and on a context that is not for a processor, which the lock
+  /// has no record for.
+  ///
+  /// The path must stay within [root], otherwise an [ArgumentError] is thrown.
+  Future<bool> isGeneratedFrom(String path, String inputs) async {
+    final id = processorId;
+    final target = resolve(path);
+    final canonical = tryCanonicalPath(path);
+    final recorded = canonical == null || id == null
+        ? null
+        : _previousOutputs[id]?[canonical];
+
+    if (recorded == null ||
+        recorded.inputs != inputs ||
+        FileSystemEntity.typeSync(target, followLinks: false) !=
+            FileSystemEntityType.file) {
+      return false;
+    }
+
+    return digestOf(await File(target).readAsBytes()) == recorded.hash;
   }
 
   /// The files whose owned content a processor found edited by hand, by
@@ -389,6 +443,27 @@ class FlavorizrContext {
     }
 
     return _frozenKeys(result);
+  }
+
+  static Map<String, Map<String, RecordedOutput>> _canonicalOutputs(
+    Map<String, Map<String, RecordedOutput>> outputs,
+  ) {
+    final result = <String, Map<String, RecordedOutput>>{};
+
+    for (final MapEntry(key: id, value: byPath) in outputs.entries) {
+      for (final MapEntry(key: path, value: output) in byPath.entries) {
+        final canonical = tryCanonicalPath(path);
+
+        if (canonical == null) continue;
+
+        result.putIfAbsent(id, () => {})[canonical] = output;
+      }
+    }
+
+    return Map.unmodifiable({
+      for (final entry in result.entries)
+        entry.key: Map<String, RecordedOutput>.unmodifiable(entry.value),
+    });
   }
 
   static Map<String, Map<String, Map<String, String>>> _frozenKeys(

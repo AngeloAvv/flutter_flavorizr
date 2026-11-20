@@ -26,6 +26,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
@@ -44,6 +45,9 @@ const iosIconsProcessorId = 'ios:icons';
 /// The processor that makes the app icons of macOS.
 const macosIconsProcessorId = 'macos:icons';
 
+/// The processor that makes the icons of Windows.
+const windowsIconsProcessorId = 'windows:icons';
+
 /// The processor that makes the launch screens of iOS, opt-in per flavor.
 const iosLaunchScreenProcessorId = 'ios:launchScreen';
 
@@ -57,7 +61,8 @@ class _DummyIcons {
   final String platform;
   final Iterable<String> flavors;
 
-  /// The folder a flavor has its icons in, with the trailing `/`.
+  /// Where a flavor has its icons: a folder with the trailing `/`, or the file
+  /// when it has a single one.
   final String Function(String flavor) folder;
 
   /// Whether the dummy asset at [path] is an icon of the processor: the launch
@@ -125,7 +130,8 @@ final class Adoption {
 /// in the lock: neither is recorded.
 ///
 /// What 3.0 no longer makes cannot be found in [produced]. The dummy icons of 2.x
-/// for the flavors in [androidFlavors], [iosFlavors] and [macosFlavors] (which may
+/// for the flavors in [androidFlavors], [iosFlavors], [macosFlavors] and
+/// [windowsFlavors] (which may
 /// name flavors the configuration no longer has) are looked for by hash (see [DummyAssets]): the ones still
 /// holding the bytes 2.x wrote are recorded as managed by the icons processor of
 /// their platform, which no longer makes them, so that the next run proposes to delete them. The
@@ -138,6 +144,13 @@ final class Adoption {
 /// flavor, so the files they make say nothing about who owns them. For the
 /// icons of such a flavor the hash is all there is to go by, and the files the
 /// icons processor makes for it are not taken as produced.
+///
+/// The inputs of a generated image (see `ManagedArtifact.inputs`) are recorded
+/// only for the ones the project holds exactly as the run made them in
+/// [workspace], the shadow workspace the processors wrote to: the file is then
+/// what those inputs generate, whoever wrote it. Any other image is not known to
+/// come from them (2.x made it with its own renderer, or the user replaced it),
+/// so the next run, which finds no inputs for it, makes it and says what changes.
 ///
 /// The pbxproj objects and the build settings the processors say they own
 /// ([ownedObjects] and [ownedKeys], as the context of the run holds them) are
@@ -162,6 +175,7 @@ Future<Adoption> adoptProject({
   required Iterable<String> androidFlavors,
   Iterable<String> iosFlavors = const [],
   Iterable<String> macosFlavors = const [],
+  Iterable<String> windowsFlavors = const [],
   Set<String> historicalFlavors = const {},
   required Map<String, String> flavors,
   required Set<String> availableProcessors,
@@ -170,6 +184,7 @@ Future<Adoption> adoptProject({
   DummyAssets? dummyAssets,
   Map<String, Map<String, Set<String>>> ownedObjects = const {},
   Map<String, Map<String, Map<String, String>>> ownedKeys = const {},
+  Directory? workspace,
 }) async {
   final icons = [
     _DummyIcons(
@@ -193,6 +208,13 @@ Future<Adoption> adoptProject({
       (flavor) => 'macos/Runner/Assets.xcassets/AppIcon-$flavor.appiconset/',
       _inAppIconSet,
     ),
+    _DummyIcons(
+      windowsIconsProcessorId,
+      'windows',
+      windowsFlavors,
+      (flavor) => 'windows/runner/resources/$flavor.ico',
+      _any,
+    ),
   ];
   final present = <String, List<Artifact>>{};
   final hashes = <String, String>{};
@@ -215,9 +237,20 @@ Future<Adoption> adoptProject({
       final bytes = path == null ? null : _read(projectRoot, path);
 
       if (path == null || bytes == null) continue;
-      if (synthetic.any(path.startsWith)) continue;
+      // A folder (it ends with `/`) holds what is below it; a file is only
+      // itself: `apple.ico` is not a prefix of the file of `apple.ico2`.
+      if (synthetic.any(
+        (target) =>
+            target.endsWith('/') ? path.startsWith(target) : path == target,
+      )) {
+        continue;
+      }
 
-      found.add(artifact);
+      found.add(
+        artifact.inputs == null || _isMadeIn(workspace, path, bytes)
+            ? artifact
+            : Artifact.managed(path),
+      );
       hashes[path] = hasher(artifact, bytes);
     }
   }
@@ -288,6 +321,13 @@ Future<Adoption> adoptProject({
     userOwned: userOwned..sort(),
     launchScreens: launchScreens..sort(),
   );
+}
+
+/// Whether the file at [path] in [workspace] holds exactly [bytes].
+bool _isMadeIn(Directory? workspace, String path, List<int> bytes) {
+  final made = workspace == null ? null : _read(workspace, path);
+
+  return made != null && const ListEquality<int>().equals(made, bytes);
 }
 
 /// Whether [path] is a folder of the project, and not a link to one.

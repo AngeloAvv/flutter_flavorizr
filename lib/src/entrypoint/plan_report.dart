@@ -30,9 +30,8 @@ import 'package:flutter_flavorizr/src/entrypoint/engine_runner.dart';
 import 'package:flutter_flavorizr/src/entrypoint/output/style.dart';
 import 'package:flutter_flavorizr/src/entrypoint/run_plan.dart';
 
-/// The processors of [plan] as text: the ones of the engine in the order they
-/// run, with the ones pulled in by a dependency marked `(auto)`, then the ones
-/// the legacy pipeline runs, which cannot be previewed.
+/// The processors of [plan] as text, in the order they run, with the ones pulled
+/// in by a dependency marked `(auto)`.
 String renderRunPlan(RunPlan plan) {
   final steps = plan.engine.steps;
 
@@ -41,10 +40,6 @@ String renderRunPlan(RunPlan plan) {
       'Processors on the engine, in order:\n'
           '${[for (var index = 0; index < steps.length; index++) '  ${index + 1}. ${steps[index].processor.id}'
                 '${steps[index].auto ? ' (auto)' : ''}'].join('\n')}',
-    if (plan.legacy.isNotEmpty)
-      'Processors not on the engine yet, applied straight to the project '
-          'afterwards, with no preview and no conflict detection:\n'
-          '${[for (final step in plan.legacy) '  - ${step.id}'].join('\n')}',
     if (plan.isEmpty) 'There is nothing to run.',
   ].join('\n\n');
 }
@@ -89,7 +84,7 @@ String renderPreview(
     ],
     if (preview.reconciliation.deletions.released.isNotEmpty)
       'Left in place (shared with you, no longer owned by flavorizr):\n'
-          '${[for (final stale in preview.reconciliation.deletions.released) '  - ${stale.path}'].join('\n')}',
+          '${[for (final stale in preview.reconciliation.deletions.released) '  - ${preview.reconciliation.deletions.describeReleased(stale)}'].join('\n')}',
     if (preview.reconciliation.invalid.isNotEmpty)
       'Ignored in the lock (not a path of the project):\n'
           '${[for (final path in preview.reconciliation.invalid) '  - ${path.path} (${path.processorId})'].join('\n')}',
