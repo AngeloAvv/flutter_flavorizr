@@ -130,13 +130,19 @@ class IosInfoPlistPatchProcessor extends InfoPlistPatchProcessor {
     // The storyboard the project has is lost once the plist points at the
     // flavors, unless the xcconfig of the flavors keeps it: it does when
     // `ios:xcconfig` is in the run (it reads the plist as it is now), or kept
-    // this very one in an earlier one. Without it the plist is left as it is, so that the
-    // storyboard can be put back.
+    // this very one in an earlier one. A project that has none kept, and has the
+    // storyboard of Flutter, loses nothing: it is what is put back. Anything else
+    // leaves the plist as it is, so that the storyboard can be kept first.
+    final kept = keptLaunchStoryboardName(ctx.projectRoot);
+    final safe =
+        ctx.selected.contains('ios:xcconfig') ||
+        kept == current ||
+        (kept == null &&
+            current == InfoPlistEditor.defaultLaunchStoryboardNameValue);
+
     if (current != InfoPlistEditor.launchStoryboardNameValue &&
         current != null &&
-        current != InfoPlistEditor.defaultLaunchStoryboardNameValue &&
-        !ctx.selected.contains('ios:xcconfig') &&
-        keptLaunchStoryboardName(ctx.projectRoot) != current) {
+        !safe) {
       ctx.logger.warn(
         '`UILaunchStoryboardName` of `${K.iOSPListPath}` is `$current`, and it '
         'is left as it is: run `ios:xcconfig` first (or with `ios:plist`) so '

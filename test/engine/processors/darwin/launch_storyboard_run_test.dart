@@ -283,5 +283,44 @@ void main() {
         contains('DEFAULT_LAUNCH_SCREEN_NAME=OtherLaunch\n'),
       );
     });
+
+    test('ios:plist alone does not take LaunchScreen either when ios:xcconfig '
+        'kept another storyboard', () async {
+      project.write('flavorizr.yaml', _config(root: 'launchScreen: true\n'));
+      await only('ios:xcconfig');
+
+      // The user goes back to the storyboard of Flutter after.
+      project.write(
+        _plist,
+        project.read(_plist).replaceFirst('CustomLaunch', 'LaunchScreen'),
+      );
+
+      await only('ios:plist');
+
+      expect(storyboard(), 'LaunchScreen');
+      expect(project.logger.warnings, isNotEmpty);
+
+      await only('ios:xcconfig');
+      await only('ios:plist');
+
+      expect(storyboard(), r'$(LAUNCH_SCREEN_NAME)');
+
+      project.write('flavorizr.yaml', _config());
+      await only('ios:plist');
+
+      expect(storyboard(), 'LaunchScreen');
+    });
+
+    test('ios:xcconfig lets go of a storyboard that is stale once the plist '
+        'is not pointing at the flavors', () async {
+      project.write('flavorizr.yaml', _config(root: 'launchScreen: true\n'));
+      await only('ios:xcconfig');
+      project.write('flavorizr.yaml', _config());
+
+      await only('ios:xcconfig');
+
+      expect(xcconfig('apple'), isNot(contains('LAUNCH_SCREEN')));
+      expect(storyboard(), 'CustomLaunch');
+    });
   });
 }
