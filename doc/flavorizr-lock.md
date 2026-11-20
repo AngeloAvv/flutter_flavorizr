@@ -29,6 +29,7 @@ processors:
         hash: sha256:c3d9f1
         ownership: managed
       lib/flavors.dart:
+        hash: sha256:4be0a2
         ownership: scaffold
   ios:xcodeproj:
     objects:
@@ -45,16 +46,20 @@ processors:
         project/C93DD37D645EA448590670D3/SWIFT_VERSION: sha256:5cc31a
         target/0A5C1A5E4B1C0D2F3E4A5B6C/PRODUCT_NAME: sha256:9d8e1f
   android:icons:
+    files:
+      android/app/src/dev/res/mipmap-hdpi/ic_launcher.png:
+        hash: sha256:73c0de
+        ownership: managed
     inputs:
       android/app/src/dev/res/mipmap-hdpi/ic_launcher.png: sha256:e8a6b7
-schemaVersion: 1
+schemaVersion: 2
 ```
 
-## Schema (version 1)
+## Schema (version 2)
 
 | Key | Type | Meaning |
 | --- | --- | --- |
-| `schemaVersion` | integer | Version of the lock format. Bumped when the format changes in a way an older flavorizr cannot read. |
+| `schemaVersion` | integer | Version of the lock format. Bumped when the format changes in a way an older flavorizr cannot read: see [Versions of the format](#versions-of-the-format). |
 | `flavorizrVersion` | string | Version of flutter_flavorizr that wrote the lock. |
 | `flavors` | map | Flavor name to the hash of its resolved configuration. The names are what the engine reads back as `previousFlavors`. |
 | `processors` | map | Processor id (for example `android:buildGradle`) to what it owns. |
@@ -63,11 +68,11 @@ Each processor has these optional sections, left out when empty:
 
 | Section | Shape | Meaning |
 | --- | --- | --- |
-| `files` | path to `{ownership, hash?}` | Whole files. `ownership` is `scaffold`, `managed` or `patched`. `hash` is the hash of the owned content (the whole file for `managed`, the owned parts for `patched`) and is present exactly for the hashed classes, so never for `scaffold`. |
+| `files` | path to `{ownership, hash?}` | Whole files. `ownership` is `scaffold`, `managed` or `patched`. `hash` is the hash of the owned content (the whole file for `managed`, the owned parts for `patched`) and is always present for those two. For a `scaffold` it is the hash of what flavorizr wrote, and is present only when flavorizr wrote it (or found it as it would have): see [Scaffold hashes](#scaffold-hashes). |
 | `regions` | path to region id to hash | Marked regions of a shared file. |
 | `keys` | path to key to hash | Owned keys of a plist, manifest, XML or project file: the hash of the value flavorizr wrote. See [Owned build settings](#owned-build-settings). |
 | `objects` | path to list of UUIDs | UUIDs of the pbxproj objects flavorizr created, sorted. See [Owned objects](#owned-objects). |
-| `inputs` | output path to hash | Generated binaries such as icons: the hash of the *inputs* (source file hash plus options), never of the output, so bumping a library such as `image` creates no noise. |
+| `inputs` | output path to hash | Generated binaries such as icons: the hash of the *inputs* (source file hash plus options), never of the output, so bumping a library such as `image` creates no noise. A path is here only when it is also one of the `files`. See [Inputs of generated files](#inputs-of-generated-files). |
 
 Notes:
 
@@ -98,6 +103,81 @@ Notes:
   in `objects` but not hashed, so an edit of it by hand is not seen as drift. A
   test checks that every object `ios:xcconfig` records is one of the lines the
   reader hashes.
+
+## Versions of the format
+
+| `schemaVersion` | What it adds |
+| --- | --- |
+| `1` | The format of the 3.0 development builds. |
+| `2` | The `hash` of a `scaffold` file, and `inputs` filled in for the generated images. |
+
+A lock of version 1 is read as it is: its scaffolds have no hash and no file has
+inputs, which means "not known yet", never an error. The next run that writes
+the lock writes version 2, with what that run could learn (see below), and no
+conflict or change to the project comes from the upgrade itself. A flavorizr
+that only knows version 1 refuses a lock of version 2 with a hint to upgrade,
+since it would drop what it does not know when it writes the lock again.
+
+## Inputs of generated files
+
+An icon is rendered from an image, and the bytes the renderer makes depend on
+the version of the library that encodes them, and on the machine. So that a run
+does not rewrite every icon after an update of `package:image`, or on a
+colleague's machine, the lock records for each generated image the hash of what
+it was made **from**, next to the hash of the file:
+
+```yaml
+windows:icons:
+  files:
+    windows/runner/resources/dev.ico:
+      hash: sha256:73c0de
+      ownership: managed
+  inputs:
+    windows/runner/resources/dev.ico: sha256:e8a6b7
+```
+
+The hash of the inputs is made of the digest of the bytes of the source image, the
+kind of file (`png` or `ico`) and the sizes of its frames, and the label, colour
+and area of the badge, if any, plus the version of flavorizr's rendering (it is
+bumped when the pixels flavorizr draws change on purpose). The path of the
+source, the flavor and the machine are not part of it.
+
+A run asks, for each image: *are the inputs the ones the lock recorded, and is the
+file the one the lock recorded?* If both are true the image is neither rendered
+nor written, and the plan has nothing to say about it, whatever the renderer would
+make today. Otherwise it is rendered as ever:
+
+| What changed | What happens |
+| --- | --- |
+| Nothing | Nothing is rendered or written. |
+| The source image (its content), the badge (label, colour, on or off) or the size set | The image is rendered again. |
+| Only the path of the source, or the library that encodes the PNG | Nothing. |
+| The file was edited by hand | It is rendered again, and a file that differs from what the lock recorded is a conflict, as for any managed file. |
+| The file is missing | It is rendered again. |
+| The lock has no inputs for it (version 1) | It is rendered again, which is how the lock learns them. |
+| The source image is missing or is not an image | The run fails, and nothing is written. |
+
+`flavorizr adopt` (and the adoption of a first run) records the inputs of an image
+only when the file on disk is exactly what flavorizr would make from them now: it
+cannot tell what a file that is different was made from (2.x had its own
+renderer, or the user replaced it), so the next run makes it and says so.
+
+## Scaffold hashes
+
+A `scaffold` file is the user's once it exists, and a run never touches it, so
+whatever the user does to it is never drift. The lock still records the hash of
+what flavorizr **wrote**, so that a scaffold that flavorizr no longer produces is
+dealt with safely:
+
+* a scaffold that is still as it was written is removed silently;
+* one that was edited, or whose hash the lock does not have, goes through the
+  conflict flow, and nothing is deleted without the user's say.
+
+The hash is recorded when a run creates the file or replaces it with
+`--overwrite-scaffold`, and also when the file that is there is exactly what the
+run would write (which is how a lock of version 1 learns it). A scaffold the user
+had before flavorizr, or one the user changed, keeps whatever the lock had for it:
+no hash for the first, the hash of what was written for the second.
 
 ## Owned objects
 
@@ -252,8 +332,9 @@ When it reads the lock, flutter_flavorizr checks, before anything else:
 * a `flavorizrVersion` **higher** than the running one (semantic version
   precedence, build metadata ignored): the run is blocked with the same hint,
   since the newer version may have recorded things this one would drop;
-* anything older or equal is read normally. Version 1 is the only format so
-  far; when it changes, the new reader is responsible for the older versions.
+* anything older or equal is read normally. A lock of version 1 is read and
+  written back as version 2 (see [Versions of the format](#versions-of-the-format));
+  when the format changes, the new reader is responsible for the older versions.
 
 A lock that is not valid YAML or does not have the shape above is reported as
 malformed, with the file to restore from version control or delete.

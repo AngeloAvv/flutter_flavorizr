@@ -167,6 +167,7 @@ Future<AdoptRun> runAdoption(
         dummyAssets: context.dummyAssets,
         ownedObjects: ctx.ownedObjects,
         ownedKeys: ctx.ownedKeys,
+        workspace: shadow.root,
       );
 
       if (!write) return;

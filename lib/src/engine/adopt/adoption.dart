@@ -26,6 +26,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_flavorizr/src/engine/adopt/dummy_assets.dart';
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
@@ -144,6 +145,13 @@ final class Adoption {
 /// icons of such a flavor the hash is all there is to go by, and the files the
 /// icons processor makes for it are not taken as produced.
 ///
+/// The inputs of a generated image (see `ManagedArtifact.inputs`) are recorded
+/// only for the ones the project holds exactly as the run made them in
+/// [workspace], the shadow workspace the processors wrote to: the file is then
+/// what those inputs generate, whoever wrote it. Any other image is not known to
+/// come from them (2.x made it with its own renderer, or the user replaced it),
+/// so the next run, which finds no inputs for it, makes it and says what changes.
+///
 /// The pbxproj objects and the build settings the processors say they own
 /// ([ownedObjects] and [ownedKeys], as the context of the run holds them) are
 /// recorded for the ones the project **has**: the UUIDs 2.x gave to the objects
@@ -176,6 +184,7 @@ Future<Adoption> adoptProject({
   DummyAssets? dummyAssets,
   Map<String, Map<String, Set<String>>> ownedObjects = const {},
   Map<String, Map<String, Map<String, String>>> ownedKeys = const {},
+  Directory? workspace,
 }) async {
   final icons = [
     _DummyIcons(
@@ -237,7 +246,11 @@ Future<Adoption> adoptProject({
         continue;
       }
 
-      found.add(artifact);
+      found.add(
+        artifact.inputs == null || _isMadeIn(workspace, path, bytes)
+            ? artifact
+            : Artifact.managed(path),
+      );
       hashes[path] = hasher(artifact, bytes);
     }
   }
@@ -308,6 +321,13 @@ Future<Adoption> adoptProject({
     userOwned: userOwned..sort(),
     launchScreens: launchScreens..sort(),
   );
+}
+
+/// Whether the file at [path] in [workspace] holds exactly [bytes].
+bool _isMadeIn(Directory? workspace, String path, List<int> bytes) {
+  final made = workspace == null ? null : _read(workspace, path);
+
+  return made != null && const ListEquality<int>().equals(made, bytes);
 }
 
 /// Whether [path] is a folder of the project, and not a link to one.

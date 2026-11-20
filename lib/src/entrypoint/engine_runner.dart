@@ -33,6 +33,8 @@ import 'package:flutter_flavorizr/src/engine/conflict/conflict_terminal.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/built_in_recipes.dart';
 import 'package:flutter_flavorizr/src/engine/lock/lock_store.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
+import 'package:flutter_flavorizr/src/engine/recorded_output.dart';
 import 'package:flutter_flavorizr/src/engine/plan_executor.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/reconciliation.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
@@ -253,6 +255,18 @@ Future<EngineRun> runEngine(
               const <MapEntry<String, ProcessorLock>>[])
         if (lock.keys.isNotEmpty) id: lock.keys,
     },
+    previousOutputs: {
+      for (final MapEntry(key: id, value: lock)
+          in previous?.processors.entries ??
+              const <MapEntry<String, ProcessorLock>>[])
+        if (lock.inputs.isNotEmpty)
+          id: {
+            for (final MapEntry(key: path, value: inputs)
+                in lock.inputs.entries)
+              if (lock.files[path]?.hash case final hash?)
+                path: RecordedOutput(hash: hash, inputs: inputs),
+          },
+    },
     previousFiles: [
       for (final lock in previous?.processors.values ?? const <ProcessorLock>[])
         ...lock.files.keys,
@@ -266,7 +280,9 @@ Future<EngineRun> runEngine(
         tracked: ctx.tracked,
         ownedHashes: {
           for (final artifact in ctx.tracked)
-            if (artifact.ownership.isHashed &&
+            // A scaffold is hashed too, for the lock to say what was written.
+            if ((artifact.ownership.isHashed ||
+                    artifact.ownership == Ownership.scaffold) &&
                 File(ctx.resolve(artifact.path)).existsSync())
               artifact.path: registry.hash(
                 artifact,

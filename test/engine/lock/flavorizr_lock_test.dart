@@ -62,11 +62,11 @@ void main() {
       );
     });
 
-    test('refuses a hash for a class that is not hashed', () {
-      expect(
-        () => LockedFile(ownership: Ownership.scaffold, hash: 'h'),
-        throwsArgumentError,
-      );
+    test('records the hash of what flavorizr wrote for a scaffold', () {
+      final scaffold = LockedFile(ownership: Ownership.scaffold, hash: 'h');
+
+      expect(scaffold.hash, 'h');
+      expect(scaffold, isNot(LockedFile(ownership: Ownership.scaffold)));
     });
   });
 
