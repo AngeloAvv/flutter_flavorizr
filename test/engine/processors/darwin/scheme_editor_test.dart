@@ -27,6 +27,7 @@ import 'dart:io';
 
 import 'package:flutter_flavorizr/src/engine/processors/darwin/scheme_editor.dart';
 import 'package:test/test.dart';
+import 'package:xml/xml.dart';
 
 import 'flutter_scheme.dart';
 
@@ -111,7 +112,16 @@ void main() {
   });
 
   group('SchemeEditor.foreignContent', () {
-    final foreign = SchemeEditor.foreignContent(_pristine);
+    /// The foreign content of [source], which has to be XML: a source that
+    /// is not is its own foreign content, and a test of an edit that broke the
+    /// XML would pass for what it did not test.
+    String foreignOf(String source) {
+      XmlDocument.parse(source);
+
+      return SchemeEditor.foreignContent(source);
+    }
+
+    final foreign = foreignOf(_pristine);
 
     test('does not change with the build configurations', () {
       final edited = _pristine
@@ -120,7 +130,7 @@ void main() {
           .replaceAll('"Profile"', '"Profile-dates"');
 
       expect(edited, isNot(_pristine));
-      expect(SchemeEditor.foreignContent(edited), foreign);
+      expect(foreignOf(edited), foreign);
     });
 
     test('does not change when Flutter injects its pre-action, for iOS or '
@@ -129,7 +139,7 @@ void main() {
         final injected = withFlutterPreAction(_pristine, platform: platform);
 
         expect(injected, isNot(_pristine));
-        expect(SchemeEditor.foreignContent(injected), foreign);
+        expect(foreignOf(injected), foreign);
       }
     });
 
@@ -139,7 +149,7 @@ void main() {
           .replaceFirst(RegExp(r'<Scheme\s'), '<Scheme ');
 
       expect(relaid, isNot(_pristine));
-      expect(SchemeEditor.foreignContent(relaid), foreign);
+      expect(foreignOf(relaid), foreign);
     });
 
     test('changes with what the user edits', () {
@@ -158,7 +168,7 @@ void main() {
       <BuildActionEntries>'''),
       ]) {
         expect(edited, isNot(_pristine));
-        expect(SchemeEditor.foreignContent(edited), isNot(foreign));
+        expect(foreignOf(edited), isNot(foreign));
       }
     });
 
@@ -168,7 +178,6 @@ void main() {
       String script, {
       String title = SchemeEditor.prepareTitle,
       String after = '',
-      String container = 'BuildAction',
     }) {
       final action =
           '''<PreActions>
@@ -177,15 +186,10 @@ void main() {
          </ExecutionAction>
       </PreActions>''';
 
-      return container == 'BuildAction'
-          ? _pristine.replaceFirst(
-              '<BuildActionEntries>',
-              '$action\n<BuildActionEntries>',
-            )
-          : _pristine.replaceFirst(
-              '<$container',
-              '<$container>$action</$container><$container',
-            );
+      return _pristine.replaceFirst(
+        '<BuildActionEntries>',
+        '$action\n<BuildActionEntries>',
+      );
     }
 
     test('keeps a script of the user that only mentions the one of Flutter', () {
@@ -208,30 +212,54 @@ void main() {
           after: '<Mine/>',
         ),
       ]) {
-        expect(
-          SchemeEditor.foreignContent(edited),
-          isNot(foreign),
-          reason: edited,
-        );
+        expect(foreignOf(edited), isNot(foreign), reason: edited);
       }
     });
 
     test('keeps the pre-action of Flutter outside of the build action', () {
-      final edited = _pristine.replaceFirst(
-        '<LaunchAction',
-        '''<LaunchAction''',
-      );
       final injected = withFlutterPreAction(_pristine);
       final action = RegExp(
         r'<PreActions>[\s\S]*?</PreActions>',
       ).firstMatch(injected)!.group(0)!;
-      final moved = edited.replaceFirst(
-        RegExp(r'(<LaunchAction[^>]*>)'),
-        r'$1'
-        '\n$action',
+      final moved = _pristine.replaceFirstMapped(
+        RegExp(r'<LaunchAction[^>]*>'),
+        (match) => '${match.group(0)}\n$action',
       );
 
-      expect(SchemeEditor.foreignContent(moved), isNot(foreign));
+      // The scheme has it in the launch action, and no pre-action in the
+      // build action.
+      expect(
+        XmlDocument.parse(
+          moved,
+        ).rootElement.getElement('LaunchAction')!.getElement('PreActions'),
+        isNotNull,
+      );
+      expect(foreignOf(moved), isNot(foreign));
+    });
+
+    test('keeps a pre-action that looks like the one of Flutter when it is '
+        'for another target, or has more in it', () {
+      final injected = withFlutterPreAction(_pristine);
+
+      for (final edited in [
+        injected.replaceFirstMapped(
+          RegExp(
+            r'(<EnvironmentBuildable>[\s\S]*?BlueprintIdentifier = )"[^"]*"',
+          ),
+          (match) => '${match.group(1)}"0123456789ABCDEF"',
+        ),
+        injected.replaceFirst(
+          '</EnvironmentBuildable>',
+          '<Mine/></EnvironmentBuildable>',
+        ),
+        injected.replaceFirst(
+          '<EnvironmentBuildable>',
+          '<EnvironmentBuildable><!-- mine -->',
+        ),
+      ]) {
+        expect(edited, isNot(injected));
+        expect(foreignOf(edited), isNot(foreign));
+      }
     });
 
     test('keeps a comment in a pre-actions container, with or without the '
@@ -242,16 +270,11 @@ void main() {
       );
       final injected = withFlutterPreAction(bare);
 
-      expect(SchemeEditor.foreignContent(bare), isNot(foreign));
+      expect(foreignOf(bare), isNot(foreign));
+      expect(foreignOf(injected), foreignOf(bare));
       expect(
-        SchemeEditor.foreignContent(injected),
-        SchemeEditor.foreignContent(bare),
-      );
-      expect(
-        SchemeEditor.foreignContent(
-          bare.replaceFirst('deployment note', 'another note'),
-        ),
-        isNot(SchemeEditor.foreignContent(bare)),
+        foreignOf(bare.replaceFirst('deployment note', 'another note')),
+        isNot(foreignOf(bare)),
       );
     });
 
@@ -260,9 +283,7 @@ void main() {
       final injected = withFlutterPreAction(_pristine);
 
       expect(
-        SchemeEditor.foreignContent(
-          injected.replaceFirst('<PreActions>', '<PreActions>\n\n   '),
-        ),
+        foreignOf(injected.replaceFirst('<PreActions>', '<PreActions>\n\n   ')),
         foreign,
       );
     });
@@ -272,27 +293,22 @@ void main() {
         _pristine.replaceFirst('<Scheme', '<!-- deployment note -->\n<Scheme'),
         '$_pristine\n<!-- deployment note -->\n',
       ]) {
-        expect(SchemeEditor.foreignContent(edited), isNot(foreign));
+        expect(foreignOf(edited), isNot(foreign));
       }
 
       expect(
-        SchemeEditor.foreignContent(
+        foreignOf(
           _pristine.replaceFirst('<Scheme', '<!--  note  -->\n<Scheme'),
         ),
-        SchemeEditor.foreignContent(
-          _pristine.replaceFirst('<Scheme', '<!-- note -->\n<Scheme'),
-        ),
+        foreignOf(_pristine.replaceFirst('<Scheme', '<!-- note -->\n<Scheme')),
       );
     });
 
     test('does not depend on line endings, nor on the order of the '
         'attributes', () {
+      expect(foreignOf(_pristine.replaceAll('\n', '\r\n')), foreign);
       expect(
-        SchemeEditor.foreignContent(_pristine.replaceAll('\n', '\r\n')),
-        foreign,
-      );
-      expect(
-        SchemeEditor.foreignContent(
+        foreignOf(
           _pristine.replaceFirst(
             RegExp(r'LastUpgradeVersion = "1510"\s+version = "1.3"'),
             'version = "1.3" LastUpgradeVersion = "1510"',
@@ -306,14 +322,8 @@ void main() {
       String scheme(String child) =>
           _pristine.replaceFirst('</Scheme>', '<Mine>$child</Mine>\n</Scheme>');
 
-      expect(
-        SchemeEditor.foreignContent(scheme('<![CDATA[a]]>')),
-        SchemeEditor.foreignContent(scheme('a')),
-      );
-      expect(
-        SchemeEditor.foreignContent(scheme('<!--a-->')),
-        isNot(SchemeEditor.foreignContent(scheme('a'))),
-      );
+      expect(foreignOf(scheme('<![CDATA[a]]>')), foreignOf(scheme('a')));
+      expect(foreignOf(scheme('<!--a-->')), isNot(foreignOf(scheme('a'))));
     });
 
     test('is the whole text when the scheme is not XML', () {

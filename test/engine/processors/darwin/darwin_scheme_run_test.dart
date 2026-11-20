@@ -96,6 +96,16 @@ List<String> _preActions(String scheme) => [
         .toXmlString(),
 ];
 
+/// [source] with [edit] made, which has to change it: an edit that finds
+/// nothing to edit would test nothing.
+String _edited(String source, String Function(String source) edit) {
+  final result = edit(source);
+
+  expect(result, isNot(source));
+
+  return result;
+}
+
 void main() {
   late CliFixture project;
 
@@ -396,7 +406,11 @@ void main() {
 
       project.write(
         '$_schemes/dates.xcscheme',
-        scheme('dates').replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        _edited(
+          scheme('dates'),
+          (source) =>
+              source.replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        ),
       );
 
       expect(
@@ -410,9 +424,12 @@ void main() {
       await apply();
       project.write(
         '$_schemes/dates.xcscheme',
-        withFlutterPreAction(scheme('dates')).replaceFirst(
-          'buildConfiguration = "Release-dates"',
-          'buildConfiguration = "Release"',
+        _edited(
+          withFlutterPreAction(scheme('dates')),
+          (source) => source.replaceFirst(
+            'buildConfiguration = "Release-dates"',
+            'buildConfiguration = "Release"',
+          ),
         ),
       );
 
@@ -426,7 +443,7 @@ void main() {
       await apply();
       project.write(
         '$_schemes/dates.xcscheme',
-        scheme('dates').replaceAll('   ', ' '),
+        _edited(scheme('dates'), (source) => source.replaceAll('   ', ' ')),
       );
 
       final code = await drop();
@@ -440,7 +457,11 @@ void main() {
       await apply();
       project.write(
         '$_schemes/dates.xcscheme',
-        scheme('dates').replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        _edited(
+          scheme('dates'),
+          (source) =>
+              source.replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+        ),
       );
 
       final code = await drop();
@@ -482,9 +503,11 @@ void main() {
         await apply();
         project.write(
           '$_schemes/dates.xcscheme',
-          scheme(
-            'dates',
-          ).replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+          _edited(
+            scheme('dates'),
+            (source) =>
+                source.replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+          ),
         );
 
         final code = await drop(['--on-conflict', 'overwrite']);
@@ -497,9 +520,11 @@ void main() {
     test('is patched in place when its flavor comes back after the user kept '
         'it', () async {
       await apply();
-      final mine = scheme(
-        'dates',
-      ).replaceFirst('launchStyle = "0"', 'launchStyle = "1"');
+      final mine = _edited(
+        scheme('dates'),
+        (source) =>
+            source.replaceFirst('launchStyle = "0"', 'launchStyle = "1"'),
+      );
       project.write('$_schemes/dates.xcscheme', mine);
       await drop();
       project.write('flavorizr.yaml', _config());

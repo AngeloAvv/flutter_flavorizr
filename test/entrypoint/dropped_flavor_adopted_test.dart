@@ -45,12 +45,14 @@ void main() {
   late CliFixture project;
 
   /// The configuration without `banana`.
-  void dropBanana() => project.write(
-    'flavorizr.yaml',
-    project
+  void dropBanana() {
+    final yaml = project
         .read('flavorizr.yaml')
-        .replaceFirst(RegExp(r'  banana:.*?(?=\nide:)', dotAll: true), ''),
-  );
+        .replaceFirst(RegExp(r'  banana:.*?(?=\nide:)', dotAll: true), '');
+
+    expect(yaml, isNot(contains('banana')));
+    project.write('flavorizr.yaml', yaml);
+  }
 
   setUp(() => project = project2x());
   tearDown(() => project.dispose());

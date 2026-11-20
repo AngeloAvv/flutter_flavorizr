@@ -25,6 +25,7 @@
 
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:xml/xml.dart';
 
@@ -161,8 +162,18 @@ abstract final class SchemeEditor {
         ?.getElement('PreActions');
 
     if (preActions != null) {
+      // What Flutter's action refers to is the target the scheme builds.
+      final targets = [
+        for (final reference
+            in scheme
+                .getElement('BuildAction')!
+                .findAllElements('BuildActionEntry')
+                .expand((entry) => entry.findElements('BuildableReference')))
+          _attributesOf(reference),
+      ];
+
       for (final action in preActions.childElements.toList()) {
-        if (_isPrepareAction(action)) action.remove();
+        if (_isPrepareAction(action, targets)) action.remove();
       }
 
       // What was left of the container is the user's, comments included: it
@@ -195,10 +206,15 @@ abstract final class SchemeEditor {
 
   /// Whether [action] is the pre-action Flutter adds, as Flutter writes it: a
   /// shell script action of the title [prepareTitle] that runs the script of
-  /// [PrepareScript] for iOS or macOS, and nothing else. A script that only
-  /// mentions it, one that runs it and something more, and a comment or an
-  /// element nobody expects in it make it the user's.
-  static bool _isPrepareAction(XmlElement action) {
+  /// [PrepareScript] for iOS or macOS, for one of the [targets] the scheme builds
+  /// (the attributes of their `BuildableReference`), and nothing else. A script
+  /// that only mentions it, one that runs it and something more, one for another
+  /// target, and a comment or an element nobody expects in it make it the
+  /// user's.
+  static bool _isPrepareAction(
+    XmlElement action,
+    List<Map<String, String>> targets,
+  ) {
     if (action.name.local != 'ExecutionAction' ||
         action.attributes.length != 1 ||
         action.getAttribute('ActionType') != _shellScriptAction ||
@@ -224,10 +240,42 @@ abstract final class SchemeEditor {
         PrepareScript.values.any(
           (script) => content.getAttribute('scriptText') == script.scriptText,
         ) &&
-        content.childElements.every(
-          (child) => child.name.local == 'EnvironmentBuildable',
-        );
+        _refersToATarget(content, targets);
   }
+
+  /// Whether the `ActionContent` is made of an `EnvironmentBuildable` that
+  /// holds a single `BuildableReference`, which is one of the [targets].
+  static bool _refersToATarget(
+    XmlElement content,
+    List<Map<String, String>> targets,
+  ) {
+    final buildables = content.childElements.toList();
+
+    if (buildables.length != 1 ||
+        buildables.single.name.local != 'EnvironmentBuildable' ||
+        buildables.single.attributes.isNotEmpty) {
+      return false;
+    }
+
+    final references = buildables.single.childElements.toList();
+
+    if (references.length != 1 ||
+        references.single.name.local != 'BuildableReference' ||
+        references.single.childElements.isNotEmpty) {
+      return false;
+    }
+
+    final reference = _attributesOf(references.single);
+
+    return targets.any(
+      (target) => const MapEquality<String, String>().equals(target, reference),
+    );
+  }
+
+  static Map<String, String> _attributesOf(XmlElement element) => {
+    for (final attribute in element.attributes)
+      attribute.name.qualified: attribute.value,
+  };
 
   /// [element] as one line per node, indented by depth, with its attributes by
   /// name: the layout of the source is not in it.
