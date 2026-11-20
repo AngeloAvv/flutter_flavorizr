@@ -40,6 +40,13 @@ import 'package:path/path.dart' as p;
 /// with it, so it is written again silently on every run, never hashed in the
 /// lock, and never a conflict or drift.
 ///
+/// The source is resolved once, and what is read is the resolved file, never
+/// the path of the configuration again. Replacing the source, or a folder
+/// above it, with a link between the check that it stays within the project and
+/// the read is outside the threat model: `dart:io` cannot open a file relative
+/// to a folder, nor without following links, and this is a command that runs on
+/// the project of the user, who is the one that can write to it.
+///
 /// Returns the bytes that were copied. Throws a [FileNotFoundException] when
 /// the source does not exist, a [MalformedResourceException] when it is not a
 /// file, and an [ArgumentError] when it leaves the project.
