@@ -44,6 +44,8 @@
 // files of the flavor that was dropped are gone. On iOS and macOS `apple` has an
 // `icon` and `banana` a `badge` with no icon of its own, so the build compiles
 // the icon sets of both, and the set of the flavor that was dropped is gone.
+// The same two flavors on Windows have an `.ico` each, and the one of the flavor
+// that was dropped is gone.
 //
 // The files of the project are the ones `flutter create` writes, so a change of
 // Flutter that a processor does not follow is found here.
@@ -82,19 +84,20 @@ const _build = {
 
 String _config(String platform, Iterable<String> flavors) {
   final section = _platformSection[platform]!;
-  final apple = platform == 'ios' || platform == 'macos';
+  // On iOS, macOS and Windows `apple` has an icon of its own, and `banana` has
+  // a badge and none: its icons are made from the one of the root.
+  final iconed =
+      platform == 'ios' || platform == 'macos' || platform == 'windows';
   final root = [
     if (platform == 'ios') 'launchScreen: true',
-    // On iOS and macOS `apple` has an icon of its own, and `banana` has a badge
-    // and none: its icons are made from the one of the root.
-    if (apple) 'icon: assets/icon.png',
+    if (iconed) 'icon: assets/icon.png',
   ].map((line) => '$line\n').join();
 
   String flavor(String name) {
-    final icon = apple && name == 'apple'
+    final icon = iconed && name == 'apple'
         ? '      icon: assets/icon.png\n'
         : '';
-    final badge = apple && name == 'banana' ? '    badge: true\n' : '';
+    final badge = iconed && name == 'banana' ? '    badge: true\n' : '';
 
     return '  $name:\n    app:\n      name: "$name"\n$icon$badge'
         '    ${section.replaceAll('%s', name)}\n';
@@ -161,7 +164,7 @@ Future<void> _e2e(String platform, Directory checkout) async {
 
     final apple = platform == 'ios' || platform == 'macos';
 
-    if (apple) {
+    if (apple || platform == 'windows') {
       File(p.join(project.path, 'assets/icon.png'))
         ..createSync(recursive: true)
         ..writeAsBytesSync(_icon());
@@ -172,6 +175,7 @@ Future<void> _e2e(String platform, Directory checkout) async {
     await _expectNothingToDo(project, 'a second run');
 
     if (apple) _expectIcons(project, platform, ['apple', 'banana']);
+    if (platform == 'windows') _expectIcos(project, ['apple', 'banana']);
     if (platform == 'ios') _expectLaunchScreens(project, ['apple', 'banana']);
 
     _step('remove banana');
@@ -186,6 +190,14 @@ Future<void> _e2e(String platform, Directory checkout) async {
         p.join(project.path, _assets[platform]!, 'AppIcon-banana.appiconset'),
       ).existsSync()) {
         _fail('The icons of the flavor that was removed are still there.');
+      }
+    }
+
+    if (platform == 'windows') {
+      _expectIcos(project, ['apple']);
+
+      if (File(p.join(project.path, _icoOf('banana'))).existsSync()) {
+        _fail('The icon of the flavor that was removed is still there.');
       }
     }
 
@@ -262,6 +274,27 @@ void _expectIcons(Directory project, String platform, List<String> flavors) {
       if (!File(p.join(set, file)).existsSync()) {
         _fail('The icons of `$flavor` have no `$file`.');
       }
+    }
+  }
+}
+
+/// The `.ico` of [flavor], relative to the project.
+String _icoOf(String flavor) => 'windows/runner/resources/$flavor.ico';
+
+/// Fails unless each of [flavors] has its `.ico`, and the CMake file points it
+/// at it.
+void _expectIcos(Directory project, List<String> flavors) {
+  final cmake = File(
+    p.join(project.path, 'windows/runner/CMakeLists.txt'),
+  ).readAsStringSync();
+
+  for (final flavor in flavors) {
+    if (!File(p.join(project.path, _icoOf(flavor))).existsSync()) {
+      _fail('The flavor `$flavor` has no `.ico`.');
+    }
+
+    if (!cmake.contains('$flavor.ico')) {
+      _fail('The CMake file does not point `$flavor` at its `.ico`.');
     }
   }
 }
