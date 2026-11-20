@@ -4,13 +4,10 @@ description: "What happens when a run has to write over a file you edited, and h
 ---
 
 A **conflict** is a file that a run has to change, and that was edited by hand since flavorizr last wrote
-it: writing it would lose your edit. flavorizr never overwrites such a file without your say, when it is a
-`managed` or `patched` file of a processor of the engine. The `local` files (the run configurations of the
-IDEs, the Firebase copies) are never checked: a run writes them again whatever you changed in them. The
-processors that are not on the engine yet (see
-[Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)) do not track what they write, and
-write over it without asking: the one that matters is `windows:icons`, which writes the `.ico` of each
-flavor that has an `icon` or a badge again on every run.
+it: writing it would lose your edit. flavorizr does not overwrite such a file without your say, when it is a
+`managed` or `patched` file. The `local` files (the run configurations of the IDEs, the copies of the Firebase
+and AppGallery Connect configurations) are never checked: a run writes them again whatever you changed in
+them. That holds for every processor, the generated icons of every platform included.
 
 ## When a file is a conflict
 
@@ -43,7 +40,8 @@ because its flavor was removed, is a conflict too.
 - `a` overwrites this and every remaining conflict, after listing them and asking for a confirmation.
 
 **With no terminal** nothing can be asked, and a run that has a conflict fails with exit code `1`, with
-nothing written. Say what to do up front with `--on-conflict`:
+nothing written. `--yes` asks nothing either, on a terminal too: with it a conflict fails the run unless
+`--on-conflict` says what to do. Say it up front:
 
 ```sh
 dart run flutter_flavorizr apply --yes --on-conflict=keep        # leave the files you edited

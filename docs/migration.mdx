@@ -213,7 +213,7 @@ dart run flutter_flavorizr adopt
 - The Xcode project is not rewritten, and no object is renamed: `adopt` records the UUIDs 2.x gave to the
   build configurations of the flavors and to the references to their xcconfig files, and the value of each
   build setting flavorizr sets, so the next runs find them and remove them with their flavor.
-- The placeholder icons that 2.x made for Android, iOS and macOS are recognised by their hash. A placeholder
+- The placeholder icons that 2.x made for Android, iOS, macOS and Windows are recognised by their hash. A placeholder
   that you did not touch is recorded as managed, and the next `plan` proposes to delete it, since 3.0 no
   longer makes it. An icon you replaced stays yours. The launch storyboards and launch images of 2.x are not
   icons: they are yours, `adopt` lists them, records none and no run deletes them.
@@ -245,14 +245,16 @@ was.
 
   A name that `flavorizr.yaml` already has is an error, with exit code `64`: `--flavors` is for the flavors it
   no longer has. The flavors, named or not, are recorded in the lock only when `adopt` covers every processor
-  of the engine that a full run covers: an `adopt` limited to targets records the files of the processors it
+  that a full run covers: an `adopt` limited to targets records the files of the processors it
   ran and no flavor names, and says so. The launcher icons of a flavor that is gone are recorded only when
   they still have the bytes of the dummy icons of 2.x.
 
-- Only what the processors of the engine own is adopted. What the processors of the 2.x pipeline made
-  (`windows:icons`, `huawei:agconnect`) is not tracked: `adopt` lists them as not adopted. The launch
-  storyboards of 2.x are not recorded either: they are yours, see
-  [the iOS launch screen](#the-ios-launch-screen-is-opt-in).
+- Only what a processor makes is recorded, and a file the project does not have is not (the next `apply`
+  creates it). The launch storyboards and launch images of 2.x are not recorded either: they are yours, `adopt`
+  lists them as `Yours, left alone`, see [the iOS launch screen](#the-ios-launch-screen-is-opt-in). The
+  schemes that 2.x made are not recorded as made by flavorizr, so they are left in place when their flavor
+  goes, and the plan says `flavorizr did not make it`: see
+  [Adding and removing flavors](/flavors#removing-a-flavor).
 
 ### Without adopt
 
@@ -305,19 +307,16 @@ says how to fix it. See [Flutter code](/configuration/flutter).
   Windows.
 - **A flavor with no `icon` and no badge** gets nothing generated, and **builds with the default icon of
   the project**: the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows
-  (unless the project has an icon for the flavor, such as the `<flavor>.ico` that 2.x made, which is used
-  whoever made it: see [Every case](/icons-and-badge#every-case)).
+  (unless the project has an icon for the flavor that flavorizr did not make, which is used whoever
+  made it: see [Every case](/icons-and-badge#every-case)).
 - **An icon you put in the project yourself** (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`,
-  `<flavor>.ico`) is yours: flavorizr points the flavor at it and never deletes it.
+  `<flavor>.ico`) is yours: flavorizr points the flavor at it, and does not overwrite or delete it without asking.
 - The placeholder icons that 2.x made for Android, iOS and macOS are recognised by their hash: the first
   `plan` proposes to delete the ones you did not change (and the flavor builds with the default icon of the
   project in that run), and they are replaced by the icons of an `icon` that you add. The ones that you
-  changed are yours. The Windows `.ico` files that 2.x made stay until you delete them.
-- The icons of Android, iOS and macOS are tracked now: they are removed when the `icon` and the badge go, or
-  the flavor, and a hand edit of one is a conflict. `windows:icons` is still a 2.x processor: it does not
-  track what it writes, so a hand edit of a `.ico` it makes is overwritten without a conflict, and the
-  file stays when the flavor goes, and stays the icon of the flavor (delete it, after you remove the `icon`
-  and the badge, to get `app_icon.ico` back).
+  changed are yours. That includes the `<flavor>.ico` of Windows, when it is still the placeholder 2.x made.
+- The icons of every platform are tracked now: they are removed when the `icon` and the badge go, or the
+  flavor, and a hand edit of one is a conflict.
 - A [badge](/icons-and-badge#icon-badge) is new, and makes icons for a flavor even when it has no `icon`,
   from the root `icon` or the `AppIcon` of the project.
 
@@ -332,7 +331,7 @@ with [`launchScreen: true`](/configuration/ios#the-launch-screen) at the root or
 
 - **What 2.x made is yours.** A `<flavor>LaunchScreen.storyboard` that flavorizr 3 did not generate, and the
   `<flavor>LaunchImage.imageset` of that flavor, are adopted as they are: never overwritten and never
-  deleted. flavorizr points the flavor at the storyboard and says so. Delete them to have the generated launch
+  deleted. flavorizr points the flavor at the storyboard, and says so with `--verbose`. Delete them to have the generated launch
   screen instead.
 - **Nothing changes without `launchScreen`.** The launch storyboard of the project stays what
   `UILaunchStoryboardName` says.
@@ -360,8 +359,8 @@ Never edit it by hand. See [`flavorizr.lock`](/reference/lock) and [Core concept
 - **Your edits survive.** `AndroidManifest.xml`, `Info.plist`, `build.gradle` and the Podfile are edited in
   place: indentation, comments and everything flavorizr does not own are left as they are. The build settings
   of a configuration are set key by key, so the `DEVELOPMENT_TEAM` you pick in Xcode is not wiped.
-- **Removing is supported.** Delete a flavor from the yaml and its files, build configurations and icons go
-  (the Windows `.ico` files excepted): [Adding and removing flavors](/flavors).
+- **Removing is supported.** Delete a flavor from the yaml and its files, build configurations and icons go:
+  [Adding and removing flavors](/flavors).
 - **The schemes** of the iOS and macOS flavors are patched, not rewritten: flavorizr owns the file and the
   build configurations of its actions, and the pre-actions Flutter adds, your arguments and everything else
   stay: [the schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors).

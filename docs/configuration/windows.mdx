@@ -28,35 +28,32 @@ flavors:
 The icon of a flavor is `windows/runner/resources/<flavor>.ico`. `windows:icons` makes it from the `icon` of
 the flavor, or from the source of its [badge](/icons-and-badge#icon-badge) when it has one, and
 `windows:cmake` points the flavor at it when the flavor has an `icon` or a badge, **or when that file is in
-the project**, whoever made it. The default `app_icon.ico` is for a flavor with none of the three.
+the project** and the lock does not know it, so it is yours. The default `app_icon.ico` is for a flavor with
+none of the three.
 
-`windows:icons` is not on the engine yet: it does not track what it writes. That has four consequences,
-which [Every case](/icons-and-badge#every-case) lays out with the other platforms:
+The `.ico` is a **managed** file, like the icons of the other platforms: it is in the lock, with the hash of
+what it was made from, so
 
-* it writes `<flavor>.ico` again on every run, over a file of yours, with no conflict, as soon as the flavor
-  has an `icon` or a badge (an `.ico` of yours is left alone while it has neither);
-* it never removes the file: when you remove the `icon`, the badge or the flavor, `<flavor>.ico` stays and
-  stays the icon of the flavor. To get `app_icon.ico` back, remove the `icon` **and** turn the badge off
-  (the root one too), delete the file and run `apply`: with either still there, the run makes it again;
-* a badge on a flavor whose `icon` is missing, is not an image or is under 512 px uses the root `icon` or
-  the `AppIcon` of the project instead, with no error. Without a badge the same `icon` fails the run;
-* a failure (no `icon` to read, or no image of 512 px or more for a badge) comes after the engine has
-  written: its changes and the lock stay, the CMake file already points at `<flavor>.ico`, and the run exits
-  with `70`. Fix the `icon` and run `apply` again (see [Core concepts](/concepts#plan-and-apply)).
+* a run that finds the same `icon` and badge, and the file as the lock recorded it, does not render or write
+  it;
+* editing it by hand is a [conflict](/conflicts);
+* when you remove the `icon`, the badge or the flavor, the `.ico` is deleted along with them, and the flavor
+  builds with `app_icon.ico`;
+* a `<flavor>.ico` of yours, that the lock does not know, is left alone while the flavor has no `icon` and no
+  badge, and is a conflict as soon as the flavor gets one: you decide whether it is replaced;
+* an `icon` that is missing or is not an image, or a badge with no image of 512 px or more to draw on, fails the
+  run (exit `70`) and writes nothing, as on the other platforms. The badge falls back to the root `icon` or the
+  `AppIcon` of the project first, with no error: see [Every case](/icons-and-badge#every-case).
 
 ## The processors
 
-| Processor | What it does | Runs on |
-| --- | --- | --- |
-| `windows:mainCppTemplate` | Makes `windows/runner/main.cpp.in` from `main.cpp`, so that its window title can be set per flavor. | engine |
-| `windows:runnerRcTemplate` | Makes `windows/runner/Runner.rc.in` from `Runner.rc`, so that its icon and title can be set per flavor. | engine |
-| `windows:cmake` | Sets the icon and the title of each flavor in `windows/runner/CMakeLists.txt`, and makes the sources from the templates. | engine |
-| `windows:icons` | Makes an `.ico` for each flavor that has an `icon` or a [badge](/icons-and-badge). | 2.x pipeline |
-| `windows:dummyAssets` | Does nothing now: a flavor with no `icon`, no badge and no `<flavor>.ico` uses `app_icon.ico`. It stays so that a recipe that names it runs. | 2.x pipeline |
-
-`windows:icons` and `windows:dummyAssets` are not on the engine yet: they run after it, straight on the
-project, with no preview, no conflict detection and no entry in the lock. See
-[Command line](/reference/cli#processors-that-are-not-on-the-engine-yet).
+| Processor | What it does |
+| --- | --- |
+| `windows:mainCppTemplate` | Makes `windows/runner/main.cpp.in` from `main.cpp`, so that its window title can be set per flavor. |
+| `windows:runnerRcTemplate` | Makes `windows/runner/Runner.rc.in` from `Runner.rc`, so that its icon and title can be set per flavor. |
+| `windows:cmake` | Sets the icon and the title of each flavor in `windows/runner/CMakeLists.txt`, and makes the sources from the templates. |
+| `windows:icons` | Makes an `.ico` for each flavor that has an `icon` or a [badge](/icons-and-badge), and removes the ones it made for a flavor that has neither anymore. |
+| `windows:dummyAssets` | Does nothing: a flavor with no `icon`, no badge and no `<flavor>.ico` uses `app_icon.ico`. It stays so that a recipe that names it runs (see [Command line](/reference/cli#the-dummyassets-processors)). |
 
 ## What flavorizr changes in your files
 
@@ -82,8 +79,8 @@ that the region moves after the call. A `Runner.rc` or `main.cpp` that a 2.x
 build already rewrote (with the icon and the title of a flavor in it) is
 templated all the same. The templates are regenerated at every `apply`, so run
 it again after you change `main.cpp` or `Runner.rc`; `status` does not see a
-change of the files they are made from. The icon of a flavor is still
-`windows/runner/resources/<flavor>.ico`, which `windows:icons` makes (`windows:dummyAssets` makes nothing).
+change of the files they are made from. The icon of a flavor is
+`windows/runner/resources/<flavor>.ico`, which `windows:icons` makes.
 
 The editors do not parse C++, CMake or resource scripts, and do not try to know
 what is a comment, a string or a directive. They recognise a few **supported

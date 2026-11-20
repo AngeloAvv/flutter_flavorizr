@@ -35,8 +35,7 @@ jobs:
 - the flavors of `flavorizr.yaml` and of the lock differ: a flavor was added, removed or changed without
   running `apply`;
 - a file is not what `flavorizr.yaml` asks for, or is missing;
-- a managed or patched file that flavorizr generated was edited by hand. Only the processors on the engine
-  are checked: `status` lists the ones it cannot vouch for.
+- a managed or patched file that flavorizr generated was edited by hand. Every processor is checked.
 
 What you edit in a file flavorizr only patches (the manifest, `build.gradle`) is not drift: only the part
 flavorizr owns is compared. The files of the `local` class (the run configurations of the IDEs, the
@@ -46,9 +45,6 @@ Firebase copies) are never drift, so a fresh clone without `.idea/` is in sync.
 `default` that lists fewer processors than `all` checks only those, and the flavors of the lock are
 recorded by a full run only (see [Recipes](/recipes#partial-runs)). Use `status all` in a pipeline when
 you want everything checked.
-
-`status` can only vouch for the processors that run on the engine: when some do not, it says
-`In sync, as far as the engine can tell` and lists the ones it did not check.
 
 ## Apply in a pipeline
 
@@ -64,7 +60,7 @@ dart run flutter_flavorizr apply --yes --on-conflict=keep
 - Use `plan` or `status` when nothing must be written.
 
 The [pipeline of this repository](https://github.com/AngeloAvv/flutter_flavorizr/blob/master/.github/workflows/drift.yml)
-runs `status` on `example/`, so the example never drifts from what flavorizr generates.
+runs `status` on `example/`, so a change that makes the example drift from what flavorizr generates fails the pipeline.
 
 ## Exit codes
 
@@ -105,3 +101,19 @@ so the pipeline needs no change: see [Custom processors](/extending/processors).
 The 2.x options still work in a script, with a warning, until 4.0. A command such as
 `flutter pub run flutter_flavorizr -f -p android:buildGradle` runs on 3.x. Prefer
 `dart run flutter_flavorizr apply --yes android:buildGradle`. See [Migration](/migration#the-command-line).
+
+## How this repository is tested
+
+The pipeline of flutter_flavorizr is eight jobs that every change has to pass (`ci-ok` fails unless they
+all succeed):
+
+| Job | What it checks |
+| --- | --- |
+| Test and analyze | `dart analyze` and the whole test suite, with a coverage threshold. |
+| Golden parity | The output of the current checkout on a fresh Flutter project against the output recorded from 2.6.0, file by file. The differences that are intended are listed in `tool/parity/whitelist.yaml`, each with its reason. |
+| Drift | `flavorizr status` on `example/`, which is committed flavorized, with its lock. |
+| End to end, five jobs (`android`, `ios`, `macos`, `linux`, `windows`) | On a project `flutter create` made: `apply`, an empty `plan`, a flavor removed, an empty `plan` again, the flavor that is left built, and an empty `plan` after the build with an `apply` that writes no file. One flavor has an icon and the other a badge, so the icons of each platform are checked and built, and on Android a manifest placeholder is checked in the merged manifest. Android runs again with a Groovy build script, and Windows also checks that `git status` is clean after the build. |
+
+The parity job against the 2.6.0 golden is **the** golden mechanism of the pipeline: what the processors make
+of a whole project is compared with what 2.6.0 made in that one place, and there is no golden of a project per
+processor. A deliberate change of the output is a whitelist entry with a reason, reviewed with the change.

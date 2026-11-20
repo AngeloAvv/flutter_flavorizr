@@ -34,15 +34,16 @@ processors:
       lib/flavors.dart:
         hash: sha256:4be0a2
         ownership: scaffold
-  ios:xcodeproj:
+  ios:xcconfig:
     objects:
       ios/Runner.xcodeproj/project.pbxproj:
         - 41CBCBB2C9EC2CFF0019D008
         - C93DD37D645EA448590670D3
   ios:plist:
-    keys:
+    files:
       ios/Runner/Info.plist:
-        CFBundleDisplayName: sha256:0d44ab
+        hash: sha256:b496e1
+        ownership: patched
   ios:buildTargets:
     keys:
       ios/Runner.xcodeproj/project.pbxproj:
@@ -73,14 +74,17 @@ Each processor has these optional sections, left out when empty:
 | --- | --- | --- |
 | `files` | path to `{ownership, hash?}` | Whole files. `ownership` is `scaffold`, `managed` or `patched`. `hash` is the hash of the owned content (the whole file for `managed`, the owned parts for `patched`) and is always present for those two. For a `scaffold` it is the hash of what flavorizr wrote, and is present only when flavorizr wrote it (or found it as it would have): see [Scaffold hashes](#scaffold-hashes). |
 | `regions` | path to region id to hash | Marked regions of a shared file. |
-| `keys` | path to key to hash | Owned keys of a plist, manifest, XML or project file: the hash of the value flavorizr wrote. See [Owned build settings](#owned-build-settings). |
+| `keys` | path to key to hash | Owned keys of a plist, manifest, XML or project file: the hash of the value flavorizr wrote. See [Owned build settings](#owned-build-settings). Two keys of another kind are recorded for the files flavorizr copies or creates: see [What the lock keeps to delete safely](#what-the-lock-keeps-to-delete-safely). |
 | `objects` | path to list of UUIDs | UUIDs of the pbxproj objects flavorizr created, sorted. See [Owned objects](#owned-objects). |
 | `inputs` | output path to hash | Generated binaries such as icons: the hash of the *inputs* (source file hash plus options), never of the output, so bumping a library such as `image` creates no noise. A path is here only when it is also one of the `files`. See [Inputs of generated files](#inputs-of-generated-files). |
 
 Notes:
 
-* Artifacts of the `local` ownership class are **never** stored: they are
-  regenerated silently on every run and are neither drift nor conflict.
+* Artifacts of the `local` ownership class are **never** stored as files: they are
+  regenerated silently on every run and are neither drift nor conflict. The
+  copies of a Firebase or AppGallery Connect configuration are the one thing the
+  lock says about a `local` file, in `keys`: see
+  [below](#what-the-lock-keeps-to-delete-safely).
 * Hashes are opaque strings. The engine decides how they are computed (the
   recommended spelling is `<algorithm>:<hex digest>`, such as `sha256:...`).
 * Paths are relative to the project root and use `/`.
@@ -183,6 +187,27 @@ run would write (which is how a lock of version 1 learns it). A scaffold the use
 had before flavorizr, or one the user changed, keeps whatever the lock had for it:
 no hash for the first, the hash of what was written for the second.
 
+## What the lock keeps to delete safely
+
+When a flavor is dropped, flavorizr deletes what it created for it, and only that. Two kinds of file are not
+`managed` and still need a record to be told from yours, so the lock keeps one key for each, under `keys`:
+
+| Key | For | What it holds | What a run does with it |
+| --- | --- | --- | --- |
+| `copy` | The copy of a service configuration: `android/app/src/<flavor>/google-services.json`, `agconnect-services.json`, `ios/Runner/<flavor>/GoogleService-Info.plist` and the macOS one. | The hash of the bytes that were copied. | When the flavor is dropped, or loses its configuration, the copy is deleted **only while it still holds exactly those bytes**. One that was edited, or that the lock does not know, stays. A copy is never a conflict or drift. |
+| `created` | The scheme of a flavor (`xcschemes/<flavor>.xcscheme` of iOS and macOS), which is shared with Xcode and Flutter. | The digest of the whole scheme minus what flavorizr owns (its build configurations), the pre-action Flutter adds, and the layout. It is written only when flavorizr **created** the file. | When the flavor is dropped the scheme is deleted if it still has that digest. A scheme that differs is a [conflict](/conflicts). A scheme with no `created` key (it was there before, or 2.x made it) stays, and the plan says `flavorizr did not make it`. |
+
+```yaml
+ios:schema:
+  files:
+    ios/Runner.xcodeproj/xcshareddata/xcschemes/dev.xcscheme:
+      hash: sha256:6b6cd4
+      ownership: patched
+  keys:
+    ios/Runner.xcodeproj/xcshareddata/xcschemes/dev.xcscheme:
+      created: sha256:570be9
+```
+
 ## Owned objects
 
 The objects a Darwin processor creates in `project.pbxproj` (the build
@@ -247,9 +272,8 @@ What the lock does with them:
   objects again by their UUID and records them again, with no change to the
   project.
 
-The format does not change: `objects` is part of schema version 1 and stays
-optional, so `schemaVersion` is not bumped, and a lock without it reads as
-"nothing created yet".
+`objects` has been part of the format since schema version 1 and is optional: a
+lock without it reads as "nothing created yet".
 
 In code, `PbxprojSeed` and `OwnedObjects` (`lib/src/engine/darwin/`) are what a
 processor uses on top of the `xcodeproj:ios` / `xcodeproj:macos` resources:

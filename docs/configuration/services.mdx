@@ -66,10 +66,15 @@ Future<void> main() async {
 
 * The copy of each flavor (`android/app/src/<flavor>/google-services.json`,
   `ios/Runner/<flavor>/GoogleService-Info.plist` and the macOS one) is *local*:
-  written again silently on every run, never recorded in `flavorizr.lock`, never
-  a conflict or drift. So is the empty `Runner/GoogleService-Info.plist` the
-  build phase writes to, which is only made when the project has none: a build
-  that changes it, or a flavor you built, is not drift.
+  written again silently on every run, never a conflict or drift, and not hashed as
+  a file in `flavorizr.lock`. The lock keeps one thing about it, the hash of the
+  bytes that were copied, so that the copy goes with its flavor: when a flavor is
+  dropped, or loses its `firebase` map, its copy is deleted **only while it still
+  holds exactly those bytes**. A copy you edited, or one the lock does not know,
+  stays, and you delete it. The empty `Runner/GoogleService-Info.plist` the build
+  phase writes to is local too, and only made when the project has none: a build
+  that changes it, or a flavor you built, is not drift, and it is not removed
+  with a flavor, since it is the copy of none.
 * `ios/firebaseScript.sh` and `macos/firebaseScript.sh` are generated from the
   flavors that have a configuration, so they are managed. A flavor that loses
   its `firebase` is out of the script, and the script goes when none is left.
@@ -112,12 +117,13 @@ flavors:
         config: ".agconnect/banana/agconnect-services.json"
 ```
 
-The `huawei:agconnect` processor is still a 2.x one: it runs after the engine, with no preview and no
-entry in the lock. It copies the file of each flavor to `android/app/src/<flavor>/agconnect-services.json` on
-every run, over whatever is there and without a conflict, and a missing source fails the run with the engine
-already done. It never removes a copy: the one of a flavor that you drop, or that loses its `agconnect`,
-stays, and you delete it. Add the native dependencies of AppGallery Connect yourself: flavorizr only applies
-the configuration.
+The `huawei:agconnect` processor runs on the engine, like the Firebase ones. It copies the file of each
+flavor to `android/app/src/<flavor>/agconnect-services.json`. The copy is *local*, as the Firebase ones are:
+written again on every run, over whatever is there, and never a conflict or drift. A source that is missing
+fails the run (exit `70`) and writes nothing. The lock keeps the hash of what was copied, so the copy of a
+flavor you drop, or that loses its `agconnect`, is deleted along with it **only while it still holds exactly
+those bytes**: one you edited stays. Add the native dependencies of AppGallery Connect yourself: flavorizr only
+applies the configuration.
 
 ## IDEs
 

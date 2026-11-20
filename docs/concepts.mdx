@@ -10,7 +10,7 @@ flavorizr separates three things that a script that edits files usually mixes up
 | | What it is | Who writes it |
 | --- | --- | --- |
 | `flavorizr.yaml` | The **desired state**: the flavors you want. | You |
-| `flavorizr.lock` | The **applied state**: what flavorizr generated the last time, and a hash of it. | flavorizr, once the changes of the engine are written |
+| `flavorizr.lock` | The **applied state**: what flavorizr generated the last time, and a hash of it. | flavorizr, once the changes are written |
 | The project | **Reality**: the files on disk, which you, Xcode, Flutter and CocoaPods also edit. | Everybody |
 
 A run compares the three:
@@ -20,8 +20,7 @@ A run compares the three:
 - the lock and the disk tell **what changed by hand** since the last run. A file that is not what
   flavorizr wrote is yours, and flavorizr asks before it changes it: see [Conflicts](/conflicts). That holds
   for the `managed` and `patched` files. It does not hold for the `local` files (the run configurations of
-  the IDEs, the Firebase copies), which are written again whatever you changed, nor for what the
-  [legacy processors](#engine-and-legacy-processors) write;
+  the IDEs, the Firebase copies), which are written again whatever you changed;
 - when there is no lock, the files that flavorizr made before there was one (2.x) are the baseline, so that
   they are not conflicts: see [the first run without a lock](/reference/adopt#the-first-run-without-a-lock);
 - the yaml and the disk tell **what is left to do**: that is the plan.
@@ -42,8 +41,8 @@ A run does not touch your project while it works out what to do:
    project and writes `flavorizr.lock`.
 
 That gives dry runs, a reviewable diff, and writes that are all or nothing in practice: a processor
-that fails does not write the changes of the engine to your project, and the lock is written last.
-Three failures can still leave a run half done, and each says so, with exit code `70` (see
+that fails does not write the changes to your project, and the lock is written last.
+Two failures can still leave a run half done, and each says so, with exit code `70` (see
 [the exit codes](/reference/cli#exit-codes)):
 
 - the copy back of the files is interrupted: the message lists what was and what was not written, and the
@@ -51,9 +50,7 @@ Three failures can still leave a run half done, and each says so, with exit code
   were written and does the rest;
 - the files are written, but the lock cannot replace `flavorizr.lock` (permissions, a folder in its place):
   the changes stay written and the lock is the previous one. Fix what stops it and run flavorizr again: it
-  finds nothing to change and writes the lock;
-- a processor of the 2.x pipeline fails after the engine finished (`windows:icons` or `huawei:agconnect`: see
-  [below](#engine-and-legacy-processors)): the changes of the engine and the lock stay written.
+  finds nothing to change and writes the lock.
 
 `status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
 
@@ -74,25 +71,21 @@ Every file a processor produces has an **owner**, and the owner decides what a r
 | `managed` | Generated whole, such as `flavors.g.dart`, the xcconfig files of a flavor or `flavorizr.gradle`. | Rewrites it when the configuration changed. The lock holds its hash, so editing it by hand is a [conflict](/conflicts). |
 | `patched` | Shared with you or with a tool, such as `AndroidManifest.xml`, `Info.plist`, `build.gradle`, the Podfile or `project.pbxproj`. | Changes only the part it owns: marked regions, owned keys, owned objects. The lock hashes only that part, so what you edit around it is never drift. |
 | `scaffold` | Created once, such as `lib/flavors.dart`, `lib/main.dart`. | Never overwritten after it exists, except with `--overwrite-scaffold`. It is yours. |
-| `local` | Written by tools or ignored by git, such as `.idea/runConfigurations` or the Firebase files copied for each flavor. | Regenerated silently on every run. Never in the lock, never a conflict, never drift. |
+| `local` | Written by tools or ignored by git, such as `.idea/runConfigurations` or the Firebase and AppGallery Connect files copied for each flavor. | Regenerated silently on every run. Never a conflict, never drift, and not hashed as a file in the lock. For the copies of a service configuration the lock keeps the hash of what was copied, so that the copy of a flavor you drop is deleted only while it is untouched. |
 
 Two things follow from it:
 
 - **Removing is as safe as adding.** A flavor you drop from the yaml has its `managed` files deleted
-  and its share of the `patched` ones (build configurations, Podfile mappings, plist keys) taken out,
-  and nothing else. What you added to a patched file is not touched.
+  (one you edited asks first) and its share of the `patched` ones (build configurations, Podfile
+  mappings, plist keys) taken out. The scheme flavorizr made for it and the copies it made of its
+  service configurations go too, but only while they are as flavorizr left them. Nothing else is
+  removed, and what you added to a patched file is not touched. See [Adding and removing
+  flavors](/flavors#removing-a-flavor).
 - **A setting that is yours stays yours.** A build setting flavorizr wrote and you changed is yours:
   it stays when flavorizr stops setting it. The `DEVELOPMENT_TEAM` you pick in Xcode survives every
   run.
 
-## Engine and legacy processors
-
-3.0 runs the processors on a new engine that does all of the above. Two processors that make or change
-files are still the ones of 2.x, `windows:icons` and `huawei:agconnect`, and so are `android:dummyAssets` and
-`windows:dummyAssets`, which do nothing and stay so that a recipe that names them runs. The 2.x processors
-are applied to the project after the engine, with no preview, no conflict detection and no entry in the
-lock. `plan` and `list` say which processors run on which, and `status` lists the ones it cannot vouch
-for. See the [command line reference](/reference/cli#processors-that-are-not-on-the-engine-yet).
+## Where a run starts from
 
 A project that was flavorized with 2.x has no lock. The first `plan`, `apply` or `status` finds the files that
 flavorizr made before and takes them as the baseline, so the run shows what 3.0 changes in them and not a

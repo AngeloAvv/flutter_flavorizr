@@ -8,6 +8,11 @@ of them in `android/app/flavorizr.gradle` (or `flavorizr.gradle.kts`, for a Kotl
 `android/app/build.gradle(.kts)`, and points the label in `AndroidManifest.xml` at the name of the app of
 the flavor.
 
+The same file, in Groovy or in Kotlin, also turns on the features of the Android Gradle Plugin that the
+flavors need and that are off by default: `buildFeatures.resValues = true` always (every flavor has a
+`resValue` for the name of the app), and `buildFeatures.buildConfig = true` when `app.android` or a flavor
+declares `buildConfigFields`.
+
 ## `app.android`
 
 What every Android flavor starts from, under the root `app` key.
@@ -154,13 +159,12 @@ tracked in the lock, so removing `adaptiveIcon` removes them on the next run.
 | `android:flavorizrGradle` | Writes `android/app/flavorizr.gradle(.kts)` with the product flavors. Managed. |
 | `android:buildGradle` | Imports it from `build.gradle(.kts)`, in a marked block. Patched: the rest of the script is yours. |
 | `android:androidManifest` | Sets the label of the application to the name of the app of the flavor. Patched. |
-| `android:icons` | Makes the launcher icons of each flavor that has an `icon`, or a [badge](/icons-and-badge). |
-| `android:dummyAssets` | Does nothing now: a flavor with no `icon` and no badge uses the default icon of the project. It stays so that a recipe that names it runs. |
+| `android:icons` | Makes the launcher icons of each flavor that has an `icon`, or a [badge](/icons-and-badge), and removes the ones of a flavor that has neither anymore. |
+| `android:dummyAssets` | Does nothing: a flavor with no `icon` and no badge uses the default icon of the project. It stays so that a recipe that names it runs (see [Command line](/reference/cli#the-dummyassets-processors)). |
 | `android:firebase` | Copies `google-services.json` for each flavor that has one. See [Firebase](/configuration/services#firebase). |
 
-Every Android processor runs on the engine (previewed, checked against the lock and written atomically),
-except `android:dummyAssets`, which does nothing and is a 2.x processor
-(see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)).
+`huawei:agconnect`, which copies `agconnect-services.json` for each flavor, is described in
+[Firebase, AppGallery and IDEs](/configuration/services#huawei-appgallery-connect).
 
 `AndroidManifest.xml` and the Gradle scripts are edited in place, as text: indentation, comments and
 everything flavorizr does not own stay as they are, and a file that is up to date is not written at all.

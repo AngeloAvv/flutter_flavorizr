@@ -80,10 +80,12 @@ npx ajv-cli validate --spec=draft2020 -s docs/schemas/flavorizr-output.schema.js
 The documents are versioned by `schemaVersion`, which is `1` in the whole of
 **3.x**. Within it:
 
-* a field is never removed, renamed or given another type, and an enum value is
-  never taken away;
+* the schema never drops a field, renames one, gives it another type or takes an enum value away;
 * a field **may be added**, and an enum **may get a new value** in a minor
   release: **ignore what you do not know**;
+* `legacy` (a value of `runsOn`) and `notChecked` (an optional field of `status`) stay in the schema, but
+  flavorizr does not emit them: `runsOn` is always `engine`, and a `status` document has no `notChecked`,
+  since every processor is checked. A field that is optional in the schema is not promised to be there;
 * `durationMs` and `message` texts describe a run, not a contract: do not compare
   them. The `kind` of a drift, the ids and the paths are the contract.
 
@@ -111,13 +113,10 @@ get to are **missing** when it failed (`64`, `65`, `70`): check `exitCode` first
 | Field | Type | |
 | --- | --- | --- |
 | `messages` | `string[]` | What was left out of the run and why, such as the recipe of a platform with no flavors. |
-| `processors` | `{id, platform, runsOn, auto}[]` | What runs, in order. `runsOn` is `engine` (previewed, checked against the lock and written atomically) or `legacy` (a 2.x processor, applied straight to the project afterwards). `auto` is `true` for the processors a dependency pulled in. |
+| `processors` | `{id, platform, runsOn, auto}[]` | What runs, in order. `runsOn` is always `engine`: every processor is previewed, checked against the lock and written atomically. The schema still lists `legacy` in the enum, which 3.x does not emit: ignore it. `auto` is `true` for the processors a dependency pulled in. |
 | `flavors` | `{added, removed, changed}` | The names of the flavors that differ between `flavorizr.yaml` and `flavorizr.lock`. |
 | `changes` | `{path, platform, change, disposition, ownership}[]` | The files of the engine, sorted by path. `change` is `added`, `modified` or `deleted`. `disposition` is `apply` (it would be written), `conflict` (it was edited by hand and the change would lose that) or `blocked` (a link or a path flavorizr never writes). `ownership` is `scaffold`, `managed`, `patched` or `null`. `platform` is `android`, `ios`, `macos`, `linux`, `windows`, `flutter` (the Dart sources) or `project`. |
 | `summary` | `{added, modified, deleted, conflicts}` | The counts of `changes`: the ones that would be written, and the conflicts. In an `apply` that wrote, the counts of what was written: a conflict that was overwritten is the change it is, and `conflicts` are the ones that were kept. |
-
-Processors that are not on the engine have no preview: they add nothing to
-`changes` or `summary`.
 
 ### `apply`
 
@@ -127,7 +126,7 @@ On top of the fields above:
 | --- | --- | --- |
 | `applied` | boolean | Whether the changes of the engine were written, with the lock. |
 | `cancelled` | boolean | Whether the run was stopped by an answer. It cannot be with `--json`, where nobody is asked. |
-| `steps` | `{id, status, durationMs}[]` | What ran, in order, ending with the processors of `processors` that did not run because an earlier one failed, `legacy` ones included. `status` is `completed`, `failed` or `skipped`. `durationMs` is `null` for a step that was skipped. |
+| `steps` | `{id, status, durationMs}[]` | What ran, in order, ending with the processors of `processors` that did not run because an earlier one failed. `status` is `completed`, `failed` or `skipped`. `durationMs` is `null` for a step that was skipped. |
 
 `apply` always has these three, even when it failed: `steps` tells where.
 
@@ -140,21 +139,20 @@ On top of the fields of `plan`:
 | `checked` | boolean | `false` when no processor of the engine was selected: there is no lock to compare with, so nothing was checked. |
 | `inSync` | boolean | Whether `flavorizr.yaml`, `flavorizr.lock` and the files agree. The exit code is `1` when it is not. |
 | `drift` | `{kind, message, paths}[]` | How they differ. `kind` is `lock` (there is no `flavorizr.lock`; on a project 2.x flavorized, the `message` also says that its files were taken as the baseline, and `flavorizr adopt` or `apply` records it), `flavors` (the flavors differ: see `flavors`), `files` (files that are not what `flavorizr.yaml` asks for, in `paths`) or `edited` (generated files edited by hand, in `paths`). |
-| `notChecked` | `string[]` | The processors that are not on the engine, which `status` cannot vouch for. |
 
 ### `list`
 
 | Field | Type | |
 | --- | --- | --- |
 | `recipes` | `{name, builtIn, default, members, processors}[]` | The recipes: `members` is what the recipe lists (processors and other recipes), `processors` is what it stands for, with the nested recipes expanded. |
-| `processors` | `{id, platform, runsOn, needs, after, overridden}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after: both are empty for a `legacy` processor. `overridden` is whether a processor of the project replaces the one of flavorizr (see [Custom processors](/extending/processors)). |
+| `processors` | `{id, platform, runsOn, needs, after, overridden}[]` | Every processor, sorted by id. `needs` are the processors it pulls in, `after` the ones it only runs after. `overridden` is whether a processor of the project replaces the one of flavorizr (see [Custom processors](/extending/processors)). |
 
 ### Examples
 
 A `plan` with a file in the way:
 
 ```json
-{"schemaVersion":1,"command":"plan","exitCode":1,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false},{"id":"android:flavorizrGradle","platform":"android","runsOn":"engine","auto":true},{"id":"windows:icons","platform":"windows","runsOn":"legacy","auto":false}],"flavors":{"added":["pear"],"removed":[],"changed":[]},"changes":[{"path":"android/app/flavorizr.gradle","platform":"android","change":"modified","disposition":"conflict","ownership":"managed"},{"path":"android/app/src/main/AndroidManifest.xml","platform":"android","change":"modified","disposition":"apply","ownership":"patched"}],"summary":{"added":0,"modified":1,"deleted":0,"conflicts":1},"warnings":[],"errors":[],"durationMs":412}
+{"schemaVersion":1,"command":"plan","exitCode":1,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false},{"id":"android:flavorizrGradle","platform":"android","runsOn":"engine","auto":true},{"id":"windows:icons","platform":"windows","runsOn":"engine","auto":false}],"flavors":{"added":["pear"],"removed":[],"changed":[]},"changes":[{"path":"android/app/flavorizr.gradle","platform":"android","change":"modified","disposition":"conflict","ownership":"managed"},{"path":"android/app/src/main/AndroidManifest.xml","platform":"android","change":"modified","disposition":"apply","ownership":"patched"}],"summary":{"added":0,"modified":1,"deleted":0,"conflicts":1},"warnings":[],"errors":[],"durationMs":412}
 ```
 
 An `apply` where a processor failed:
@@ -166,13 +164,13 @@ An `apply` where a processor failed:
 A `status` that is in sync:
 
 ```json
-{"schemaVersion":1,"command":"status","exitCode":0,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false}],"flavors":{"added":[],"removed":[],"changed":[]},"changes":[],"summary":{"added":0,"modified":0,"deleted":0,"conflicts":0},"checked":true,"inSync":true,"drift":[],"notChecked":[],"warnings":[],"errors":[],"durationMs":301}
+{"schemaVersion":1,"command":"status","exitCode":0,"messages":[],"processors":[{"id":"android:androidManifest","platform":"android","runsOn":"engine","auto":false}],"flavors":{"added":[],"removed":[],"changed":[]},"changes":[],"summary":{"added":0,"modified":0,"deleted":0,"conflicts":0},"checked":true,"inSync":true,"drift":[],"warnings":[],"errors":[],"durationMs":301}
 ```
 
 A `list`:
 
 ```json
-{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[],"overridden":false},{"id":"windows:icons","platform":"windows","runsOn":"legacy","needs":[],"after":[],"overridden":false}],"warnings":[],"errors":[],"durationMs":8}
+{"schemaVersion":1,"command":"list","exitCode":0,"recipes":[{"name":"android","builtIn":true,"default":false,"members":["android:androidManifest","android:icons"],"processors":["android:androidManifest","android:icons"]}],"processors":[{"id":"android:icons","platform":"android","runsOn":"engine","needs":[],"after":[],"overridden":false},{"id":"windows:icons","platform":"windows","runsOn":"engine","needs":[],"after":["windows:dummyAssets"],"overridden":false}],"warnings":[],"errors":[],"durationMs":8}
 ```
 
 A command that fails before it got far, here a `plan` with an unknown target:

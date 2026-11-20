@@ -45,17 +45,17 @@ flavors:
 
 ## The processors
 
-| Processor | What it does | Runs on |
-| --- | --- | --- |
-| `macos:xcconfig` | Writes the xcconfig files of each flavor in `macos/Flutter`. | engine |
-| `macos:configs` | Writes the xcconfig files of each flavor in `macos/Runner/Configs` and adds references to them to the project. | engine |
-| `macos:buildTargets` | Adds the build configurations of each flavor to the project and to its first target. | engine |
-| `macos:podfile` | Maps the build configurations of each flavor in the Podfile. | engine |
-| `macos:plist` | Sets `CFBundleName` of `Info.plist` in place. | engine |
-| `macos:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). | engine |
-| `macos:schema` | Creates a scheme for each flavor, keeping the edits made to it, which builds the app named after its target. See [The schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors). | engine |
-| `macos:icons` | Makes `AppIcon-<flavor>.appiconset` for each flavor that has an `icon` or a [badge](/icons-and-badge#ios-and-macos), and removes the one of a flavor that has neither anymore. | engine |
-| `macos:dummyAssets` | Does nothing now: a flavor with no `icon` and no badge uses the default `AppIcon`. It stays so that a recipe that names it runs. | engine |
+| Processor | What it does |
+| --- | --- |
+| `macos:xcconfig` | Writes the xcconfig files of each flavor in `macos/Flutter`. |
+| `macos:configs` | Writes the xcconfig files of each flavor in `macos/Runner/Configs` and adds references to them to the project. |
+| `macos:buildTargets` | Adds the build configurations of each flavor to the project and to its first target. |
+| `macos:podfile` | Maps the build configurations of each flavor in the Podfile. |
+| `macos:plist` | Sets `CFBundleName` of `Info.plist` in place. |
+| `macos:firebase` | Adds the Firebase configuration of each flavor. See [Firebase](/configuration/services#firebase). |
+| `macos:schema` | Creates a scheme for each flavor, keeping the edits made to it, which builds the app named after its target. See [The schemes](/configuration/ios#the-schemes-of-the-ios-and-macos-flavors). |
+| `macos:icons` | Makes `AppIcon-<flavor>.appiconset` for each flavor that has an `icon` or a [badge](/icons-and-badge#ios-and-macos), and removes the one of a flavor that has neither anymore. |
+| `macos:dummyAssets` | Does nothing now: a flavor with no `icon` and no badge uses the default `AppIcon`. It stays so that a recipe that names it runs. |
 
 ## Running a flavor
 

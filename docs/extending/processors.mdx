@@ -54,7 +54,7 @@ class FlavorsDocProcessor extends FlavorizrProcessor {
   rendered from another one, can say what it is made from:
   `Artifact.managed(path, inputs: hash)`, where `hash` is computed from the
   inputs alone (the bytes of the source, the options), never from the output.
-  The lock records it (see [Inputs of generated files](flavorizr-lock.md#inputs-of-generated-files)),
+  The lock records it (see [Inputs of generated files](/reference/lock#inputs-of-generated-files)),
   and a later run asks `await ctx.isGeneratedFrom(path, hash)`: when it is
   `true` the file is still what was generated from those inputs, and the
   processor leaves it as it is and tracks it again with the same `inputs`.

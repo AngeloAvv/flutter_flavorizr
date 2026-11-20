@@ -26,11 +26,11 @@ The title of the window is the `app.name` of the flavor.
 
 ## The processors
 
-| Processor | What it does | Runs on |
-| --- | --- | --- |
-| `linux:cmake` | Sets the application ID of each flavor in `linux/CMakeLists.txt`. | engine |
-| `linux:runnerCmake` | Forwards `FLUTTER_APP_FLAVOR` into `linux/runner/CMakeLists.txt`, so it is available to native code. | engine |
-| `linux:myApplication` | Sets the window title of each flavor in `linux/runner/my_application.cc`. | engine |
+| Processor | What it does |
+| --- | --- |
+| `linux:cmake` | Sets the application ID of each flavor in `linux/CMakeLists.txt`. |
+| `linux:runnerCmake` | Forwards `FLUTTER_APP_FLAVOR` into `linux/runner/CMakeLists.txt`, so it is available to native code. |
+| `linux:myApplication` | Sets the window title of each flavor in `linux/runner/my_application.cc`. |
 
 ## What flavorizr changes in your files
 

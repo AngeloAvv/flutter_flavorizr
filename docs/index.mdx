@@ -44,11 +44,11 @@ flutter run --flavor dev
   plists, `build.gradle`, the Podfile) is left alone
 - **Plan and apply**: every run goes through a shadow copy of the project, which gives dry runs,
   diffs and writes that are all or nothing in practice
-- **Removes what it made**: drop a flavor from the yaml and its files, configurations and icons go. The
-  Windows `.ico` files are the exception: see [Icons and badge](/icons-and-badge#removing-icons)
+- **Removes what it made**: drop a flavor from the yaml and its files, configurations, schemes and icons go,
+  and what you made yourself stays: see [Adding and removing flavors](/flavors#removing-a-flavor)
 - **Conflicts, not overwrites**: a generated file you edited is reported, and you choose what wins. It holds
-  for the managed and patched files, not for local files such as the IDE run configurations, nor for what
-  `windows:icons` writes: see [Concepts](/concepts#file-ownership)
+  for the managed and patched files, not for local files such as the IDE run configurations: see
+  [Concepts](/concepts#file-ownership)
 - **Adopts what 2.x made**: a project flavorized with 2.x is taken as the baseline on its first run, with no
   conflicts: see [Migration](/migration)
 - **Icons and badge**: per-flavor launcher icons, with an optional band that names the flavor

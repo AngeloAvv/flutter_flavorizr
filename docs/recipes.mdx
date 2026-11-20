@@ -46,8 +46,7 @@ The recipe of a platform is skipped when no flavor is built for it: a project wi
 flavors runs nothing for macOS, Linux and Windows, and the run says so.
 
 `flavorizr list` prints every recipe, with what it contains and what it expands to, and every processor,
-with the processors it needs and whether it runs on the engine or is a `legacy` (2.x) processor. `list --json` is
-the same for scripts.
+with the processors it needs and the ones it runs after. `list --json` is the same for scripts.
 
 ## Your own recipes
 
@@ -105,9 +104,7 @@ the files of their processors and nothing else. The lock records the flavors onl
 that covers every processor of `all` that the project has something to make (the platforms with no
 flavors, `ide:config` with no `ide`, `ios:launchScreen` with no flavor that has a launch screen and the
 Firebase processors with no Firebase configuration are not counted). Until one has run, and after you add or remove a flavor with a partial one, `status` exits with
-`1` and reports the flavors as drift: run `apply all` to settle it. A selection of only processors that are
-not on the engine yet (a `default` of `[windows:icons]`) is the exception: `status` has nothing it can check,
-says so, and exits with `0`, without comparing the flavors. A `default` that is a short list is a
+`1` and reports the flavors as drift: run `apply all` to settle it. A `default` that is a short list is a
 fine way to run often, as long as `all` runs when the flavors change.
 
 ## Dependencies

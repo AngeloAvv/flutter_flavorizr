@@ -113,18 +113,16 @@ assets:download,android:buildGradle` runs on 3.x with warnings only.
 | `65` | The configuration or `flavorizr.lock` cannot be used, or the configuration asks for what flavorizr cannot undo (see below). |
 | `70` | A processor failed, or the project changed during the run, or a run was left half done (see below). |
 
-A run that fails does not write the engine's changes to the project, and the
+A run that fails does not write the changes to the project, and the
 lock is written last. A lock that cannot even be staged stops the run before
-anything is written. There are three exceptions, and each says so:
+anything is written. There are two exceptions, and each says so:
 
 * a copy-back that is interrupted exits with `70` and lists what was and what was not written: the lock
   keeps the previous state, so review the files with your version control and run flavorizr again;
 * a lock that cannot replace `flavorizr.lock` once the files are written exits
-  with `70`: the engine's changes stay written, so fix what stops the lock from
+  with `70`: the changes stay written, so fix what stops the lock from
   being written (permissions, a folder in its place) and run flavorizr again,
-  which finds nothing to change and writes the lock;
-* a 2.x processor that fails after the engine finished leaves the engine's
-  changes in place.
+  which finds nothing to change and writes the lock.
 
 ## Removing flavors, and what flavorizr refuses
 
@@ -137,9 +135,7 @@ code `65`. See [Adding and removing flavors](/flavors#what-flavorizr-refuses).
 `status` runs the processors on a copy of the project, like `plan`, and exits
 with `1` when any of these holds:
 
-* there is no `flavorizr.lock`, when the selection holds processors of the
-  engine: only a run of the engine writes the lock, so a selection with none
-  (for example `status windows:icons`) has nothing to check, and says so;
+* there is no `flavorizr.lock`;
 * the flavors of `flavorizr.yaml` and of the lock differ (added, removed or
   changed);
 * a file is not what `flavorizr.yaml` asks for, or is missing;
@@ -153,48 +149,21 @@ written the lock. It writes nothing.
 What a user edits in a file flavorizr only patches (the manifest, `build.gradle`)
 is not drift: only the part flavorizr owns is compared.
 
-## Processors that are not on the engine yet
+A selection that holds no processor, such as `status ios` in a project with no iOS flavor, has nothing to check: `status` prints
+`Nothing to check: no processor is selected.` and exits with `0`.
 
-The engine runs the processors that were ported to it: for these a run is previewed, checked against the
-lock, written atomically and recorded in `flavorizr.lock`. `flavorizr list` tells where each processor
-runs.
+## The `dummyAssets` processors
 
-| Runs on | Processors |
-| --- | --- |
-| The engine | `android:androidManifest`, `android:flavorizrGradle`, `android:buildGradle`, `android:icons`, `android:firebase`, `flutter:flavors`, `flutter:app`, `flutter:pages`, `flutter:main`, `ios:xcconfig`, `ios:buildTargets`, `ios:podfile`, `ios:plist`, `ios:launchScreen`, `ios:schema`, `ios:icons`, `ios:dummyAssets`, `ios:firebase`, `macos:xcconfig`, `macos:configs`, `macos:buildTargets`, `macos:podfile`, `macos:plist`, `macos:schema`, `macos:icons`, `macos:dummyAssets`, `macos:firebase`, `linux:cmake`, `linux:runnerCmake`, `linux:myApplication`, `windows:mainCppTemplate`, `windows:runnerRcTemplate`, `windows:cmake`, `ide:config` |
-| The 2.x pipeline | `windows:icons`, `windows:dummyAssets`, `android:dummyAssets`, `huawei:agconnect` |
+Every processor runs on the engine: a run is previewed, checked against the lock, written atomically and
+recorded in `flavorizr.lock`, and `status` checks all of them. `flavorizr list` shows each one with what it
+needs.
 
-The processors of the 2.x pipeline are not dropped: `apply` runs them **after** the engine, straight on
-the project. That means they have no preview in `plan`, no conflict detection, no lock entry and are not
-checked by `status`; the commands say so every time they meet one. When the engine fails nothing else
-runs. Each port moves a processor from the 2.x pipeline to the engine without any change to how you call
-flavorizr.
-
-`android:dummyAssets`, `macos:dummyAssets`, `windows:dummyAssets` and `ios:dummyAssets` do nothing now: flavorizr makes the
-icons it writes, and a flavor with no `icon` and no badge uses the default icon of the project (or the icon
-the project already has for it: see [Every case](/icons-and-badge#every-case)). They stay so that a
-recipe that names one still runs (`ios:dummyAssets` and `macos:dummyAssets` are on the engine,
-`android:dummyAssets` and `windows:dummyAssets` are not). On iOS the launch image of a flavor is made by
-`ios:launchScreen`, for the flavors that turn [`launchScreen`](/configuration/ios#the-launch-screen) on.
-
-What is left of the 2.x pipeline is `windows:icons`, which makes the `.ico` of each flavor with an `icon` or a
-badge, and `huawei:agconnect`, which copies `agconnect-services.json`. Neither tracks what it writes, so a
-hand edit of what they write is overwritten without a conflict, and what they wrote stays in the project when
-the flavor goes (and a `<flavor>.ico` that stays is still the icon of its flavor). Because they run after the
-engine, one that fails (a source that is missing, or a badge with no image of 512 px or more) leaves the
-engine's changes and the lock written, and exits with `70`. A badge falls back to the root `icon` or the
-`AppIcon` of the project when the `icon` of the flavor is missing, so it fails only when none is there.
-
-The 2.x processors never overwrite what the engine generated: the files the engine writes whole
-(`flavorizr.gradle`, the launcher icons of `android:icons`) are put back if a 2.x processor changes them.
-
-Known limits of the mix, which go away as processors are ported:
-
-* The engine always runs first, so `android:icons` cannot run *after* `android:dummyAssets` as its `after`
-  edge says. That makes no difference: `android:dummyAssets` makes nothing.
-* `status` can only vouch for the processors of the engine. When some are not, it says
-  `In sync, as far as the engine can tell` and lists the ones it did not check. A selection of only such
-  processors (`status windows:icons`) prints `Nothing to check` and exits with `0`.
+`android:dummyAssets`, `ios:dummyAssets`, `macos:dummyAssets` and `windows:dummyAssets` do nothing:
+flavorizr makes the icons it writes, and a flavor with no `icon` and no badge uses the default icon of the
+project (or the icon the project already has for it: see [Every case](/icons-and-badge#every-case)). They
+stay so that a recipe that names one still runs, and so that the processors that were ordered after them
+still are. On iOS the launch image of a flavor is made by `ios:launchScreen`, for the flavors that turn
+[`launchScreen`](/configuration/ios#the-launch-screen) on.
 
 ## Confirmation
 

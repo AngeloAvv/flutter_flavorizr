@@ -37,12 +37,10 @@ flavors:
 A run adds everything the flavor needs from the processors it runs: the Android product flavor, the xcconfig files, build
 configurations and scheme of Xcode, the mappings in the Podfile, the entries of the Flutter code and of the
 IDE configurations, and its icons when it has an `icon` or a [badge](/icons-and-badge). The flavors that
-already exist are not touched unless they changed, with two exceptions: the run configurations of the
+already exist are not touched unless they changed, with one exception: the run configurations of the
 IDEs are *local* files, written again on every run (a `.idea/runConfigurations/<flavor>.xml` of an existing
 flavor is rewritten whole, and so are its entries `<flavor> Debug`, `<flavor> Profile` and `<flavor> Release`
-in `.vscode/launch.json`, so options you added to them are lost), and `windows:icons`, which is not on the
-engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)), writes the `.ico`
-of every flavor with an `icon` or a badge again on every run, with no change detection.
+in `.vscode/launch.json`, so options you added to them are lost).
 
 ## Changing a flavor
 
@@ -59,8 +57,8 @@ one**. When a removed and an added flavor have exactly the same configuration, `
 
 Delete it from the yaml. A run removes what flavorizr generated for it, which the lock knows:
 
-- the files that are **managed**: its xcconfig files, its icons on Android, iOS and macOS, its launch
-  screen, its entry in `flavorizr.gradle` and in the Flutter code;
+- the files that are **managed**: its xcconfig files, its icons on Android, iOS, macOS and Windows
+  (`<flavor>.ico`), its launch screen, its entry in `flavorizr.gradle` and in the Flutter code;
 - its part of the **patched** files, and nothing else: its build configurations and the references to
   its xcconfig files in `project.pbxproj`, its mappings in the Podfile, its regions in the Linux and
   Windows CMake lists, its keys and entries;
@@ -68,25 +66,28 @@ Delete it from the yaml. A run removes what flavorizr generated for it, which th
   `.vscode/launch.json`. They are regenerated and removed without a conflict check, so a change of yours in
   them goes too. A `launch.json` that cannot be parsed is left as it is, with a warning (see
   [IDEs](/configuration/services#ides)): the entries of the flavor stay in it, and **only the run that
-  finds the flavor dropped removes them**, so remove them by hand.
+  finds the flavor dropped removes them**, so remove them by hand;
+- the **copies of its Firebase and AppGallery Connect configurations** (`google-services.json`,
+  `GoogleService-Info.plist`, `agconnect-services.json`), which are local too, but the lock records what
+  was copied: a copy goes only while it still holds exactly that. One you edited is yours, and stays;
+- its **scheme**, on iOS and macOS (`xcschemes/<flavor>.xcscheme`). A scheme is a file you and Xcode
+  edit too, so it is deleted only when the lock says flavorizr created it **and** what it holds, apart
+  from the build configurations flavorizr owns and the pre-action Flutter adds, is as flavorizr made it.
+  A scheme you changed is a [conflict](/conflicts). A scheme the lock does not say flavorizr created (it was
+  there before, or 2.x made it: 2.x kept no record) stays, and the plan lists it under `Left in place` with
+  `flavorizr did not make it`: delete it yourself if you do not need it.
 
-The scheme of an iOS or macOS flavor you drop stays: a scheme is a file you and Xcode edit too, so the lock only stops owning it. What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
+What flavorizr did not generate stays. A setting that you changed after flavorizr wrote it is yours and
 stays, and a build configuration of the flavor that holds a setting of yours stays in the project.
-Files that you put in the project yourself, such as an icon in `src/<flavor>/res`, are never deleted.
+A file you put in a folder of the flavor yourself, such as `src/<flavor>/res/drawable/mine.xml`, is not
+deleted: the folders that end up empty go, the others stay.
 
 Removing goes through the [conflict](/conflicts) check like any other change: a managed or patched file you
-edited asks before it is deleted. Local files, and the `.ico` files of `windows:icons`, are not checked.
+edited asks before it is deleted. Local files are not checked: the ones of the IDEs go as they are, and a
+copy of a service configuration that you edited stays, as above.
 
-<Info>
-  `windows:icons` and `huawei:agconnect` are not on the engine yet (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)):
-  they do not track what they write, so they cannot remove it. The `windows/runner/resources/<flavor>.ico` of a
-  flavor you remove, or whose `icon` and badge you remove, stays in the project, and so does the
-  `agconnect-services.json` copied to `android/app/src/<flavor>`: you delete them. The icons of Android, iOS
-  and macOS, and the launch screen of iOS, are on the engine and go with the flavor. A flavor that loses its
-  `icon` but keeps a badge (or the other way round) keeps its icons, made again: see
-  [Every case](/icons-and-badge#every-case). To give a Windows flavor the default `app_icon.ico` back, remove
-  its `icon`, turn its badge off, delete its `.ico` and run `apply`.
-</Info>
+A flavor that loses its `icon` but keeps a badge (or the other way round) keeps its icons, made again: see
+[Every case](/icons-and-badge#every-case).
 
 ## Partial runs
 
@@ -95,10 +96,8 @@ A run of fewer processors than a full one (a `default` recipe that is a short li
 `flavorizr.lock`: only a run that covers every processor a full run covers records them. After you add or
 remove a flavor, finish with a full run (`apply all`), or `status` reports the flavors as drift.
 
-That holds when the selection has processors of the engine. A selection of only processors that are not
-on the engine yet (a `default` of `[windows:icons]`, say) is not checked at all: `status` prints `Nothing to
-check` and exits with `0`, whatever the flavors and the lock say, and `apply` writes no lock. Run
-`status all` to compare the whole project.
+`status` checks the same selection, so a `status` with no target of a project whose `default` is short reports
+the flavors it has not recorded. Run `status all` to compare the whole project.
 
 ## What flavorizr refuses
 

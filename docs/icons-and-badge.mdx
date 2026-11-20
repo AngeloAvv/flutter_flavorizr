@@ -25,12 +25,14 @@ flavors:
       icon: "assets/icon/dev_android.png"  # Android only
 ```
 
-An `icon` is a path relative to the project that stays inside it, links included. The icons of Android, iOS
-and macOS are generated files, owned as **managed** and hashed in the lock, so editing one by hand is a
-conflict. The Windows icons are the exception: `windows:icons` is a 2.x processor that is not on the engine
-yet, so its `.ico` files are not in the lock, and a run writes them over a hand edit without a conflict. The
-output is deterministic: the same sources always give the same bytes. Android flavors can also set an
-[`adaptiveIcon`](/configuration/android#adaptiveicon).
+An `icon` is a path relative to the project that stays inside it, links included. The icons of every
+platform (Android, iOS, macOS and Windows) are generated files, owned as **managed** and hashed in the lock,
+so editing one by hand is a conflict. The output is deterministic: the same sources, rendered by the same
+version of flavorizr, give the same bytes. The lock also records what each icon was made **from** (the bytes
+of the source image, the sizes, the badge): a run that finds the same inputs and the file as it recorded
+neither renders nor writes it, so a change of the path of the source, or of the library that encodes the
+images, writes nothing. See [Inputs of generated files](/reference/lock#inputs-of-generated-files).
+Android flavors can also set an [`adaptiveIcon`](/configuration/android#adaptiveicon).
 
 ### A flavor with no icon
 
@@ -55,28 +57,27 @@ project otherwise.
 What a flavor gets, by what it has. The **source** of the icons is the `icon` of the platform section or of
 the `app` of the flavor. A [badge](#icon-badge) is on when the flavor, or the root, says so. The root `icon`
 is **not** an icon of the flavor: it is only where a badge, or a launch screen, finds an image when the flavor
-has none of its own. The files of Android, iOS and macOS are on the engine (managed, in the lock) and
-`windows:icons` is not (see [Command line](/reference/cli#processors-that-are-not-on-the-engine-yet)), which
-is why the last column differs.
+has none of its own. The cases are the same on Android, iOS, macOS and Windows, which make their files with
+the same rules.
 
-| Case | Android, iOS and macOS | Windows |
-| --- | --- | --- |
-| `icon` is an image, no badge | Icons made from it, whatever its size. | `<flavor>.ico` made from it, written again on every run. |
-| `icon` is missing or is not an image, no badge | The run fails and **writes nothing**. | The engine runs first and its changes and the lock are written; then `windows:icons` fails (exit `70`). The CMake file already points the flavor at `<flavor>.ico`, which is not there until you fix the `icon` and run again. |
-| No `icon`, no badge, and no file of the flavor in the project | Nothing is made. The flavor builds with the default icon (`main` resources, `AppIcon`). | Nothing is made. The flavor builds with `app_icon.ico`. |
-| No `icon`, no badge, and the project has a file of the flavor (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`, `<flavor>.ico`) | It is yours. The flavor builds with it, and it is never overwritten or deleted. | Same: `windows:cmake` points the flavor at `<flavor>.ico` whoever made it. |
-| Only a root `icon` (no `icon` of the flavor, no badge) | Nothing is made. | Nothing is made. |
-| Badge, and `icon` is an image of 512 px or more | Icons made from it, with the band. | `<flavor>.ico` made from it, with the band. |
-| Badge, and no `icon`, or one that is missing, is not an image or is under 512 px | The icon is passed over, **with no error**, and the source is the first image of 512 px or more among the root `icon` and the `AppIcon` of the iOS and macOS projects (the larger one). Icons are made from it, with the band. | The same source, and `<flavor>.ico` made from it, with the band. |
-| Badge, and there is no image of 512 px or more anywhere | The run fails with a hint to set `icon:`, and **writes nothing**. | Fails as in the second row, after the engine has written. |
-| The flavor has an `icon` or a badge, and the project has a file where a generated one goes that the lock does not know | A [conflict](/conflicts): you are asked, and nothing is written until you answer. | It is overwritten, with no question. |
-| You remove the `icon` of a flavor that has no badge, or the badge of one that has no `icon`, or the flavor | The generated files are removed, with their folder (a file of yours in it stays). On iOS and macOS the flavor builds with the `AppIcon` of the project in that same run. | **Nothing is removed**: `<flavor>.ico` stays and is still the icon of the flavor. |
-| You remove the `icon` of a flavor that still has a badge, or the badge of one that still has an `icon` | The icons are made again, from the source the case says. Nothing is removed. | `<flavor>.ico` is made again. |
+| Case | What happens |
+| --- | --- |
+| `icon` is an image, no badge | Icons made from it, whatever its size. |
+| `icon` is missing or is not an image, no badge | The run fails (exit `70`) and **writes nothing**. |
+| No `icon`, no badge, and no file of the flavor in the project | Nothing is made. The flavor builds with the default icon of the project: the `main` resources on Android, `AppIcon` on iOS and macOS, `app_icon.ico` on Windows. |
+| No `icon`, no badge, and the project has a file of the flavor that the lock does not know (`src/<flavor>/res`, `AppIcon-<flavor>.appiconset`, `<flavor>.ico`) | It is yours. The flavor builds with it, and a run leaves it alone while the flavor has no `icon` and no badge: it does not overwrite or delete it. `windows:cmake` points the flavor at `<flavor>.ico` whoever made it. |
+| Only a root `icon` (no `icon` of the flavor, no badge) | Nothing is made. |
+| Badge, and `icon` is an image of 512 px or more | Icons made from it, with the band. |
+| Badge, and no `icon`, or one that is missing, is not an image or is under 512 px | The icon is passed over, **with no error**, and the source is the first image of 512 px or more among the root `icon` and the `AppIcon` of the iOS and macOS projects (the larger one). Icons are made from it, with the band. |
+| Badge, and there is no image of 512 px or more anywhere | The run fails with a hint to set `icon:`, and **writes nothing**. |
+| The flavor has an `icon` or a badge, and the project has a file where a generated one goes that the lock does not know | A [conflict](/conflicts): you are asked, and nothing is written until you answer. This includes the file of the previous row, once the flavor gets an `icon` or a badge. |
+| You edited a generated icon by hand | A [conflict](/conflicts): the run renders it again and asks before it replaces your edit. |
+| You remove the `icon` of a flavor that has no badge, or the badge of one that has no `icon`, or the flavor | The generated files are removed, with their folder (a file of yours in it stays). The flavor builds with the default icon of the project in that same run: on iOS and macOS with `AppIcon`, on Windows with `app_icon.ico`. |
+| You remove the `icon` of a flavor that still has a badge, or the badge of one that still has an `icon` | The icons are made again, from the source the case says. Nothing is removed. |
 
-On Windows the default `app_icon.ico` comes back only when the flavor has no `icon`, **no badge** (neither its own
-nor the one of the root) and no `<flavor>.ico` in the project: remove the `icon` and turn the badge off, delete
-`windows/runner/resources/<flavor>.ico`, and run `apply`. Deleting the file alone is not enough while an
-`icon` or a badge is still there: the run makes it again.
+On Windows `windows:cmake` points a flavor at its `<flavor>.ico` when `windows:icons` makes one for it, or when
+the project has one that the lock does not know. A `<flavor>.ico` that the lock recorded and the flavor no
+longer makes is removed, and the flavor builds with `app_icon.ico` again.
 
 On Android a flavor with an `adaptiveIcon` and no `icon` has the layers of the adaptive icon and no legacy
 mipmaps, with or without a badge (the band is on the foreground); see [Android](#android) below.
@@ -147,4 +148,5 @@ foreground gets no Android icons at all while it has a badge, and a warning says
 
 The band is drawn on the icons of each set at the size of each icon, and on every size of the Windows
 `.ico`. What happens to the icons when the badge, the `icon` or the flavor goes is in
-[Every case](#every-case): they are removed on Android, iOS and macOS, and they are not on Windows.
+[Every case](#every-case): on every platform they are removed, or made again when the flavor still has
+an `icon` or a badge.
