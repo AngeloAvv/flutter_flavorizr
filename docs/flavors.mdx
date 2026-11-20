@@ -81,6 +81,11 @@ A run of fewer processors than a full one (a `default` recipe that is a short li
 `flavorizr.lock`: only a run that covers every processor a full run covers records them. After you add or
 remove a flavor, finish with a full run (`apply all`), or `status` reports the flavors as drift.
 
+That holds when the selection has processors of the engine. A selection of only processors that are not
+on the engine yet (a `default` of `[ios:icons]`, say) is not checked at all: `status` prints `Nothing to
+check` and exits with `0`, whatever the flavors and the lock say, and `apply` writes no lock. Run
+`status all` to compare the whole project.
+
 ## What flavorizr refuses
 
 `plan` and `apply` **refuse** two things, with exit code `65`, before any processor runs, so nothing is
