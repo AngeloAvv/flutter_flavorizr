@@ -29,6 +29,8 @@
 
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 /// The `changes` of the document that `flavorizr plan --json` printed on
 /// [stdout], or `null` when there is no such document.
 ///
@@ -55,6 +57,48 @@ List<Object?>? planChanges(String stdout) {
 List<String> dirtyPaths(String porcelain) => LineSplitter.split(
   porcelain,
 ).map((line) => line.trimRight()).where((line) => line.isNotEmpty).toList();
+
+/// The folders that a build, a `pub get` or the version control fill, and which
+/// are not the sources of the project: a snapshot does not look below them.
+const _outputFolders = {
+  'build',
+  '.dart_tool',
+  '.git',
+  '.gradle',
+  '.symlinks',
+  'Pods',
+  'ephemeral',
+  'DerivedData',
+};
+
+/// Whether [relativePath] (of the project, `/` or `\` separated) is the output
+/// of a build or a tool, which a snapshot of the sources leaves out.
+bool isBuildOutput(String relativePath) =>
+    relativePath.split(RegExp(r'[/\\]')).any(_outputFolders.contains);
+
+/// The hash of the content of a file, which a snapshot keeps in place of it.
+String contentHash(List<int> bytes) => sha256.convert(bytes).toString();
+
+/// What differs between two snapshots of a project, each a map of the path of a
+/// file to the [contentHash] of its content: the files that were added, removed
+/// or changed, one line each and in the order of the paths. None when [after] is
+/// [before].
+List<String> snapshotDiff(
+  Map<String, String> before,
+  Map<String, String> after,
+) {
+  final paths = {...before.keys, ...after.keys}.toList()..sort();
+
+  return [
+    for (final path in paths)
+      if (!before.containsKey(path))
+        'added $path'
+      else if (!after.containsKey(path))
+        'removed $path'
+      else if (before[path] != after[path])
+        'changed $path',
+  ];
+}
 
 /// Whether [bytes] start with the signature of a PNG and hold its `IHDR`.
 bool isPng(List<int> bytes) {

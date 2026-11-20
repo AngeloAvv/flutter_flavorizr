@@ -70,6 +70,54 @@ void main() {
     });
   });
 
+  group('snapshots', () {
+    test('contentHash tells one content from another', () {
+      expect(contentHash([1, 2, 3]), contentHash([1, 2, 3]));
+      expect(contentHash([1, 2, 3]), isNot(contentHash([1, 2, 4])));
+      expect(contentHash([]), hasLength(64));
+    });
+
+    test('snapshotDiff is empty for a project that is the same', () {
+      expect(snapshotDiff({}, {}), isEmpty);
+      expect(snapshotDiff({'a': '1', 'b': '2'}, {'b': '2', 'a': '1'}), isEmpty);
+    });
+
+    test('snapshotDiff lists what was added, removed and changed', () {
+      expect(
+        snapshotDiff(
+          {'a': '1', 'b': '2', 'c': '3'},
+          {'a': '1', 'b': 'x', 'd': '4'},
+        ),
+        ['changed b', 'removed c', 'added d'],
+      );
+    });
+
+    test('isBuildOutput leaves the output of a build and of tools out', () {
+      for (final path in [
+        'build/app/outputs/a.aab',
+        '.dart_tool/package_config.json',
+        'ios/Pods/Pods.xcodeproj/project.pbxproj',
+        'windows/flutter/ephemeral/.plugin_symlinks/a',
+        r'android\.gradle\8.0\a.bin',
+        '.git/index',
+      ]) {
+        expect(isBuildOutput(path), isTrue, reason: path);
+      }
+    });
+
+    test('isBuildOutput keeps the sources and the lock', () {
+      for (final path in [
+        'flavorizr.lock',
+        'android/app/flavorizr.gradle.kts',
+        'ios/Runner.xcodeproj/project.pbxproj',
+        'lib/build_info.dart',
+        'windows/runner/resources/apple.ico',
+      ]) {
+        expect(isBuildOutput(path), isFalse, reason: path);
+      }
+    });
+  });
+
   group('png', () {
     test('reads the size of the header', () {
       expect(pngSize(_png(192, 96)), (width: 192, height: 96));

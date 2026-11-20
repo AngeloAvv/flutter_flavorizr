@@ -40,7 +40,8 @@
 //    second `plan` has nothing to do again;
 // 4. the flavor that is left builds;
 // 5. the build changes nothing for flavorizr, on every platform: `plan` has
-//    nothing to do after it, and neither has an `apply`. On iOS and macOS,
+//    nothing to do after it, and neither has an `apply`, which writes no file
+//    of the project (a snapshot of their hashes tells). On iOS and macOS,
 //    Flutter injects its Swift Package Manager pre-action into the schemes it
 //    finds without one, and the scheme of the flavor has that pre-action once.
 //    On Windows the build leaves `git status` clean too: the CMake file writes
@@ -297,7 +298,21 @@ Future<void> _e2e(
     if (tracked) await _expectCleanTree(project, 'the build');
     await _expectNothingToDo(project, 'the build');
 
+    // `plan` says what `apply` would do, not what it did: the files of the
+    // project tell it.
+    final before = _snapshot(project);
+
     await _flavorizr(project, ['apply', '--yes']);
+
+    final written = snapshotDiff(before, _snapshot(project));
+
+    if (written.isNotEmpty) {
+      _fail(
+        'an apply after the build wrote to the project:\n'
+        '${written.map((line) => '  $line').join('\n')}',
+      );
+    }
+
     await _expectNothingToDo(project, 'an apply after the build');
 
     if (_prepareScripts.containsKey(platform)) {
@@ -621,6 +636,16 @@ Future<void> _expectNothingToDo(Directory project, String after) async {
     );
   }
 }
+
+/// The content hash of each file of [project], by its path relative to it,
+/// leaving out what a build or a tool writes (see [isBuildOutput]).
+Map<String, String> _snapshot(Directory project) => {
+  for (final entity in project.listSync(recursive: true, followLinks: false))
+    if (entity is File &&
+        !isBuildOutput(p.relative(entity.path, from: project.path)))
+      p.posix.joinAll(p.split(p.relative(entity.path, from: project.path))):
+          contentHash(entity.readAsBytesSync()),
+};
 
 /// Runs `git` in [project], and fails when it does.
 Future<String> _git(Directory project, List<String> arguments) async {
