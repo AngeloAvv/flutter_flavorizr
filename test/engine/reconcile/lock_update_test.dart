@@ -53,6 +53,7 @@ FlavorizrLock update({
   Set<String> retained = const {},
   Map<String, Map<String, Set<String>>> objects = const {},
   Set<String> written = const {},
+  Set<String> inSync = const {},
 }) => updateLock(
   previous: previous,
   flavorizrVersion: '3.0.0',
@@ -64,6 +65,7 @@ FlavorizrLock update({
   retained: retained,
   ownedObjects: objects,
   written: written,
+  inSync: inSync,
 );
 
 const pbxproj = 'ios/Runner.xcodeproj/project.pbxproj';
@@ -349,6 +351,330 @@ void main() {
       );
 
       expect(LockCodec.encode(second), LockCodec.encode(first));
+    });
+  });
+
+  group('updateLock, inputs of generated files', () {
+    test('records the inputs a managed artifact declares, by path', () {
+      final lock = update(
+        produced: {
+          'android:icons': [
+            const Artifact.managed('a.png', inputs: 'i1'),
+            const Artifact.managed('b.png', inputs: 'i2'),
+            const Artifact.managed('c.xml'),
+          ],
+        },
+        hashes: {'a.png': 'h1', 'b.png': 'h2', 'c.xml': 'h3'},
+      );
+
+      expect(lock.processors['android:icons']!.inputs, {
+        'a.png': 'i1',
+        'b.png': 'i2',
+      });
+    });
+
+    test('an artifact that stops declaring inputs stops having them', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'android:icons': ProcessorLock(
+              files: {'a.png': managed('h1')},
+              inputs: {'a.png': 'i1'},
+            ),
+          },
+        ),
+        produced: {
+          'android:icons': [const Artifact.managed('a.png')],
+        },
+        hashes: {'a.png': 'h1'},
+      );
+
+      expect(lock.processors['android:icons']!.inputs, isEmpty);
+    });
+
+    test('new inputs replace the recorded ones', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'android:icons': ProcessorLock(
+              files: {'a.png': managed('h1')},
+              inputs: {'a.png': 'i1'},
+            ),
+          },
+        ),
+        produced: {
+          'android:icons': [const Artifact.managed('a.png', inputs: 'i2')],
+        },
+        hashes: {'a.png': 'h2'},
+        written: {'a.png'},
+      );
+
+      expect(lock.processors['android:icons']!.inputs, {'a.png': 'i2'});
+      expect(lock.processors['android:icons']!.files['a.png'], managed('h2'));
+    });
+
+    test('a file of a flavor that was dropped takes its inputs with it', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'android:icons': ProcessorLock(
+              files: {'a.png': managed('h1'), 'old.png': managed('h2')},
+              inputs: {'a.png': 'i1', 'old.png': 'i2'},
+            ),
+          },
+        ),
+        produced: {
+          'android:icons': [const Artifact.managed('a.png', inputs: 'i1')],
+        },
+        hashes: {'a.png': 'h1'},
+        stale: [
+          const StaleArtifact(
+            processorId: 'android:icons',
+            path: 'old.png',
+            ownership: Ownership.managed,
+            recordedHash: 'h2',
+          ),
+        ],
+      );
+
+      expect(lock.processors['android:icons']!.inputs, {'a.png': 'i1'});
+    });
+
+    test('a file the run did not write keeps the inputs the lock had', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'android:icons': ProcessorLock(
+              files: {'a.png': managed('old')},
+              inputs: {'a.png': 'i1'},
+            ),
+          },
+        ),
+        produced: {
+          'android:icons': [const Artifact.managed('a.png', inputs: 'i2')],
+        },
+        hashes: {'a.png': 'new'},
+        retained: {'a.png'},
+      );
+
+      expect(lock.processors['android:icons']!.files['a.png'], managed('old'));
+      expect(lock.processors['android:icons']!.inputs, {'a.png': 'i1'});
+    });
+
+    test('a deletion that did not happen keeps the inputs of the file', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'android:icons': ProcessorLock(
+              files: {'edited.png': managed('h1')},
+              inputs: {'edited.png': 'i1'},
+            ),
+          },
+        ),
+        produced: {'android:icons': const []},
+        stale: [
+          const StaleArtifact(
+            processorId: 'android:icons',
+            path: 'edited.png',
+            ownership: Ownership.managed,
+            recordedHash: 'h1',
+          ),
+        ],
+        retained: {'edited.png'},
+      );
+
+      expect(lock.processors['android:icons']!.inputs, {'edited.png': 'i1'});
+    });
+
+    test('the other processors keep theirs in a partial run', () {
+      final iosRecord = ProcessorLock(
+        files: {'ios/a.png': managed('h9')},
+        inputs: {'ios/a.png': 'i9'},
+      );
+      final lock = update(
+        previous: lockOf(processors: {'ios:icons': iosRecord}),
+        produced: {
+          'android:icons': [const Artifact.managed('a.png', inputs: 'i1')],
+        },
+        hashes: {'a.png': 'h1'},
+      );
+
+      expect(lock.processors['ios:icons'], same(iosRecord));
+    });
+
+    test('a second identical run writes a byte identical lock', () {
+      Map<String, Iterable<Artifact>> produced(List<String> order) => {
+        'android:icons': [
+          for (final name in order) Artifact.managed(name, inputs: 'in-$name'),
+        ],
+      };
+      const hashes = {'a.png': 'h1', 'b.png': 'h2'};
+      final first = update(
+        produced: produced(['b.png', 'a.png']),
+        hashes: hashes,
+      );
+      final second = update(
+        previous: first,
+        produced: produced(['a.png', 'b.png']),
+        hashes: hashes,
+      );
+
+      expect(LockCodec.encode(second), LockCodec.encode(first));
+    });
+  });
+
+  group('updateLock, hashes of scaffold files', () {
+    const scaffold = Artifact.scaffold('lib/main.dart');
+
+    LockedFile scaffoldOf([String? hash]) =>
+        LockedFile(ownership: Ownership.scaffold, hash: hash);
+
+    test('records the hash of a scaffold the run wrote', () {
+      final lock = update(
+        produced: {
+          'flutter:main': [scaffold],
+        },
+        hashes: {'lib/main.dart': 'h1'},
+        written: {'lib/main.dart'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': scaffoldOf('h1'),
+      });
+    });
+
+    test(
+      'records the hash of a scaffold that is as the run would write it',
+      () {
+        final lock = update(
+          produced: {
+            'flutter:main': [scaffold],
+          },
+          hashes: {'lib/main.dart': 'h1'},
+          inSync: {'lib/main.dart'},
+        );
+
+        expect(lock.processors['flutter:main']!.files, {
+          'lib/main.dart': scaffoldOf('h1'),
+        });
+      },
+    );
+
+    test('a scaffold the user had is not recorded with a hash', () {
+      final lock = update(
+        produced: {
+          'flutter:main': [scaffold],
+        },
+        hashes: {'lib/main.dart': 'h1'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': scaffoldOf(),
+      });
+    });
+
+    test('a scaffold the user changed keeps the hash of what was written', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'flutter:main': ProcessorLock(
+              files: {'lib/main.dart': scaffoldOf('h1')},
+            ),
+          },
+        ),
+        produced: {
+          'flutter:main': [scaffold],
+        },
+        hashes: {'lib/main.dart': 'h2'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': scaffoldOf('h1'),
+      });
+    });
+
+    test('a scaffold the run replaced has the hash of the new content', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'flutter:main': ProcessorLock(
+              files: {'lib/main.dart': scaffoldOf('h1')},
+            ),
+          },
+        ),
+        produced: {
+          'flutter:main': [scaffold],
+        },
+        hashes: {'lib/main.dart': 'h2'},
+        written: {'lib/main.dart'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': scaffoldOf('h2'),
+      });
+    });
+
+    test('a lock of version 1 gets the hash once the file is as written', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'flutter:main': ProcessorLock(
+              files: {'lib/main.dart': scaffoldOf()},
+            ),
+          },
+        ),
+        produced: {
+          'flutter:main': [scaffold],
+        },
+        hashes: {'lib/main.dart': 'h1'},
+        inSync: {'lib/main.dart'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': scaffoldOf('h1'),
+      });
+    });
+
+    test('a scaffold kept as the user has it keeps the record it had', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'flutter:main': ProcessorLock(
+              files: {'lib/main.dart': scaffoldOf('h1')},
+            ),
+          },
+        ),
+        produced: {
+          'flutter:main': [scaffold],
+        },
+        hashes: {'lib/main.dart': 'h2'},
+        written: {'lib/main.dart'},
+        retained: {'lib/main.dart'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': scaffoldOf('h1'),
+      });
+    });
+
+    test('a scaffold that became a managed file is not carried over', () {
+      final lock = update(
+        previous: lockOf(
+          processors: {
+            'flutter:main': ProcessorLock(
+              files: {'lib/main.dart': scaffoldOf('h1')},
+            ),
+          },
+        ),
+        produced: {
+          'flutter:main': [const Artifact.managed('lib/main.dart')],
+        },
+        hashes: {'lib/main.dart': 'h2'},
+      );
+
+      expect(lock.processors['flutter:main']!.files, {
+        'lib/main.dart': managed('h2'),
+      });
     });
   });
 

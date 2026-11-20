@@ -47,7 +47,7 @@ void main() {
         '  dev: sha256:aaa\n'
         '  prod: sha256:bbb\n'
         'processors: {}\n'
-        'schemaVersion: 1\n',
+        'schemaVersion: 2\n',
       );
     });
 
@@ -91,7 +91,35 @@ void main() {
           '        ownership: managed\n'
           '      lib/main.dart:\n'
           '        ownership: scaffold\n'
-          'schemaVersion: 1\n',
+          'schemaVersion: 2\n',
+        ),
+      );
+    });
+
+    test('writes the hash of a scaffold when the lock has one', () {
+      final lock = FlavorizrLock(
+        flavorizrVersion: '3.0.0',
+        processors: {
+          'flutter:main': ProcessorLock(
+            files: {
+              'lib/main.dart': LockedFile(
+                ownership: Ownership.scaffold,
+                hash: 'sha256:333',
+              ),
+              'lib/other.dart': LockedFile(ownership: Ownership.scaffold),
+            },
+          ),
+        },
+      );
+
+      expect(
+        LockCodec.encode(lock),
+        contains(
+          '      lib/main.dart:\n'
+          '        hash: sha256:333\n'
+          '        ownership: scaffold\n'
+          '      lib/other.dart:\n'
+          '        ownership: scaffold\n',
         ),
       );
     });
@@ -179,6 +207,54 @@ void main() {
         LockCodec.decode(LockCodec.encode(lock), runningVersion: '3.0.0'),
         lock,
       );
+    });
+
+    test('reads back the hash of a scaffold', () {
+      final lock = FlavorizrLock(
+        flavorizrVersion: '3.0.0',
+        processors: {
+          'flutter:main': ProcessorLock(
+            files: {
+              'lib/main.dart': LockedFile(
+                ownership: Ownership.scaffold,
+                hash: 'sha256:333',
+              ),
+            },
+          ),
+        },
+      );
+
+      expect(
+        LockCodec.decode(LockCodec.encode(lock), runningVersion: '3.0.0'),
+        lock,
+      );
+    });
+
+    test('reads a lock of version 1, whose scaffolds have no hash', () {
+      final lock = LockCodec.decode(
+        'flavorizrVersion: 3.0.0\n'
+        'flavors: {dev: sha256:aaa}\n'
+        'processors:\n'
+        '  flutter:main:\n'
+        '    files:\n'
+        '      lib/main.dart:\n'
+        '        ownership: scaffold\n'
+        '  android:icons:\n'
+        '    files:\n'
+        '      android/a.png:\n'
+        '        hash: sha256:111\n'
+        '        ownership: managed\n'
+        'schemaVersion: 1\n',
+        runningVersion: '3.0.0',
+      );
+
+      expect(
+        lock.processors['flutter:main']!.files['lib/main.dart'],
+        LockedFile(ownership: Ownership.scaffold),
+      );
+      expect(lock.processors['android:icons']!.inputs, isEmpty);
+      // Written back, it is a lock of the current version.
+      expect(LockCodec.encode(lock), endsWith('schemaVersion: 2\n'));
     });
 
     test('reads back regions, owned keys, objects and inputs', () {
@@ -358,7 +434,7 @@ void main() {
     test('blocks a lock with a newer schema, with an upgrade hint', () {
       expect(
         () => LockCodec.decode(
-          lockText(schema: 2, version: '3.2.0'),
+          lockText(schema: 3, version: '3.2.0'),
           runningVersion: '3.0.0',
         ),
         throwsA(
@@ -564,7 +640,6 @@ void main() {
       expectMalformed('$head        ownership: local\n');
       expectMalformed('$head        ownership: local\n        hash: h\n');
       expectMalformed('$head        ownership: managed\n');
-      expectMalformed('$head        ownership: scaffold\n        hash: h\n');
       expectMalformed('$head        ownership: nobody\n        hash: h\n');
       expectMalformed('$head        hash: h\n');
     });

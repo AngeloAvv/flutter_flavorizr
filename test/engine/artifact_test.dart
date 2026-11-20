@@ -84,6 +84,26 @@ void main() {
       );
     });
 
+    test('a managed artifact may declare the hash of its inputs', () {
+      const artifact = Artifact.managed('a.png', inputs: 'sha256:abc');
+
+      expect(artifact.inputs, 'sha256:abc');
+      expect(const Artifact.managed('a.png').inputs, isNull);
+      expect(const Artifact.patched('a.png').inputs, isNull);
+    });
+
+    test('artifacts with other inputs are other artifacts', () {
+      const same = Artifact.managed('a.png', inputs: 'h1');
+
+      expect(same, const Artifact.managed('a.png', inputs: 'h1'));
+      expect(
+        same.hashCode,
+        const Artifact.managed('a.png', inputs: 'h1').hashCode,
+      );
+      expect(same, isNot(const Artifact.managed('a.png', inputs: 'h2')));
+      expect(same, isNot(const Artifact.managed('a.png')));
+    });
+
     test('describes itself with its class and path', () {
       expect(
         const Artifact.local('.idea/runConfigurations/a.xml').toString(),

@@ -36,6 +36,7 @@ import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_adaptive_icon_xml.dart';
 import 'package:flutter_flavorizr/src/engine/processors/android/android_icon_source.dart';
+import 'package:flutter_flavorizr/src/engine/processors/icon_inputs.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
 import 'package:path/path.dart' as p;
@@ -62,7 +63,13 @@ import 'package:sprintf/sprintf.dart';
 /// foreground is a vector, for which it makes no icons at all.
 ///
 /// Every file is [Artifact.managed]: it is generated whole from a source icon,
-/// so it is hashed in the lock and a hand edit of it is a conflict. A flavor
+/// so it is hashed in the lock and a hand edit of it is a conflict. The PNGs
+/// also record the hash of their inputs (see [iconInputs]): the lock then knows
+/// they were made from that source, size and badge, and a run that finds the
+/// same inputs and the file as the lock has it neither renders nor writes it, so
+/// an update of the library that encodes the PNGs, or another machine, changes
+/// nothing. Changing the source image, the badge, or the file by hand makes it
+/// again. A flavor
 /// without icons, or one that was dropped, simply produces nothing: the files
 /// of a previous run are cleaned by the reconciliation of stale artifacts, and
 /// copy-back removes the `src/<flavor>/res` folders that leaves empty. A file
@@ -111,7 +118,7 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
     // dropped as soon as its sizes are rendered, so only small PNGs are kept
     // while many flavors, or many sources, are processed.
     final rendered = <String, Map<int, Uint8List>>{};
-    final outputs = <String, Uint8List>{};
+    final files = GeneratedIcons(ctx);
 
     Future<void> addPngs(
       String flavor,
@@ -121,17 +128,38 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
       ResolvedBadge? badge,
       BadgeArea area = BadgeArea.full,
     }) async {
+      final digest = await files.sourceDigest(sourcePath);
+      // What is not up to date, by path.
+      final stale = <String, ({int size, String inputs})>{};
+
+      for (final MapEntry(key: folder, value: size) in sizes.entries) {
+        final path = sprintf(pathTemplate, [flavor, folder]);
+        final inputs = iconInputs(
+          kind: 'png',
+          sourceDigest: digest,
+          sizes: [size, size],
+          badge: badge,
+          area: area,
+        );
+
+        if (!await files.keepIfUpToDate(path, inputs)) {
+          stale[path] = (size: size, inputs: inputs);
+        }
+      }
+
+      if (stale.isEmpty) return;
+
       final pngs = await _render(
         ctx,
         rendered,
         sourcePath,
-        sizes.values,
+        stale.values.map((file) => file.size),
         badge: badge,
         area: area,
       );
 
-      for (final MapEntry(key: folder, value: size) in sizes.entries) {
-        outputs[sprintf(pathTemplate, [flavor, folder])] = pngs[size]!;
+      for (final MapEntry(key: path, value: file) in stale.entries) {
+        files.add(path, pngs[file.size]!, inputs: file.inputs);
       }
     }
 
@@ -222,21 +250,14 @@ class AndroidIconsProcessor extends FlavorizrProcessor {
           );
         }
 
-        outputs[sprintf(K.androidAdaptiveIconXmlPath, [
-          flavor,
-        ])] = Uint8List.fromList(
+        files.add(
+          sprintf(K.androidAdaptiveIconXmlPath, [flavor]),
           utf8.encode(androidAdaptiveIconXml(adaptiveIcon)),
         );
       }
     }
 
-    for (final MapEntry(key: path, value: bytes) in outputs.entries) {
-      final target = File(ctx.resolve(path));
-
-      await target.parent.create(recursive: true);
-      await target.writeAsBytes(bytes);
-      ctx.track(Artifact.managed(path));
-    }
+    await files.write();
   }
 
   /// The PNGs of [sizes] (squares) of the source at [path], from [rendered] or,

@@ -39,7 +39,13 @@ final class FlavorizrLock {
   ///
   /// It is bumped whenever the format changes in a way an older flavorizr
   /// cannot read.
-  static const int currentSchemaVersion = 1;
+  ///
+  /// * `1`: the first format, of the 3.0 development builds.
+  /// * `2`: a scaffold file may record the hash of what flavorizr wrote (see
+  ///   [LockedFile]), and `inputs` is filled in for the generated binaries (see
+  ///   [ProcessorLock.inputs]). A lock of version 1 is read as it is, and
+  ///   rewritten as version 2 by the next run that writes.
+  static const int currentSchemaVersion = 2;
 
   /// The version of flavorizr that wrote the lock.
   final String flavorizrVersion;
@@ -104,6 +110,10 @@ final class ProcessorLock {
   /// The hash of the *inputs* of each generated binary, such as an icon, by
   /// output path: the hash of the source file and the options, never of the
   /// output, which depends on the version of the libraries that produced it.
+  ///
+  /// A path is here only when it is also one of [files], and a file whose
+  /// inputs and content are what the lock recorded is not rendered again (see
+  /// `FlavorizrContext.isGeneratedFrom`).
   final Map<String, String> inputs;
 
   /// Creates the record of a processor.
@@ -152,20 +162,26 @@ final class ProcessorLock {
 ///
 /// The lock records the artifacts of the classes the engine tracks, but never
 /// a [Ownership.local] one: it is regenerated silently and is neither drift
-/// nor conflict. A hash is recorded exactly for the classes with
-/// [Ownership.isHashed].
+/// nor conflict. A hash is recorded for the classes with [Ownership.isHashed],
+/// and may be for a scaffold.
 final class LockedFile {
   /// The class of the file.
   final Ownership ownership;
 
   /// The hash of the owned content: the whole file for a managed one, the
-  /// owned parts for a patched one. `null` for a scaffold.
+  /// owned parts for a patched one.
+  ///
+  /// For a scaffold it is the hash of what flavorizr wrote, and it is only
+  /// there to tell, when the file has to be removed, a file that is as
+  /// flavorizr left it from one the user changed: it is `null` for a scaffold
+  /// the user had before flavorizr, and for one a lock of version 1 recorded.
+  /// Whatever the user does to the file is never drift.
   final String? hash;
 
   /// Records a file of class [ownership].
   ///
-  /// Throws an [ArgumentError] for a local file, for a hashed class without
-  /// [hash] and for a class that is not hashed with one.
+  /// Throws an [ArgumentError] for a local file, and for a hashed class
+  /// without [hash].
   LockedFile({required this.ownership, this.hash}) {
     if (ownership == Ownership.local) {
       throw ArgumentError.value(
@@ -175,13 +191,11 @@ final class LockedFile {
       );
     }
 
-    if (ownership.isHashed != (hash != null)) {
+    if (ownership.isHashed && hash == null) {
       throw ArgumentError.value(
         hash,
         'hash',
-        ownership.isHashed
-            ? 'a ${ownership.name} file needs a hash'
-            : 'a ${ownership.name} file is never hashed',
+        'a ${ownership.name} file needs a hash',
       );
     }
   }

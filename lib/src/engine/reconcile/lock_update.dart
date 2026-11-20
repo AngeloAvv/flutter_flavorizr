@@ -36,9 +36,11 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// `flavorizr android`) never touches the lock entries of another platform. The
 /// record of a processor of the run is rebuilt from what it tracked: the files
 /// it stopped producing leave it, and a processor that owns nothing has no
-/// record. Its regions and inputs are not rebuilt, since `Artifact` cannot
-/// express them yet. The exceptions are the objects and the keys: see
-/// [ownedObjects] and [ownedKeys].
+/// record. Its regions are not rebuilt, since `Artifact` cannot express them
+/// yet. Its inputs are: they are the ones its managed artifacts declare (see
+/// `ManagedArtifact.inputs`), and a file that is kept as it is, or whose
+/// deletion did not happen, keeps the ones the lock had for it. The objects and
+/// the keys are the exceptions: see [ownedObjects] and [ownedKeys].
 ///
 /// * [produced] are the artifacts each processor tracked, and [ownedHashes] the
 ///   hash of the owned content of each of them, by canonical path: it must have
@@ -71,6 +73,13 @@ import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
 /// processor tracks is the exception: it is recorded as the processor says, and
 /// it is how the processor remembers the copies it made.
 ///
+/// The hash of a scaffold is the one of what flavorizr wrote, and it is there so
+/// that a scaffold that is not produced anymore is removed only while it is as
+/// it was written. It is recorded for a scaffold in [written], and for one in
+/// [inSync], which the project holds exactly as the run would write it (so
+/// that a lock of version 1, which has none, learns it). Otherwise the user may
+/// have changed it, or had it first: the hash the lock had is kept, if any.
+///
 /// [written] are the paths the run writes to the project (the changes that
 /// are applied, and the conflicts that were approved). A file that several
 /// processors patch is hashed as a whole, so the processors that did not run
@@ -94,6 +103,7 @@ FlavorizrLock updateLock({
   Map<String, Map<String, Set<String>>> ownedObjects = const {},
   Map<String, Map<String, Map<String, String>>> ownedKeys = const {},
   Set<String> written = const {},
+  Set<String> inSync = const {},
 }) {
   final previousProcessors = previous?.processors ?? const {};
   final isFullRun =
@@ -104,7 +114,9 @@ FlavorizrLock updateLock({
 
   for (final MapEntry(key: id, value: artifacts) in produced.entries) {
     final before = previousProcessors[id]?.files ?? const {};
+    final beforeInputs = previousProcessors[id]?.inputs ?? const {};
     final files = <String, LockedFile>{};
+    final inputs = <String, String>{};
     final copies = <String>{};
 
     for (final artifact in artifacts) {
@@ -118,14 +130,32 @@ FlavorizrLock updateLock({
       if (retained.contains(path)) {
         final recorded = _sameClass(before[path], artifact.ownership);
 
-        if (recorded != null) files[path] = recorded;
+        if (recorded != null) {
+          files[path] = recorded;
+
+          final kept = beforeInputs[path];
+
+          if (kept != null) inputs[path] = kept;
+        }
         continue;
       }
 
       files[path] = LockedFile(
         ownership: artifact.ownership,
-        hash: artifact.ownership.isHashed ? _hashOf(ownedHashes, path) : null,
+        hash: switch (artifact.ownership) {
+          Ownership.managed || Ownership.patched => _hashOf(ownedHashes, path),
+          Ownership.scaffold =>
+            (written.contains(path) || inSync.contains(path)
+                    ? ownedHashes[path]
+                    : null) ??
+                _scaffoldHashBefore(before[path]),
+          Ownership.local => null,
+        },
       );
+
+      final declared = artifact.inputs;
+
+      if (declared != null) inputs[path] = declared;
     }
 
     for (final entry in stale) {
@@ -136,6 +166,10 @@ FlavorizrLock updateLock({
           ownership: entry.ownership,
           hash: entry.recordedHash,
         );
+
+        final kept = beforeInputs[entry.path];
+
+        if (kept != null) inputs[entry.path] = kept;
       }
     }
 
@@ -160,6 +194,7 @@ FlavorizrLock updateLock({
         files: files,
         keys: keys,
         objects: objects,
+        inputs: inputs,
       );
     }
   }
@@ -227,6 +262,9 @@ Map<String, V> _recordedOf<V>({
       if (!isEmpty(entry.value)) entry.key: entry.value,
   };
 }
+
+String? _scaffoldHashBefore(LockedFile? recorded) =>
+    recorded?.ownership == Ownership.scaffold ? recorded!.hash : null;
 
 LockedFile? _sameClass(LockedFile? recorded, Ownership ownership) =>
     recorded != null && recorded.ownership == ownership ? recorded : null;

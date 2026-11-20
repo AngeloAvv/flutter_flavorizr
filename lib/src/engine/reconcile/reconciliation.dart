@@ -29,11 +29,15 @@ import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_content.dart';
 import 'package:flutter_flavorizr/src/engine/conflict/conflict_resolver.dart';
 import 'package:flutter_flavorizr/src/engine/lock/flavorizr_lock.dart';
+import 'package:flutter_flavorizr/src/engine/ownership.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/deletion_plan.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/flavor_diff.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/lock_update.dart';
 import 'package:flutter_flavorizr/src/engine/reconcile/stale_artifacts.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/file_digest.dart';
 import 'package:flutter_flavorizr/src/engine/shadow/workspace_diff.dart';
+import 'package:flutter_flavorizr/src/engine/shadow/workspace_paths.dart';
+import 'package:path/path.dart' as p;
 
 /// What a run does to bring the project, and the lock, in line with the
 /// configuration: the flavors that changed, the files to garbage collect and
@@ -66,6 +70,7 @@ final class Reconciliation {
   final Set<String> _availableProcessors;
   final List<StaleArtifact> _stale;
   final List<StaleArtifact> _unattributed;
+  final Set<String> _inSync;
 
   Reconciliation._({
     required this.flavors,
@@ -81,6 +86,7 @@ final class Reconciliation {
     required Set<String> availableProcessors,
     required List<StaleArtifact> stale,
     required List<StaleArtifact> unattributed,
+    required Set<String> inSync,
   }) : _previous = previous,
        _flavorizrVersion = flavorizrVersion,
        _produced = produced,
@@ -90,7 +96,8 @@ final class Reconciliation {
        _desiredFlavors = desiredFlavors,
        _availableProcessors = availableProcessors,
        _stale = stale,
-       _unattributed = unattributed;
+       _unattributed = unattributed,
+       _inSync = inSync;
 
   /// [diff], the changes of the shadow workspace, together with the deletions.
   WorkspaceDiff applyTo(WorkspaceDiff diff) => deletions.applyTo(diff);
@@ -150,6 +157,7 @@ final class Reconciliation {
       ownedKeys: _ownedKeys,
       desiredFlavors: _desiredFlavors,
       availableProcessors: _availableProcessors,
+      inSync: _inSync,
       stale: [..._stale, ..._unattributed],
       retained: {
         ...resolution.kept,
@@ -223,6 +231,11 @@ final class _DeletionAwareContent implements ConflictContent {
 /// outside of them is ever deleted. [hasher] hashes the owned content of a
 /// file, like the one of `ShadowWorkspace.diff`.
 ///
+/// [ownedHashes] has the hash of the scaffold files too, which are not hashed
+/// otherwise: the lock keeps the hash of the ones the run writes, and of the
+/// ones the project already holds exactly as the run would write them (see
+/// `updateLock`).
+///
 /// Nothing is written: see [Reconciliation].
 Future<Reconciliation> reconcile({
   required Directory projectRoot,
@@ -251,6 +264,12 @@ Future<Reconciliation> reconcile({
   );
 
   return Reconciliation._(
+    inSync: await _scaffoldsInSync(
+      projectRoot: projectRoot,
+      produced: produced,
+      ownedHashes: ownedHashes,
+      hasher: hasher ?? (_, bytes) => digestOf(bytes),
+    ),
     flavors: diffFlavors(
       desired: desiredFlavors,
       applied: previous?.flavors ?? const {},
@@ -268,4 +287,48 @@ Future<Reconciliation> reconcile({
     stale: scan.stale,
     unattributed: scan.unattributed,
   );
+}
+
+/// The scaffold files [produced] that the project holds exactly as the run would
+/// write them, by canonical path: the content of the project hashes to what
+/// [ownedHashes] says for them.
+///
+/// A link is never followed, and a path that is not a file of the project has
+/// none.
+Future<Set<String>> _scaffoldsInSync({
+  required Directory projectRoot,
+  required Map<String, Iterable<Artifact>> produced,
+  required Map<String, String> ownedHashes,
+  required ArtifactHasher hasher,
+}) async {
+  final project = Directory(p.normalize(projectRoot.absolute.path));
+  final desired = {
+    for (final entry in ownedHashes.entries)
+      ?tryCanonicalPath(entry.key): entry.value,
+  };
+  final inSync = <String>{};
+
+  for (final artifact in produced.values.expand((artifacts) => artifacts)) {
+    final path = tryCanonicalPath(artifact.path);
+
+    if (artifact.ownership != Ownership.scaffold ||
+        path == null ||
+        !desired.containsKey(path) ||
+        goesThroughLink(project, path)) {
+      continue;
+    }
+
+    final file = resolveIn(project, path);
+
+    if (await FileSystemEntity.type(file, followLinks: false) !=
+        FileSystemEntityType.file) {
+      continue;
+    }
+
+    if (hasher(artifact, await File(file).readAsBytes()) == desired[path]) {
+      inSync.add(path);
+    }
+  }
+
+  return inSync;
 }

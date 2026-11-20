@@ -130,10 +130,16 @@ void main() {
         isFalse,
         reason: 'nothing is written to the project',
       );
-      expect(ctx.tracked, [
+      expect(ctx.tracked.map((artifact) => artifact.path), [
         for (final folder in _sizes.keys)
-          Artifact.managed('android/app/src/apple/res/$folder/ic_launcher.png'),
+          'android/app/src/apple/res/$folder/ic_launcher.png',
       ]);
+      expect(ctx.tracked, everyElement(isA<ManagedArtifact>()));
+      // What each icon is made from is declared, so that the lock records it.
+      expect(
+        ctx.tracked.map((artifact) => artifact.inputs),
+        everyElement(matches(RegExp(r'^sha256:[0-9a-f]{64}$'))),
+      );
     });
 
     test(
