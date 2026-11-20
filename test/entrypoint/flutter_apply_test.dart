@@ -66,7 +66,6 @@ void main() {
           project.read('lib/flavors.dart'),
           contains("export 'flavors.g.dart';"),
         );
-        expect(project.legacy.ran, isEmpty);
 
         final lock = project.read('flavorizr.lock');
 

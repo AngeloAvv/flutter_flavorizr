@@ -140,7 +140,6 @@ void main() {
       final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ids, isEmpty);
 
       templates.forEach(
         (path, template) => expect(project.read(path), template, reason: path),

@@ -113,8 +113,7 @@ void main() {
       final registry = ProcessorRegistry.standard();
 
       for (final id in ['windows:icons', 'windows:dummyAssets']) {
-        expect(registry.isEngine(id), isTrue, reason: id);
-        expect(registry.legacyIds, isNot(contains(id)), reason: id);
+        expect(registry.engineProcessors, contains(id), reason: id);
       }
     });
 

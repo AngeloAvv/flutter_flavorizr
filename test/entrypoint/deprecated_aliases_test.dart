@@ -104,7 +104,6 @@ void main() {
         project.read('android/app/build.gradle'),
         isNot(contains('flavorizr.gradle')),
       );
-      expect(project.legacy.ran, isEmpty);
       expect(warned('--processors'), hasLength(1));
       expect(warned('--processors').single, contains('4.0'));
       expect(
@@ -211,14 +210,12 @@ void main() {
 
       expect(code, ExitCodes.usage);
       expect(warned('--processors'), hasLength(1));
-      expect(project.legacy.ran, isEmpty);
     });
 
     test('a command name is an unknown target, not the command', () async {
       final code = await project.run(['-p', 'list']);
 
       expect(code, ExitCodes.usage);
-      expect(project.legacy.ran, isEmpty);
       expect(project.logger.output, isNot(contains('Recipes')));
     });
 
@@ -226,7 +223,6 @@ void main() {
       final code = await project.run(['-y', '-p']);
 
       expect(code, ExitCodes.usage);
-      expect(project.legacy.ran, isEmpty);
     });
 
     test('an empty value is as if -p was not given', () async {
@@ -238,7 +234,6 @@ void main() {
 
       expect(code, without);
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ids, explicit.legacy.ids);
       expect(project.snapshot(), explicit.snapshot());
       expect(warned('--processors'), hasLength(1));
     });
@@ -247,7 +242,6 @@ void main() {
       final code = await project.run(['-y', '-p', ',android:buildGradle,,']);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ran, isEmpty);
     });
   });
 
@@ -265,7 +259,6 @@ void main() {
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.questions, isEmpty);
-        expect(project.legacy.ran, isEmpty);
         expect(project.exists('android/app/flavorizr.gradle'), isTrue);
         expect(warned('assets:download'), hasLength(1));
         expect(warned('assets:download').single, contains(reason));
@@ -281,7 +274,6 @@ void main() {
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(warned(id), hasLength(1));
-        expect(project.legacy.ran, isEmpty);
       });
     }
 
@@ -298,7 +290,6 @@ void main() {
 
         expect(code, ExitCodes.ok, reason: project.logger.output);
         expect(project.snapshot(), before);
-        expect(project.legacy.ran, isEmpty);
         expect(project.logger.output, contains('There is nothing to run.'));
         expect(warned('assets:download'), hasLength(1));
         expect(warned('assets:extract'), hasLength(1));

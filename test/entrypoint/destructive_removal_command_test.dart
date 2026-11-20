@@ -63,7 +63,6 @@ void main() {
         expect(code, ExitCodes.data, reason: project.logger.output);
         expect(project.snapshot(), before);
         expect(project.questions, isEmpty);
-        expect(project.legacy.ran, isEmpty);
         expect(
           project.logger.errors.join('\n'),
           allOf(
@@ -85,7 +84,6 @@ void main() {
 
         expect(code, ExitCodes.data, reason: project.logger.output);
         expect(project.snapshot(), before);
-        expect(project.legacy.ran, isEmpty);
         expect(
           project.logger.errors.join('\n'),
           allOf(

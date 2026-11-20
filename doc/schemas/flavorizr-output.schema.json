@@ -35,7 +35,10 @@
       "properties": {
         "id": { "type": "string" },
         "platform": { "type": "string" },
-        "runsOn": { "enum": ["engine", "legacy"] },
+        "runsOn": {
+          "enum": ["engine", "legacy"],
+          "description": "Always engine: every processor runs on the engine. legacy is no longer emitted."
+        },
         "auto": { "type": "boolean" }
       }
     },
@@ -104,7 +107,10 @@
       "properties": {
         "id": { "type": "string" },
         "platform": { "type": "string" },
-        "runsOn": { "enum": ["engine", "legacy"] },
+        "runsOn": {
+          "enum": ["engine", "legacy"],
+          "description": "Always engine: every processor runs on the engine. legacy is no longer emitted."
+        },
         "needs": { "$ref": "#/$defs/strings" },
         "after": { "$ref": "#/$defs/strings" },
         "overridden": { "type": "boolean" }
@@ -159,11 +165,14 @@
             "checked": { "type": "boolean" },
             "inSync": { "type": "boolean" },
             "drift": { "type": "array", "items": { "$ref": "#/$defs/drift" } },
-            "notChecked": { "$ref": "#/$defs/strings" }
+            "notChecked": {
+              "$ref": "#/$defs/strings",
+              "description": "No longer emitted: every processor is checked."
+            }
           },
           "if": { "properties": { "exitCode": { "enum": [0, 1] } } },
           "then": {
-            "required": ["checked", "inSync", "drift", "notChecked"]
+            "required": ["checked", "inSync", "drift"]
           }
         }
       ]

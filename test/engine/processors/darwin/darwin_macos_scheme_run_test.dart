@@ -116,8 +116,7 @@ void main() {
   test('macos:schema runs on the engine', () {
     final registry = ProcessorRegistry.standard();
 
-    expect(registry.isEngine('macos:schema'), isTrue);
-    expect(registry.legacyIds, isNot(contains('macos:schema')));
+    expect(registry.engineProcessors, contains('macos:schema'));
   });
 
   group('a new scheme', () {

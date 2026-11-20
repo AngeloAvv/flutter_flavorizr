@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Angelo Cassano
+ * Copyright (c) 2026 Angelo Cassano
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,20 +23,28 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
+import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 
-/// Used to copy a dummy launcher icon into the source set of each flavor.
+/// `android:dummyAssets`: it makes nothing.
 ///
-/// It does nothing now: a flavor with no `icon` has no source set of its own,
-/// so it uses the `res` of `main`, which is the default icon of the project, and
-/// the icons that exist in a source set are the user's. The id
-/// `android:dummyAssets` stays so that a recipe that names it still runs.
-class AndroidDummyAssetsProcessor extends QueueProcessor {
-  AndroidDummyAssetsProcessor({
-    required super.config,
-    required super.logger,
-  }) : super(const []);
+/// 2.x copied a dummy launcher icon into the source set of each flavor. 3.0
+/// does not: a flavor with no `icon` has no source set of its own, so it uses
+/// the `res` of `main`, which is the default icon of the project, and the icons
+/// that exist in a source set are the user's or the ones of `android:icons`.
+/// What a project still has of the placeholders is recognised by hash, when it
+/// is adopted (see `DummyAssets`), and removed by `android:icons` like any icon
+/// it does not make anymore.
+///
+/// The id stays so that a recipe that names it still runs, and so that
+/// `android:icons` is ordered after it, as it always was.
+class AndroidDummyAssetsProcessor extends FlavorizrProcessor {
+  /// Creates the processor.
+  const AndroidDummyAssetsProcessor();
 
   @override
-  String toString() => 'AndroidDummyAssetsProcessor';
+  String get id => 'android:dummyAssets';
+
+  @override
+  Future<void> apply(FlavorizrContext ctx) async {}
 }

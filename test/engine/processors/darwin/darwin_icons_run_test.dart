@@ -136,8 +136,7 @@ void main() {
         final registry = ProcessorRegistry.standard();
 
         for (final id in [platform.id('icons'), platform.id('dummyAssets')]) {
-          expect(registry.isEngine(id), isTrue, reason: id);
-          expect(registry.legacyIds, isNot(contains(id)), reason: id);
+          expect(registry.engineProcessors, contains(id), reason: id);
         }
       });
 
