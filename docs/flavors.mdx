@@ -133,5 +133,6 @@ The next run treats the project as one flavorized with 2.x: when it has files th
 baseline and the run shows what 3.0 changes in them, with no conflict
 (see [the first run without a lock](/reference/adopt#the-first-run-without-a-lock)). Otherwise a patched
 file is adopted by patching it, and a generated (managed) file that exists and differs from what the run
-would write is a [conflict](/conflicts), since there is no telling it from one you wrote. Commit the lock to
-avoid it.
+would write is a [conflict](/conflicts), since there is no telling it from one you wrote. A lost lock also
+forgets which schemes flavorizr created: they stay when their flavor is dropped, and the plan lists them as
+`flavorizr did not make it`. Commit the lock to avoid all of it.

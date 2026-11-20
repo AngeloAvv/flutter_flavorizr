@@ -55,6 +55,11 @@ missing), only the processors of the run are adopted, and the run says so. When 
 those cannot read it, the run fails with the error of the processor, as a failed
 processor does, and writes nothing.
 
+The baseline lives in memory until the lock is written. If the run that writes it fails after the files were
+written (see [what a retry does not restore](/concepts#plan-and-apply)), there is still no lock, and the next
+run adopts the project again from the files on disk, which now hold what the failed run wrote: it has nothing
+left to change, no conflict, and writes the lock.
+
 A lock that exists is never replaced by an adoption, whatever it records. A
 project whose lock was lost is read the same way: the files that are there are
 the baseline.

@@ -118,11 +118,13 @@ lock is written last. A lock that cannot even be staged stops the run before
 anything is written. There are two exceptions, and each says so:
 
 * a copy-back that is interrupted exits with `70` and lists what was and what was not written: the lock
-  keeps the previous state, so review the files with your version control and run flavorizr again;
+  keeps the previous state, so review the files with your version control and run flavorizr again (see
+  [what a retry does not restore](/concepts#plan-and-apply));
 * a lock that cannot replace `flavorizr.lock` once the files are written exits
   with `70`: the changes stay written, so fix what stops the lock from
   being written (permissions, a folder in its place) and run flavorizr again,
-  which finds nothing to change and writes the lock.
+  which finds nothing to change and writes the lock (see
+  [what a retry does not restore](/concepts#plan-and-apply)).
 
 ## Removing flavors, and what flavorizr refuses
 

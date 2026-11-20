@@ -17,13 +17,32 @@ The lock holds a hash of what flavorizr wrote. A run compares it with the file o
 | --- | --- |
 | `managed` | A file that is not what the lock recorded, when the run would write something else. A managed file that exists and that the lock does not know is one too: there is no telling it from a file you wrote, unless the project has files that only flavorizr makes (2.x), which a run [adopts as the baseline](/reference/adopt#the-first-run-without-a-lock) first. |
 | `patched` | The **owned part** of the file (the region, the keys, the objects flavorizr put in it) was edited since the last run. What you edit around it is not a conflict, and a patched file that the lock does not know yet is adopted by patching it. |
-| `scaffold` | Never: it is created once and then it is yours. `--overwrite-scaffold` is the only way to replace it. |
+| `scaffold` | Never, while a processor still makes it: it is created once and then it is yours, and `--overwrite-scaffold` is the only way to replace it. It is a conflict when a processor **stops** making it and the run would delete it: see [Deleting a file that is not made anymore](#deleting-a-file-that-is-not-made-anymore). |
 | `local` | Never: it is regenerated silently. |
 
 A file that already is what the run would write is not a conflict, whatever its history.
 
 Deleting is a change like any other: a generated file that you edited and that the run would delete,
 because its flavor was removed, is a conflict too.
+
+## Deleting a file that is not made anymore
+
+A processor that runs and no longer produces a file the lock attributes to it (a custom processor that stops
+writing a file, a flavor that goes, an `icon` that is removed) makes that file **stale**. A run proposes to
+delete it, and decides by what the lock recorded for it:
+
+| Owner | What the run does with a stale file |
+| --- | --- |
+| `managed` | Deletes it when it is still what the lock recorded, and asks (a conflict) when you edited it. |
+| `scaffold` | Deletes it **silently** when it is still exactly what flavorizr wrote, which the lock records as a hash. A scaffold you edited, one the lock has no hash for (it was yours before, or the lock is a version 1 one that never recorded it), is a **conflict**: the plan shows it as `- <file> (scaffold) [conflict]`. |
+| `patched` | Left in place, and the lock stops owning it: it is shared with you, so the run only takes out what it owned. A patched file flavorizr created (a scheme) is the one exception: see [Adding and removing flavors](/flavors#removing-a-flavor). |
+| `local` | Not in the lock, so never stale. The processor that wrote it removes it itself: the run configuration of a flavor that goes, and a copy of a service configuration while it is untouched. |
+
+A conflict of this kind is answered like any other: `o` deletes the file, `k` keeps it, and `--on-conflict=keep`
+leaves it. A kept file stays in the lock, so the next run asks again for as long as the processor runs and
+does not make it. Only the processors that run are looked at: a partial run, a processor that the recipe does
+not name, or one that is not registered anymore (it is gone from `tool/flavorizr.dart`) leaves its files, and
+its lock entries, as they are. Delete them by hand if you do not need them.
 
 ## Answering
 

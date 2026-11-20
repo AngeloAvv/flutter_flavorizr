@@ -52,6 +52,21 @@ Two failures can still leave a run half done, and each says so, with exit code `
   the changes stay written and the lock is the previous one. Fix what stops it and run flavorizr again: it
   finds nothing to change and writes the lock.
 
+A run also stops with `70`, and writes nothing, when a file of the project changed after the run copied it
+to the workspace: run it again.
+
+**What a retry does not restore.** In both cases the files are written and the lock is the previous one, so
+the retry finds the files as they are and writes the lock with what it can tell from them: the hash of each
+generated file, the keys, the objects of the Xcode project (found again by their UUID), the inputs of the
+icons (they are rendered again, to the same bytes) and the copies of the service configurations (written on
+every run). The one record that is made only when a file is **created** is lost: that a scheme
+(`xcschemes/<flavor>.xcscheme`) was made by flavorizr. A retry finds the scheme already there, so it does
+not record it, and when you drop the flavor later the scheme stays and the plan lists it as `flavorizr did
+not make it`. To keep the record, restore what the failed run created before you run again: delete the
+scheme files it added (the lines that `apply` printed with `+`, or the new files `git status` shows),
+fix what stopped it, and run flavorizr: it creates the schemes again and the lock records them. Skipping
+this costs one file to delete by hand when the flavor goes. See [`flavorizr.lock`](/reference/lock#what-the-lock-keeps-to-delete-safely).
+
 `status` is the same run, which compares and exits with `1` when the project and the yaml disagree.
 
 Each step of a run is a **processor**: a unit that makes, patches or removes the files of one area,

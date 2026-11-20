@@ -9,7 +9,8 @@ run remove what an earlier run generated (for example a flavor that was dropped
 from the configuration) and tell a change made by the tool from one made by
 hand.
 
-It is written only after a run fully succeeded, and never edited by hand.
+`apply` writes it last, once the files of the run are written (and `adopt` writes it alone), so a run that
+fails or is interrupted leaves the previous one. It is never edited by hand.
 
 ## Example
 
@@ -196,6 +197,11 @@ When a flavor is dropped, flavorizr deletes what it created for it, and only tha
 | --- | --- | --- | --- |
 | `copy` | The copy of a service configuration: `android/app/src/<flavor>/google-services.json`, `agconnect-services.json`, `ios/Runner/<flavor>/GoogleService-Info.plist` and the macOS one. | The hash of the bytes that were copied. | When the flavor is dropped, or loses its configuration, the copy is deleted **only while it still holds exactly those bytes**. One that was edited, or that the lock does not know, stays. A copy is never a conflict or drift. |
 | `created` | The scheme of a flavor (`xcschemes/<flavor>.xcscheme` of iOS and macOS), which is shared with Xcode and Flutter. | The digest of the whole scheme minus what flavorizr owns (its build configurations), the pre-action Flutter adds, and the layout. It is written only when flavorizr **created** the file. | When the flavor is dropped the scheme is deleted if it still has that digest. A scheme that differs is a [conflict](/conflicts). A scheme with no `created` key (it was there before, or 2.x made it) stays, and the plan says `flavorizr did not make it`. |
+
+The `created` key is recorded only by the run that creates the file, and only when the lock is written
+at the end of that run. If that run is interrupted, or cannot write the lock, a retry finds the scheme already
+there and does not record it: see [Plan and apply](/concepts#plan-and-apply) for what to do. The same goes
+for a lock that was lost, and for a scheme that was there before flavorizr: it is never recorded as created.
 
 ```yaml
 ios:schema:

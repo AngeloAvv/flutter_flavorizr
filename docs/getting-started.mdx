@@ -105,10 +105,8 @@ flutter run --flavor dev
 In Dart, `F.appFlavor` is the flavor the app was built with, and `F.title` the name of its app. They
 are generated in `lib/flavors.g.dart`: see [Flutter code](/configuration/flutter).
 
-<Warning>
-  Flutter cannot run the macOS flavors from the terminal: run them from Xcode by selecting the scheme
-  of the flavor. See [macOS](/configuration/macos).
-</Warning>
+On macOS the same command takes the device: `flutter run -d macos --flavor dev`. You can also run a flavor from
+Xcode by selecting its scheme: see [macOS](/configuration/macos#running-a-flavor).
 
 ## Check it stays right
 
