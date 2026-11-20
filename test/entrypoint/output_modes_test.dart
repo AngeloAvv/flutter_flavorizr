@@ -62,7 +62,7 @@ void main() {
         lines.where(
           (l) => RegExp(r'^  ok android:\w+ \(\d+ ms\)$').hasMatch(l),
         ),
-        hasLength(4),
+        hasLength(5),
       );
       expect(printed(), isNot(contains(_ansi)));
       expect(printed(), isNot(contains('\r')));
@@ -163,7 +163,7 @@ void main() {
       expect(project.stdout.toString(), contains('android:icons'));
       expect(
         project.logger.lines.where((l) => RegExp(r'✓.* android:').hasMatch(l)),
-        hasLength(4),
+        hasLength(5),
       );
       expect(project.logger.lines, contains('\x1B[1mandroid\x1B[22m'));
     });

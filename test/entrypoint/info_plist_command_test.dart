@@ -119,7 +119,6 @@ void main() {
       final code = await project.run(['apply', '--yes', ..._run]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ran, isEmpty);
       expect(
         project.read(_ios),
         _iosPristine

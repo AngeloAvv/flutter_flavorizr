@@ -145,7 +145,7 @@ void main() {
       expect(project.questions, isEmpty);
     });
 
-    test('tells what it cannot check', () async {
+    test('checks every processor, android:dummyAssets too', () async {
       await project.run(['apply', '-y', ...engineTargets]);
 
       final code = await project.run([
@@ -155,14 +155,24 @@ void main() {
       ]);
 
       expect(code, ExitCodes.ok);
-      expect(project.logger.output, contains('Not checked'));
-      expect(project.logger.output, contains('as far as the engine can tell'));
-      expect(project.logger.output, contains('android:dummyAssets'));
+      expect(project.logger.output, contains('In sync.'));
+      expect(project.logger.output, isNot(contains('Not checked')));
+      expect(project.logger.output, isNot(contains('as far as the engine')));
     });
 
-    group('when no processor of the engine is selected', () {
+    group('when no processor is selected', () {
+      setUp(() {
+        project.write(
+          'flavorizr.yaml',
+          CliFixture.config([
+            'apple',
+            'banana',
+          ], extra: 'recipes:\n  default: []\n'),
+        );
+      });
+
       test('does not claim the project is in sync', () async {
-        final code = await project.run(['status', 'android:dummyAssets']);
+        final code = await project.run(['status']);
 
         expect(code, ExitCodes.ok);
         expect(project.logger.output, contains('Nothing to check'));
@@ -176,10 +186,7 @@ void main() {
           // of its processors never has one: calling that drift would be a
           // failure `apply` cannot fix.
           expect(project.exists('flavorizr.lock'), isFalse);
-          expect(
-            await project.run(['status', 'android:dummyAssets']),
-            ExitCodes.ok,
-          );
+          expect(await project.run(['status']), ExitCodes.ok);
           expect(project.logger.output, contains('Nothing to check'));
         },
       );

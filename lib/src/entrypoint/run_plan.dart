@@ -25,12 +25,11 @@
 
 import 'package:flutter_flavorizr/src/engine/execution_plan.dart';
 import 'package:flutter_flavorizr/src/engine/recipe/recipe_catalog.dart';
-import 'package:flutter_flavorizr/src/entrypoint/legacy_pipeline.dart';
 import 'package:flutter_flavorizr/src/entrypoint/processor_registry.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 
 /// What a run does: the processors of the engine, in the order they are
-/// applied, and the ones the legacy pipeline applies afterwards.
+/// applied.
 final class RunPlan {
   /// What was left out and why, ready to be shown as info messages.
   final List<String> messages;
@@ -39,29 +38,24 @@ final class RunPlan {
   /// that were pulled in by a dependency marked as such.
   final ExecutionPlan engine;
 
-  /// The instructions the legacy pipeline applies after the engine, in the
-  /// order they were asked for.
-  final List<LegacyStep> legacy;
-
   /// The paths of the project the processors of [engine] work on.
   final Set<String> paths;
 
-  /// The ids of every processor the run was asked for, the ones of the legacy
-  /// pipeline too: what a processor of the engine needs to know about the
-  /// steps it works with, but does not run itself.
+  /// The ids of every processor the run was asked for: what a processor of the
+  /// engine needs to know about the steps it works with, but does not run
+  /// itself.
   final Set<String> selected;
 
   /// Creates a plan.
   RunPlan({
     required this.messages,
     required this.engine,
-    required this.legacy,
     required this.paths,
     this.selected = const {},
   });
 
   /// Whether nothing is left to run.
-  bool get isEmpty => engine.steps.isEmpty && legacy.isEmpty;
+  bool get isEmpty => engine.steps.isEmpty;
 }
 
 /// The platforms [config] has no flavors for, which are left out of a run.
@@ -73,9 +67,9 @@ Set<String> platformsWithoutFlavors(FlavorizrConfig config) => {
   if (!config.windowsFlavorsAvailable) 'windows',
 };
 
-/// The ids of the processors on the engine that a full run of [config] covers:
-/// the ones of `ProcessorRegistry.fullRunIds`, but the ones of a platform
-/// [config] has no flavors for.
+/// The ids of the processors that a full run of [config] covers: the ones of
+/// `ProcessorRegistry.fullRunIds`, but the ones of a platform [config] has no
+/// flavors for.
 ///
 /// A run that covers all of them is a *full* run, the only one that records the
 /// flavors in the lock (see `updateLock`). A project that has no Linux flavors
@@ -112,10 +106,7 @@ Set<String> engineIdsFor(ProcessorRegistry registry, FlavorizrConfig config) {
 /// not. The recipes of the platforms with no flavors are left out, with
 /// a message.
 ///
-/// The processors that run on the engine are ordered by their dependencies,
-/// and the others keep the order they were asked for. The engine goes first,
-/// since it is the one that can be previewed and that refuses to run over
-/// edits made by hand: nothing else is run when it fails.
+/// The processors are ordered by their dependencies.
 ///
 /// Throws what `RecipeCatalog` and `resolveExecutionPlan` throw for a target or
 /// a recipe that is not valid.
@@ -135,16 +126,12 @@ RunPlan resolveRunPlan({
   );
   final engine = resolveExecutionPlan(
     registry.engineProcessors.values,
-    requested: resolution.processorIds.where(registry.isEngine),
+    requested: resolution.processorIds,
   );
 
   return RunPlan(
     messages: resolution.messages,
     engine: engine,
-    legacy: [
-      for (final id in resolution.processorIds)
-        if (!registry.isEngine(id)) LegacyStep(id, config),
-    ],
     paths: registry.pathsOf(engine.steps.map((step) => step.processor)),
     selected: Set.unmodifiable(resolution.processorIds),
   );

@@ -117,8 +117,7 @@ void main() {
     test('is a processor of the engine, in the recipe of iOS', () {
       final registry = ProcessorRegistry.standard();
 
-      expect(registry.isEngine('ios:launchScreen'), isTrue);
-      expect(registry.legacyIds, isNot(contains('ios:launchScreen')));
+      expect(registry.engineProcessors, contains('ios:launchScreen'));
     });
 
     test('makes nothing for a configuration without a launch screen, and '

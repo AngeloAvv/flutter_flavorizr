@@ -74,7 +74,7 @@ recipes:
       await project.run(['list']);
 
       expect(project.logger.output, contains('android:icons [engine]'));
-      expect(project.logger.output, contains('android:dummyAssets [legacy]'));
+      expect(project.logger.output, contains('android:dummyAssets [engine]'));
       expect(project.logger.output, contains('huawei:agconnect [engine]'));
       expect(project.logger.output, contains('ios:podfile [engine]'));
       expect(project.logger.output, contains('ios:buildTargets [engine]'));
@@ -96,7 +96,7 @@ recipes:
         project.logger.output,
         contains(
           'android:icons [engine]\n'
-          '    └─ after android:dummyAssets (legacy)',
+          '    └─ after android:dummyAssets',
         ),
       );
     });

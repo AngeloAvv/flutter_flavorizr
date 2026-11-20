@@ -280,8 +280,7 @@ void main() {
       final registry = ProcessorRegistry.standard();
       final extended = registry.withProcessors([const _SentryProcessor()]);
 
-      expect(extended.engineIds, {...registry.engineIds, 'acme:sentry'});
-      expect(extended.legacyIds, registry.legacyIds);
+      expect(extended.ids, {...registry.ids, 'acme:sentry'});
       expect(extended.resources, hasLength(registry.resources.length));
     });
   });
@@ -364,11 +363,10 @@ void main() {
       );
     });
 
-    test('replace a processor that still runs on the legacy pipeline', () {
+    test('replace a processor that has no paths of its own', () {
       final registry = override([const _Named('huawei:agconnect')]);
 
-      expect(registry.isEngine('huawei:agconnect'), isTrue);
-      expect(registry.legacyIds, isNot(contains('huawei:agconnect')));
+      expect(registry.ids, contains('huawei:agconnect'));
       expect(registry.overriddenIds, {'huawei:agconnect'});
     });
 

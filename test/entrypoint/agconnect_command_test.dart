@@ -93,7 +93,6 @@ void main() {
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_copy('apple')), 'apple-agconnect');
       expect(project.exists(_copy('banana')), isFalse);
-      expect(project.legacy.ids, isEmpty);
     });
 
     test(
@@ -428,7 +427,6 @@ void main() {
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
       expect(project.read(_copy('banana')), 'banana-agconnect');
-      expect(project.legacy.ids, isNot(contains(_target)));
     });
 
     test('a default run with no configuration at all is in sync, and has no '

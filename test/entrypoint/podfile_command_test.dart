@@ -130,7 +130,6 @@ void main() {
       final code = await project.run(['apply', '--yes', ..._fullRun]);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ran, isEmpty);
 
       for (final path in _paths) {
         final patched = project.read(path);

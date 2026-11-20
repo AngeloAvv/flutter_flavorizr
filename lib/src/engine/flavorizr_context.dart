@@ -69,8 +69,7 @@ class FlavorizrContext {
   /// It is what [previousObjectsOf] and [ownObjects] speak for.
   final String? processorId;
 
-  /// The ids of every processor the run was asked for, the ones that run on
-  /// the legacy pipeline too.
+  /// The ids of every processor the run was asked for.
   ///
   /// A processor that depends on a step it does not run itself, such as the
   /// launch screen the plist points to, reads it here and not in the

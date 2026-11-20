@@ -62,7 +62,6 @@ void main() {
       final code = await project.run(['apply', '--yes']);
 
       expect(code, ExitCodes.ok, reason: project.logger.output);
-      expect(project.legacy.ids, isNot(contains('ide:config')));
       expect(project.read('$_idea/apple.xml'), contains('name="apple"'));
       expect(project.read('$_idea/banana.xml'), contains('value="banana"'));
     });

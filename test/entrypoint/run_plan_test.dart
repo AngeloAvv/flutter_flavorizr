@@ -48,16 +48,16 @@ void main() {
 
   final android = CliFixture.config(['apple']);
 
-  test('splits a recipe between the engine and the legacy pipeline', () {
+  test('resolves a recipe into processors, in dependency order', () {
     final plan = resolve(android, ['android']);
 
     expect(engine(plan), [
       'android:androidManifest',
+      'android:dummyAssets',
       'android:flavorizrGradle',
       'android:buildGradle',
       'android:icons',
     ]);
-    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
   });
 
   test('pulls in what a processor depends on, and says so', () {
@@ -67,18 +67,16 @@ void main() {
       'android:flavorizrGradle (auto)',
       'android:buildGradle',
     ]);
-    expect(plan.legacy, isEmpty);
   });
 
   test('the default is the `all` recipe', () {
     final plan = resolve(android);
 
-    expect(engine(plan), hasLength(8));
+    expect(engine(plan), hasLength(9));
     expect(
       engine(plan),
       containsAll(['ide:config', 'android:firebase', 'huawei:agconnect']),
     );
-    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
   });
 
   test('leaves out the platforms without flavors, with a message', () {
@@ -87,7 +85,6 @@ void main() {
     expect(plan.messages, [
       'Skipping "ios": no flavors are configured for ios.',
     ]);
-    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
   });
 
   test('the default recipe of the configuration is used without targets', () {
@@ -97,8 +94,7 @@ void main() {
       '    - android:dummyAssets\n',
     );
 
-    expect(engine(plan), ['android:flavorizrGradle']);
-    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
+    expect(engine(plan), ['android:dummyAssets', 'android:flavorizrGradle']);
   });
 
   test('a default recipe that is empty runs nothing', () {
@@ -106,7 +102,6 @@ void main() {
 
     expect(plan.isEmpty, isTrue);
     expect(plan.engine.steps, isEmpty);
-    expect(plan.legacy, isEmpty);
   });
 
   test('a target wins over an empty default recipe', () {
@@ -124,7 +119,6 @@ void main() {
     );
 
     expect(engine(plan), ['android:icons']);
-    expect(plan.legacy, isEmpty);
   });
 
   test('the recipes of the configuration are targets', () {
@@ -133,8 +127,7 @@ void main() {
 
     final plan = resolve(yaml, ['ci']);
 
-    expect(engine(plan), ['android:icons']);
-    expect(plan.legacy.map((step) => step.id), ['android:dummyAssets']);
+    expect(engine(plan), ['android:dummyAssets', 'android:icons']);
   });
 
   test('the default recipe of the configuration runs without targets', () {
@@ -143,7 +136,6 @@ void main() {
     final plan = resolve(yaml);
 
     expect(engine(plan), ['android:icons']);
-    expect(plan.legacy, isEmpty);
   });
 
   test('an unknown target says what it looks like', () {
@@ -170,31 +162,12 @@ void main() {
     });
   });
 
-  group('dummy assets', () {
-    final icons = '''
-flavors:
-  apple:
-    app:
-      name: Apple
-      icon: assets/apple.png
-    android:
-      applicationId: com.example.apple
-  banana:
-    app:
-      name: Banana
-    android:
-      applicationId: com.example.banana
-''';
+  group('android:dummyAssets', () {
+    test('runs on the engine, before the icons', () {
+      final plan = resolve(android, ['android:icons', 'android:dummyAssets']);
 
-    test('are made for every flavor, the ones with an icon too', () {
-      final plan = resolve(icons, ['android']);
-      final dummy = plan.legacy.singleWhere(
-        (step) => step.id == 'android:dummyAssets',
-      );
-
-      // What the engine wrote is kept by the pipeline (see `preserve`), so the
-      // rest of what the assets hold reaches every flavor.
-      expect(dummy.config.androidFlavors.keys, ['apple', 'banana']);
+      expect(engine(plan), ['android:dummyAssets', 'android:icons']);
+      expect(plan.paths, {'android/app/src'});
     });
   });
 
@@ -208,8 +181,7 @@ flavors:
       applicationId: "com.example.apple"
 ''';
 
-    test('run on the engine, in the order of the recipe, with no legacy '
-        'step', () {
+    test('run on the engine, in the order of the recipe, ', () {
       final plan = resolve(linux, ['linux']);
 
       expect(engine(plan), [
@@ -217,7 +189,6 @@ flavors:
         'linux:runnerCmake',
         'linux:myApplication',
       ]);
-      expect(plan.legacy, isEmpty);
       expect(plan.paths, {
         'linux/CMakeLists.txt',
         'linux/runner/CMakeLists.txt',
@@ -243,6 +214,7 @@ flavors:
         'android:androidManifest',
         'android:flavorizrGradle',
         'android:buildGradle',
+        'android:dummyAssets',
         'android:icons',
         'flutter:flavors',
       });
@@ -285,7 +257,6 @@ flavors:
         engine(plan).indexOf('windows:runnerRcTemplate'),
         lessThan(engine(plan).indexOf('windows:cmake')),
       );
-      expect(plan.legacy, isEmpty);
       expect(plan.paths, {
         'windows/runner/main.cpp.in',
         'windows/runner/Runner.rc.in',

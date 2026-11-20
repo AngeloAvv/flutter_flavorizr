@@ -45,8 +45,6 @@ void main() {
       expect(implicitCode, explicitCode);
       expect(implicitCode, ExitCodes.ok, reason: project.logger.output);
       expect(project.snapshot(), explicit.snapshot());
-      expect(project.legacy.ids, explicit.legacy.ids);
-      expect(project.legacy.ids, isNotEmpty);
       expect(project.questions, explicit.questions);
       expect(project.questions, ['Do you want to proceed?']);
       expect(project.exists('flavorizr.lock'), isTrue);
@@ -65,7 +63,6 @@ void main() {
 
       expect(code, ExitCodes.ok);
       expect(project.exists('android/app/flavorizr.gradle'), isTrue);
-      expect(project.legacy.ran, isEmpty);
     });
 
     test('2.x style: -f alone applies everything without asking', () async {
@@ -92,7 +89,6 @@ void main() {
         project.read('android/app/build.gradle'),
         isNot(contains('flavorizr.gradle')),
       );
-      expect(project.legacy.ran, isEmpty);
     });
 
     test('--verbose is accepted before the command too', () async {
@@ -112,7 +108,6 @@ void main() {
       }
       expect(project.logger.output, contains('Exit codes'));
       expect(project.snapshot().keys, isNot(contains('flavorizr.lock')));
-      expect(project.legacy.ran, isEmpty);
     });
 
     for (final command in ['apply', 'plan', 'status', 'list', 'doctor']) {
@@ -128,7 +123,6 @@ void main() {
           expect(project.logger.output, contains('--verbose'));
           expect(project.logger.output, contains('Exit codes'));
           expect(project.snapshot(), before);
-          expect(project.legacy.ran, isEmpty);
         },
       );
     }
@@ -169,7 +163,6 @@ void main() {
         final code = await project.run(['-p', 'list']);
 
         expect(code, ExitCodes.usage);
-        expect(project.legacy.ran, isEmpty);
       },
     );
   });
@@ -186,7 +179,6 @@ void main() {
       final code = await project.run(['frobnicate']);
 
       expect(code, ExitCodes.usage);
-      expect(project.legacy.ran, isEmpty);
     });
   });
 }
