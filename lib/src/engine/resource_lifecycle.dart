@@ -177,6 +177,7 @@ class ResourceLifecycle {
           processorId: step.processor.id,
           previousObjects: ctx.previousObjects,
           previousKeys: ctx.previousKeys,
+          previousOutputs: ctx.previousOutputs,
           previousFiles: ctx.previousFiles,
           selected: ctx.selected,
           adopting: ctx.adopting,

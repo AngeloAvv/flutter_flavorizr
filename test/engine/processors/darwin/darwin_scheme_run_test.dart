@@ -360,6 +360,28 @@ void main() {
       expect(project.snapshot(), before);
     });
 
+    test('is deleted whichever version of the lock recorded it', () async {
+      await apply();
+
+      expect(project.read('flavorizr.lock'), contains('schemaVersion: 2'));
+      expect(project.read('flavorizr.lock'), contains('created: sha256:'));
+
+      // The same record, as the first format wrote it.
+      project.write(
+        'flavorizr.lock',
+        project
+            .read('flavorizr.lock')
+            .replaceFirst('schemaVersion: 2', 'schemaVersion: 1'),
+      );
+
+      final code = await drop();
+
+      expect(code, ExitCodes.ok, reason: project.logger.output);
+      expect(project.exists('$_schemes/dates.xcscheme'), isFalse);
+      expect(project.read('flavorizr.lock'), contains('schemaVersion: 2'));
+      expect(project.read('flavorizr.lock'), isNot(contains('dates')));
+    });
+
     test('is in the plan as a deletion before it happens, and `status` is '
         'out of sync', () async {
       await apply();

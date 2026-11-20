@@ -24,6 +24,7 @@
  */
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_flavorizr/src/badge/badge_source_icon.dart';
 import 'package:flutter_flavorizr/src/badge/project_badge_source_files.dart';
@@ -44,7 +45,16 @@ import 'package:path/path.dart' as p;
 Future<AndroidIconSource> loadIconSource(
   FlavorizrContext ctx,
   String path,
-) async {
+) async =>
+    AndroidIconSource.decode(await readIconSourceBytes(ctx, path), name: path);
+
+/// Reads the bytes of the source icon at [path], relative to the project, with
+/// the checks of [loadIconSource] but the decoding: what the inputs hash of an
+/// icon is made from.
+///
+/// Throws what [loadIconSource] throws for a file that is missing, too big, not
+/// a file or outside the project.
+Future<Uint8List> readIconSourceBytes(FlavorizrContext ctx, String path) async {
   final resolved = ctx.resolveProject(path);
 
   switch (FileSystemEntity.typeSync(resolved)) {
@@ -76,7 +86,7 @@ Future<AndroidIconSource> loadIconSource(
     throw MalformedResourceException(path);
   }
 
-  return AndroidIconSource.decode(await file.readAsBytes(), name: path);
+  return file.readAsBytes();
 }
 
 /// The image the icons of the flavor [flavorName] are made from, relative to the

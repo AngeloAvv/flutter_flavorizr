@@ -78,7 +78,9 @@ void main() {
     Map<String, String> flavors = const {},
     Set<String>? available,
     Set<String> historical = const {},
+    Directory? workspace,
   }) => adoptProject(
+    workspace: workspace,
     projectRoot: root,
     produced: produced,
     androidFlavors: androidFlavors,
@@ -92,6 +94,68 @@ void main() {
     hasher: _hash,
     dummyAssets: _dummies,
   );
+
+  group('the inputs of the images a processor produces', () {
+    late Directory workspace;
+
+    setUp(() {
+      workspace = Directory.systemTemp.createTempSync('flavorizr_workspace_');
+      addTearDown(() => workspace.deleteSync(recursive: true));
+    });
+
+    void make(String path, String content) {
+      final file = File(p.join(workspace.path, path));
+
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(content);
+    }
+
+    const icon = 'android/app/src/dev/res/mipmap-mdpi/ic_launcher.png';
+    const produced = {
+      'android:icons': [Artifact.managed(icon, inputs: 'i1')],
+    };
+
+    test('are recorded for an image the project holds as the run made it, '
+        'which is generated from them whoever put it there', () async {
+      write(icon, 'png');
+      make(icon, 'png');
+
+      final adoption = await adopt(produced: produced, workspace: workspace);
+
+      expect(adoption.lock.processors['android:icons']!.inputs, {icon: 'i1'});
+    });
+
+    test('are not recorded for an image the run would make differently: 2.x or '
+        'the user made that one, and the next run says what changes', () async {
+      write(icon, 'made by 2.x');
+      make(icon, 'png');
+
+      final adoption = await adopt(produced: produced, workspace: workspace);
+
+      expect(
+        adoption.lock.processors['android:icons']!.files[icon],
+        LockedFile(ownership: Ownership.managed, hash: 'managed:made by 2.x'),
+      );
+      expect(adoption.lock.processors['android:icons']!.inputs, isEmpty);
+    });
+
+    test('are not recorded when the adoption has no workspace to compare '
+        'with', () async {
+      write(icon, 'png');
+
+      final adoption = await adopt(produced: produced);
+
+      expect(adoption.lock.processors['android:icons']!.inputs, isEmpty);
+    });
+
+    test('are not recorded for an image the run did not make', () async {
+      write(icon, 'png');
+
+      final adoption = await adopt(produced: produced, workspace: workspace);
+
+      expect(adoption.lock.processors['android:icons']!.inputs, isEmpty);
+    });
+  });
 
   group('the files a processor produces', () {
     test('are recorded with the hash of what the disk holds', () async {

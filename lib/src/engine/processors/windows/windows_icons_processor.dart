@@ -23,13 +23,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_flavorizr/src/engine/artifact.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_context.dart';
 import 'package:flutter_flavorizr/src/engine/flavorizr_processor.dart';
 import 'package:flutter_flavorizr/src/engine/processors/darwin/xcconfig_naming.dart';
+import 'package:flutter_flavorizr/src/engine/processors/icon_inputs.dart';
 import 'package:flutter_flavorizr/src/engine/processors/icon_source_loader.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/utils/constants.dart';
@@ -67,7 +67,11 @@ bool windowsMakesIcon(FlavorizrContext ctx, String flavorName, Flavor flavor) =>
 /// `WindowsRunnerCMakeListsPatchProcessor`).
 ///
 /// Every file is [Artifact.managed]: it is generated whole from a source icon,
-/// so it is hashed in the lock and a hand edit of it is a conflict. What a flavor
+/// so it is hashed in the lock and a hand edit of it is a conflict. It also
+/// records the hash of its inputs (see [iconInputs]): a run that finds the same
+/// source and badge, and the file as the lock has it, neither renders nor writes
+/// it, so another machine, or another version of the library that encodes the
+/// `.ico`, changes nothing. What a flavor
 /// does not make anymore (it was dropped, lost its `icon`, or its badge was
 /// turned off and it has no `icon`) is not produced, so the reconciliation of
 /// stale artifacts removes the file of the previous run. An `.ico` that the lock
@@ -103,7 +107,7 @@ class WindowsIconsProcessor extends FlavorizrProcessor {
     // The `.ico` rendered so far, by source and badge: the source of two flavors
     // may be the same. A decoded source is dropped as soon as it is rendered.
     final rendered = <String, Uint8List>{};
-    final outputs = <String, Uint8List>{};
+    final files = GeneratedIcons(ctx);
 
     for (final MapEntry(key: flavorName, value: flavor)
         in ctx.config.windowsFlavors.entries) {
@@ -119,22 +123,26 @@ class WindowsIconsProcessor extends FlavorizrProcessor {
         if (badge != null) ...[badge.label, badge.color.hex],
       ].join('\u0000');
 
+      final path = windowsIcoPath(flavorName);
+      final inputs = iconInputs(
+        kind: 'ico',
+        sourceDigest: await files.sourceDigest(source),
+        sizes: sizes,
+        badge: badge,
+      );
+
+      if (await files.keepIfUpToDate(path, inputs)) continue;
+
       if (!rendered.containsKey(key)) {
-        final image = await loadIconSource(ctx, source);
+        final image = await files.loadSource(source);
 
         rendered[key] = image.renderIco(sizes, badge: badge);
       }
 
-      outputs[windowsIcoPath(flavorName)] = rendered[key]!;
+      files.add(path, rendered[key]!, inputs: inputs);
     }
 
-    for (final MapEntry(key: path, value: bytes) in outputs.entries) {
-      final target = File(ctx.resolve(path));
-
-      await target.parent.create(recursive: true);
-      await target.writeAsBytes(bytes);
-      ctx.track(Artifact.managed(path));
-    }
+    await files.write();
   }
 }
 

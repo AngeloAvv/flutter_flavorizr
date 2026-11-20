@@ -51,7 +51,12 @@ sealed class Artifact {
 
   /// An artifact fully regenerated and hashed in the lock.
   /// See [Ownership.managed].
-  const factory Artifact.managed(String path) = ManagedArtifact;
+  ///
+  /// A file generated from inputs that are costly to turn into the same bytes
+  /// on every machine (an icon rendered from an image) declares [inputs], the
+  /// hash of everything it is made from: see [ManagedArtifact.inputs].
+  const factory Artifact.managed(String path, {String? inputs}) =
+      ManagedArtifact;
 
   /// An artifact of which only the owned parts are touched and hashed.
   /// See [Ownership.patched].
@@ -64,17 +69,24 @@ sealed class Artifact {
   /// The class of the artifact, which decides what a run may do to it.
   Ownership get ownership;
 
+  /// The hash of everything the artifact is generated from, or `null`.
+  ///
+  /// Only a [ManagedArtifact] has it. See [ManagedArtifact.inputs].
+  String? get inputs => null;
+
   @override
   bool operator ==(Object other) =>
       other is Artifact &&
       other.runtimeType == runtimeType &&
-      other.path == path;
+      other.path == path &&
+      other.inputs == inputs;
 
   @override
-  int get hashCode => Object.hash(runtimeType, path);
+  int get hashCode => Object.hash(runtimeType, path, inputs);
 
   @override
-  String toString() => 'Artifact.${ownership.name}($path)';
+  String toString() =>
+      'Artifact.${ownership.name}($path${inputs == null ? '' : ', inputs: $inputs'})';
 }
 
 /// An artifact of class [Ownership.scaffold].
@@ -88,8 +100,26 @@ final class ScaffoldArtifact extends Artifact {
 
 /// An artifact of class [Ownership.managed].
 final class ManagedArtifact extends Artifact {
+  /// The hash of everything the file is generated from, such as the bytes of
+  /// the source image of an icon and the options it is rendered with, or `null`
+  /// for a file that is cheap and deterministic to generate.
+  ///
+  /// It is recorded in the lock next to the hash of the file. A later run asks
+  /// the context whether the file is still what was generated from the same
+  /// inputs (`FlavorizrContext.isGeneratedFrom`) and, if so, leaves it as it is
+  /// instead of rendering it again: a library that renders the same inputs to
+  /// other bytes on another machine, or in another version, then changes
+  /// nothing.
+  ///
+  /// It must be computed from the inputs alone, never from the output, and must
+  /// not depend on the machine, so that it is the same everywhere.
+  @override
+  final String? inputs;
+
   /// Creates a managed artifact living at [path].
-  const ManagedArtifact(super.path) : super._();
+  const ManagedArtifact(super.path, {this.inputs})
+    : assert(inputs == null || inputs != ''),
+      super._();
 
   @override
   Ownership get ownership => Ownership.managed;
