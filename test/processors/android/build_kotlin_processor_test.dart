@@ -75,6 +75,29 @@ void main() {
     expect(actual, matcher);
   });
 
+  test(
+      'Test idempotent AndroidBuildKotlinProcessor with CRLF line endings',
+      () {
+    final expected = File(
+            'test_resources/android/build_kotlin_processor_test/build_expected.gradle.kts')
+        .readAsStringSync();
+    final content = expected.replaceAll('\r\n', '\n').replaceAll('\n', '\r\n');
+
+    AndroidBuildKotlinProcessor processor = AndroidBuildKotlinProcessor(
+      K.androidFlavorizrKotlinName,
+      config: flavorizr,
+      input: content,
+      logger: logger,
+    );
+    String actual = processor.execute();
+
+    expect('BEGIN flavorDimensions'.allMatches(actual).length, 1);
+    expect(
+      TestUtils.stripEndOfLines(actual),
+      TestUtils.stripEndOfLines(expected),
+    );
+  });
+
   test('Test idempotent AndroidBuildKotlinProcessor', () {
     String content = File(
             'test_resources/android/build_kotlin_processor_test/build_idempotent_2.gradle.kts')

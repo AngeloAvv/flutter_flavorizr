@@ -105,7 +105,11 @@ class AndroidBuildKotlinProcessor extends StringProcessor {
     final escapedEnd = RegExp.escape(_endFlavorDimensionsMarkup);
 
     final regex = RegExp(
-      r'^[ \t]*' + escapedBegin + r'\n.*?\n[ \t]*' + escapedEnd + r'\n?',
+      r'^[ \t]*' +
+          escapedBegin +
+          r'\r?\n.*?\r?\n[ \t]*' +
+          escapedEnd +
+          r'\r?\n?',
       dotAll: true,
       multiLine: true,
     );
