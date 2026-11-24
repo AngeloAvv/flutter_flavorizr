@@ -24,6 +24,7 @@
  */
 
 import 'package:checked_yaml/checked_yaml.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_flavorizr/src/extensions/extensions_map.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -134,19 +135,8 @@ List<IDE>? _ideListFromJson(dynamic json) {
   }
 
   final output = switch (json) {
-    final List list =>
-      list
-          .map(
-            (e) => IDE.values.firstWhere(
-              (ide) => ide.name.toLowerCase() == e.toString().toLowerCase(),
-            ),
-          )
-          .toList(growable: false),
-    final String str => [
-      IDE.values.firstWhere(
-        (ide) => ide.name.toLowerCase() == str.toLowerCase(),
-      ),
-    ],
+    final List list => list.map(_ideFromJson).toList(growable: false),
+    final String str => [_ideFromJson(str)],
     _ => null,
   };
 
@@ -155,4 +145,19 @@ List<IDE>? _ideListFromJson(dynamic json) {
   }
 
   throw FormatException('Invalid format for IDE list');
+}
+
+IDE _ideFromJson(Object? value) {
+  final ide = IDE.values.firstWhereOrNull(
+    (ide) => ide.name.toLowerCase() == value.toString().toLowerCase(),
+  );
+
+  if (ide == null) {
+    throw FormatException(
+      'Unknown IDE `$value`. Allowed values are: '
+      '${IDE.values.map((ide) => ide.name).join(', ')}',
+    );
+  }
+
+  return ide;
 }
