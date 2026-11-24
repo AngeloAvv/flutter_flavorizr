@@ -23,17 +23,27 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'package:flutter_flavorizr/src/parser/models/flavors/flavor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_create_scheme_processor.dart';
 
+/// Queues one [DarwinCreateSchemeProcessor] per entry of [flavors].
+///
+/// A scheme shares its name with the flavor, and it points to the
+/// `Debug-<flavor>`, `Profile-<flavor>` and `Release-<flavor>` build
+/// configurations created by the `ios:buildTargets`/`macos:buildTargets` step.
+/// Only flavors that configure the platform have those configurations, so the
+/// caller must pass the platform-specific map: `config.iosFlavors` for
+/// `ios:schema`, `config.macosFlavors` for `macos:schema`.
 class DarwinSchemasProcessor extends QueueProcessor {
   DarwinSchemasProcessor(
     String path, {
+    required Map<String, Flavor> flavors,
     required super.config,
     required super.logger,
   }) : super(
           [
-            ...config.flavors.keys.map(
+            ...flavors.keys.map(
               (String flavorName) => DarwinCreateSchemeProcessor(
                 path,
                 flavorName,
